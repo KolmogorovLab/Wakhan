@@ -8,7 +8,13 @@
 * Samtools
 * Pysam
 * Bcftools
-* Tabix
+
+## For NIH Biowulf HPC
+```
+module load samtools
+module load bcftools
+
+```
 
 ## Installation
 ```
