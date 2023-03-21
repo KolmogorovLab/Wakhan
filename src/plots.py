@@ -79,6 +79,7 @@ def coverage_plots_chromosomes(df, df_phasesets, arguments, output_phasesets_fil
         print_chromosome_html(fig, chrom, html_graphs, arguments['out_dir_plots'])
 
     html_graphs.write("</body></html>")
+
 def print_chromosome_pdf(fig, chrom, coverage_plots_path):
     filename = f"{os.path.join(coverage_plots_path, chrom + '.pdf')}"
     plotly.io.write_image(fig,  filename, format='pdf')
@@ -87,6 +88,7 @@ def print_chromosome_html(fig, chrom, html_graphs, coverage_plots_path):
     fname = f"{os.path.join(coverage_plots_path, chrom + '.html')}"
     plotly.offline.plot(fig, filename=fname,auto_open=False)
     html_graphs.write("  <object data=\""+chrom+'.html'+"\" width=\"700\" height=\"420\"></object>"+"\n")
+
 def coverage_plots_genome(df):
     # TODO genome-wide plots
     print('')
@@ -100,6 +102,7 @@ def plots_add_markers_lines(fig):
         mode="markers",
         showlegend=True
     )
+
 def add_scatter_trace_coverage(fig, x, y, name, text, yaxis, opacity, color):
     fig.add_trace(go.Scatter(
         x=x,
@@ -146,6 +149,7 @@ def add_scatter_trace_phaseblocks(fig, phaseblocks_positions, haplotype_1_phaseb
         hoverinfo = "x+name+y+text",
         #legendgroup="group2",
     ))
+
 def plots_layout_settings(fig, chrom, arguments):
     # Update axes
     fig.update_layout(

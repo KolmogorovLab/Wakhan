@@ -3,6 +3,7 @@ import subprocess
 import statistics
 import logging
 import os
+
 def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, bin_size): #TODO This module needs better implementation, currently slow
     snps_df = snps_df_sorted[snps_df_sorted['chr'] == chrom]
     snps_df['gt'].astype(str)
@@ -47,6 +48,7 @@ def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, bin_siz
             snps_haplotype2_mean.append(statistics.median(sub_list))
         total += len_cov
     return snps_haplotype1_mean, snps_haplotype2_mean
+
 def vcf_parse_to_csv_for_het_phased_snps_phasesets(input_vcf):
     #pathlib.Path(input_vcf).suffix #extension
     # TODO add output check conditions with all these processes

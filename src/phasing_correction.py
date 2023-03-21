@@ -4,6 +4,7 @@ import os
 
 chroms = ['chr1', 'chr2', 'chr3', 'chr4', 'chr5', 'chr6', 'chr7', 'chr8', 'chr9', 'chr10', 'chr11', 'chr12', 'chr13',
           'chr14', 'chr15', 'chr16', 'chr17', 'chr18', 'chr19', 'chr20', 'chr21', 'chr22']  # , 'chrX', 'chrY']
+
 def get_phasesets_bins(bam, phasesets, bin_size):
     indices, values = remove_overlapping_and_small_phasesets(phasesets, bin_size)
     head, tail = os.path.split(bam)
@@ -57,6 +58,7 @@ def remove_overlapping_and_small_phasesets(phasesets, bin_size):
         indices_all.append(index)
         values_all.append(final)
     return indices_all, values_all
+
 def phaseblock_flipping(haplotype_1_values, haplotype_2_values, ref_start_values, \
                     haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets):
     haplotype_block_changed = []

@@ -4,6 +4,7 @@ import os
 from phasing_correction import get_phasesets_bins
 def generate_phasesets_bins(bam, path, bin_size):
     return get_phasesets_bins(bam, path, bin_size)
+
 def get_chromosomes_bins(bam_file, bin_size):
     bed=[]
     bam_alignment = pysam.AlignmentFile(bam_file)
@@ -26,6 +27,7 @@ def get_chromosomes_bins(bam_file, bin_size):
                 start=end+1
                 end+=bin_size
     return bed
+
 def chromosomes_sorter(label):
     from itertools import takewhile
     # Strip "chr" prefix
@@ -45,14 +47,17 @@ def chromosomes_sorter(label):
         else:
             key = (3000 + nums, chars)
     return key
+
 def csv_df_chromosomes_sorter(path):
     dataframe = pd.read_csv(path, sep='\t', names=['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
     dataframe.sort_values(by=['chr', 'start'], ascending=[True, True], inplace=True)
     return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
+
 def csv_df_chromosomes_sorter_snps(path):
     dataframe = pd.read_csv(path, sep='\t', names=['chr', 'pos', 'qual', 'filter', 'ps', 'gt', 'dp', 'vaf'])
     dataframe.sort_values(by=['chr', 'pos'], ascending=[True, True], inplace=True)
     return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
+
 def get_breakpoint(chrom, bp_file_path): #TODO add call in plots
     break_points = []
     with open(bp_file_path) as bp_file:
@@ -71,6 +76,7 @@ def get_breakpoint(chrom, bp_file_path): #TODO add call in plots
                 break_points.extend([bp_pos1, mid, bp_pos2])
     print(break_points)
     return break_points
+
 def write_segments_coverage(coverage_segments, output):
     with open('data/' + output, 'w') as fp:
         for items in coverage_segments:
