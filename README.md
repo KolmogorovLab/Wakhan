@@ -5,6 +5,7 @@
 Requirements:
 * Python3
 * Plotly
+* Samtools
 * Pysam
 * Bcftools
 * Tabix
