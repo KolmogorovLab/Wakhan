@@ -5,6 +5,9 @@
 Requirements:
 * Python3
 * Plotly
+* Pysam
+* Bcftools
+* Tabix
 
 ## Installation
 ```
