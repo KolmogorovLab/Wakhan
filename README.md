@@ -1,1 +1,31 @@
 # SomaticCNA
+
+####### Note: This repository is under extensive updates. Currently, only haplotagged BAM file coverage plots module is working.
+
+Requirements:
+* Python3
+* Plotly
+
+## Installation
+```
+git clone https://github.com/KolmogorovLab/SomaticCNA.git
+cd SomaticCNA
+```
+
+## Usage
+```
+python3 main.py --target-bam </home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam> --out-dir-plots <coverage_plots> --genome-name <Cellline> --phased-vcf <HCC1437BL.phased.vcf.gz>
+```
+
+## Required parameters
+
+* `--target-bam` path to one or multiple target bam files (must be indexed)
+  
+* `--out-dir-plots` path to output coverage plots
+
+* `--genome-name` genome cellline/sample name to be displayed on plots
+
+* `--phased-vcf` phased VCF file for the corresponding haplotagged BAM
+  
+  ## Optional parameters
+  
