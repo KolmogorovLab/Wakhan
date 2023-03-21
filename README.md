@@ -27,7 +27,7 @@ python3 main.py --target-bam </home/rezkuh/GenData/COLO829/colo829_tumor_grch38_
 
 * `--phased-vcf` phased VCF file for the corresponding haplotagged BAM
   
-  ## Optional parameters
+## Optional parameters
   
 * `--phaseblock-flipping-enable` enabling phaseblock flipping in coverage plots
   
