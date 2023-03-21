@@ -9,7 +9,7 @@ Requirements:
 ## Installation
 ```
 git clone https://github.com/KolmogorovLab/SomaticCNA.git
-cd SomaticCNA
+cd SomaticCNA/src
 ```
 
 ## Usage
