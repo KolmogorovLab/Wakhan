@@ -29,13 +29,13 @@ python3 main.py --target-bam </home/rezkuh/GenData/COLO829/colo829_tumor_grch38_
   
   ## Optional parameters
   
-* `phaseblock-flipping-enable` enabling phaseblock flipping in coverage plots
+* `--phaseblock-flipping-enable` enabling phaseblock flipping in coverage plots
   
-* `smoothing-enable` enabling smoothing in coverage plots
+* `--smoothing-enable` enabling smoothing in coverage plots
 
-* `phaseblocks-enable` enabling phaseblocks display in coverage plots
+* `--phaseblocks-enable` enabling phaseblocks display in coverage plots
 
-* `het-phased-snps-freq-enable` enabling hetrozygous phased snps frequencies in coverage plots
+* `--het-phased-snps-freq-enable` enabling hetrozygous phased snps frequencies in coverage plots
 
-* `breakpoints-enable` enabling breakpoints in coverage plots
+* `--breakpoints-enable` enabling breakpoints in coverage plots
   
