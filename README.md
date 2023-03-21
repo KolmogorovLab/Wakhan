@@ -13,6 +13,7 @@
 ```
 module load samtools
 module load bcftools
+pip install plotly
 
 ```
 
