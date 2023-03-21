@@ -141,7 +141,7 @@ def main():
     #segments.append(('colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam', 'chr7', 78318498, 78486891))
     segments_coverage = get_segments_coverage(segments, coverage_histograms)
     logging.info('Writing coverage for bins')
-    write_segments_coverage(segments_coverage, 'coverage.csv')
+    #write_segments_coverage(segments_coverage, 'coverage.csv')
 
     logging.info('Parsing phaseblocks information')
     output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(arguments['phased_vcf'])
@@ -149,7 +149,7 @@ def main():
     logging.info('Computing coverage for phaseblocks')
     phasesets_coverage = get_segments_coverage(phasesets_segments, coverage_histograms)
     logging.info('Writing coverage for phaseblocks')
-    write_segments_coverage(phasesets_coverage, 'coverage_ps.csv')
+    #write_segments_coverage(phasesets_coverage, 'coverage_ps.csv')
 
     logging.info('Loading coverage (bins) and coverage (phaseblocks) files...')
     csv_df_phasesets = csv_df_chromosomes_sorter('data/coverage_ps.csv')
