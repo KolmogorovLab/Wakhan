@@ -2,7 +2,7 @@
 
 ###### Note: This repository is under extensive updates. Currently, only haplotagged BAM file coverage plots module is working.
 
-Requirements:
+## Requirements:
 * Python3
 * Plotly
 * Samtools
