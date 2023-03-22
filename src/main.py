@@ -47,6 +47,10 @@ def main():
                         metavar="path", required=True, default=None,
                         help="Path to phased vcf to plot snps frequencies coverage")
 
+    parser.add_argument("--breakpoints-file", dest="breakpoints_file",
+                        metavar="path", required=False, default=None,
+                        help="Path to breakpoints file to plot inconjunction with coverage plots")
+
     parser.add_argument("--genome-name", dest="genome_name",
                         required=True, default=None,
                         help="Genome sample/cellline name to be displayed on plots")
@@ -95,6 +99,7 @@ def main():
         "out_dir_plots": args.out_dir_plots,
         "phased_vcf": args.phased_vcf,
         "phased_vcf_snps_freqs": args.phased_vcf_snps_freqs,
+        "breakpoints_file": args.breakpoints_file,
         "breakpoints_enable": args.breakpoints_enable,
         "genome_name": args.genome_name,
         "bin_size": args.bin_size,

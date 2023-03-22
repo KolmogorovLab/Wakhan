@@ -58,13 +58,14 @@ def csv_df_chromosomes_sorter_snps(path):
     dataframe.sort_values(by=['chr', 'pos'], ascending=[True, True], inplace=True)
     return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
 
-def get_breakpoint(chrom, bp_file_path): #TODO add call in plots
+def get_breakpoints(chrom, bp_file_path): #TODO add call in plots
     break_points = []
     with open(bp_file_path) as bp_file:
         next(bp_file)
         for st in bp_file:
             # st = '-chr1:2671683|+chr1:2673127,0,0,0,9,10,22'
             st = st.split(",")
+            #Parse the file
             chr1 = (st[0].split("|"))[0].split(":")[0][1:]
             chr2 = (st[0].split("|"))[1].split(":")[0][1:]
             bp_pos1 = int((st[0].split("|"))[0].split(":")[1])
@@ -72,9 +73,9 @@ def get_breakpoint(chrom, bp_file_path): #TODO add call in plots
             val_1=int(st[1])
             val_2=int(st[4])
             if ( val_1 == 0 and val_2 >= 3) and (abs(bp_pos1 - bp_pos2) > 1000) and (chr1 == chr2) and (chr2 == chrom):
+                #1k condition and both connections should be on same chromosome for the moment
                 mid=bp_pos1 + round((abs(bp_pos1 - bp_pos2) / 2))
                 break_points.extend([bp_pos1, mid, bp_pos2])
-    print(break_points)
     return break_points
 
 def write_segments_coverage(coverage_segments, output):

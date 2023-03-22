@@ -11,7 +11,7 @@ import logging
 from phasing_correction import phaseblock_flipping
 from smoothing import smoothing
 from vcf_processing import get_snps_frquncies_coverage, vcf_parse_to_csv_for_het_phased_snps_phasesets
-from utils import csv_df_chromosomes_sorter_snps
+from utils import csv_df_chromosomes_sorter_snps, get_breakpoints
 
 chroms = ['chr1', 'chr2', 'chr3', 'chr4', 'chr5', 'chr6', 'chr7', 'chr8', 'chr9', 'chr10', 'chr11', 'chr12', 'chr13', 'chr14', 'chr15', 'chr16', 'chr17', 'chr18', 'chr19', 'chr20', 'chr21', 'chr22']#, 'chrX', 'chrY']
 def coverage_plots_chromosomes(df, df_phasesets, arguments):
@@ -71,6 +71,10 @@ def coverage_plots_chromosomes(df, df_phasesets, arguments):
             phaseblocks_positions = list(itertools.chain.from_iterable(zip(ref_start_values_phasesets, ref_end_values_phasesets, gaps_values)))
 
             add_scatter_trace_phaseblocks(fig, phaseblocks_positions, haplotype_1_phaseblocks_values, haplotype_2_phaseblocks_values)
+
+        if arguments['breakpoints_enable']:
+            breakpoints = get_breakpoints(chrom, arguments['breakpoints_file'])
+            add_scatter_trace_breakpoints(fig, breakpoints)
 
         plots_layout_settings(fig, chrom, arguments)
 
@@ -149,6 +153,20 @@ def add_scatter_trace_phaseblocks(fig, phaseblocks_positions, haplotype_1_phaseb
         marker_symbol='diamond-wide',
         hoverinfo = "x+name+y+text",
         #legendgroup="group2",
+    ))
+
+def add_scatter_trace_breakpoints(fig, break_points):
+    fig.add_trace(go.Scatter(
+        x=break_points,
+        y=[-1,99,-1]*round((len(break_points)/3)),
+        name="BP",
+        text=break_points,
+        yaxis="y5",
+        opacity=0.5,
+        mode='lines',
+        line=dict(shape='linear', color='dodgerblue', width=1, dash='solid'),
+        showlegend=False,
+        hoverinfo="x+name+text",
     ))
 
 def plots_layout_settings(fig, chrom, arguments):

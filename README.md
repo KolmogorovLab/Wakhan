@@ -49,4 +49,5 @@ python3 main.py --target-bam </home/rezkuh/GenData/COLO829/colo829_tumor_grch38_
 * `--het-phased-snps-freq-enable` enabling hetrozygous phased snps frequencies in coverage plots
 
 * `--breakpoints-enable` enabling breakpoints in coverage plots
+
   
