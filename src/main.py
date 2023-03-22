@@ -42,7 +42,11 @@ def main():
 
     parser.add_argument("--phased-vcf", dest="phased_vcf",
                         metavar="path", required=True, default=None,
-                        help="Path to compressed (*.vcf.gz) phased vcf")
+                        help="Path to phased vcf")
+    parser.add_argument("--phased-vcf-snps-freqs", dest="phased_vcf_snps_freqs",
+                        metavar="path", required=True, default=None,
+                        help="Path to phased vcf to plot snps frequencies coverage")
+
     parser.add_argument("--genome-name", dest="genome_name",
                         required=True, default=None,
                         help="Genome sample/cellline name to be displayed on plots")
@@ -90,6 +94,7 @@ def main():
         "het_phased_snps_freq_enable": args.het_phased_snps_freq_enable,
         "out_dir_plots": args.out_dir_plots,
         "phased_vcf": args.phased_vcf,
+        "phased_vcf_snps_freqs": args.phased_vcf_snps_freqs,
         "breakpoints_enable": args.breakpoints_enable,
         "genome_name": args.genome_name,
         "bin_size": args.bin_size,
@@ -156,7 +161,7 @@ def main():
     csv_df_coverage = csv_df_chromosomes_sorter('data/coverage.csv')
 
     logging.info('Generating coverage plots chromosomes-wise')
-    coverage_plots_chromosomes(csv_df_coverage, csv_df_phasesets, arguments, output_phasesets_file_path)
+    coverage_plots_chromosomes(csv_df_coverage, csv_df_phasesets, arguments)
 
     logging.info('Generating coverage plots genome wide')
     coverage_plots_genome(csv_df_coverage)

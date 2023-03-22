@@ -10,11 +10,11 @@ import itertools
 import logging
 from phasing_correction import phaseblock_flipping
 from smoothing import smoothing
-from vcf_processing import get_snps_frquncies_coverage
+from vcf_processing import get_snps_frquncies_coverage, vcf_parse_to_csv_for_het_phased_snps_phasesets
 from utils import csv_df_chromosomes_sorter_snps
 
 chroms = ['chr1', 'chr2', 'chr3', 'chr4', 'chr5', 'chr6', 'chr7', 'chr8', 'chr9', 'chr10', 'chr11', 'chr12', 'chr13', 'chr14', 'chr15', 'chr16', 'chr17', 'chr18', 'chr19', 'chr20', 'chr21', 'chr22']#, 'chrX', 'chrY']
-def coverage_plots_chromosomes(df, df_phasesets, arguments, output_phasesets_file_path):
+def coverage_plots_chromosomes(df, df_phasesets, arguments):
     filename = f"{os.path.join(arguments['out_dir_plots'], 'DASHBOARD.html')}"
     html_graphs = open(filename, 'w')
     html_graphs.write("<html><head></head><body>" + "\n")
@@ -53,6 +53,7 @@ def coverage_plots_chromosomes(df, df_phasesets, arguments, output_phasesets_fil
 
         if arguments['het_phased_snps_freq_enable']:
             logging.info('hetrozygous phased snps frequencies coverage module')
+            output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(arguments['phased_vcf_snps_freqs'])
             csv_df_snps = csv_df_chromosomes_sorter_snps(output_phasesets_file_path)
             haplotype_1_snps_freqs, haplotype_2_snps_freqs = get_snps_frquncies_coverage(csv_df_snps, chrom, ref_start_values, arguments['bin_size'])
             add_scatter_trace_coverage(fig, ref_start_values, haplotype_1_snps_freqs, name='HP-1 SNPs Freqs', text=None, yaxis=None,

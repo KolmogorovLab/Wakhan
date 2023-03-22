@@ -65,12 +65,6 @@ def vcf_parse_to_csv_for_het_phased_snps_phasesets(input_vcf):
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     process.wait()
 
-    # logging.info('tabix -> Index generation for new VCF')
-    # # Tabix VCF
-    # cmd = ['tabix', '-p',  'vcf', output_vcf]
-    # process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    # process.wait()
-
     logging.info('bcftools -> Query for phasesets and GT,DP,VAF feilds by creating a CSV file')
     # bcftools query for phasesets and GT,DP,VAF
     cmd = ['bcftools', 'query', '-f',  '%CHROM\t%POS\t%QUAL\t%FILTER\t[%PS]\t[%GT]\t[%DP]\t[%VAF]\n', '-i PS>1', output_vcf, '-o', output_csv] #

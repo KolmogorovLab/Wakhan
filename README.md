@@ -37,6 +37,8 @@ python3 main.py --target-bam </home/rezkuh/GenData/COLO829/colo829_tumor_grch38_
 * `--genome-name` genome cellline/sample name to be displayed on plots
 
 * `--phased-vcf` phased VCF file for the corresponding haplotagged BAM
+
+* `--phased-vcf-snps-freqs` phased VCF file to plot snps frequencies coverages along BAM coverage
   
 ## Optional parameters
   
