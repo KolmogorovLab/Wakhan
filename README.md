@@ -25,7 +25,7 @@ cd SomaticCNA/src
 
 ## Usage
 ```
-python3 main.py --target-bam </home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam> --out-dir-plots <coverage_plots> --genome-name <Cellline> --phased-vcf <HCC1437BL.phased.vcf.gz>
+python3 main.py --target-bam </home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam> --out-dir-plots <coverage_plots> --genome-name <Cellline> --phased-vcf <HCC1437BL.phased.vcf.gz> --phased-vcf-snps-freqs <HCC1437BL.phased.vcf.gz>
 ```
 
 ## Required parameters
