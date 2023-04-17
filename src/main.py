@@ -163,8 +163,8 @@ def main():
     #write_segments_coverage(phasesets_coverage, 'coverage_ps.csv')
 
     logging.info('Loading coverage (bins) and coverage (phaseblocks) files...')
-    csv_df_phasesets = csv_df_chromosomes_sorter('data/2009/coverage_ps.csv')
-    csv_df_coverage = csv_df_chromosomes_sorter('data/2009/coverage.csv')
+    csv_df_phasesets = csv_df_chromosomes_sorter('data/1437/coverage_ps.csv')
+    csv_df_coverage = csv_df_chromosomes_sorter('data/1437/coverage.csv')
 
     logging.info('Generating coverage plots chromosomes-wise')
     coverage_plots_chromosomes(csv_df_coverage, csv_df_phasesets, arguments)
