@@ -71,6 +71,7 @@ def remove_overlapping_and_small_phasesets(phasesets, bin_size):
 def closest(lst):
     s = sorted(set(lst))
     return min([[a, b] for a, b in zip(s, s[1:])], key=lambda x: x[1] - x[0])
+
 def phaseblock_flipping(haplotype_1_values, haplotype_2_values, ref_start_values, ref_end_values, \
                     haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets):
 
@@ -110,6 +111,7 @@ def phaseblock_flipping(haplotype_1_values, haplotype_2_values, ref_start_values
     return haplotype_1_values, haplotype_2_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets
     #haplotype_1_values_updated.extend(haplotype_1_values)
     #haplotype_2_values_updated.extend(haplotype_2_values)
+
 
 def scan_and_update_phaseswitches_inside_phaseblocks(values_ps, haplotype_1_values, haplotype_2_values, ref_start_values, ref_end_values, \
                     haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets):
@@ -205,6 +207,7 @@ def scan_and_update_phaseswitches_inside_phaseblocks(values_ps, haplotype_1_valu
                 ref_end_values_phasesets[start_index:start_index] = last_value
                 haplotype_1_values_phasesets[start_index:start_index] = mean_value_haplotype_1
                 haplotype_2_values_phasesets[start_index:start_index] = mean_value_haplotype_2
+
 def scan_and_update_phaseblocks_switch_errors(max_value_index, values_ps, haplotype_1_values, haplotype_2_values, ref_start_values, ref_end_values, \
                     haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets):
     PHASESETS_DIFF_THRESHOLD = 12
@@ -430,6 +433,7 @@ def scan_and_update_phaseblocks_switch_errors(max_value_index, values_ps, haplot
                                 haplotype_1_values[i] = new_hp2
                                 haplotype_2_values[i] = new_hp1
                                 i = i + 1
+
 def bins_without_phaseblocks(max_value_index, values_ps, haplotype_1_values, haplotype_2_values, ref_start_values, ref_end_values, \
                     haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets):
     if haplotype_1_values_phasesets[max_value_index] > haplotype_2_values_phasesets[max_value_index] or haplotype_1_values_phasesets[max_value_index] == haplotype_2_values_phasesets[max_value_index]:
@@ -456,6 +460,7 @@ def bins_without_phaseblocks(max_value_index, values_ps, haplotype_1_values, hap
                         haplotype_1_values[i] = new_hp2
                         haplotype_2_values[i] = new_hp1
                     i = i + 1
+
 
 def phase_switch_spanning_haplotypes(max_value_index, values_ps, haplotype_1_values, haplotype_2_values, ref_start_values, ref_end_values, \
                     haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets):
@@ -488,6 +493,7 @@ def phase_switch_spanning_haplotypes(max_value_index, values_ps, haplotype_1_val
                         haplotype_2_values[i] = new_hp1
                         i = i + 1
                 break
+
 
 #Apmlification cases
 # or (abs(haplotype_1_values_phasesets[ref_start_values_phasesets.index(value_ps[0])] - \
