@@ -22,30 +22,31 @@ cd SomaticCNA/src
 ```
 
 ## Prerequisite
-This tool requires haplotagged BAM and phased VCF. This can be done through any phasing tools like PEPPER Margin, Clair3/ClairS Whatshap/longphase. Following commands could be helpful.
+This tool requires haplotagged BAM and phased VCF. This can be done through any phasing tools like Margin, Whatshap and Longphase. 
+Following commands could be helpful for phasing VCFs and haplotagging BAMs.
 
 #### For normal/tumor pair:
 ```
 # ClairS phase and haplotag both normal and tumor samples
-singularity run clairs_latest.sif /opt/bin/run_clairs --threads 56 --phase_tumor True --use_whatshap_for_final_output_haplotagging --use_whatshap_for_final_output_phasing --tumor_bam_fn HCC1437.bam --normal_bam_fn HCC1437BL.bam --ref grch38_chr.fasta --output_dir HCC1437_clairS --platform ont_r10
+singularity run clairs_latest.sif /opt/bin/run_clairs --threads 56 --phase_tumor True --use_whatshap_for_final_output_haplotagging --use_whatshap_for_final_output_phasing --tumor_bam_fn normal.bam --normal_bam_fn tumor.bam --ref ref.fasta --output_dir clairS --platform ont_r10
 ```
 or
 ```
 # Phase normal sample
-pepper_margin_deepvariant call_variant -b HCC1437BL.bam -f grch38_chr.fasta -o HCC1437_pepper/output -t 56 --ont_r9_guppy5_sup -p HCC1437_pepper --phased_output
+pepper_margin_deepvariant call_variant -b normal.bam -f ref.fasta -o pepper/output -t 56 --ont_r9_guppy5_sup -p pepper --phased_output
 
-# Haplotag tumor sample with normal phased VCF (HCC1437BL.phased.vcf.gz) output from previous step
-whatshap haplotag --ignore-read-groups HCC1437BL.phased.vcf.gz HCC1437.bam  --reference grch38_chr.fasta -o HCC1437_whathap_haplotagged.bam
+# Haplotag tumor sample with normal phased VCF (phased.vcf.gz) output from previous step
+whatshap haplotag --ignore-read-groups phased.vcf.gz tumor.bam  --reference ref.fasta -o tumor_whatshap_haplotagged.bam
 ```
 #### For tumor only:
 ```
 # Phase and haplotag tumor sample
-singularity run clair3_latest.sif /opt/bin/run_clair3.sh --use_whatshap_for_final_output_haplotagging --use_whatshap_for_final_output_phasing --bam_fn=CaSki_grch38_hpv.bam --ref_fn=grch38_hpv.fasta --threads=56 --platform=ont --model_path=r941_prom_sup_g5014 --output=clair_CaSki --enable_phasing
+singularity run clair3_latest.sif /opt/bin/run_clair3.sh --use_whatshap_for_final_output_haplotagging --use_whatshap_for_final_output_phasing --bam_fn=tumor.bam --ref_fn=ref.fasta --threads=56 --platform=ont --model_path=r941_prom_sup_g5014 --output=clair3 --enable_phasing
 ```
 or
 ```
 # Phase and haplotag tumor sample
-pepper_margin_deepvariant call_variant -b CaSki_grch38_hpv.bam -f grch38_hpv.fasta -o CaSki_pepper/output -t 56 --ont_r9_guppy5_sup -p CaSki_pepper --phased_output
+pepper_margin_deepvariant call_variant -b tumor.bam -f ref.fasta -o pepper/output -t 56 --ont_r9_guppy5_sup -p pepper --phased_output
 ```
 
 ## Usage
