@@ -21,6 +21,27 @@ git clone https://github.com/KolmogorovLab/SomaticCNA.git
 cd SomaticCNA/src
 ```
 
+## Prerequisite
+This tool requires haplotagged BAM and phased VCF. This can be done through any phasing tools like PEPPER Margin, Clair3/ClairS Whatshap/longphase. Following commands could be helpful.
+
+For normal/tumor pair using ClairS:
+```
+# ClairS phase and haplotag both normal and tumor
+singularity run clairs_latest.sif /opt/bin/run_clairs --threads 56 --phase_tumor True --use_whatshap_for_final_output_haplotagging --use_whatshap_for_final_output_phasing --tumor_bam_fn HCC1437.bam --normal_bam_fn HCC1437BL.bam --ref grch38_chr.fasta --output_dir HCC1437_clairS --platform ont_r10
+```
+or
+```
+# Phase normal sample
+run_pepper_margin_deepvariant call_variant -b HCC1437BL.bam -f grch38_chr.fasta -o HCC1437_pepper/output -t 56 --ont_r9_guppy5_sup -p HCC1437_pepper --phased_output
+
+# Haplotag tumor sample with normal phased VCF (HCC1437BL.phased.vcf.gz) from previous step
+whatshap haplotag --ignore-read-groups HCC1437BL.phased.vcf.gz HCC1437.bam  --reference grch38_chr.fasta -o HCC1437_whathap_haplotagged.bam
+```
+For tumor only:
+```
+run_pepper_margin_deepvariant call_variant -b CaSki.bam -f grch38_chr.fasta -o CaSki_pepper/output -t 56 --ont_r9_guppy5_sup -p CaSki_pepper --phased_output
+```
+
 ## Usage
 ```
 python3 main.py --target-bam </home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam> --out-dir-plots <coverage_plots> --genome-name <Cellline> --phased-vcf <HCC1437BL.phased.vcf.gz>
