@@ -55,9 +55,9 @@ def main():
                         required=True, default=None,
                         help="Genome sample/cellline name to be displayed on plots")
 
-    parser.add_argument("-bin-size", "--bin_size", dest="bin_size",
+    parser.add_argument("--bin-size", "--bin_size", dest="bin_size",
                         default=BIN_SIZE, metavar="int", type=int, help="coverage (readdepth) bin size [50k]")
-    parser.add_argument("-cut-threshold", "--cut_threshold", dest="cut_threshold",
+    parser.add_argument("--cut-threshold", "--cut_threshold", dest="cut_threshold",
                         default=MAX_CUT_THRESHOLD, metavar="int", type=int, help="Maximum cut threshold for coverage (readdepth) [100]")
 
     parser.add_argument('--pdf-enable',  dest="pdf_enable", required=False,
@@ -66,14 +66,14 @@ def main():
                         default=True, help="Enabling HTML output coverage plots")
 
     parser.add_argument('--unphased-reads-coverage-enable',  dest="unphased_reads_coverage_enable", required=False,
-                        default=True, help="Enabling unphased reads coverage output in plots")
+                        default=False, help="Enabling unphased reads coverage output in plots")
 
     parser.add_argument('--phaseblock-flipping-enable',  dest="phaseblock_flipping_enable", required=False,
-                        default=True, help="Enabling phaseblock flipping in coverage plots")
+                        default=False, help="Enabling phaseblock flipping in coverage plots")
     parser.add_argument('--smoothing-enable',  dest="smoothing_enable", required=False,
-                        default=True, help="Enabling smoothing in coverage plots")
+                        default=False, help="Enabling smoothing in coverage plots")
     parser.add_argument('--phaseblocks-enable',  dest="phaseblocks_enable", required=False,
-                        default=True, help="Enabling phaseblocks display in coverage plots")
+                        default=False, help="Enabling phaseblocks display in coverage plots")
     parser.add_argument('--het-phased-snps-freq-enable',  dest="het_phased_snps_freq_enable", required=False,
                         default=False, help="Enabling hetrozygous phased snps frequencies in coverage plots")
     parser.add_argument('--breakpoints-enable',  dest="breakpoints_enable", required=False,
@@ -93,6 +93,7 @@ def main():
 
     arguments = {
         "phaseblock_flipping_enable": args.phaseblock_flipping_enable,
+        "unphased_reads_coverage_enable": args.unphased_reads_coverage_enable,
         "smoothing_enable": args.smoothing_enable,
         "phaseblocks_enable": args.phaseblocks_enable,
         "het_phased_snps_freq_enable": args.het_phased_snps_freq_enable,
@@ -151,7 +152,7 @@ def main():
     #segments.append(('colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam', 'chr7', 78318498, 78486891))
     segments_coverage = get_segments_coverage(segments, coverage_histograms)
     logging.info('Writing coverage for bins')
-    write_segments_coverage(segments_coverage, 'coverage.csv')
+    #write_segments_coverage(segments_coverage, 'coverage.csv')
 
     logging.info('Parsing phaseblocks information')
     output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(arguments['phased_vcf'])
@@ -159,11 +160,11 @@ def main():
     logging.info('Computing coverage for phaseblocks')
     phasesets_coverage = get_segments_coverage(phasesets_segments, coverage_histograms)
     logging.info('Writing coverage for phaseblocks')
-    write_segments_coverage(phasesets_coverage, 'coverage_ps.csv')
+    #write_segments_coverage(phasesets_coverage, 'coverage_ps.csv')
 
     logging.info('Loading coverage (bins) and coverage (phaseblocks) files...')
-    csv_df_phasesets = csv_df_chromosomes_sorter('data/coverage_ps.csv')
-    csv_df_coverage = csv_df_chromosomes_sorter('data/coverage.csv')
+    csv_df_phasesets = csv_df_chromosomes_sorter('data/2009/coverage_ps.csv')
+    csv_df_coverage = csv_df_chromosomes_sorter('data/2009/coverage.csv')
 
     logging.info('Generating coverage plots chromosomes-wise')
     coverage_plots_chromosomes(csv_df_coverage, csv_df_phasesets, arguments)
@@ -173,3 +174,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+#--phaseblock-flipping-enable True
+# --phaseblocks-enable True --unphased-reads-coverage-enable True
+
+#--smoothing-enable True

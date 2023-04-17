@@ -26,30 +26,31 @@ def coverage_plots_chromosomes(df, df_phasesets, arguments):
         df_chrom = df[df['chr'] == chrom]
         df_chrom_phasesets = df_phasesets[df_phasesets['chr'] == chrom]
 
-        unphased_reads_values = df_chrom.hp3.values.tolist()
-        haplotype_1_values = df_chrom.hp1.values.tolist()
-        haplotype_2_values = df_chrom.hp2.values.tolist()
+        unphased_reads_values = df_chrom.hp3.clip(upper=arguments['cut_threshold']).values.tolist()
+        haplotype_1_values = df_chrom.hp1.clip(upper=arguments['cut_threshold']).values.tolist()
+        haplotype_2_values = df_chrom.hp2.clip(upper=arguments['cut_threshold']).values.tolist()
         ref_start_values = df_chrom.start.values.tolist()
-        #ref_end_values = df_chrom.end.values.tolist()
+        ref_end_values = df_chrom.end.values.tolist()
 
-        haplotype_1_values_phasesets = df_chrom_phasesets.hp1.values.tolist()
-        haplotype_2_values_phasesets = df_chrom_phasesets.hp2.values.tolist()
+        haplotype_1_values_phasesets = df_chrom_phasesets.hp1.clip(upper=arguments['cut_threshold']).values.tolist()
+        haplotype_2_values_phasesets = df_chrom_phasesets.hp2.clip(upper=arguments['cut_threshold']).values.tolist()
         ref_start_values_phasesets = df_chrom_phasesets.start.values.tolist()
         ref_end_values_phasesets = df_chrom_phasesets.end.values.tolist()
 
         if arguments['phaseblock_flipping_enable']:
             logging.info('phaseblock flipping module')
-            haplotype_1_values, haplotype_2_values = \
-            phaseblock_flipping(haplotype_1_values, haplotype_2_values, ref_start_values, \
+            haplotype_1_values, haplotype_2_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets = \
+            phaseblock_flipping(haplotype_1_values, haplotype_2_values, ref_start_values, ref_end_values, \
                     haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
 
         if arguments['smoothing_enable']:
             logging.info('smoothing module')
             unphased_reads_values, haplotype_1_values, haplotype_2_values = smoothing(unphased_reads_values, haplotype_1_values, haplotype_2_values, conv_window_size=15)
 
-        add_scatter_trace_coverage(fig, ref_start_values, unphased_reads_values, name='Unphased reads', text=None, yaxis=None, opacity=None, color='lightgreen')
-        add_scatter_trace_coverage(fig, ref_start_values, haplotype_1_values, name='HP-1', text=None, yaxis=None, opacity=None, color='lightpink')
-        add_scatter_trace_coverage(fig, ref_start_values, haplotype_2_values, name='HP-2', text=None, yaxis=None, opacity=None, color='cornflowerblue')
+        if arguments['unphased_reads_coverage_enable']:
+            add_scatter_trace_coverage(fig, ref_start_values, unphased_reads_values, name='Unphased reads', text=None, yaxis=None, opacity=None, color='olive')
+        add_scatter_trace_coverage(fig, ref_start_values, haplotype_1_values, name='HP-1', text=None, yaxis=None, opacity=None, color='firebrick')
+        add_scatter_trace_coverage(fig, ref_start_values, haplotype_2_values, name='HP-2', text=None, yaxis=None, opacity=None, color='steelblue')
 
         if arguments['het_phased_snps_freq_enable']:
             logging.info('hetrozygous phased snps frequencies coverage module')
@@ -60,7 +61,6 @@ def coverage_plots_chromosomes(df, df_phasesets, arguments):
                                        opacity=None, color=None)
             add_scatter_trace_coverage(fig, ref_start_values, haplotype_2_snps_freqs, name='HP-2 SNPs Freqs', text=None, yaxis=None,
                                        opacity=None, color=None)
-
         plots_add_markers_lines(fig)
 
         if arguments['phaseblocks_enable']:
@@ -181,7 +181,7 @@ def plots_layout_settings(fig, chrom, arguments):
         ),
         yaxis5=dict(
             linecolor="dimgray",
-            range=[0, arguments['cut_threshold']],
+            range=[0, arguments['cut_threshold']+5],
             side="left",
             tickfont={"color": "dimgray"},
             tickmode="auto",

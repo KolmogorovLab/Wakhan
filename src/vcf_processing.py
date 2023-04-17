@@ -61,11 +61,11 @@ def vcf_parse_to_csv_for_het_phased_snps_phasesets(input_vcf):
 
     logging.info('bcftools -> Filtering out hetrozygous and phased SNPs and generating a new VCF')
     # Filter out het, phased SNPs
-    cmd = ['bcftools', 'view',  '--phased', '-g', 'het', '--types', 'snps', input_vcf, '-Oz', '-o', output_vcf]
+    cmd = ['bcftools', 'view', '--threads', '$(nproc)',  '--phased', '-g', 'het', '--types', 'snps', input_vcf, '-Oz', '-o', output_vcf]
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     process.wait()
 
-    logging.info('bcftools -> Query for phasesets and GT,DP,VAF feilds by creating a CSV file')
+    logging.info('bcftools -> Query for phasesets and GT, DP, VAF feilds by creating a CSV file')
     # bcftools query for phasesets and GT,DP,VAF
     cmd = ['bcftools', 'query', '-f',  '%CHROM\t%POS\t%QUAL\t%FILTER\t[%PS]\t[%GT]\t[%DP]\t[%VAF]\n', '-i PS>1', output_vcf, '-o', output_csv] #
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
