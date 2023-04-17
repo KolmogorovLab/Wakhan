@@ -3,8 +3,8 @@
 ###### Note: This repository is under extensive updates. Currently, only haplotagged BAM file phasing correction and coverage plots modules are working.
 
 This tool intends to generate haplotype-specific somatic copy number aberrations/profiling from long reads (Oxford Nanopore, PacBio) sequencing data. 
-To achieve this accurately, first phase switch errors which occurs due to multiple artifacts related to lower coverage, LOH, etc., are fixed. 
-Haplotype-specific coverage plots and phased heterozygous SNPs frequencies plots are also being generated.   
+To achieve this accurately, first phase switch errors which occurs due to multiple artifacts related to lower coverage, LOH, etc., are being fixed. 
+Haplotype-specific coverage plots and phased heterozygous SNPs frequencies plots are also being generated.    
 
 <img width="1373" alt="plots_example" src="examples/images/image.gif">
 
