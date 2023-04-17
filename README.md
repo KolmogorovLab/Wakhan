@@ -49,7 +49,7 @@ Few cell lines arbitrary phasing output with coverage profile is included in the
 * `--het-phased-snps-freq-enable` enabling hetrozygous phased snps frequencies in coverage plots
 
 * `--breakpoints-enable` enabling breakpoints in coverage plots
-* 
+
 * `--phased-vcf-snps-freqs` phased VCF file to plot snps frequencies coverages along BAM coverage
 
   
