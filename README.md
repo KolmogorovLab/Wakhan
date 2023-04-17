@@ -25,6 +25,8 @@ cd SomaticCNA/src
 ```
 python3 main.py --target-bam </home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam> --out-dir-plots <coverage_plots> --genome-name <Cellline> --phased-vcf <HCC1437BL.phased.vcf.gz> --phased-vcf-snps-freqs <HCC1437BL.phased.vcf.gz>
 ```
+## Examples
+Few cell lines arbitrary phasing output with coverage profile is included in the [examples](https://github.com/KolmogorovLab/SomaticCNA/tree/main/examples) directory. 
 
 ## Required parameters
 
