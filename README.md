@@ -2,6 +2,8 @@
 
 ###### Note: This repository is under extensive updates. Currently, only haplotagged BAM file phasing correction and coverage plots modules are working.
 
+<img width="1373" alt="plots_example" src="examples/images/image.gif">
+
 ## Requirements:
 * Python3
 * Plotly
