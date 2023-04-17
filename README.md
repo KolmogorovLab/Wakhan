@@ -23,7 +23,7 @@ cd SomaticCNA/src
 
 ## Usage
 ```
-python3 main.py --target-bam </home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam> --out-dir-plots <coverage_plots> --genome-name <Cellline> --phased-vcf <HCC1437BL.phased.vcf.gz> --phased-vcf-snps-freqs <HCC1437BL.phased.vcf.gz>
+python3 main.py --target-bam </home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam> --out-dir-plots <coverage_plots> --genome-name <Cellline> --phased-vcf <HCC1437BL.phased.vcf.gz>
 ```
 ## Examples
 Few cell lines arbitrary phasing output with coverage profile is included in the [examples](https://github.com/KolmogorovLab/SomaticCNA/tree/main/examples) directory. 
@@ -37,8 +37,6 @@ Few cell lines arbitrary phasing output with coverage profile is included in the
 * `--genome-name` genome cellline/sample name to be displayed on plots
 
 * `--phased-vcf` phased VCF file for the corresponding haplotagged BAM
-
-* `--phased-vcf-snps-freqs` phased VCF file to plot snps frequencies coverages along BAM coverage
   
 ## Optional parameters
   
@@ -51,5 +49,7 @@ Few cell lines arbitrary phasing output with coverage profile is included in the
 * `--het-phased-snps-freq-enable` enabling hetrozygous phased snps frequencies in coverage plots
 
 * `--breakpoints-enable` enabling breakpoints in coverage plots
+* 
+* `--phased-vcf-snps-freqs` phased VCF file to plot snps frequencies coverages along BAM coverage
 
   

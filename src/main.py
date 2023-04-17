@@ -44,7 +44,7 @@ def main():
                         metavar="path", required=True, default=None,
                         help="Path to phased vcf")
     parser.add_argument("--phased-vcf-snps-freqs", dest="phased_vcf_snps_freqs",
-                        metavar="path", required=True, default=None,
+                        metavar="path", required=False, default=None,
                         help="Path to phased vcf to plot snps frequencies coverage")
 
     parser.add_argument("--breakpoints-file", dest="breakpoints_file",
