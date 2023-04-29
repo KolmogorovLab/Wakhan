@@ -6,6 +6,10 @@ import pysam
 import argparse
 import logging
 import os
+
+from cnvlib.cmdutil import read_cna
+from cnvlib import segmentation, coverage, batch, fix
+
 from multiprocessing import Pool
 from collections import defaultdict
 from bam_processing import get_all_reads_parallel, update_coverage_hist, get_segments_coverage
@@ -146,6 +150,24 @@ def main():
     logging.info('Computing coverage histogram')
     coverage_histograms = update_coverage_hist(genome_ids, ref_lengths, segments_by_read, args.min_mapping_quality,
                                                args.max_read_error)
+
+    tumor = '/home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam'
+    bed_fname = '/home/rezkuh/gits/Wakhan/src/data/regions.bed'
+    cnarr = coverage.do_coverage(bed_fname, tumor, by_count=False, min_mapq=0, processes=1, fasta=None)
+
+    fasta = '/home/rezkuh/GenData/reference/parts/chr7.fasta'
+    annot = '/home/rezkuh/gits/Wakhan/src/data/refflat.bed'
+    bam = '/home/rezkuh/GenData/COLO829/colo829_normal_grch38_md_chr7:78318498-78486891_haplotagged.bam'
+    #ref_fname, tgt_bed_fname, _ = batch.batch_make_reference([bam], None, None, True, fasta, annot, True, 500, None, None, None, None, "build", 1, False, "wgs", False, )
+    ref_fname = '/home/rezkuh/gits/Wakhan/src/build/reference.cnn'
+
+    log2_key = "log2"
+    spread_key = "spread"
+    cnarr, ref_matched = fix.load_adjust_coverages(cnarr, read_cna(ref_fname), True, False, False, False)
+    cnarr.data["log2"] -= ref_matched[log2_key]
+    cnarr = fix.apply_weights(cnarr, ref_matched, log2_key, spread_key)
+    cnarr.center_all(skip_low=True)
+    segs = segmentation.do_segmentation(cnarr,'hmm',threshold=None,variants=None,skip_low=False,skip_outliers=10,min_weight=0,save_dataframe=False,rscript_path="Rscript",processes=1,smooth_cbs=False)
 
     logging.info('Computing coverage for bins')
     segments = get_chromosomes_bins(args.target_bam[0], arguments['bin_size'])
