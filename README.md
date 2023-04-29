@@ -1,10 +1,10 @@
-# SomaticCNA
+# Wakhan
 
 ###### Note: This repository is under extensive updates. Currently, only haplotagged BAM file phasing correction and coverage plots modules are working.
 
-This tool intends to generate haplotype-specific somatic copy number aberrations/profiling from long reads (Oxford Nanopore, PacBio) sequencing data. 
-To achieve this accurately, first phase switch errors which occurs due to multiple artifacts related to lower coverage, LOH, etc., are being fixed. 
-Haplotype-specific coverage plots and phased heterozygous SNPs frequencies plots are also being generated.    
+A tool to analyze haplotype-specific chromosome-scale somatic copy number aberrations and aneuploidy using long reads (Oxford Nanopore, PacBio). 
+Wakhan takes long-read alignment and phased heterozygous variants as input, and first uses extends the phased blocks, taking
+advantage of the CNA differences between the haplotypes. Wakhan then generates inetractive haplotype-specific coverage plots.    
 
 <img width="1373" alt="plots_example" src="examples/images/image.gif">
 
