@@ -1,10 +1,40 @@
+import csv
+
+import numpy
 import pandas as pd
 import pysam
 import os
+
+from cnvlib.cmdutil import read_cna
+from cnvlib.cnary import CopyNumArray as CNA
+from cnvlib import segmentation, coverage, batch, fix, scatter
+from skgenome import tabio
+
 from phasing_correction import get_phasesets_bins
 def generate_phasesets_bins(bam, path, bin_size):
     return get_phasesets_bins(bam, path, bin_size)
-
+def get_chromosomes_bins_replica(bam_file, bin_size):
+    bed=[]
+    bam_alignment = pysam.AlignmentFile(bam_file)
+    headers = bam_alignment.header
+    seq_dict = headers['SQ']
+    region = [''] * len(seq_dict)
+    chrs = [''] * len(seq_dict)
+    head, tail = os.path.split(bam_file)
+    for i, seq_elem in enumerate(seq_dict):
+        region[i] = seq_elem['LN']
+        chrs[i] = seq_elem['SN']
+        start=0
+        end=bin_size
+        if chrs[i] == 'chr7':
+            for c in range(0,region[i],bin_size):
+                if end > region[i]:
+                    bed.append(chrs[i]+'\t'+str(start)+'\t'+str(region[i]))
+                else:
+                    bed.append(chrs[i]+'\t'+str(start)+'\t'+str(end))
+                start=end+1
+                end+=bin_size
+    return bed
 def get_chromosomes_bins(bam_file, bin_size):
     bed=[]
     bam_alignment = pysam.AlignmentFile(bam_file)
@@ -28,6 +58,36 @@ def get_chromosomes_bins(bam_file, bin_size):
                 end+=bin_size
     return bed
 
+def update_bins_with_bps(bins):
+    size=len(bins)
+    new_start=0
+    new_end = 0
+    indices=[]
+
+    with open('/home/rezkuh/gits/devel/BGA/breakpoints.csv', mode='r') as csvfile:
+        segments = csv.reader(csvfile, delimiter='\t')
+        #next(segments)
+        for s in segments:
+            print(s)
+            chr_id=s[0]
+            bp_start=int(s[1])
+            bp_end=int(s[2])
+            for index, value in enumerate(bins):
+                if (value[0] == chr_id and bp_start > int(value[1]) and bp_start < int(value[2])) or new_start > 0:
+                    if new_start==0:
+                        new_start=int(value[1])
+                    new_end=int(value[2])
+                    indices.append(index)
+                    if bp_end < new_end:
+                        size=len(bins)
+                        bins.insert(size, [chr_id, new_start, bp_start - 1])
+                        bins.insert(size+1, [chr_id, bp_start, bp_end])
+                        bins.insert(size+2, [chr_id, bp_end+1, int(value[2])])
+                        break
+    for ind in indices:
+        del bins[ind]
+    return bins
+
 def chromosomes_sorter(label):
     from itertools import takewhile
     # Strip "chr" prefix
@@ -50,6 +110,11 @@ def chromosomes_sorter(label):
 
 def csv_df_chromosomes_sorter(path):
     dataframe = pd.read_csv(path, sep='\t', names=['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
+    dataframe.sort_values(by=['chr', 'start'], ascending=[True, True], inplace=True)
+    return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
+
+def csv_df_chromosomes_sorter_copyratios(path):
+    dataframe = pd.read_csv(path, sep='\t', names=['chr', 'start', 'end', 'gene', 'log2', 'depth', 'probes', 'weight'])
     dataframe.sort_values(by=['chr', 'start'], ascending=[True, True], inplace=True)
     return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
 
@@ -82,3 +147,49 @@ def write_segments_coverage(coverage_segments, output):
     with open('data/' + output, 'w') as fp:
         for items in coverage_segments:
             fp.write("%s\n" % items)
+
+def flatten(haplotype_values_updated):
+    return [item for sublist in haplotype_values_updated for item in sublist]
+def apply_copynumber_log2_ratio(csv_df_coverage, haplotype_values_updated, normal_bam):
+
+    depth_values = flatten(haplotype_values_updated)
+    csv_df_coverage = csv_df_coverage.assign(depth=depth_values)
+    #csv_df_coverage = csv_df_coverage[csv_df_coverage['chr'] == 'chr7'] #TODO remove it
+
+    NULL_LOG2_COVERAGE = -20.0
+    csv_df_coverage = csv_df_coverage.assign(log2=0)
+    csv_df_coverage.loc[(csv_df_coverage['depth'] == 0), 'log2'] = NULL_LOG2_COVERAGE
+    ok_idx = csv_df_coverage["depth"] > 0
+    csv_df_coverage.loc[ok_idx, "log2"] = numpy.log2(csv_df_coverage.loc[ok_idx, "depth"])
+
+    # Fill in CNA required columns
+    if "gene" in csv_df_coverage:
+        csv_df_coverage["gene"] = csv_df_coverage["gene"].fillna("-")
+    else:
+        csv_df_coverage["gene"] = "-"
+    csv_df_coverage.rename(columns={"chr": "chromosome"}, inplace=True)
+    csv_df_coverage.drop(columns=['hp1', 'hp2', 'hp3'], inplace=True)
+
+    #fasta = '/home/rezkuh/GenData/reference/parts/chr7.fasta'
+    #annot = '/home/rezkuh/gits/Wakhan/src/data/refflat.bed'
+    #ref_fname, tgt_bed_fname, _ = batch.batch_make_reference([normal_bam], 'data/bins.bed', None, True, fasta, annot, True, 50000, None, None, None, None, "build", 8, False, "wgs", False, )
+    ref_fname = '/home/rezkuh/gits/Wakhan/src/data/colo829/reference.cnn'
+
+    meta = {"sample_id": 'sample'}
+    cnarr = CNA(csv_df_coverage, meta)
+    log2_key = "log2"
+    spread_key = "spread"
+    cnarr, ref_matched = fix.load_adjust_coverages(cnarr, read_cna(ref_fname), True, False, False, False)
+    cnarr.data["log2"] -= ref_matched[log2_key]
+    cnarr = fix.apply_weights(cnarr, ref_matched, log2_key, spread_key)
+    cnarr.center_all(skip_low=True)
+    #tabio.write(cnarr, "colo829_normal_grch38_md_chr7_haplotagged.cnr")
+
+    #TODO variants = load_het_snps()
+    segs = segmentation.do_segmentation(cnarr, 'hmm', threshold=None, variants=None, skip_low=True, skip_outliers=30,
+                                        min_weight=0, save_dataframe=False, rscript_path="Rscript", processes=1,
+                                        smooth_cbs=False)
+    #TODO _log2_ratio_to_absolute
+    #tabio.write(segs, "colo829_normal_grch38_md_chr7_haplotagged.cns")
+
+    return cnarr.as_dataframe(cnarr.data), segs.as_dataframe(segs.data)

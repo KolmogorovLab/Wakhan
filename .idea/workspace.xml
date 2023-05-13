@@ -1,0 +1,661 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="7b2a068c-f573-47d8-9af9-7571196e6175" name="Changes" comment="cnvlib segmentation devel">
+      <change afterPath="$PROJECT_DIR$/.idea/Wakhan.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/build/bins.antitarget.bed" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/build/bins.target.bed" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/build/colo829_normal_grch38_md_chr7_haplotagged.antitargetcoverage.cnn" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/build/colo829_normal_grch38_md_chr7_haplotagged.targetcoverage.cnn" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/build/reference.cnn" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/chr7.bed" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/_version.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/access.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/antitarget.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/autobin.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/batch.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/bintest.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/call.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/cluster.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/cmdutil.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/cnary.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/cnvkit.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/commands.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/core.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/coverage.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/descriptives.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/diagram.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/export.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/fix.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/heatmap.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/import_rna.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/importers.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/metrics.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/parallel.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/params.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/plots.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/reference.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/reports.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/rna.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/samutil.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/scatter.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/segfilters.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/segmentation/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/segmentation/cbs.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/segmentation/flasso.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/segmentation/haar.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/segmentation/hmm.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/segmentation/none.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/segmetrics.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/smoothing.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/target.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/cnvlib/vary.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/colo829_normal_grch38_md_chr7_haplotagged-scatter.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/colo829_normal_grch38_md_chr7_haplotagged.cnr" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/colo829_normal_grch38_md_chr7_haplotagged.cns" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/COLO928_genome.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/COPY_NUMBER_LOG2_RATIOS.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr1.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr10.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr10_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr11.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr12.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr12_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr13_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr14.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr14_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr16.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr16_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr17.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr17_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr18_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr19.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr19_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr1_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr20_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr21.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr22.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr2_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr3.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr3_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr4_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr5_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr6_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr7_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr8.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr8_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chrX_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/COLO829BL_ONT.medaka.snp.pass_het.q20.PC.hc2.phased.vcf.gz" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/COLO829BL_ONT.medaka.snp.pass_het.q20.PC.hc2.phased.vcf_het_phased_snps.vcf.gz" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/COLO829BL_ONT.medaka.snp.pass_het.q20.PC.hc2.phased.vcf_phasesets.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/HCC1437BL.phased.vcf.gz" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/coverage.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/coverage_ps.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/COPY_NUMBER_LOG2_RATIOS.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr10.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr10_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr11.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr11_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr12.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr13.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr13_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr14.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr14_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr16_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr17.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr17_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr18.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr18_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr19.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr19_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr1_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr2.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr20.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr20_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr21.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr21_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr22.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr22_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr2_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr3.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr3_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr4_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr5.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr5_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr6_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr7.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr7_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr8.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr9.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chrX.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chrX_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chrY_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/COPY_NUMBER_LOG2_RATIOS.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr1.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr10.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr10_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr11.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr11_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr12.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr12_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr13.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr14.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr14_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr15_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr17.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr17_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr18.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr18_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr19.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr19_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr1_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr2.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr20.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr20_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr21.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr22.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr2_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr3.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr3_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr4_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr5.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr5_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr6.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr6_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr7.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr7_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr8.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr8_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr9.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr9_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chrX.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chrX_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chrY.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chrY_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/COPY_NUMBER_LOG2_RATIOS.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr1.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr10.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr10_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr11.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr12.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr12_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr13.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr14.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr14_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr15.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr16_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr17.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr17_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr18.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr18_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr19.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr19_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr1_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr2.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr20.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr20_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr21.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr21_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr22.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr22_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr2_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr4_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr5.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr5_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr6.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr6_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr7.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr7_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr8.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr8_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr9.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr9_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chrX.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chrX_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chrY.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chrY_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1437/reference.cnn" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/HCC1937BL.phased.vcf_phasesets.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/bins.bed" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/coverage.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/coverage_ps.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/haar/COPY_NUMBER_LOG2_RATIOS.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/haar/COVERAGE.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr1.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr10.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr10_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr11.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr11_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr12.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr12_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr13.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr13_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr14.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr14_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr15.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr15_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr16.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr17.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr17_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr18.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr18_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr19.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr19_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr1_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr2.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr20.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr20_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr21.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr21_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr22.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr22_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr2_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr3.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr4_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr5_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr6.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr6_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr7.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr7_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr8.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr8_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/haar/chrX_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/COPY_NUMBER_LOG2_RATIOS.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/COVERAGE.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr1.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr10.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr10_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr11.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr11_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr12.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr12_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr13.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr14.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr14_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr15.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr16.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr17.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr18.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr18_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr19.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr19_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr1_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr2.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr20.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr21.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr21_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr22.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr2_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr3.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr3_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr4.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr5.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr5_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr6.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr6_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr7.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr7_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr8.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr8_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr9.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr9_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chrX.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chrY.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chrY_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/COPY_NUMBER_LOG2_RATIOS.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/COVERAGE.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr1.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr10.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr10_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr11.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr11_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr12.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr12_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr13.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr13_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr14.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr14_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr15.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr16.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr16_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr17.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr18.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr18_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr19.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr1_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr2.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr20.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr21.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr21_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr22.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr22_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr2_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr3_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr4.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr4_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr5.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr5_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr6.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr6_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr7.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr8.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr8_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr9.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr9_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chrX.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chrX_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chrY.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chrY_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/reference.cnn" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/coverage.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/coverage_cnr.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/coverage_ps.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/refflat.bed" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/regions.bed" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/genome_updated.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/skgenome/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/skgenome/chromsort.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/skgenome/combiners.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/skgenome/gary.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/skgenome/intersect.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/skgenome/merge.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/skgenome/rangelabel.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/skgenome/subdivide.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/skgenome/subtract.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/skgenome/tabio/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/skgenome/tabio/bedio.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/skgenome/tabio/genepred.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/skgenome/tabio/gff.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/skgenome/tabio/picard.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/skgenome/tabio/seg.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/skgenome/tabio/seqdict.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/skgenome/tabio/tab.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/skgenome/tabio/textcoord.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/skgenome/tabio/util.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/skgenome/tabio/vcfio.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/skgenome/tabio/vcfsimple.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/DASHBOARD.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/COVERAGE.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr1.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr10.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/coverage_plots/chr6.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr11.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr5.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr12.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr13_cnr.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr13.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr12_cnr.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr14.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr3.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr15.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr4.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr16.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr15_cnr.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr17.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr4.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr18.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/colo829/haar/chrX.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr19.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr15.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr2.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr20.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/coverage_plots/chr15.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr21.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chrY.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr22.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr16.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr3.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr7_cnr.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr4.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr5.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr9_cnr.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr6.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/coverage_plots/chr2.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr7.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr8.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr9.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr4.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/DASHBOARD.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/COVERAGE.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr1.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr10.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr15_cnr.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr11.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/coverage_plots/chr5.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr12.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr13.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr17_cnr.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr14.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/coverage_plots/chr9.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr15.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr4.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr16.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr19_cnr.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr17.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/coverage_plots/chrX.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr18.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/coverage_plots/chr13.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr19.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/coverage_plots/chr18.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr2.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr20.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr21_cnr.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr21.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr16.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr22.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr15.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr3.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr4.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr5.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/coverage_plots/chr9_cnr.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr6.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/coverage_plots/chr4.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr7.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr13_cnr.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr8.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr15_cnr.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr9.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr16_cnr.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/DASHBOARD.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/COVERAGE.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr1.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr10.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr9.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr11.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/coverage_plots/chr15_cnr.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr12.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr15_cnr.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr13.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr20_cnr.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr14.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr17_cnr.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr15.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr20_cnr.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr16.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/colo829/haar/chrY_cnr.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr17.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr22_cnr.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr18.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr22_cnr.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr19.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/colo829/haar/chrY.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr2.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr3_cnr.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr20.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/coverage_plots/chr20.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr21.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/coverage_plots/chrY.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr22.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr16.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr3.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/coverage_plots/chr11_cnr.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr4.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr5.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chrX_cnr.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr6.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm/chr11_cnr.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr7.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/colo829/hmm/chr3.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr8.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr1.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr9.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr6.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/DASHBOARD.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/coverage_plots/COVERAGE.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr1.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr10.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr11.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr12.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr13.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr8_cnr.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr14.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr15.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr16.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/HCC1437/hmm-tumor/chr13_cnr.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr17.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr16_cnr.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr18.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr16_cnr.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr19.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/coverage_plots/chr22_cnr.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr2.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr20.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/coverage_plots/chr7.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr21.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/coverage_plots/chrY_cnr.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr22.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/coverage_plots/chr21_cnr.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr3.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr4.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr5.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/colo829/hmm-tumor/chr4_cnr.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr6.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr7.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/colo829/haar/chr3_cnr.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr8.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/HCC1437/haar/chr9_cnr.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr9.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/images/image.gif" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/bam_processing.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/bam_processing.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/plots.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/plots.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/utils.py" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/src/main.py" root0="FORCE_HIGHLIGHTING" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProjectId" id="2MvTeOD86ngXaUkhDLS12Goe7vt" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ASKED_ADD_EXTERNAL_FILES": "true",
+    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "WebServerToolWindowFactoryState": "false",
+    "last_opened_file_path": "//wsl$/Ubuntu/home/rezkuh/gits/BGA",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RunManager">
+    <configuration name="main" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
+      <module name="Wakhan" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="/usr/bin/python3" />
+      <option name="SDK_NAME" value="/usr/bin/python3" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/main.py" />
+      <option name="PARAMETERS" value="--target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --control-bam /home/rezkuh/GenData/COLO829/colo829_normal_grch38_md_chr7:78318498-78486891_haplotagged.bam --out-dir-plots coverage_plots   --phased-vcf data/COLO829BL_ONT.medaka.snp.pass_het.q20.PC.hc2.phased.vcf.gz  --copyratios-enable True   --genome-name COLO928 --cut-threshold 150" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="7b2a068c-f573-47d8-9af9-7571196e6175" name="Changes" comment="" />
+      <created>1678647150718</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1678647150718</updated>
+      <workItem from="1678647151899" duration="76082000" />
+      <workItem from="1679764393475" duration="9182000" />
+      <workItem from="1679782740676" duration="217281000" />
+      <workItem from="1681698157244" duration="54618000" />
+      <workItem from="1682545193910" duration="3690000" />
+      <workItem from="1682621547367" duration="20487000" />
+      <workItem from="1682709857027" duration="8590000" />
+      <workItem from="1682731044823" duration="7186000" />
+      <workItem from="1682738931077" duration="75538000" />
+      <workItem from="1683739646913" duration="33277000" />
+    </task>
+    <task id="LOCAL-00001" summary="cnvlib segmentation devel">
+      <created>1682742251527</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1682742251527</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
+    <MESSAGE value="cnvlib segmentation devel" />
+    <option name="LAST_COMMIT_MESSAGE" value="cnvlib segmentation devel" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/utils.py</url>
+          <line>154</line>
+          <option name="timeStamp" value="142" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/main.py</url>
+          <line>196</line>
+          <option name="timeStamp" value="143" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/utils.py</url>
+          <line>188</line>
+          <option name="timeStamp" value="148" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/cnvlib/core.py</url>
+          <line>19</line>
+          <option name="timeStamp" value="149" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/cnvlib/segmentation/__init__.py</url>
+          <line>204</line>
+          <option name="timeStamp" value="150" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/main.py</url>
+          <line>156</line>
+          <option name="timeStamp" value="152" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/bam_processing.py</url>
+          <line>188</line>
+          <option name="timeStamp" value="153" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/bam_processing.py</url>
+          <line>168</line>
+          <option name="timeStamp" value="155" />
+        </line-breakpoint>
+      </breakpoints>
+      <default-breakpoints>
+        <breakpoint type="python-exception">
+          <properties notifyOnTerminate="true" exception="BaseException">
+            <option name="notifyOnTerminate" value="true" />
+          </properties>
+        </breakpoint>
+      </default-breakpoints>
+    </breakpoint-manager>
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/Wakhan$main.coverage" NAME="main Coverage Results" MODIFIED="1683925111418" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/SomaticCNA$main.coverage" NAME="main Coverage Results" MODIFIED="1682722202731" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+  </component>
+</project>

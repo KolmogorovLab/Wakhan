@@ -196,6 +196,27 @@ def get_all_reads_parallel(bam_file, thread_pool, ref_lengths,
             segments_by_read[aln.read_id].append(aln)
     return segments_by_read
 
+def haplotype_update_all_bins_parallel(bam_file, thread_pool, bins, bin_size):
+    tasks = [(bam_file, region) for region in bins]
+    parsing_results = thread_pool.starmap(process_all_reads, tasks)
+
+def process_all_reads(histograms, bam_file, genome_id, region):
+    ref_id, region_start, region_end, haplotype_1, haplotype_2 = region
+
+    haplotype_1_coverage = segment_coverage(histograms, genome_id, ref_id, region_start, region_end, 1)
+    haplotype_2_coverage = segment_coverage(histograms, genome_id, ref_id, region_start, region_end, 2)
+
+    aln_file = pysam.AlignmentFile(bam_file, "rb")
+    out_file = pysam.AlignmentFile(ref_id+'_'+region_start+'.bam', 'wb', aln_file.header)
+    for aln in aln_file.fetch(ref_id, region_start, region_end, multiple_iterators=True):
+        if not haplotype_1 == haplotype_1_coverage:
+            if aln.tag.HP == 1:
+                aln.set_tag('HP', 2)
+            elif aln.tag.HP == 2:
+                aln.set_tag('HP', 1)
+
+            out_file.write(aln)
+
 def segment_coverage(histograms, genome_id, ref_id, ref_start, ref_end, haplotype):
     hist_start = ref_start // COV_WINDOW
     hist_end = ref_end // COV_WINDOW

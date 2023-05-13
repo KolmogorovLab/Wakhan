@@ -2,21 +2,30 @@
 
 import sys
 import shutil
+
+import numpy
 import pysam
 import argparse
 import logging
 import os
 
 from cnvlib.cmdutil import read_cna
-from cnvlib import segmentation, coverage, batch, fix
+from cnvlib import segmentation, coverage, batch, fix, scatter
+from skgenome import tabio
+
+from matplotlib import pyplot
 
 from multiprocessing import Pool
 from collections import defaultdict
-from bam_processing import get_all_reads_parallel, update_coverage_hist, get_segments_coverage
-from utils import get_chromosomes_bins, write_segments_coverage, csv_df_chromosomes_sorter, generate_phasesets_bins, csv_df_chromosomes_sorter_snps
-from plots import coverage_plots_chromosomes, coverage_plots_genome
+from bam_processing import get_all_reads_parallel, update_coverage_hist, get_segments_coverage, haplotype_update_all_bins_parallel
+from cnvlib import descriptives
+from utils import get_chromosomes_bins, write_segments_coverage, csv_df_chromosomes_sorter, generate_phasesets_bins, csv_df_chromosomes_sorter_snps,\
+    apply_copynumber_log2_ratio, csv_df_chromosomes_sorter_copyratios
+from plots import coverage_plots_chromosomes, coverage_plots_genome, copy_number_log2_ratios_plots_chromosomes
 from vcf_processing import vcf_parse_to_csv_for_het_phased_snps_phasesets
 
+#remove
+from utils import get_chromosomes_bins_replica
 
 def main():
     # default tunable parameters
@@ -82,6 +91,8 @@ def main():
                         default=False, help="Enabling hetrozygous phased snps frequencies in coverage plots")
     parser.add_argument('--breakpoints-enable',  dest="breakpoints_enable", required=False,
                         default=False, help="Enabling breakpoints in coverage plots")
+    parser.add_argument('--copyratios-enable', dest="copyratios_enable", required=False,
+                        default=False, help="Enabling copy number ratios in coverage plots")
 
     parser.add_argument("-t", "--threads", dest="threads",
                         default=8, metavar="int", type=int, help="number of parallel threads [8]")
@@ -100,6 +111,7 @@ def main():
         "unphased_reads_coverage_enable": args.unphased_reads_coverage_enable,
         "smoothing_enable": args.smoothing_enable,
         "phaseblocks_enable": args.phaseblocks_enable,
+        "copyratios_enable": args.copyratios_enable,
         "het_phased_snps_freq_enable": args.het_phased_snps_freq_enable,
         "out_dir_plots": args.out_dir_plots,
         "phased_vcf": args.phased_vcf,
@@ -147,52 +159,45 @@ def main():
         segments_by_read.update(segments_by_read_bam)
         print("Parsed {0} segments".format(len(segments_by_read_bam)), file=sys.stderr)
 
+
+    haplotype_update_all_bins_parallel(bam_file, thread_pool, bins, bin_size)
+    #TODO Merge and index
+
+
     logging.info('Computing coverage histogram')
     coverage_histograms = update_coverage_hist(genome_ids, ref_lengths, segments_by_read, args.min_mapping_quality,
                                                args.max_read_error)
-
-    tumor = '/home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam'
-    bed_fname = '/home/rezkuh/gits/Wakhan/src/data/regions.bed'
-    cnarr = coverage.do_coverage(bed_fname, tumor, by_count=False, min_mapq=0, processes=1, fasta=None)
-
-    fasta = '/home/rezkuh/GenData/reference/parts/chr7.fasta'
-    annot = '/home/rezkuh/gits/Wakhan/src/data/refflat.bed'
-    bam = '/home/rezkuh/GenData/COLO829/colo829_normal_grch38_md_chr7:78318498-78486891_haplotagged.bam'
-    #ref_fname, tgt_bed_fname, _ = batch.batch_make_reference([bam], None, None, True, fasta, annot, True, 500, None, None, None, None, "build", 1, False, "wgs", False, )
-    ref_fname = '/home/rezkuh/gits/Wakhan/src/build/reference.cnn'
-
-    log2_key = "log2"
-    spread_key = "spread"
-    cnarr, ref_matched = fix.load_adjust_coverages(cnarr, read_cna(ref_fname), True, False, False, False)
-    cnarr.data["log2"] -= ref_matched[log2_key]
-    cnarr = fix.apply_weights(cnarr, ref_matched, log2_key, spread_key)
-    cnarr.center_all(skip_low=True)
-    segs = segmentation.do_segmentation(cnarr,'hmm',threshold=None,variants=None,skip_low=False,skip_outliers=10,min_weight=0,save_dataframe=False,rscript_path="Rscript",processes=1,smooth_cbs=False)
 
     logging.info('Computing coverage for bins')
     segments = get_chromosomes_bins(args.target_bam[0], arguments['bin_size'])
     #segments.append(('colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam', 'chr7', 78318498, 78486891))
     segments_coverage = get_segments_coverage(segments, coverage_histograms)
     logging.info('Writing coverage for bins')
-    write_segments_coverage(segments_coverage, 'coverage.csv')
+    #write_segments_coverage(segments_coverage, 'coverage.csv')
 
     logging.info('Parsing phaseblocks information')
-    output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(arguments['phased_vcf'])
-    phasesets_segments = generate_phasesets_bins(args.target_bam[0], output_phasesets_file_path, arguments['bin_size']) #TODO update for multiple bam files
+    #output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(arguments['phased_vcf'])
+    #phasesets_segments = generate_phasesets_bins(args.target_bam[0], output_phasesets_file_path, arguments['bin_size']) #TODO update for multiple bam files
     logging.info('Computing coverage for phaseblocks')
-    phasesets_coverage = get_segments_coverage(phasesets_segments, coverage_histograms)
+    #phasesets_coverage = get_segments_coverage(phasesets_segments, coverage_histograms)
     logging.info('Writing coverage for phaseblocks')
-    write_segments_coverage(phasesets_coverage, 'coverage_ps.csv')
+    #write_segments_coverage(phasesets_coverage, 'coverage_ps.csv')
 
     logging.info('Loading coverage (bins) and coverage (phaseblocks) files...')
-    csv_df_phasesets = csv_df_chromosomes_sorter('data/coverage_ps.csv')
-    csv_df_coverage = csv_df_chromosomes_sorter('data/coverage.csv')
+    csv_df_phasesets = csv_df_chromosomes_sorter('data/colo829/coverage_ps.csv')
+    csv_df_coverage = csv_df_chromosomes_sorter('data/colo829/coverage.csv')
 
     logging.info('Generating coverage plots chromosomes-wise')
-    coverage_plots_chromosomes(csv_df_coverage, csv_df_phasesets, arguments)
+    haplotype_1_values_updated, haplotype_2_values_updated = coverage_plots_chromosomes(csv_df_coverage, csv_df_phasesets, arguments)
 
-    logging.info('Generating coverage plots genome wide')
-    coverage_plots_genome(csv_df_coverage)
+    df_cnr_hp1, df_segs_hp1 = apply_copynumber_log2_ratio(csv_df_coverage, haplotype_1_values_updated, args.control_bam[0])
+    df_cnr_hp2, df_segs_hp2 = apply_copynumber_log2_ratio(csv_df_coverage, haplotype_2_values_updated, args.control_bam[0])
+
+    logging.info('Generating copy number log2 ratios plots chromosomes-wise')
+    copy_number_log2_ratios_plots_chromosomes(df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, arguments)
+
+    logging.info('Generating coverage/copy number log2 ratios plots genome wide')
+    coverage_plots_genome(df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, arguments)
 
 if __name__ == "__main__":
     main()
