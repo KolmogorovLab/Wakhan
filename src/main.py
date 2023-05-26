@@ -9,19 +9,13 @@ import argparse
 import logging
 import os
 
-from cnvlib.cmdutil import read_cna
-from cnvlib import segmentation, coverage, batch, fix, scatter
-from skgenome import tabio
-
-from matplotlib import pyplot
-
 from multiprocessing import Pool
 from collections import defaultdict
 from bam_processing import get_all_reads_parallel, update_coverage_hist, get_segments_coverage, haplotype_update_all_bins_parallel
 from cnvlib import descriptives
 from utils import get_chromosomes_bins, write_segments_coverage, csv_df_chromosomes_sorter, generate_phasesets_bins, csv_df_chromosomes_sorter_snps,\
-    apply_copynumber_log2_ratio, csv_df_chromosomes_sorter_copyratios
-from plots import coverage_plots_chromosomes, coverage_plots_genome, copy_number_log2_ratios_plots_chromosomes
+    apply_copynumber_log2_ratio, csv_df_chromosomes_sorter_copyratios, seperate_dfs_coverage
+from plots import coverage_plots_chromosomes, plots_genome, plots_genome_coverage, copy_number_log2_ratios_plots_chromosomes
 from vcf_processing import vcf_parse_to_csv_for_het_phased_snps_phasesets
 
 #remove
@@ -34,7 +28,7 @@ def main():
     MIN_SV_SIZE = 50
     BIN_SIZE = 50000
     MAX_CUT_THRESHOLD = 100
-
+    MIN_ALIGNED_LENGTH = 5000
 
     SAMTOOLS_BIN = "samtools"
     BCFTOOLS_BIN = "bcftools"
@@ -72,6 +66,9 @@ def main():
                         default=BIN_SIZE, metavar="int", type=int, help="coverage (readdepth) bin size [50k]")
     parser.add_argument("--cut-threshold", "--cut_threshold", dest="cut_threshold",
                         default=MAX_CUT_THRESHOLD, metavar="int", type=int, help="Maximum cut threshold for coverage (readdepth) [100]")
+
+    parser.add_argument("--min-aligned-length", "--min_aligned_length", dest="min_aligned_length",
+                        default=MIN_ALIGNED_LENGTH, metavar="int", type=int, help="Minimum aligned reads length [5000]")
 
     parser.add_argument('--pdf-enable',  dest="pdf_enable", required=False,
                         default=False, help="Enabling PDF output coverage plots")
@@ -122,6 +119,7 @@ def main():
         "bin_size": args.bin_size,
         "pdf_enable": args.pdf_enable,
         "cut_threshold": args.cut_threshold,
+        "min_aligned_length": args.min_aligned_length,
     }
     logging.basicConfig(level=logging.DEBUG)
 
@@ -159,36 +157,38 @@ def main():
         segments_by_read.update(segments_by_read_bam)
         print("Parsed {0} segments".format(len(segments_by_read_bam)), file=sys.stderr)
 
-
-    haplotype_update_all_bins_parallel(bam_file, thread_pool, bins, bin_size)
+    #haplotype_update_all_bins_parallel(bam_file, thread_pool, bins, bin_size)
     #TODO Merge and index
-
 
     logging.info('Computing coverage histogram')
     coverage_histograms = update_coverage_hist(genome_ids, ref_lengths, segments_by_read, args.min_mapping_quality,
-                                               args.max_read_error)
+                                               args.max_read_error, arguments)
 
     logging.info('Computing coverage for bins')
     segments = get_chromosomes_bins(args.target_bam[0], arguments['bin_size'])
     #segments.append(('colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam', 'chr7', 78318498, 78486891))
     segments_coverage = get_segments_coverage(segments, coverage_histograms)
     logging.info('Writing coverage for bins')
-    #write_segments_coverage(segments_coverage, 'coverage.csv')
+    write_segments_coverage(segments_coverage, 'coverage.csv')
 
     logging.info('Parsing phaseblocks information')
-    #output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(arguments['phased_vcf'])
-    #phasesets_segments = generate_phasesets_bins(args.target_bam[0], output_phasesets_file_path, arguments['bin_size']) #TODO update for multiple bam files
+    output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(arguments['phased_vcf'])
+    phasesets_segments = generate_phasesets_bins(args.target_bam[0], output_phasesets_file_path, arguments['bin_size']) #TODO update for multiple bam files
     logging.info('Computing coverage for phaseblocks')
-    #phasesets_coverage = get_segments_coverage(phasesets_segments, coverage_histograms)
+    phasesets_coverage = get_segments_coverage(phasesets_segments, coverage_histograms)
     logging.info('Writing coverage for phaseblocks')
-    #write_segments_coverage(phasesets_coverage, 'coverage_ps.csv')
+    write_segments_coverage(phasesets_coverage, 'coverage_ps.csv')
 
     logging.info('Loading coverage (bins) and coverage (phaseblocks) files...')
-    csv_df_phasesets = csv_df_chromosomes_sorter('data/colo829/coverage_ps.csv')
-    csv_df_coverage = csv_df_chromosomes_sorter('data/colo829/coverage.csv')
+    csv_df_phasesets = csv_df_chromosomes_sorter('data/coverage_ps.csv')
+    csv_df_coverage = csv_df_chromosomes_sorter('data/coverage.csv')
 
     logging.info('Generating coverage plots chromosomes-wise')
-    haplotype_1_values_updated, haplotype_2_values_updated = coverage_plots_chromosomes(csv_df_coverage, csv_df_phasesets, arguments)
+    haplotype_1_values_updated, haplotype_2_values_updated, unphased = coverage_plots_chromosomes(csv_df_coverage, csv_df_phasesets, arguments)
+    df_hp1, df_hp2, df_unphased = seperate_dfs_coverage(csv_df_coverage, haplotype_1_values_updated, haplotype_2_values_updated, unphased)
+
+    logging.info('Generating coverage plots genome wide')
+    plots_genome_coverage(df_hp1, df_hp2, df_unphased, arguments)
 
     df_cnr_hp1, df_segs_hp1 = apply_copynumber_log2_ratio(csv_df_coverage, haplotype_1_values_updated, args.control_bam[0])
     df_cnr_hp2, df_segs_hp2 = apply_copynumber_log2_ratio(csv_df_coverage, haplotype_2_values_updated, args.control_bam[0])
@@ -197,7 +197,9 @@ def main():
     copy_number_log2_ratios_plots_chromosomes(df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, arguments)
 
     logging.info('Generating coverage/copy number log2 ratios plots genome wide')
-    coverage_plots_genome(df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, arguments)
+    plots_genome(df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, arguments)
+
+
 
 if __name__ == "__main__":
     main()
@@ -205,3 +207,6 @@ if __name__ == "__main__":
 # --phaseblocks-enable True --unphased-reads-coverage-enable True
 
 #--smoothing-enable True
+#--pdf-enable True
+#--copyratios-enable True
+

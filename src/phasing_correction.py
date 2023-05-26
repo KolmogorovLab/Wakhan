@@ -72,41 +72,71 @@ def closest(lst):
     s = sorted(set(lst))
     return min([[a, b] for a, b in zip(s, s[1:])], key=lambda x: x[1] - x[0])
 
-def phaseblock_flipping(haplotype_1_values, haplotype_2_values, ref_start_values, ref_end_values, \
+def phaseblock_flipping(is_simple_correction, haplotype_1_values, haplotype_2_values, ref_start_values, ref_end_values, \
                     haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets):
+    if is_simple_correction == False:
+        values_ps = []
+        for index, value in enumerate(ref_start_values_phasesets):
+            values_ps.append([ref_start_values_phasesets[index], ref_end_values_phasesets[index]])
 
-    values_ps = []
-    for index, value in enumerate(ref_start_values_phasesets):
-        values_ps.append([ref_start_values_phasesets[index], ref_end_values_phasesets[index]])
+        #inside phaseblocks phaseswitch errors
+        scan_and_update_phaseswitches_inside_phaseblocks(values_ps, haplotype_1_values, haplotype_2_values, ref_start_values, ref_end_values, \
+                                                         haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
+        diff = []
+        values_ps = []
+        #ref_start_values_phasesets.sort()
+        #ref_end_values_phasesets.sort()
 
-    #inside phaseblocks phaseswitch errors
-    scan_and_update_phaseswitches_inside_phaseblocks(values_ps, haplotype_1_values, haplotype_2_values, ref_start_values, ref_end_values, \
-                                                     haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
-    diff = []
-    values_ps = []
-    #ref_start_values_phasesets.sort()
-    #ref_end_values_phasesets.sort()
+        for index, value in enumerate(ref_start_values_phasesets):
+            diff.append(ref_end_values_phasesets[index] - ref_start_values_phasesets[index])
+            values_ps.append([ref_start_values_phasesets[index], ref_end_values_phasesets[index]])
+        max_value_index = diff.index(max(diff))
+        print(ref_start_values_phasesets[max_value_index], ref_end_values_phasesets[max_value_index])
 
-    for index, value in enumerate(ref_start_values_phasesets):
-        diff.append(ref_end_values_phasesets[index] - ref_start_values_phasesets[index])
-        values_ps.append([ref_start_values_phasesets[index], ref_end_values_phasesets[index]])
-    max_value_index = diff.index(max(diff))
-    print(ref_start_values_phasesets[max_value_index], ref_end_values_phasesets[max_value_index])
+        #phaseblocks switch errors
+        scan_and_update_phaseblocks_switch_errors(max_value_index, values_ps, haplotype_1_values, haplotype_2_values, ref_start_values, ref_end_values, \
+                        haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
 
-    #phaseblocks switch errors
-    scan_and_update_phaseblocks_switch_errors(max_value_index, values_ps, haplotype_1_values, haplotype_2_values, ref_start_values, ref_end_values, \
-                    haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
+        #case for whole HPs switch, ie., HCC1437 - chr8
+        phase_switch_spanning_haplotypes(max_value_index, values_ps, haplotype_1_values, haplotype_2_values, ref_start_values, ref_end_values, \
+                        haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
 
-    #case for whole HPs switch, ie., HCC1437 - chr8
-    phase_switch_spanning_haplotypes(max_value_index, values_ps, haplotype_1_values, haplotype_2_values, ref_start_values, ref_end_values, \
-                    haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
+        #bins without phaseblocks
+        bins_without_phaseblocks(max_value_index, values_ps, haplotype_1_values, haplotype_2_values, ref_start_values, ref_end_values, \
+                        haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
 
-    #bins without phaseblocks
-    bins_without_phaseblocks(max_value_index, values_ps, haplotype_1_values, haplotype_2_values, ref_start_values, ref_end_values, \
-                    haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
+        #amplified signals
+        #
+    else:
+        if len(ref_start_values_phasesets) > 1:
+            hp_changed=[]
+            for i in range(len(ref_start_values_phasesets) - 1):
+                if haplotype_1_values_phasesets[i] > haplotype_2_values_phasesets[i]:
+                    hp_changed.append([ref_start_values_phasesets[i], ref_end_values_phasesets[i]+1])
 
-    #amplified signals
-    #
+            for i in range(len(ref_start_values)):
+                for j in range(len(hp_changed)):
+                    if (ref_start_values[i] >= hp_changed[j][0] and ref_start_values[i] <= hp_changed[j][1]):
+                        new_hp2 = haplotype_2_values[i]
+                        new_hp1 = haplotype_1_values[i]
+                        haplotype_1_values[i]=new_hp2
+                        haplotype_2_values[i]=new_hp1
+                    elif haplotype_1_values[i] > haplotype_2_values[i]:
+                        new_hp2 = haplotype_2_values[i]
+                        new_hp1 = haplotype_1_values[i]
+                        haplotype_1_values[i]=new_hp2
+                        haplotype_2_values[i]=new_hp1
+                        break
+                    else:
+                        haplotype_1_values[i]=haplotype_1_values[i]
+                        haplotype_2_values[i]=haplotype_2_values[i]
+        else:
+            for i in range(len(ref_start_values)):
+                if haplotype_2_values[i] > haplotype_1_values[i]:
+                    new_hp2 = haplotype_2_values[i]
+                    new_hp1 = haplotype_1_values[i]
+                    haplotype_1_values[i] = new_hp2
+                    haplotype_2_values[i] = new_hp1
 
     return haplotype_1_values, haplotype_2_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets
     #haplotype_1_values_updated.extend(haplotype_1_values)
@@ -210,6 +240,7 @@ def scan_and_update_phaseswitches_inside_phaseblocks(values_ps, haplotype_1_valu
 
 def scan_and_update_phaseblocks_switch_errors(max_value_index, values_ps, haplotype_1_values, haplotype_2_values, ref_start_values, ref_end_values, \
                     haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets):
+
     PHASESETS_DIFF_THRESHOLD = 12
     #############################################################################################
     # Scan Right-Left (HP1>HP2)

@@ -52,8 +52,8 @@ def get_allsegments(segments_by_read_filtered):
             if not seg.is_insertion:
                 allsegments.append(seg)
     return allsegments
-def filter_all_reads(segments_by_read, min_mapq, max_read_error):
-    MIN_ALIGNED_LENGTH = 5000
+def filter_all_reads(segments_by_read, min_mapq, max_read_error, arguments):
+    #MIN_ALIGNED_LENGTH = 5000
     MIN_ALIGNED_RATE = 0.5
     MAX_SEGMENTS = 10
     MIN_SEGMENT_LENGTH = 100
@@ -72,7 +72,7 @@ def filter_all_reads(segments_by_read, min_mapq, max_read_error):
 
         aligned_len = sum([seg.segment_length for seg in dedup_segments if not seg.is_insertion])
         aligned_ratio = aligned_len / segments[0].read_length
-        if aligned_len < MIN_ALIGNED_LENGTH or aligned_ratio < MIN_ALIGNED_RATE or len(segments) > MAX_SEGMENTS:
+        if aligned_len < arguments['min_aligned_length'] or aligned_ratio < MIN_ALIGNED_RATE or len(segments) > MAX_SEGMENTS:
             continue
         segments_by_read_filtered.append(dedup_segments)
 
@@ -235,9 +235,9 @@ def get_segments_coverage(segments, coverage_histograms):
     return genomic_segments
 
 COV_WINDOW = 500
-def update_coverage_hist(genome_ids, ref_lengths, segments_by_read, min_mapq, max_read_error):
+def update_coverage_hist(genome_ids, ref_lengths, segments_by_read, min_mapq, max_read_error, arguments):
     NUM_HAPLOTYPES = 3
-    segments_by_read_filtered = filter_all_reads(segments_by_read, min_mapq, max_read_error)
+    segments_by_read_filtered = filter_all_reads(segments_by_read, min_mapq, max_read_error, arguments)
     allsegments = get_allsegments(segments_by_read_filtered)
     coverage_histograms = {}
     for genome_id in genome_ids:

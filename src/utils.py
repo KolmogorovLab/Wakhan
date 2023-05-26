@@ -7,7 +7,7 @@ import os
 
 from cnvlib.cmdutil import read_cna
 from cnvlib.cnary import CopyNumArray as CNA
-from cnvlib import segmentation, coverage, batch, fix, scatter
+from cnvlib import segmentation, coverage, batch, fix, segmetrics, call, scatter
 from skgenome import tabio
 
 from phasing_correction import get_phasesets_bins
@@ -148,8 +148,19 @@ def write_segments_coverage(coverage_segments, output):
         for items in coverage_segments:
             fp.write("%s\n" % items)
 
-def flatten(haplotype_values_updated):
-    return [item for sublist in haplotype_values_updated for item in sublist]
+def seperate_dfs_coverage(df, haplotype_1_values_updated, haplotype_2_values_updated, unphased):
+    haplotype_1_values_updated = flatten(haplotype_1_values_updated)
+    haplotype_2_values_updated = flatten(haplotype_2_values_updated)
+    unphased = flatten(unphased)
+    df_hp1 = df[['chr', 'start','end', 'hp1']].copy()
+    df_hp2 = df[['chr', 'start','end', 'hp2']].copy()
+    df_unphased = df[['chr', 'start','end', 'hp3']].copy()
+    df_hp1['hp1'] = haplotype_1_values_updated
+    df_hp2['hp2'] = haplotype_2_values_updated
+    df_unphased['hp3'] = unphased
+    return df_hp1, df_hp2, df_unphased
+def flatten(values):
+    return [item for sublist in values for item in sublist]
 def apply_copynumber_log2_ratio(csv_df_coverage, haplotype_values_updated, normal_bam):
 
     depth_values = flatten(haplotype_values_updated)
@@ -179,16 +190,27 @@ def apply_copynumber_log2_ratio(csv_df_coverage, haplotype_values_updated, norma
     cnarr = CNA(csv_df_coverage, meta)
     log2_key = "log2"
     spread_key = "spread"
-    cnarr, ref_matched = fix.load_adjust_coverages(cnarr, read_cna(ref_fname), True, False, False, False)
-    cnarr.data["log2"] -= ref_matched[log2_key]
-    cnarr = fix.apply_weights(cnarr, ref_matched, log2_key, spread_key)
+    #cnarr, ref_matched = fix.load_adjust_coverages(cnarr, read_cna(ref_fname), True, False, False, False)
+    #cnarr.data["log2"] -= ref_matched[log2_key]
+    cnarr = fix.apply_weights_replica(cnarr, None, log2_key, spread_key)
     cnarr.center_all(skip_low=True)
+
+    cnarr['log2'] =cnarr['depth']
     #tabio.write(cnarr, "colo829_normal_grch38_md_chr7_haplotagged.cnr")
 
     #TODO variants = load_het_snps()
-    segs = segmentation.do_segmentation(cnarr, 'hmm', threshold=None, variants=None, skip_low=True, skip_outliers=30,
+    #cnarr = read_cna('data/coverage_cnvkit.cnr')
+    segs = segmentation.do_segmentation(cnarr, 'hmm', threshold=None, variants=None, skip_low=True, skip_outliers=20,
                                         min_weight=0, save_dataframe=False, rscript_path="Rscript", processes=1,
                                         smooth_cbs=False)
+
+    #seg_metrics = segmetrics.do_segmetrics(cnarr, segs, interval_stats=["ci"], alpha=0.5, smoothed=True, skip_low=True,)
+    #seg_call = call.do_call(seg_metrics, method="none", filters=["ci"])
+    #seg_alltest = segmetrics.do_segmetrics(cnarr, seg_call, location_stats=["p_ttest"], skip_low=True)
+    # Finally, assign absolute copy number values to each segment
+    #seg_alltest.center_all("median")
+    #seg_final = call.do_call(seg_alltest, method="threshold")
+
     #TODO _log2_ratio_to_absolute
     #tabio.write(segs, "colo829_normal_grch38_md_chr7_haplotagged.cns")
 
