@@ -5,8 +5,78 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7b2a068c-f573-47d8-9af9-7571196e6175" name="Changes" comment="cnvlib segmentation devel">
-      <change afterPath="$PROJECT_DIR$/src/data/CaSki_pmdv.vcf_phasesets.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/data/coverage_cnvkit.cnr" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/clustering.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/COPY_NUMBER_LOG2_RATIOS.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/COVERAGE.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr1.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr10.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr10_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr11.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr11_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr12.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr12_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr13.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr13_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr14.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr14_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr15.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr15_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr16.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr16_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr17.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr17_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr18.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr18_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr19.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr19_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr1_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr2.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr20.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr20_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr21.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr21_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr22.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr22_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr2_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr3.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr3_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr4.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr4_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr5.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr5_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr6.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr6_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr7.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr7_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr8.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr8_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr9.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr9_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/1437/HCC1437BL.phased.vcf.gz" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/1437/coverage.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/1437/coverage_ps.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/1937/HCC1937BL.phased.vcf.gz" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/1937/coverage.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/1937/coverage_ps.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/2009/BL2009.phased.vcf.gz" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/2009/coverage.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/2009/coverage_ps.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/CaSki/CaSki_margin.haplotagged.bam.phased.vcf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/CaSki/CaSki_pmdv.vcf.gz" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/CaSki/coverage.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/CaSki/coverage_ps.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/CaSki_pmdv.vcf_het_phased_snps.vcf.gz" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/coverage.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/data/colo829/coverage_ps.csv" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/Wakhan.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/Wakhan.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/cnvlib/segfilters.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/cnvlib/segfilters.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/cnvlib/segmentation/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/cnvlib/segmentation/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/cnvlib/segmentation/hmm.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/cnvlib/segmentation/hmm.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/plots.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/plots.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/smoothing.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/smoothing.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/utils.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -37,23 +107,23 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ASKED_ADD_EXTERNAL_FILES": "true",
-    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "WebServerToolWindowFactoryState": "false",
-    "last_opened_file_path": "//wsl$/Ubuntu/home/rezkuh/gits/BGA",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
+    &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
+    &quot;last_opened_file_path&quot;: &quot;//wsl$/Ubuntu/home/rezkuh/gits/backup/hps togather/Wakhan&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager">
     <configuration name="main" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="Wakhan" />
@@ -70,7 +140,7 @@
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/main.py" />
-      <option name="PARAMETERS" value="--target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --control-bam /home/rezkuh/GenData/COLO829/colo829_normal_grch38_md_chr7:78318498-78486891_haplotagged.bam --out-dir-plots coverage_plots   --phased-vcf data/CaSki/CaSki_pmdv.vcf.gz   --phaseblock-flipping-enable True --smoothing-enable True --unphased-reads-coverage-enable True   --genome-name CaSki --copyratios-enable True  --cut-threshold 25" />
+      <option name="PARAMETERS" value="--target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --control-bam /home/rezkuh/GenData/COLO829/colo829_normal_grch38_md_chr7:78318498-78486891_haplotagged.bam --out-dir-plots coverage_plots   --phased-vcf data/CaSki/CaSki_pmdv.vcf.gz   --copyratios-enable True  --no-of-clusters 6 --phaseblock-flipping-enable True  --cut-threshold 150 --genome-name 1437" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
@@ -96,7 +166,11 @@
       <workItem from="1682709857027" duration="8590000" />
       <workItem from="1682731044823" duration="7186000" />
       <workItem from="1682738931077" duration="75538000" />
-      <workItem from="1683739646913" duration="109223000" />
+      <workItem from="1683739646913" duration="253148000" />
+      <workItem from="1686577871165" duration="891000" />
+      <workItem from="1686737632174" duration="3972000" />
+      <workItem from="1687351657024" duration="308000" />
+      <workItem from="1687812036159" duration="48153000" />
     </task>
     <task id="LOCAL-00001" summary="cnvlib segmentation devel">
       <created>1682742251527</created>
@@ -131,34 +205,164 @@
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/src/main.py</url>
-          <line>196</line>
-          <option name="timeStamp" value="143" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/src/cnvlib/core.py</url>
           <line>19</line>
           <option name="timeStamp" value="149" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/src/cnvlib/segmentation/__init__.py</url>
-          <line>204</line>
+          <line>207</line>
           <option name="timeStamp" value="150" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/src/utils.py</url>
-          <line>216</line>
-          <option name="timeStamp" value="156" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/src/plots.py</url>
-          <line>110</line>
+          <line>121</line>
           <option name="timeStamp" value="157" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/src/cnvlib/segmentation/hmm.py</url>
-          <line>87</line>
-          <option name="timeStamp" value="166" />
+          <line>243</line>
+          <option name="timeStamp" value="169" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/plots.py</url>
+          <line>86</line>
+          <option name="timeStamp" value="171" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/main.py</url>
+          <line>203</line>
+          <option name="timeStamp" value="228" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/utils.py</url>
+          <line>187</line>
+          <option name="timeStamp" value="236" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/utils.py</url>
+          <line>178</line>
+          <option name="timeStamp" value="237" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/utils.py</url>
+          <line>242</line>
+          <option name="timeStamp" value="238" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/utils.py</url>
+          <line>240</line>
+          <option name="timeStamp" value="239" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/utils.py</url>
+          <line>239</line>
+          <option name="timeStamp" value="240" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/utils.py</url>
+          <line>194</line>
+          <option name="timeStamp" value="242" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/plots.py</url>
+          <line>18</line>
+          <option name="timeStamp" value="243" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/cnvlib/segmentation/hmm.py</url>
+          <line>78</line>
+          <option name="timeStamp" value="244" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/cnvlib/segmentation/hmm.py</url>
+          <line>102</line>
+          <option name="timeStamp" value="246" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/plots.py</url>
+          <line>559</line>
+          <option name="timeStamp" value="248" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/cnvlib/segmentation/hmm.py</url>
+          <line>41</line>
+          <option name="timeStamp" value="249" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/cnvlib/segmentation/hmm.py</url>
+          <line>44</line>
+          <option name="timeStamp" value="250" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/cnvlib/segmentation/hmm.py</url>
+          <line>67</line>
+          <option name="timeStamp" value="252" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/cnvlib/segmentation/hmm.py</url>
+          <line>62</line>
+          <option name="timeStamp" value="253" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/cnvlib/segmentation/__init__.py</url>
+          <line>144</line>
+          <option name="timeStamp" value="254" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/cnvlib/segmentation/hmm.py</url>
+          <line>49</line>
+          <option name="timeStamp" value="257" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/cnvlib/segmentation/hmm.py</url>
+          <line>48</line>
+          <option name="timeStamp" value="258" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/utils.py</url>
+          <line>196</line>
+          <option name="timeStamp" value="259" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/main.py</url>
+          <line>194</line>
+          <option name="timeStamp" value="263" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/main.py</url>
+          <line>193</line>
+          <option name="timeStamp" value="264" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/clustering.py</url>
+          <line>71</line>
+          <option name="timeStamp" value="272" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/cnvlib/segmentation/hmm.py</url>
+          <line>130</line>
+          <option name="timeStamp" value="273" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/cnvlib/segmentation/hmm.py</url>
+          <line>132</line>
+          <option name="timeStamp" value="274" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/clustering.py</url>
+          <line>27</line>
+          <option name="timeStamp" value="276" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/clustering.py</url>
+          <line>31</line>
+          <option name="timeStamp" value="277" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/clustering.py</url>
+          <line>125</line>
+          <option name="timeStamp" value="278" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
@@ -171,7 +375,7 @@
     </breakpoint-manager>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/Wakhan$main.coverage" NAME="main Coverage Results" MODIFIED="1685130528913" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/Wakhan$main.coverage" NAME="main Coverage Results" MODIFIED="1688063673230" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
     <SUITE FILE_PATH="coverage/SomaticCNA$main.coverage" NAME="main Coverage Results" MODIFIED="1682722202731" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
   </component>
 </project>

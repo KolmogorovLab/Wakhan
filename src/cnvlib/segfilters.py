@@ -61,6 +61,7 @@ def squash_by_groups(cnarr, levels, by_arm=False):
         )
         change_levels += chrom_col
     data = cnarr.data.assign(_group=change_levels)
+    data = data.assign(states=levels)
     groupkey = ["_group"]
     if "cn1" in cnarr:
         # Keep allele-specific CNAs separate
@@ -126,6 +127,7 @@ def squash_region(cnarr):
     if "p_bintest" in cnarr:
         # Only relevant for single-bin segments, but this seems safe/conservative
         out["p_bintest"] = cnarr["p_bintest"].max()
+    out["state"] = int(np.average(cnarr['states']))
     return pd.DataFrame(out)
 
 

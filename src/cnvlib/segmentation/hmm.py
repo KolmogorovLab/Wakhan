@@ -10,11 +10,12 @@ import scipy.special
 from ..cnary import CopyNumArray as CNA
 from ..descriptives import biweight_midvariance
 from ..segfilters import squash_by_groups
+from src.clustering import kmeans_clustering
 
 from pomegranate import State, NormalDistribution, IndependentComponentsDistribution, DiscreteDistribution
 from pomegranate import HiddenMarkovModel as HMM
 
-def segment_hmm(cnarr, method, window=None, variants=None, processes=1):
+def segment_hmm(depth, cnarr, method, window=None, variants=None, processes=1):
     """Segment bins by Hidden Markov Model.
 
     Use Viterbi method to infer copy number segments from sequential data.
@@ -38,13 +39,14 @@ def segment_hmm(cnarr, method, window=None, variants=None, processes=1):
     # NB: Incorporate weights into smoothed log2 estimates
     # (Useful kludge until weighted HMM is in place)
     orig_log2 = cnarr["log2"].values.copy()
-    cnarr["log2"] = cnarr.smooth_log2()  # window)
+    #cnarr["log2"] = cnarr.smooth_log2()  # window)
+    cnarr.data = cnarr.data.reset_index(drop=True)
 
     logging.info("Building model from observations")
-    model = hmm_get_model(cnarr, method, processes)
+    model = hmm_get_model(depth, cnarr, method, processes)
 
     logging.info("Predicting states from model")
-    observations = as_observation_matrix(cnarr)
+    observations = observations_matrix(cnarr)#as_observation_matrix(cnarr)
     states = np.concatenate(
         [np.array(model.predict(obs, algorithm="map")) for obs in observations]
     )
@@ -56,19 +58,54 @@ def segment_hmm(cnarr, method, window=None, variants=None, processes=1):
     logging.debug("Observations: %s", observations[0][:100])
     logging.debug("Edges: %s", model.edges)
 
-    # Merge adjacent bins with the same state to create segments
-    cnarr["log2"] = orig_log2
-    cnarr["probes"] = 1
-    segarr = squash_by_groups(
-        cnarr, pd.Series(states, index=cnarr.data.index), by_arm=True
-    )
-    if not (segarr.start < segarr.end).all():
-        bad_segs = segarr[segarr.start >= segarr.end]
-        logging.warning("Bad segments:\n%s", bad_segs.data)
-    return segarr
+    values = cnarr.as_dataframe(cnarr.data)
+    values.data.reset_index(drop=True, inplace=True)
+    half_values = values.data[(values.data['chromosome'] == "chr1") & (values.data['start'] == 0)].index[1]
 
+    segs = []
+    start = 0
+    for i in range(2): #range(0, len(values), 49592):#len(values) // 2):
+        state = states[start:half_values]
+        cnarray = values.data.iloc[start:half_values, ]
+        start = half_values
+        half_values += (len(values) - half_values)#half_values
 
-def hmm_get_model(cnarr, method, processes):
+        meta = {"sample_id": 'sample'}
+        cnarray = CNA(cnarray, meta)
+
+        # Merge adjacent bins with the same state to create segments
+        #cnarr["log2"] = orig_log2
+        cnarray["probes"] = 1
+        segarr = squash_by_groups(
+            cnarray, pd.Series(state, index=cnarray.data.index), by_arm=True
+        )
+        if not (segarr.start < segarr.end).all():
+            bad_segs = segarr[segarr.start >= segarr.end]
+            logging.warning("Bad segments:\n%s", bad_segs.data)
+
+        mean = []
+        df = cnarray.data.assign(group=state)
+        for i, row in segarr.data.iterrows():
+            size = len(segarr.data.index)
+            if row.chromosome == 'chr15':
+                print("here")
+            if (row.end - row.start < 1000000) and (i > 0 and i < size-1):
+                if segarr.data.at[i - 1, 'state'] == segarr.data.at[i + 1, 'state'] and segarr.data.at[i, 'chromosome'] == segarr.data.at[i - 1, 'chromosome']:
+                    segarr.data.at[i, 'state'] = segarr.data.at[i+1, 'state']
+                elif (not segarr.data.at[i - 1, 'state'] == segarr.data.at[i + 1, 'state']) and segarr.data.at[i, 'chromosome'] == segarr.data.at[i - 1, 'chromosome']:
+                        segarr.data.at[i, 'state'] = segarr.data.at[i - 1, 'state']
+
+        for i in range(len(np.unique(df['group']))):
+            mean.append(np.mean(df[df['group'] == i]['depth']))
+            segarr['state'] = np.where(segarr['state'] == i, mean[i], segarr['state'])
+        segs.append(segarr)
+
+    return segs
+
+def squash_regions(df):
+
+    return pd.DataFrame(df)
+def hmm_get_model(depth_values, cnarr, method, processes):
     """
 
     Parameters
@@ -86,33 +123,26 @@ def hmm_get_model(cnarr, method, processes):
         A pomegranate HiddenMarkovModel trained on the given dataset.
     """
     assert method in ("hmm-tumor", "hmm-germline", "hmm")
-    observations = as_observation_matrix(cnarr.autosomes())
+    observations = observations_matrix(cnarr)#as_observation_matrix(cnarr.autosomes())
 
     # Estimate standard deviation from the full distribution, robustly
     stdev = biweight_midvariance(np.concatenate(observations), initial=0)
-    if method == "hmm-germline":
-        state_names = ["loss", "neutral", "gain"]
-        distributions = [
-            pom.NormalDistribution(-1.0, stdev, frozen=True),
-            pom.NormalDistribution(0.0, stdev, frozen=True),
-            pom.NormalDistribution(0.585, stdev, frozen=True),
-        ]
-    elif method == "hmm-tumor":
-        state_names = ["del", "loss", "neutral", "gain", "amp"]
-        distributions = [
-            pom.NormalDistribution(-2.0, stdev, frozen=False),
-            pom.NormalDistribution(-0.5, stdev, frozen=False),
-            pom.NormalDistribution(0.0, stdev, frozen=True),
-            pom.NormalDistribution(0.3, stdev, frozen=False),
-            pom.NormalDistribution(1.0, stdev, frozen=False),
-        ]
-    else:
-        state_names = ["loss", "neutral", "gain"]
-        distributions = [
-            pom.NormalDistribution(-1.0, stdev, frozen=False),
-            pom.NormalDistribution(0.0, stdev, frozen=False),
-            pom.NormalDistribution(0.585, stdev, frozen=False),
-        ]
+
+    u_labels, labels, centers, stdev, clusters = kmeans_clustering(depth_values, 5)
+
+    state_names = []#["copy_1", "copy_2", "copy_3", "copy_4", "copy_5"]
+    distributions = []
+    for i in range(len(u_labels)):
+        state_names.append("copy_"+str(i))
+        distributions.append(pom.NormalDistribution(centers[i], stdev[i], frozen=False))
+
+    # distributions = [
+    #     pom.NormalDistribution(centers[0], stdev[0], frozen=False),
+    #     pom.NormalDistribution(centers[1], stdev[1], frozen=False),
+    #     pom.NormalDistribution(centers[2], stdev[2], frozen=False),
+    #     pom.NormalDistribution(centers[3], stdev[3], frozen=False),
+    #     pom.NormalDistribution(centers[4], stdev[4], frozen=False),
+    # ]
 
     n_states = len(distributions)
     # Starts -- prefer neutral
@@ -145,6 +175,7 @@ def hmm_get_model(cnarr, method, processes):
         n_jobs=processes,
         verbose=False,
     )
+
     return model
 
 
@@ -210,7 +241,7 @@ def variants_in_segment(varr, segment, min_variants=50):
 
         # Merge adjacent bins with the same state to create segments
         fake_cnarr = CNA(varr.add_columns(weight=1, log2=0, gene=".").data)
-        results = squash_by_groups(fake_cnarr, varr.as_series(states), by_arm=False)
+        results = squash_by_groups(fake_cnarr, varr.as_series(states), by_arm=True)
         assert (results.start < results.end).all()
 
     else:
@@ -264,3 +295,21 @@ def variants_in_segment(varr, segment, min_variants=50):
         )
 
     return dframe
+
+def observations_matrix(cnarray):
+    obs = []
+    values = cnarray.as_dataframe(cnarray.data)
+    values.data.reset_index(drop=True, inplace=True)
+
+    half_values = values.data[(values.data['chromosome'] == "chr1") & (values.data['start'] == 0)].index[1]
+    start = 0
+    for i in range(2): #len(values) // 2):
+        cnarr = values.data.iloc[start:half_values, ]
+        start = half_values
+        half_values += (len(values) - half_values)
+
+        meta = {"sample_id": 'sample'}
+        cnarr = CNA(cnarr, meta)
+        obs.extend(as_observation_matrix(cnarr.autosomes()))
+
+    return obs

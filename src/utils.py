@@ -1,5 +1,4 @@
 import csv
-
 import numpy
 import pandas as pd
 import pysam
@@ -10,9 +9,13 @@ from cnvlib.cnary import CopyNumArray as CNA
 from cnvlib import segmentation, coverage, batch, fix, segmetrics, call, scatter
 from skgenome import tabio
 
+from pomegranate import HiddenMarkovModel as Model
+
 from phasing_correction import get_phasesets_bins
+
 def generate_phasesets_bins(bam, path, bin_size):
     return get_phasesets_bins(bam, path, bin_size)
+
 def get_chromosomes_bins_replica(bam_file, bin_size):
     bed=[]
     bam_alignment = pysam.AlignmentFile(bam_file)
@@ -35,6 +38,7 @@ def get_chromosomes_bins_replica(bam_file, bin_size):
                 start=end+1
                 end+=bin_size
     return bed
+
 def get_chromosomes_bins(bam_file, bin_size):
     bed=[]
     bam_alignment = pysam.AlignmentFile(bam_file)
@@ -149,6 +153,7 @@ def write_segments_coverage(coverage_segments, output):
             fp.write("%s\n" % items)
 
 def seperate_dfs_coverage(df, haplotype_1_values_updated, haplotype_2_values_updated, unphased):
+
     haplotype_1_values_updated = flatten(haplotype_1_values_updated)
     haplotype_2_values_updated = flatten(haplotype_2_values_updated)
     unphased = flatten(unphased)
@@ -159,19 +164,37 @@ def seperate_dfs_coverage(df, haplotype_1_values_updated, haplotype_2_values_upd
     df_hp2['hp2'] = haplotype_2_values_updated
     df_unphased['hp3'] = unphased
     return df_hp1, df_hp2, df_unphased
+
 def flatten(values):
     return [item for sublist in values for item in sublist]
-def apply_copynumber_log2_ratio(csv_df_coverage, haplotype_values_updated, normal_bam):
 
-    depth_values = flatten(haplotype_values_updated)
+def apply_copynumber_log2_ratio(csv_df_coverage, haplotype_1_values_updated, haplotype_2_values_updated, normal_bam):
+
+    depth_values = flatten(haplotype_1_values_updated)
+    depth_values1 = flatten(haplotype_2_values_updated)
+    NULL_LOG2_COVERAGE = -20.0
+
+    csv_df_coverage.drop(csv_df_coverage[(csv_df_coverage.chr == "chrX") | (csv_df_coverage.chr == "chrY")].index, inplace=True)
+
     csv_df_coverage = csv_df_coverage.assign(depth=depth_values)
+    csv_df_coverage1 = csv_df_coverage.assign(depth=depth_values1)
+    #csv_df_coverage = csv_df_coverage[csv_df_coverage['chr'] == 'chr1']
     #csv_df_coverage = csv_df_coverage[csv_df_coverage['chr'] == 'chr7'] #TODO remove it
 
-    NULL_LOG2_COVERAGE = -20.0
+
     csv_df_coverage = csv_df_coverage.assign(log2=0)
-    csv_df_coverage.loc[(csv_df_coverage['depth'] == 0), 'log2'] = NULL_LOG2_COVERAGE
-    ok_idx = csv_df_coverage["depth"] > 0
-    csv_df_coverage.loc[ok_idx, "log2"] = numpy.log2(csv_df_coverage.loc[ok_idx, "depth"])
+    #csv_df_coverage.loc[(csv_df_coverage['depth'] == 0), 'log2'] = NULL_LOG2_COVERAGE
+    #ok_idx = csv_df_coverage["depth"] > 0
+    #csv_df_coverage.loc[ok_idx, "log2"] = numpy.log2(csv_df_coverage.loc[ok_idx, "depth"])
+
+    csv_df_coverage1 = csv_df_coverage1.assign(log2=0)
+    #csv_df_coverage1.loc[(csv_df_coverage1['depth'] == 0), 'log2'] = NULL_LOG2_COVERAGE
+    #ok_idx = csv_df_coverage1["depth"] > 0
+    #csv_df_coverage1.loc[ok_idx, "log2"] = numpy.log2(csv_df_coverage1.loc[ok_idx, "depth"])
+
+    csv_df_coverage = pd.concat([csv_df_coverage, csv_df_coverage1], ignore_index=True)
+
+    depth_values.extend(depth_values1)
 
     # Fill in CNA required columns
     if "gene" in csv_df_coverage:
@@ -200,7 +223,7 @@ def apply_copynumber_log2_ratio(csv_df_coverage, haplotype_values_updated, norma
 
     #TODO variants = load_het_snps()
     #cnarr = read_cna('data/coverage_cnvkit.cnr')
-    segs = segmentation.do_segmentation(cnarr, 'hmm', threshold=None, variants=None, skip_low=True, skip_outliers=20,
+    segs = segmentation.do_segmentation(depth_values, cnarr, 'hmm', threshold=None, variants=None, skip_low=True, skip_outliers=20,
                                         min_weight=0, save_dataframe=False, rscript_path="Rscript", processes=1,
                                         smooth_cbs=False)
 
@@ -214,4 +237,7 @@ def apply_copynumber_log2_ratio(csv_df_coverage, haplotype_values_updated, norma
     #TODO _log2_ratio_to_absolute
     #tabio.write(segs, "colo829_normal_grch38_md_chr7_haplotagged.cns")
 
-    return cnarr.as_dataframe(cnarr.data), segs.as_dataframe(segs.data)
+    values = cnarr.as_dataframe(cnarr.data)
+    half_values = len(values) // 2
+
+    return values.data.iloc[:half_values, ], segs[0].as_dataframe(segs[0].data), values.data.iloc[half_values:,], segs[1].as_dataframe(segs[1].data)

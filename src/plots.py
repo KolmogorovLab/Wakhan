@@ -1,3 +1,4 @@
+import numpy
 import plotly.graph_objects as go
 import plotly
 import pandas as pd
@@ -13,7 +14,7 @@ from smoothing import smoothing
 from vcf_processing import get_snps_frquncies_coverage, vcf_parse_to_csv_for_het_phased_snps_phasesets
 from utils import csv_df_chromosomes_sorter_snps, get_breakpoints, flatten
 
-chroms = ['chr1', 'chr2', 'chr3', 'chr4', 'chr5', 'chr6', 'chr7', 'chr8', 'chr9', 'chr10', 'chr11', 'chr12', 'chr13', 'chr14', 'chr15', 'chr16', 'chr17', 'chr18', 'chr19', 'chr20', 'chr21', 'chr22', 'chrX', 'chrY']
+chroms = ['chr1', 'chr2', 'chr3', 'chr4', 'chr5', 'chr6', 'chr7', 'chr8', 'chr9', 'chr10', 'chr11', 'chr12', 'chr13', 'chr14', 'chr15', 'chr16', 'chr17', 'chr18', 'chr19', 'chr20', 'chr21', 'chr22']#, 'chrX', 'chrY']
 def copy_number_log2_ratios_plots_chromosomes(df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, arguments):
     filename = f"{os.path.join(arguments['out_dir_plots'], 'COPY_NUMBER_LOG2_RATIOS.html')}"
     html_graphs = open(filename, 'w')
@@ -34,11 +35,11 @@ def copy_number_log2_ratios_plots_chromosomes(df_cnr_hp1, df_segs_hp1, df_cnr_hp
             haplotype_2_values_cnr = df_cnr_hp2_chrom.log2.values.tolist()
             haplotype_1_start_values_cnr = df_cnr_hp1_chrom.start.values.tolist()
 
-            haplotype_1_values_copyratios = df_segs_hp1_chrom.log2.values.tolist()
+            haplotype_1_values_copyratios = df_segs_hp1_chrom.data.state.values.tolist()
             haplotype_1_start_values_copyratios = df_segs_hp1_chrom.start.values.tolist()
             haplotype_1_end_values_copyratios = df_segs_hp1_chrom.end.values.tolist()
 
-            haplotype_2_values_copyratios = df_segs_hp2_chrom.log2.values.tolist()
+            haplotype_2_values_copyratios = df_segs_hp2_chrom.data.state.values.tolist()
             haplotype_2_start_values_copyratios = df_segs_hp2_chrom.start.values.tolist()
             haplotype_2_end_values_copyratios = df_segs_hp2_chrom.end.values.tolist()
 
@@ -83,8 +84,9 @@ def coverage_plots_chromosomes(df, df_phasesets, arguments):
     haplotype_1_values_updated = [[]]
     haplotype_2_values_updated = [[]]
     hunphased_updated = [[]]
+
     for index, chrom in enumerate(chroms):
-        if chrom:
+        if not chrom == 'chrX' and not chrom == 'chrY':
             logging.info('Plots generation for ' + chrom)
             fig = go.Figure()
 
@@ -107,9 +109,9 @@ def coverage_plots_chromosomes(df, df_phasesets, arguments):
 
             if arguments['phaseblock_flipping_enable']:
                 logging.info('phaseblock flipping module')
-                is_simple_correction = True
-                #if len(ref_start_values_phasesets) < 5:
-                #    is_simple_correction = True
+                is_simple_correction = False
+                if len(ref_start_values_phasesets) < 5:
+                    is_simple_correction = True
                 haplotype_1_values, haplotype_2_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets = \
                 phaseblock_flipping(is_simple_correction, haplotype_1_values, haplotype_2_values, ref_start_values, ref_end_values, \
                         haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
@@ -159,6 +161,8 @@ def coverage_plots_chromosomes(df, df_phasesets, arguments):
             haplotype_2_values_updated.append(haplotype_2_values)
             hunphased_updated.append(unphased_reads_values)
 
+    #plot_bins_histograms(flatten(haplotype_1_values_updated), flatten(haplotype_2_values_updated), ref_start_values, arguments)
+    #plot_bins_ratios(flatten(haplotype_1_values_updated), flatten(haplotype_2_values_updated), arguments)
     html_graphs.write("</body></html>")
 
     return haplotype_1_values_updated, haplotype_2_values_updated, hunphased_updated
@@ -282,18 +286,18 @@ def plots_genome(df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, arguments):
                     haplotype_2_start_values.extend([x + offset for x in haplotype_2_start_values_copyratios])
                     haplotype_2_end_values.extend([x + offset for x in haplotype_2_end_values_copyratios])
 
-        haplotype_1_gaps_values = np.full(len(df_segs_hp1.log2.values.tolist()), 'None')
-        haplotype_1_copyratios_values = list(itertools.chain.from_iterable(zip(df_segs_hp1.log2.values.tolist(), df_segs_hp1.log2.values.tolist(), haplotype_1_gaps_values)))
+        haplotype_1_gaps_values = np.full(len(df_segs_hp1.data.state.values.tolist()), 'None')
+        haplotype_1_copyratios_values = list(itertools.chain.from_iterable(zip(df_segs_hp1.data.state.values.tolist(), df_segs_hp1.data.state.values.tolist(), haplotype_1_gaps_values)))
         haplotype_1_copyratios_positions = list(itertools.chain.from_iterable(zip(haplotype_1_start_values, haplotype_1_end_values, haplotype_1_gaps_values)))
 
-        haplotype_2_gaps_values = np.full(len(df_segs_hp2.log2.values.tolist()), 'None')
-        haplotype_2_copyratios_values = list(itertools.chain.from_iterable(zip(df_segs_hp2.log2.values.tolist(), df_segs_hp2.log2.values.tolist(), haplotype_2_gaps_values)))
+        haplotype_2_gaps_values = np.full(len(df_segs_hp2.data.state.values.tolist()), 'None')
+        haplotype_2_copyratios_values = list(itertools.chain.from_iterable(zip(df_segs_hp2.data.state.values.tolist(), df_segs_hp2.data.state.values.tolist(), haplotype_2_gaps_values)))
         haplotype_2_copyratios_positions = list(itertools.chain.from_iterable(zip(haplotype_2_start_values, haplotype_2_end_values, haplotype_2_gaps_values)))
 
         add_scatter_trace_copyratios(fig, haplotype_1_copyratios_positions, haplotype_2_copyratios_positions, haplotype_1_copyratios_values, haplotype_2_copyratios_values)
 
     plots_layout_settings(fig, 'Genome', arguments, indices[-1:][0])
-    #fig.update_yaxes(range=[-10, 10])
+    fig.update_yaxes(range=[-1, arguments['cut_threshold']])
     #fig.update_yaxes(title='copy ratio (log2)')
     fig.update_layout(width=1080, height=400,)
 
@@ -364,7 +368,7 @@ def add_scatter_trace_copyratios(fig, haplotype_1_copyratios_positions, haplotyp
     fig.add_trace(go.Scatter(
         x=haplotype_1_copyratios_positions,
         y= haplotype_1_copyratios_values,
-        name="HP-1 Copy-ratios",
+        name="HP-1 Copy-numbers",
         text=haplotype_1_copyratios_positions,
         yaxis="y5",
         line = dict(shape = 'spline', color = 'gray', width= 5, dash = 'solid'),
@@ -382,7 +386,7 @@ def add_scatter_trace_copyratios(fig, haplotype_1_copyratios_positions, haplotyp
     fig.add_trace(go.Scatter(
         x=haplotype_2_copyratios_positions,
         y=haplotype_2_copyratios_values,
-        name="HP-2 Copy-ratios",
+        name="HP-2 Copy-numbers",
         text=haplotype_2_copyratios_positions,
         yaxis="y5",
         line = dict(shape = 'spline', color = 'green', width= 5, dash = 'solid'),
@@ -475,5 +479,108 @@ def plots_layout_settings(fig, chrom, arguments, limit):
         height=400,
        )
 
+def plot_bins_ratios(hp1,hp2, arguments):
+    import plotly.express as px
+    fig = go.Figure()
+
+    numpy.clip(hp1, a_min=1, a_max=300)
+    numpy.clip(hp2, a_min=1, a_max=300)
+
+    add_scatter_trace_coverage(fig, hp1/hp2, hp2/hp1, name='HP-1/HP-2 ratio', text=None, yaxis=None,
+                               opacity=0.7, color='firebrick')
+
+    fig.write_html(arguments['out_dir_plots'] +'/'+ arguments['genome_name'] + "_genome_ratio.html")
+
+def plot_bins_histograms(hp1,hp2, start, arguments):
+    import plotly.express as px
+    from sklearn.cluster import KMeans
+    import plotly.figure_factory as ff
+
+    hp1=numpy.clip(hp1, a_min=1, a_max=300)
+    hp2=numpy.clip(hp2, a_min=1, a_max=300)
+
+    df = pd.DataFrame(dict(
+        Haplotypes=np.concatenate((["HP-1"] * len(hp1), ["HP-2"] * len(hp2))),
+        coverage=np.concatenate((hp1, hp2))
+    ))
+    # df = pd.DataFrame(dict(
+    #     Haplotypes=(["HP-1/HP-2"] * len(hp1)),
+    #     coverage=(hp1/(hp1+hp2)),
+    # ))
 
 
+    #X=list(zip(hp1,start))
+
+
+
+    df = pd.DataFrame(dict(
+        Haplotypes=(["HP-1 & HP-2"] * (len(hp1)*2)),
+        coverage=np.concatenate((hp1, hp2)),
+    ))
+
+    hp1[hp1 != 0]
+    hp = list(hp1)
+    hp1=hp1.reshape(-1, 1)
+
+    hp2[hp2 != 0]
+    hp = list(hp2)
+    hp2=hp2.reshape(-1, 1)
+
+    new = np.concatenate((hp1, hp2))#list(zip(hp1, hp2))
+
+    Sum_of_squared_distances = []
+    K = range(1, 15)
+    for k in K:
+        km = KMeans(n_clusters=k)
+        km = km.fit(new)
+        Sum_of_squared_distances.append(km.inertia_)
+
+    # fig = px.line(x=K, y=Sum_of_squared_distances, markers=True)
+    # fig.update_yaxes(title='Sum_of_squared_distances')
+    # fig.update_xaxes(title='Number_of_clusters')
+    # plotly.io.write_image(fig, "kmeans.pdf", format='pdf')
+
+    from kneed import KneeLocator
+    kn = KneeLocator(x=K, y=Sum_of_squared_distances, curve='convex', direction='decreasing')
+    print(kn.knee)
+
+    km = KMeans(n_clusters=kn.knee+1, n_init=25, max_iter = 600, random_state=0)
+    km = km.fit(new)
+    labels = list(km.labels_)
+    u_labels = np.unique(labels)
+    centers = list(np.concatenate(km.cluster_centers_))
+
+    stdev = []
+    clusters = []
+    for i in range(len(u_labels)):
+        clusters.append([int(a) for a, b in zip(new, labels) if b == i])
+        stdev.append(numpy.std([(a, b) for a, b in zip(new, labels) if b == i]))
+
+    # Group data togetherhist_data = {list: 4} [[array([76.40792133]), array([76.40792133]), array([76.40792133]), array([76.40792133]), array([76.40792133]), array([76.40792133]), array([76.40792133]), array([76.40792133]), array([76.40792133]), array([76.40792133]), array([76.40792133]), array([76.40... View
+    hist_data = clusters # [i for i in clusters]
+    group_labels = ['Cluster '+str(i) for i in range(len(clusters))]
+    fig = ff.create_distplot(hist_data, group_labels, curve_type='normal', # override default 'kde'
+    )
+
+    #fig = px.histogram(df, x="coverage", color="Haplotypes", barmode="overlay", marginal="violin")#, log_y=True)
+
+
+    #fig.update_yaxes(range=[1, 1000])
+    #fig.update_xaxes(range=[1, 36])
+
+    fig.update_layout(
+        title={
+            'text': 'Genome - ' + arguments['genome_name'],
+            'y': 0.96,
+            'x': 0.5,
+            'xanchor': 'center',
+            'yanchor': 'top'},
+
+        font_family="Courier New",
+        font_color="dimgray",
+        title_font_family="Times New Roman",
+        title_font_color="red",
+        legend_title_font_color="green",
+    )
+
+    fig.write_html(arguments['out_dir_plots'] +'/'+ arguments['genome_name'] + "_genome_histogram.html")

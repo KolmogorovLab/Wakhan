@@ -18,6 +18,7 @@ SEGMENT_METHODS = ("cbs", "flasso", "haar", "none", "hmm", "hmm-tumor", "hmm-ger
 
 
 def do_segmentation(
+    depth_values,
     cnarr,
     method,
     threshold=None,
@@ -60,6 +61,7 @@ def do_segmentation(
         # ENH segment p/q arms separately
         # -> assign separate identifiers via chrom name suffix?
         cna = _do_segmentation(
+            depth_values,
             cnarr,
             method,
             threshold,
@@ -106,7 +108,7 @@ def do_segmentation(
             rstr = "".join(rstr)
         cna = cnarr.concat(rets)
 
-    cna.sort_columns()
+    #cna.sort_columns()
     if save_dataframe:
         return cna, rstr
     return cna
@@ -124,6 +126,7 @@ def _ds(args):
 
 
 def _do_segmentation(
+    depth_values,
     cnarr,
     method,
     threshold,
@@ -177,7 +180,7 @@ def _do_segmentation(
         segarr = none.segment_none(filtered_cn)
 
     elif method.startswith("hmm"):
-        segarr = hmm.segment_hmm(filtered_cn, method, threshold, variants)
+        segarr = hmm.segment_hmm(depth_values, filtered_cn, method, threshold, variants)
 
     elif method in ("cbs", "flasso"):
         # Run R scripts to calculate copy number segments
@@ -219,7 +222,7 @@ def _do_segmentation(
     else:
         raise ValueError(f"Unknown method {method!r}")
 
-    segarr.meta = cnarr.meta.copy()
+    #segarr.meta = cnarr.meta.copy()
     if variants and not method.startswith("hmm"):
         # Re-segment the variant allele freqs within each segment
         # TODO train on all segments together
@@ -231,7 +234,7 @@ def _do_segmentation(
         segarr = segarr.as_dataframe(pd.concat(newsegs))
         segarr["baf"] = variants.baf_by_ranges(segarr)
 
-    segarr = transfer_fields(segarr, cnarr)
+    #segarr = transfer_fields(segarr, cnarr)
     if save_dataframe:
         return segarr, seg_out
     return segarr
