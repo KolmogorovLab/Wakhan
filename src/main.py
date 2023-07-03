@@ -13,11 +13,12 @@ from multiprocessing import Pool
 from collections import defaultdict
 from bam_processing import get_all_reads_parallel, update_coverage_hist, get_segments_coverage, haplotype_update_all_bins_parallel
 from cnvlib import descriptives
+from cnvlib import cluster
 from utils import get_chromosomes_bins, write_segments_coverage, csv_df_chromosomes_sorter, generate_phasesets_bins, csv_df_chromosomes_sorter_snps,\
-    apply_copynumber_log2_ratio, csv_df_chromosomes_sorter_copyratios, seperate_dfs_coverage
+    apply_copynumber_log2_ratio, csv_df_chromosomes_sorter_copyratios, seperate_dfs_coverage, flatten_smooth
 from plots import coverage_plots_chromosomes, plots_genome, plots_genome_coverage, copy_number_log2_ratios_plots_chromosomes
 from vcf_processing import vcf_parse_to_csv_for_het_phased_snps_phasesets
-from clustering import plot_optimal_clusters
+
 
 #remove
 from utils import get_chromosomes_bins_replica
@@ -174,21 +175,21 @@ def main():
     #segments.append(('colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam', 'chr7', 78318498, 78486891))
     segments_coverage = get_segments_coverage(segments, coverage_histograms)
     logging.info('Writing coverage for bins')
-    write_segments_coverage(segments_coverage, 'coverage.csv')
+    #write_segments_coverage(segments_coverage, 'coverage.csv')
 
     logging.info('Parsing phaseblocks information')
-    output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(arguments['phased_vcf'])
-    phasesets_segments = generate_phasesets_bins(args.target_bam[0], output_phasesets_file_path, arguments['bin_size']) #TODO update for multiple bam files
+    #output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(arguments['phased_vcf'])
+    #phasesets_segments = generate_phasesets_bins(args.target_bam[0], output_phasesets_file_path, arguments['bin_size']) #TODO update for multiple bam files
     logging.info('Computing coverage for phaseblocks')
-    phasesets_coverage = get_segments_coverage(phasesets_segments, coverage_histograms)
+    #phasesets_coverage = get_segments_coverage(phasesets_segments, coverage_histograms)
     logging.info('Writing coverage for phaseblocks')
-    write_segments_coverage(phasesets_coverage, 'coverage_ps.csv')
+    #write_segments_coverage(phasesets_coverage, 'coverage_ps.csv')
 
     logging.info('Loading coverage (bins) and coverage (phaseblocks) files...')
-    csv_df_phasesets = csv_df_chromosomes_sorter('data/coverage_ps.csv')
-    csv_df_coverage = csv_df_chromosomes_sorter('data/coverage.csv')
-    #csv_df_phasesets = csv_df_chromosomes_sorter('data/'+arguments['genome_name']+'/coverage_ps.csv')
-    #csv_df_coverage = csv_df_chromosomes_sorter('data/'+arguments['genome_name']+'/coverage.csv')
+    #csv_df_phasesets = csv_df_chromosomes_sorter('data/coverage_ps.csv')
+    #csv_df_coverage = csv_df_chromosomes_sorter('data/coverage.csv')
+    csv_df_phasesets = csv_df_chromosomes_sorter('/home/rezkuh/gits/data/'+arguments['genome_name']+'/coverage_ps.csv')
+    csv_df_coverage = csv_df_chromosomes_sorter('/home/rezkuh/gits/data/'+arguments['genome_name']+'/coverage.csv')
 
     logging.info('Generating coverage plots chromosomes-wise')
     haplotype_1_values_updated, haplotype_2_values_updated, unphased = coverage_plots_chromosomes(csv_df_coverage, csv_df_phasesets, arguments)
@@ -200,7 +201,9 @@ def main():
     plots_genome_coverage(df_hp1, df_hp2, df_unphased, arguments)
 
     logging.info('Generating optimal clusters plots for bins')
-    plot_optimal_clusters(haplotype_1_values_updated, haplotype_2_values_updated, unphased,  arguments)
+
+    haplotype_1_values_updated, haplotype_2_values_updated, unphased = flatten_smooth(haplotype_1_values_updated, haplotype_2_values_updated, unphased)
+    cluster.plot_optimal_clusters(haplotype_1_values_updated, haplotype_2_values_updated, unphased,  arguments)
 
     df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2 = apply_copynumber_log2_ratio(csv_df_coverage, haplotype_1_values_updated, haplotype_2_values_updated, args.control_bam[0])
     #df_cnr_hp2, df_segs_hp2 = apply_copynumber_log2_ratio(csv_df_coverage, haplotype_2_values_updated, args.control_bam[0])

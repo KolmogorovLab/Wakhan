@@ -10,7 +10,7 @@ import scipy.special
 from ..cnary import CopyNumArray as CNA
 from ..descriptives import biweight_midvariance
 from ..segfilters import squash_by_groups
-from src.clustering import kmeans_clustering
+from ..cluster import kmeans_clustering
 
 from pomegranate import State, NormalDistribution, IndependentComponentsDistribution, DiscreteDistribution
 from pomegranate import HiddenMarkovModel as HMM

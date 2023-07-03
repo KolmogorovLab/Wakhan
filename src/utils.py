@@ -8,6 +8,7 @@ from cnvlib.cmdutil import read_cna
 from cnvlib.cnary import CopyNumArray as CNA
 from cnvlib import segmentation, coverage, batch, fix, segmetrics, call, scatter
 from skgenome import tabio
+from smoothing import smoothing
 
 from pomegranate import HiddenMarkovModel as Model
 
@@ -168,10 +169,10 @@ def seperate_dfs_coverage(df, haplotype_1_values_updated, haplotype_2_values_upd
 def flatten(values):
     return [item for sublist in values for item in sublist]
 
-def apply_copynumber_log2_ratio(csv_df_coverage, haplotype_1_values_updated, haplotype_2_values_updated, normal_bam):
+def apply_copynumber_log2_ratio(csv_df_coverage, depth_values, depth_values1, normal_bam):
 
-    depth_values = flatten(haplotype_1_values_updated)
-    depth_values1 = flatten(haplotype_2_values_updated)
+    #depth_values = flatten(haplotype_1_values_updated)
+    #depth_values1 = flatten(haplotype_2_values_updated)
     NULL_LOG2_COVERAGE = -20.0
 
     csv_df_coverage.drop(csv_df_coverage[(csv_df_coverage.chr == "chrX") | (csv_df_coverage.chr == "chrY")].index, inplace=True)
@@ -241,3 +242,11 @@ def apply_copynumber_log2_ratio(csv_df_coverage, haplotype_1_values_updated, hap
     half_values = len(values) // 2
 
     return values.data.iloc[:half_values, ], segs[0].as_dataframe(segs[0].data), values.data.iloc[half_values:,], segs[1].as_dataframe(segs[1].data)
+
+def flatten_smooth(hp1, hp2, unphased):
+    hp1 = flatten(hp1)
+    hp2 = flatten(hp2)
+    unphased = flatten(unphased)
+    unphased, hp1, hp2 = smoothing(unphased, hp1, hp2, conv_window_size=15)
+
+    return hp1, hp2, unphased
