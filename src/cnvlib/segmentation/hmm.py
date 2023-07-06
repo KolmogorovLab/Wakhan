@@ -91,7 +91,7 @@ def segment_hmm(depth, arguments, cnarr, method, window=None, variants=None, pro
             size = len(segarr.data.index)
             if row.chromosome == 'chr15':
                 print("here")
-            if (row.end - row.start < 100000) and (i > 0 and i < size-1):
+            if (row.end - row.start < 1000000) and (i > 0 and i < size-1):
                 if segarr.data.at[i - 1, 'state'] == segarr.data.at[i + 1, 'state'] and segarr.data.at[i, 'chromosome'] == segarr.data.at[i - 1, 'chromosome']:
                     segarr.data.at[i, 'state'] = segarr.data.at[i+1, 'state']
                 elif (not segarr.data.at[i - 1, 'state'] == segarr.data.at[i + 1, 'state']) and segarr.data.at[i, 'chromosome'] == segarr.data.at[i - 1, 'chromosome']:

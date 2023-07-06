@@ -6,7 +6,11 @@ A tool to analyze haplotype-specific chromosome-scale somatic copy number aberra
 Wakhan takes long-read alignment and phased heterozygous variants as input, and first uses extends the phased blocks, taking
 advantage of the CNA differences between the haplotypes. Wakhan then generates inetractive haplotype-specific coverage plots.    
 
+#### Coverage display & phaseblocks errors correction:
 <img width="1373" alt="plots_example" src="examples/images/image.gif">
+
+#### Coverage display & Copy numbers:
+<img width="1373" alt="plots_example" src="examples/images/copynumbers.gif">
 
 ## Requirements:
 * Python3.8
