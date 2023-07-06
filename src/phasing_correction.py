@@ -4,26 +4,26 @@ import pandas as pd
 import numpy as np
 import os
 
-chroms = ['chr1', 'chr2', 'chr3', 'chr4', 'chr5', 'chr6', 'chr7', 'chr8', 'chr9', 'chr10', 'chr11', 'chr12', 'chr13',
-          'chr14', 'chr15', 'chr16', 'chr17', 'chr18', 'chr19', 'chr20', 'chr21', 'chr22']  # , 'chrX', 'chrY']
-
-def get_phasesets_bins(bam, phasesets, bin_size):
-    indices, values = remove_overlapping_and_small_phasesets(phasesets, bin_size)
+def get_phasesets_bins(bam, phasesets, bin_size, arguments):
+    indices, values = remove_overlapping_and_small_phasesets(phasesets, bin_size, arguments)
     head, tail = os.path.split(bam)
     bed = []
-    print(phasesets)
+    from utils import get_contigs_list
+    chroms = get_contigs_list(arguments['contigs'])
     for ind, chrom in enumerate(chroms) :
         for i in range(0, len(values[ind]), 2): #for i in range(len(values[ind])-1):
             start = values[ind][i]
             end = values[ind][i+1]
-            if end - start > 50000*6:
+            if end - start > arguments['bin_size']*6:
                 bed.append([tail, chrom, start, end])
     return bed
 
-def remove_overlapping_and_small_phasesets(phasesets, bin_size):
+def remove_overlapping_and_small_phasesets(phasesets, bin_size, arguments):
     dfs = pd.read_csv(phasesets, sep='\t', names=['chr', 'pos', 'qual', 'filter', 'ps', 'gt', 'dp', 'vaf'])
     values_all = []
     indices_all = []
+    from utils import get_contigs_list
+    chroms = get_contigs_list(arguments['contigs'])
     for index, chrom in enumerate(chroms):
         df = dfs[dfs['chr'] == chrom]
         unique_ps_by_chr = df.groupby('chr', group_keys=True)['ps'].apply(lambda x: list(np.unique(x)))

@@ -14,10 +14,10 @@ from pomegranate import HiddenMarkovModel as Model
 
 from phasing_correction import get_phasesets_bins
 
-def generate_phasesets_bins(bam, path, bin_size):
-    return get_phasesets_bins(bam, path, bin_size)
+def generate_phasesets_bins(bam, path, bin_size, arguments):
+    return get_phasesets_bins(bam, path, bin_size, arguments)
 
-def get_chromosomes_bins_replica(bam_file, bin_size):
+def get_chromosomes_bins_replica(bam_file, bin_size, arguments):
     bed=[]
     bam_alignment = pysam.AlignmentFile(bam_file)
     headers = bam_alignment.header
@@ -25,12 +25,13 @@ def get_chromosomes_bins_replica(bam_file, bin_size):
     region = [''] * len(seq_dict)
     chrs = [''] * len(seq_dict)
     head, tail = os.path.split(bam_file)
+    chroms = get_contigs_list(arguments['contigs'])
     for i, seq_elem in enumerate(seq_dict):
         region[i] = seq_elem['LN']
         chrs[i] = seq_elem['SN']
         start=0
         end=bin_size
-        if chrs[i] == 'chr7':
+        if chrs[i] in chroms:
             for c in range(0,region[i],bin_size):
                 if end > region[i]:
                     bed.append(chrs[i]+'\t'+str(start)+'\t'+str(region[i]))
@@ -40,7 +41,7 @@ def get_chromosomes_bins_replica(bam_file, bin_size):
                 end+=bin_size
     return bed
 
-def get_chromosomes_bins(bam_file, bin_size):
+def get_chromosomes_bins(bam_file, bin_size, arguments):
     bed=[]
     bam_alignment = pysam.AlignmentFile(bam_file)
     headers = bam_alignment.header
@@ -48,12 +49,13 @@ def get_chromosomes_bins(bam_file, bin_size):
     region = [''] * len(seq_dict)
     chrs = [''] * len(seq_dict)
     head, tail = os.path.split(bam_file)
+    chroms = get_contigs_list(arguments['contigs'])
     for i, seq_elem in enumerate(seq_dict):
         region[i] = seq_elem['LN']
         chrs[i] = seq_elem['SN']
         start=0
         end=bin_size
-        if chrs[i]:
+        if chrs[i] in chroms:
             for c in range(0,region[i],bin_size):
                 if end > region[i]:
                     bed.append([tail, chrs[i], start, region[i]])
@@ -62,6 +64,20 @@ def get_chromosomes_bins(bam_file, bin_size):
                 start=end+1
                 end+=bin_size
     return bed
+
+def get_contigs_list(contigs):
+    chroms_list_final = []
+    chroms = contigs.split(',')
+    for chrom in chroms:
+        chrom = chrom[len('chr'):] if chrom.startswith('chr') else chrom
+        chrom = chrom.split('-')
+        if len(chrom) > 1:
+            chroms_list_final.extend(list(range(int(chrom[0]), int(chrom[1]) + 1)))
+        else:
+            chroms_list_final.extend(chrom)
+
+    chroms_list_final = ['chr' + x if not x.startswith('chr') else x for x in map(str, chroms_list_final)]
+    return chroms_list_final
 
 def update_bins_with_bps(bins):
     size=len(bins)
@@ -154,10 +170,10 @@ def write_segments_coverage(coverage_segments, output):
             fp.write("%s\n" % items)
 
 def seperate_dfs_coverage(df, haplotype_1_values_updated, haplotype_2_values_updated, unphased):
+    #haplotype_1_values_updated = flatten(haplotype_1_values_updated)
+    #haplotype_2_values_updated = flatten(haplotype_2_values_updated)
+    #unphased = flatten(unphased)
 
-    haplotype_1_values_updated = flatten(haplotype_1_values_updated)
-    haplotype_2_values_updated = flatten(haplotype_2_values_updated)
-    unphased = flatten(unphased)
     df_hp1 = df[['chr', 'start','end', 'hp1']].copy()
     df_hp2 = df[['chr', 'start','end', 'hp2']].copy()
     df_unphased = df[['chr', 'start','end', 'hp3']].copy()
@@ -169,7 +185,7 @@ def seperate_dfs_coverage(df, haplotype_1_values_updated, haplotype_2_values_upd
 def flatten(values):
     return [item for sublist in values for item in sublist]
 
-def apply_copynumber_log2_ratio(csv_df_coverage, depth_values, depth_values1, normal_bam):
+def apply_copynumbers(csv_df_coverage, depth_values, depth_values1, normal_bam, arguments):
 
     #depth_values = flatten(haplotype_1_values_updated)
     #depth_values1 = flatten(haplotype_2_values_updated)
@@ -224,7 +240,7 @@ def apply_copynumber_log2_ratio(csv_df_coverage, depth_values, depth_values1, no
 
     #TODO variants = load_het_snps()
     #cnarr = read_cna('data/coverage_cnvkit.cnr')
-    segs = segmentation.do_segmentation(depth_values, cnarr, 'hmm', threshold=None, variants=None, skip_low=True, skip_outliers=20,
+    segs = segmentation.do_segmentation(depth_values, arguments, cnarr, 'hmm', threshold=None, variants=None, skip_low=True, skip_outliers=20,
                                         min_weight=0, save_dataframe=False, rscript_path="Rscript", processes=1,
                                         smooth_cbs=False)
 

@@ -12,10 +12,12 @@ from ..descriptives import biweight_midvariance
 from ..segfilters import squash_by_groups
 from ..cluster import kmeans_clustering
 
+
+
 from pomegranate import State, NormalDistribution, IndependentComponentsDistribution, DiscreteDistribution
 from pomegranate import HiddenMarkovModel as HMM
 
-def segment_hmm(depth, cnarr, method, window=None, variants=None, processes=1):
+def segment_hmm(depth, arguments, cnarr, method, window=None, variants=None, processes=1):
     """Segment bins by Hidden Markov Model.
 
     Use Viterbi method to infer copy number segments from sequential data.
@@ -43,7 +45,7 @@ def segment_hmm(depth, cnarr, method, window=None, variants=None, processes=1):
     cnarr.data = cnarr.data.reset_index(drop=True)
 
     logging.info("Building model from observations")
-    model = hmm_get_model(depth, cnarr, method, processes)
+    model = hmm_get_model(depth, arguments, cnarr, method, processes)
 
     logging.info("Predicting states from model")
     observations = observations_matrix(cnarr)#as_observation_matrix(cnarr)
@@ -89,7 +91,7 @@ def segment_hmm(depth, cnarr, method, window=None, variants=None, processes=1):
             size = len(segarr.data.index)
             if row.chromosome == 'chr15':
                 print("here")
-            if (row.end - row.start < 1000000) and (i > 0 and i < size-1):
+            if (row.end - row.start < 100000) and (i > 0 and i < size-1):
                 if segarr.data.at[i - 1, 'state'] == segarr.data.at[i + 1, 'state'] and segarr.data.at[i, 'chromosome'] == segarr.data.at[i - 1, 'chromosome']:
                     segarr.data.at[i, 'state'] = segarr.data.at[i+1, 'state']
                 elif (not segarr.data.at[i - 1, 'state'] == segarr.data.at[i + 1, 'state']) and segarr.data.at[i, 'chromosome'] == segarr.data.at[i - 1, 'chromosome']:
@@ -105,7 +107,7 @@ def segment_hmm(depth, cnarr, method, window=None, variants=None, processes=1):
 def squash_regions(df):
 
     return pd.DataFrame(df)
-def hmm_get_model(depth_values, cnarr, method, processes):
+def hmm_get_model(depth_values, arguments, cnarr, method, processes):
     """
 
     Parameters
@@ -128,7 +130,7 @@ def hmm_get_model(depth_values, cnarr, method, processes):
     # Estimate standard deviation from the full distribution, robustly
     stdev = biweight_midvariance(np.concatenate(observations), initial=0)
 
-    u_labels, labels, centers, stdev, clusters = kmeans_clustering(depth_values, 5)
+    u_labels, labels, centers, stdev, clusters = kmeans_clustering(depth_values, arguments['no_of_clusters'])
 
     state_names = []#["copy_1", "copy_2", "copy_3", "copy_4", "copy_5"]
     distributions = []

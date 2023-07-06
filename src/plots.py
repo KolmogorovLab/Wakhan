@@ -12,14 +12,14 @@ import logging
 from phasing_correction import phaseblock_flipping
 from smoothing import smoothing
 from vcf_processing import get_snps_frquncies_coverage, vcf_parse_to_csv_for_het_phased_snps_phasesets
-from utils import csv_df_chromosomes_sorter_snps, get_breakpoints, flatten
+from utils import csv_df_chromosomes_sorter_snps, get_breakpoints, flatten, get_contigs_list
 
-chroms = ['chr1', 'chr2', 'chr3', 'chr4', 'chr5', 'chr6', 'chr7', 'chr8', 'chr9', 'chr10', 'chr11', 'chr12', 'chr13', 'chr14', 'chr15', 'chr16', 'chr17', 'chr18', 'chr19', 'chr20', 'chr21', 'chr22']#, 'chrX', 'chrY']
-def copy_number_log2_ratios_plots_chromosomes(df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, arguments):
-    filename = f"{os.path.join(arguments['out_dir_plots'], 'COPY_NUMBER_LOG2_RATIOS.html')}"
+def copy_number_plots_chromosomes(df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, arguments):
+    filename = f"{os.path.join(arguments['out_dir_plots'], 'COPY_NUMBERS.html')}"
     html_graphs = open(filename, 'w')
     html_graphs.write("<html><head></head><body>" + "\n")
 
+    chroms = get_contigs_list(arguments['contigs'])
     for index, chrom in enumerate(chroms):
         if not chrom == 'chrX' and not chrom == 'chrY':
             logging.info('Plots generation for ' + chrom)
@@ -43,8 +43,8 @@ def copy_number_log2_ratios_plots_chromosomes(df_cnr_hp1, df_segs_hp1, df_cnr_hp
             haplotype_2_start_values_copyratios = df_segs_hp2_chrom.start.values.tolist()
             haplotype_2_end_values_copyratios = df_segs_hp2_chrom.end.values.tolist()
 
-            if arguments['copyratios_enable']:
-                logging.info('copyratios plots module')
+            if arguments['copynumbers_enable']:
+                logging.info('copynumbers plots module')
                 OFFSET=.25
                 haplotype_1_values_cnr = list(np.asarray(haplotype_1_values_cnr) + OFFSET)
                 haplotype_2_values_cnr = list(np.asarray(haplotype_2_values_cnr) - OFFSET)
@@ -81,12 +81,13 @@ def coverage_plots_chromosomes(df, df_phasesets, arguments):
     filename = f"{os.path.join(arguments['out_dir_plots'], 'COVERAGE.html')}"
     html_graphs = open(filename, 'w')
     html_graphs.write("<html><head></head><body>" + "\n")
-    haplotype_1_values_updated = [[]]
-    haplotype_2_values_updated = [[]]
-    hunphased_updated = [[]]
+    haplotype_1_values_updated = []
+    haplotype_2_values_updated = []
+    hunphased_updated = []
 
+    chroms = get_contigs_list(arguments['contigs'])
     for index, chrom in enumerate(chroms):
-        if not chrom == 'chrX' and not chrom == 'chrY':
+        if chrom in chroms:
             logging.info('Plots generation for ' + chrom)
             fig = go.Figure()
 
@@ -157,9 +158,9 @@ def coverage_plots_chromosomes(df, df_phasesets, arguments):
 
             print_chromosome_html(fig, chrom, html_graphs, arguments['out_dir_plots'])
 
-            haplotype_1_values_updated.append(haplotype_1_values)
-            haplotype_2_values_updated.append(haplotype_2_values)
-            hunphased_updated.append(unphased_reads_values)
+            haplotype_1_values_updated.extend(haplotype_1_values)
+            haplotype_2_values_updated.extend(haplotype_2_values)
+            hunphased_updated.extend(unphased_reads_values)
 
     #plot_bins_histograms(flatten(haplotype_1_values_updated), flatten(haplotype_2_values_updated), ref_start_values, arguments)
     #plot_bins_ratios(flatten(haplotype_1_values_updated), flatten(haplotype_2_values_updated), arguments)
@@ -183,11 +184,12 @@ def plots_genome_coverage(df_hp1, df_hp2, df_unphased, arguments):
     # TODO genome-wide plots
 
     lengths = []
+    chroms = get_contigs_list(arguments['contigs'])
     for index, chrom in enumerate(chroms):
         df_cnr_hp1_chrom = df_hp1[df_hp1['chr'] == chrom]
         lengths.append(len(df_cnr_hp1_chrom))
 
-    indices = np.arange(0, len(df_hp1)*50000, 50000, dtype=int)
+    indices = np.arange(0, len(df_hp1)*arguments['bin_size'], arguments['bin_size'], dtype=int)
 
     fig = go.Figure()
     add_scatter_trace_coverage(fig, indices, df_hp1.hp1.values.tolist(), name='HP-1', text=None,
@@ -202,11 +204,11 @@ def plots_genome_coverage(df_hp1, df_hp2, df_unphased, arguments):
 
     current = 0
     label_pos = []
-
+    chroms = get_contigs_list(arguments['contigs'])
     for index, chrom in enumerate(chroms):
         current += lengths[index]
-        label_pos.append(round(current - (lengths[index] / 2))*50000)
-        fig.add_vline(x=current*50000, y0=-10, y1=150, line_width=1, line_dash="dashdot", line_color="green")
+        label_pos.append(round(current - (lengths[index] / 2))*arguments['bin_size'])
+        fig.add_vline(x=current*arguments['bin_size'], y0=-10, y1=150, line_width=1, line_dash="dashdot", line_color="green")
 
     fig.update_layout(
         xaxis=dict(
@@ -226,15 +228,16 @@ def plots_genome_coverage(df_hp1, df_hp2, df_unphased, arguments):
 
     fig.write_html(arguments['out_dir_plots'] +'/'+ arguments['genome_name'] + "_genome_coverage.html")
 
-def plots_genome(df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, arguments):
+def copy_number_plots_genome(df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, arguments):
     # TODO genome-wide plots
 
     lengths = []
+    chroms = get_contigs_list(arguments['contigs'])
     for index, chrom in enumerate(chroms):
         df_cnr_hp1_chrom = df_cnr_hp1[df_cnr_hp1['chromosome'] == chrom]
         lengths.append(len(df_cnr_hp1_chrom))
 
-    indices = np.arange(0, len(df_cnr_hp1)*50000, 50000, dtype=int)
+    indices = np.arange(0, len(df_cnr_hp1)*arguments['bin_size'], arguments['bin_size'], dtype=int)
 
     fig = go.Figure()
     add_scatter_trace_coverage(fig, indices, df_cnr_hp1.log2.values.tolist(), name='HP-1', text=None,
@@ -245,11 +248,11 @@ def plots_genome(df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, arguments):
 
     current = 0
     label_pos = []
-
+    chroms = get_contigs_list(arguments['contigs'])
     for index, chrom in enumerate(chroms):
         current += lengths[index]
-        label_pos.append(round(current - (lengths[index] / 2))*50000)
-        fig.add_vline(x=current*50000, y0=-10, y1=150, line_width=1, line_dash="dashdot", line_color="green")
+        label_pos.append(round(current - (lengths[index] / 2))*arguments['bin_size'])
+        fig.add_vline(x=current*arguments['bin_size'], y0=-10, y1=150, line_width=1, line_dash="dashdot", line_color="green")
 
     fig.update_layout(
         xaxis=dict(
@@ -259,13 +262,14 @@ def plots_genome(df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, arguments):
         ),
         font=dict(size=18, color="black"))
 
-    if arguments['copyratios_enable']:
+    if arguments['copynumbers_enable']:
         offset = 0
         haplotype_1_start_values = []
         haplotype_1_end_values = []
 
         haplotype_2_start_values = []
         haplotype_2_end_values = []
+        chroms = get_contigs_list(arguments['contigs'])
         for index, chrom in enumerate(chroms):
             if not chrom == 'chrX' and not chrom == 'chrY':
                 df_segs_hp1_chrom = df_segs_hp1[df_segs_hp1['chromosome'] == chrom]
@@ -280,7 +284,7 @@ def plots_genome(df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, arguments):
                     haplotype_2_start_values.extend(haplotype_2_start_values_copyratios)
                     haplotype_2_end_values.extend(haplotype_2_end_values_copyratios)
                 else:
-                    offset += lengths[index-1] * 50000
+                    offset += lengths[index-1] * arguments['bin_size']
                     haplotype_1_start_values.extend([x + offset for x in haplotype_1_start_values_copyratios])
                     haplotype_1_end_values.extend([x + offset for x in haplotype_1_end_values_copyratios])
                     haplotype_2_start_values.extend([x + offset for x in haplotype_2_start_values_copyratios])

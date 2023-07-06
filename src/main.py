@@ -15,8 +15,8 @@ from bam_processing import get_all_reads_parallel, update_coverage_hist, get_seg
 from cnvlib import descriptives
 from cnvlib import cluster
 from utils import get_chromosomes_bins, write_segments_coverage, csv_df_chromosomes_sorter, generate_phasesets_bins, csv_df_chromosomes_sorter_snps,\
-    apply_copynumber_log2_ratio, csv_df_chromosomes_sorter_copyratios, seperate_dfs_coverage, flatten_smooth
-from plots import coverage_plots_chromosomes, plots_genome, plots_genome_coverage, copy_number_log2_ratios_plots_chromosomes
+    apply_copynumbers, csv_df_chromosomes_sorter_copyratios, seperate_dfs_coverage, flatten_smooth, get_contigs_list
+from plots import coverage_plots_chromosomes, copy_number_plots_genome, plots_genome_coverage, copy_number_plots_chromosomes
 from vcf_processing import vcf_parse_to_csv_for_het_phased_snps_phasesets
 
 
@@ -63,6 +63,9 @@ def main():
     parser.add_argument("--genome-name", dest="genome_name",
                         required=True, default=None,
                         help="Genome sample/cellline name to be displayed on plots")
+    parser.add_argument("--contigs", dest="contigs",
+                        required=True, default=None,
+                        help="List of contigs (choromosomes) to be included in the plots [e.g., chr1-22,X,Y]")
 
     parser.add_argument("--bin-size", "--bin_size", dest="bin_size",
                         default=BIN_SIZE, metavar="int", type=int, help="coverage (readdepth) bin size [50k]")
@@ -93,8 +96,8 @@ def main():
                         default=False, help="Enabling hetrozygous phased snps frequencies in coverage plots")
     parser.add_argument('--breakpoints-enable',  dest="breakpoints_enable", required=False,
                         default=False, help="Enabling breakpoints in coverage plots")
-    parser.add_argument('--copyratios-enable', dest="copyratios_enable", required=False,
-                        default=False, help="Enabling copy number ratios in coverage plots")
+    parser.add_argument('--copynumbers-enable', dest="copynumbers_enable", required=False,
+                        default=False, help="Enabling copy number in coverage plots")
 
     parser.add_argument("-t", "--threads", dest="threads",
                         default=8, metavar="int", type=int, help="number of parallel threads [8]")
@@ -113,7 +116,7 @@ def main():
         "unphased_reads_coverage_enable": args.unphased_reads_coverage_enable,
         "smoothing_enable": args.smoothing_enable,
         "phaseblocks_enable": args.phaseblocks_enable,
-        "copyratios_enable": args.copyratios_enable,
+        "copynumbers_enable": args.copynumbers_enable,
         "het_phased_snps_freq_enable": args.het_phased_snps_freq_enable,
         "out_dir_plots": args.out_dir_plots,
         "phased_vcf": args.phased_vcf,
@@ -126,6 +129,7 @@ def main():
         "cut_threshold": args.cut_threshold,
         "min_aligned_length": args.min_aligned_length,
         "no_of_clusters": args.no_of_clusters,
+        "contigs": args.contigs,
     }
     logging.basicConfig(level=logging.DEBUG)
 
@@ -171,7 +175,7 @@ def main():
                                                args.max_read_error, arguments)
 
     logging.info('Computing coverage for bins')
-    segments = get_chromosomes_bins(args.target_bam[0], arguments['bin_size'])
+    segments = get_chromosomes_bins(args.target_bam[0], arguments['bin_size'], arguments)
     #segments.append(('colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam', 'chr7', 78318498, 78486891))
     segments_coverage = get_segments_coverage(segments, coverage_histograms)
     logging.info('Writing coverage for bins')
@@ -179,7 +183,7 @@ def main():
 
     logging.info('Parsing phaseblocks information')
     #output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(arguments['phased_vcf'])
-    #phasesets_segments = generate_phasesets_bins(args.target_bam[0], output_phasesets_file_path, arguments['bin_size']) #TODO update for multiple bam files
+    #phasesets_segments = generate_phasesets_bins(args.target_bam[0], output_phasesets_file_path, arguments['bin_size'], arguments) #TODO update for multiple bam files
     logging.info('Computing coverage for phaseblocks')
     #phasesets_coverage = get_segments_coverage(phasesets_segments, coverage_histograms)
     logging.info('Writing coverage for phaseblocks')
@@ -202,19 +206,17 @@ def main():
 
     logging.info('Generating optimal clusters plots for bins')
 
-    haplotype_1_values_updated, haplotype_2_values_updated, unphased = flatten_smooth(haplotype_1_values_updated, haplotype_2_values_updated, unphased)
+    #haplotype_1_values_updated, haplotype_2_values_updated, unphased = flatten_smooth(haplotype_1_values_updated, haplotype_2_values_updated, unphased)
     cluster.plot_optimal_clusters(haplotype_1_values_updated, haplotype_2_values_updated, unphased,  arguments)
 
-    df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2 = apply_copynumber_log2_ratio(csv_df_coverage, haplotype_1_values_updated, haplotype_2_values_updated, args.control_bam[0])
+    df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2 = apply_copynumbers(csv_df_coverage, haplotype_1_values_updated, haplotype_2_values_updated, args.control_bam[0], arguments)
     #df_cnr_hp2, df_segs_hp2 = apply_copynumber_log2_ratio(csv_df_coverage, haplotype_2_values_updated, args.control_bam[0])
 
     logging.info('Generating copy number log2 ratios plots chromosomes-wise')
-    copy_number_log2_ratios_plots_chromosomes(df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, arguments)
+    copy_number_plots_chromosomes(df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, arguments)
 
-    logging.info('Generating coverage/copy number log2 ratios plots genome wide')
-    plots_genome(df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, arguments)
-
-
+    logging.info('Generating coverage/copy numbers plots genome wide')
+    copy_number_plots_genome(df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, arguments)
 
 if __name__ == "__main__":
     main()
@@ -223,5 +225,5 @@ if __name__ == "__main__":
 
 #--smoothing-enable True
 #--pdf-enable True
-#--copyratios-enable True
+#--copynumbers-enable True
 

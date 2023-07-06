@@ -224,7 +224,7 @@ def segment_coverage(histograms, genome_id, ref_id, ref_start, ref_end, haplotyp
 
     if not cov_list:
         return 0
-    return int(np.median(cov_list))
+    return np.median(cov_list)
 def get_segments_coverage(segments, coverage_histograms):
     genomic_segments = []
     for (genome_id, seg_ref, seg_start, seg_end) in segments: # TODO Parallize it through threads pool with tasks

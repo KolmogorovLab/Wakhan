@@ -13,7 +13,7 @@ import logging
 import numpy as np
 
 from sklearn.cluster import KMeans
-from kneed import KneeLocator
+#from kneed import KneeLocator
 from sklearn.metrics import silhouette_score
 import plotly.figure_factory as ff
 import numpy as np
@@ -310,6 +310,7 @@ def kmeans_clustering_seed(depth_values):
 def kmeans_clustering(depth_values, no_of_clusters=None):
     depth_values = np.clip(depth_values, a_min=1, a_max=300)
     depth_values[depth_values != 0]
+
     hp = list(depth_values)
     depth_values = depth_values.reshape(-1, 1)
 
@@ -349,6 +350,8 @@ def plot_optimal_clusters(hp1, hp2, unphased, arguments):
     hp2[hp2 != 0]
     hp2=hp2.reshape(-1, 1)
     depth_values = np.concatenate((hp1, hp2))
+
+    depth_values = [int(x) for x in depth_values]
 
     u_labels, labels, centers, stdev, clusters = kmeans_clustering(depth_values, arguments['no_of_clusters'])
     plot_clsters_settings(clusters, arguments)
