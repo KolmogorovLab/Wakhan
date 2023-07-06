@@ -56,7 +56,7 @@ pepper_margin_deepvariant call_variant -b tumor.bam -f ref.fasta -o pepper/outpu
 
 ## Usage
 ```
-python3.8 main.py --target-bam <tumor_haplotagged.bam> --out-dir-plots <coverage_plots> --genome-name <cellline/sample name> --phased-vcf <phased.vcf.gz>
+python3.8 main.py --target-bam <tumor_haplotagged.bam> --out-dir-plots <coverage_plots> --genome-name <cellline/sample name> --phased-vcf <phased.vcf.gz> --contigs <chr1-22,X,Y>
 ```
 ## Examples
 Few cell lines arbitrary phasing output with coverage profile is included in the [examples](https://github.com/KolmogorovLab/Wakhan/tree/devel/examples) directory. 
