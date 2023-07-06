@@ -185,7 +185,7 @@ def seperate_dfs_coverage(df, haplotype_1_values_updated, haplotype_2_values_upd
 def flatten(values):
     return [item for sublist in values for item in sublist]
 
-def apply_copynumbers(csv_df_coverage, depth_values, depth_values1, normal_bam, arguments):
+def apply_copynumbers(csv_df_coverage, depth_values, depth_values1, arguments):
 
     #depth_values = flatten(haplotype_1_values_updated)
     #depth_values1 = flatten(haplotype_2_values_updated)

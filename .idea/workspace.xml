@@ -5,7 +5,90 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7b2a068c-f573-47d8-9af9-7571196e6175" name="Changes" comment="cnvlib segmentation devel">
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/COPY_NUMBERS.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/COVERAGE.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/PT8_genome_bins_clusters[3]_histogram.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/PT8_genome_copynumber.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/PT8_genome_coverage.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr1.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr10.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr10_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr11.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr11_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr12.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr12_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr13.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr13_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr14.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr14_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr15.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr15_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr16.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr16_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr17.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr17_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr18.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr18_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr19.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr19_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr1_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr2.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr20.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr20_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr21.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr21_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr22.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr22_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr23.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr23_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr24.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr24_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr25.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr25_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr26.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr26_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr27.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr27_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr28.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr28_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr29.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr29_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr2_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr3.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr30.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr30_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr31.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr31_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr32.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr32_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr33.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr33_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr34.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr34_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr35.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr35_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr36.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr36_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr37.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr37_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr38.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr38_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr3_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr4.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr4_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr5.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr5_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr6.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr6_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr7.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr7_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr8.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr8_cnr.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr9.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/coverage_plots/chr9_cnr.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/utils.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -99,7 +182,7 @@
       <workItem from="1686577871165" duration="891000" />
       <workItem from="1686737632174" duration="3972000" />
       <workItem from="1687351657024" duration="308000" />
-      <workItem from="1687812036159" duration="77080000" />
+      <workItem from="1687812036159" duration="78582000" />
     </task>
     <task id="LOCAL-00001" summary="cnvlib segmentation devel">
       <created>1682742251527</created>
@@ -299,7 +382,7 @@
     </breakpoint-manager>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/Wakhan$main.coverage" NAME="main Coverage Results" MODIFIED="1688638210162" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/Wakhan$main.coverage" NAME="main Coverage Results" MODIFIED="1688639064087" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
     <SUITE FILE_PATH="coverage/SomaticCNA$main.coverage" NAME="main Coverage Results" MODIFIED="1682722202731" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
   </component>
 </project>
