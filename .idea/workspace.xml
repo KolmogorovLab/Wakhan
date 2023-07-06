@@ -5,9 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7b2a068c-f573-47d8-9af9-7571196e6175" name="Changes" comment="cnvlib segmentation devel">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/cnvlib/segmentation/hmm.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/cnvlib/segmentation/hmm.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -101,7 +99,7 @@
       <workItem from="1686577871165" duration="891000" />
       <workItem from="1686737632174" duration="3972000" />
       <workItem from="1687351657024" duration="308000" />
-      <workItem from="1687812036159" duration="80630000" />
+      <workItem from="1687812036159" duration="81360000" />
     </task>
     <task id="LOCAL-00001" summary="cnvlib segmentation devel">
       <created>1682742251527</created>
