@@ -90,4 +90,4 @@ Few cell lines arbitrary phasing output with coverage profile is included in the
 
 * `--phased-vcf-snps-freqs` phased VCF file to plot snps frequencies coverages along BAM coverage
 
-* `--contigs` List of contigs (chromosomes) to be included in the plots [e.g., chr1-22,X,Y]
+* `--contigs` List of contigs (chromosomes, default:chr1-22) to be included in the plots [e.g., chr1-22,X,Y]

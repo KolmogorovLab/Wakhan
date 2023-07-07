@@ -56,7 +56,7 @@ def get_chromosomes_bins(bam_file, bin_size, arguments):
         chrs[i] = seq_elem['SN']
         start=0
         end=bin_size
-        if chrs[i] in chroms or chroms_without_prefix:
+        if (chrs[i] in chroms) or (chrs[i] in chroms_without_prefix):
             for c in range(0,region[i],bin_size):
                 if end > region[i]:
                     bed.append([tail, chrs[i], start, region[i]])
