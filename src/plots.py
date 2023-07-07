@@ -119,7 +119,7 @@ def coverage_plots_chromosomes(df, df_phasesets, arguments):
 
             if arguments['smoothing_enable']:
                 logging.info('smoothing module')
-                unphased_reads_values, haplotype_1_values, haplotype_2_values = smoothing(unphased_reads_values, haplotype_1_values, haplotype_2_values, conv_window_size=15)
+                unphased_reads_values, haplotype_1_values, haplotype_2_values = smoothing(unphased_reads_values, haplotype_1_values, haplotype_2_values, conv_window_size=5)
 
             add_scatter_trace_coverage(fig, ref_start_values, haplotype_1_values, name='HP-1', text=None, yaxis=None, opacity=0.7, color='firebrick')
             add_scatter_trace_coverage(fig, ref_start_values, haplotype_2_values, name='HP-2', text=None, yaxis=None, opacity=0.7, color='steelblue')

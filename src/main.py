@@ -35,6 +35,8 @@ def main():
     SAMTOOLS_BIN = "samtools"
     BCFTOOLS_BIN = "bcftools"
 
+    DEFAULT_CONTIGS = 'chr1-22'
+
     parser = argparse.ArgumentParser \
         (description="Find breakpoints and build breakpoint graph from a bam file")
 
@@ -64,7 +66,7 @@ def main():
                         required=True, default=None,
                         help="Genome sample/cellline name to be displayed on plots")
     parser.add_argument("--contigs", dest="contigs",
-                        required=True, default=None,
+                        required=False, default=DEFAULT_CONTIGS,
                         help="List of contigs (choromosomes) to be included in the plots [e.g., chr1-22,X,Y]")
 
     parser.add_argument("--bin-size", "--bin_size", dest="bin_size",
@@ -220,6 +222,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 #--phaseblock-flipping-enable True
 # --phaseblocks-enable True --unphased-reads-coverage-enable True
 

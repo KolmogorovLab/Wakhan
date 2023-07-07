@@ -50,12 +50,13 @@ def get_chromosomes_bins(bam_file, bin_size, arguments):
     chrs = [''] * len(seq_dict)
     head, tail = os.path.split(bam_file)
     chroms = get_contigs_list(arguments['contigs'])
+    chroms_without_prefix = [str(i).replace( 'chr', '') for i in chroms]
     for i, seq_elem in enumerate(seq_dict):
         region[i] = seq_elem['LN']
         chrs[i] = seq_elem['SN']
         start=0
         end=bin_size
-        if chrs[i] in chroms:
+        if chrs[i] in chroms or chroms_without_prefix:
             for c in range(0,region[i],bin_size):
                 if end > region[i]:
                     bed.append([tail, chrs[i], start, region[i]])
@@ -131,16 +132,22 @@ def chromosomes_sorter(label):
 
 def csv_df_chromosomes_sorter(path):
     dataframe = pd.read_csv(path, sep='\t', names=['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
+    if not dataframe['chr'].iloc[0].startswith('chr'):
+        dataframe['chr'] = 'chr' + dataframe['chr'].astype(str)
     dataframe.sort_values(by=['chr', 'start'], ascending=[True, True], inplace=True)
     return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
 
 def csv_df_chromosomes_sorter_copyratios(path):
     dataframe = pd.read_csv(path, sep='\t', names=['chr', 'start', 'end', 'gene', 'log2', 'depth', 'probes', 'weight'])
+    if not dataframe['chr'].iloc[0].startswith('chr'):
+        dataframe['chr'] = 'chr' + dataframe['chr'].astype(str)
     dataframe.sort_values(by=['chr', 'start'], ascending=[True, True], inplace=True)
     return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
 
 def csv_df_chromosomes_sorter_snps(path):
     dataframe = pd.read_csv(path, sep='\t', names=['chr', 'pos', 'qual', 'filter', 'ps', 'gt', 'dp', 'vaf'])
+    if not dataframe['chr'].iloc[0].startswith('chr'):
+        dataframe['chr'] = 'chr' + dataframe['chr'].astype(str)
     dataframe.sort_values(by=['chr', 'pos'], ascending=[True, True], inplace=True)
     return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
 
@@ -240,7 +247,7 @@ def apply_copynumbers(csv_df_coverage, depth_values, depth_values1, arguments):
 
     #TODO variants = load_het_snps()
     #cnarr = read_cna('data/coverage_cnvkit.cnr')
-    segs = segmentation.do_segmentation(depth_values, arguments, cnarr, 'hmm', threshold=None, variants=None, skip_low=True, skip_outliers=20,
+    segs = segmentation.do_segmentation(depth_values, arguments, cnarr, 'hmm', threshold=None, variants=None, skip_low=False, skip_outliers=0,
                                         min_weight=0, save_dataframe=False, rscript_path="Rscript", processes=1,
                                         smooth_cbs=False)
 

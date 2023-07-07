@@ -5,7 +5,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7b2a068c-f573-47d8-9af9-7571196e6175" name="Changes" comment="cnvlib segmentation devel">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/bam_processing.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/bam_processing.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/plots.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/plots.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/smoothing.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/smoothing.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/utils.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -69,7 +75,7 @@
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/main.py" />
-      <option name="PARAMETERS" value="--target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --control-bam /home/rezkuh/GenData/COLO829/colo829_normal_grch38_md_chr7:78318498-78486891_haplotagged.bam --out-dir-plots coverage_plots   --phased-vcf data/CaSki/CaSki_pmdv.vcf.gz   --copynumbers-enable True  --no-of-clusters 5  --cut-threshold 150 --genome-name colo829 --contigs chr1-22" />
+      <option name="PARAMETERS" value="--target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --control-bam /home/rezkuh/GenData/COLO829/colo829_normal_grch38_md_chr7:78318498-78486891_haplotagged.bam --out-dir-plots coverage_plots   --phased-vcf data/CaSki/CaSki_pmdv.vcf.gz   --copynumbers-enable True  --no-of-clusters 3   --cut-threshold 70 --unphased-reads-coverage-enable True --genome-name OT4     --contigs chr1-38" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
@@ -99,7 +105,7 @@
       <workItem from="1686577871165" duration="891000" />
       <workItem from="1686737632174" duration="3972000" />
       <workItem from="1687351657024" duration="308000" />
-      <workItem from="1687812036159" duration="81360000" />
+      <workItem from="1687812036159" duration="100923000" />
     </task>
     <task id="LOCAL-00001" summary="cnvlib segmentation devel">
       <created>1682742251527</created>
@@ -160,37 +166,37 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/src/main.py</url>
-          <line>212</line>
+          <line>214</line>
           <option name="timeStamp" value="228" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/src/utils.py</url>
-          <line>204</line>
+          <line>211</line>
           <option name="timeStamp" value="236" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/src/utils.py</url>
-          <line>195</line>
+          <line>202</line>
           <option name="timeStamp" value="237" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/src/utils.py</url>
-          <line>259</line>
+          <line>266</line>
           <option name="timeStamp" value="238" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/src/utils.py</url>
-          <line>257</line>
+          <line>264</line>
           <option name="timeStamp" value="239" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/src/utils.py</url>
-          <line>256</line>
+          <line>263</line>
           <option name="timeStamp" value="240" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/src/utils.py</url>
-          <line>211</line>
+          <line>218</line>
           <option name="timeStamp" value="242" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
@@ -250,7 +256,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/src/utils.py</url>
-          <line>213</line>
+          <line>220</line>
           <option name="timeStamp" value="259" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
@@ -280,13 +286,23 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/src/main.py</url>
-          <line>198</line>
+          <line>200</line>
           <option name="timeStamp" value="291" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/src/main.py</url>
-          <line>209</line>
+          <line>211</line>
           <option name="timeStamp" value="293" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/cnvlib/segmentation/hmm.py</url>
+          <line>305</line>
+          <option name="timeStamp" value="294" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/utils.py</url>
+          <line>134</line>
+          <option name="timeStamp" value="298" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
@@ -299,7 +315,7 @@
     </breakpoint-manager>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/Wakhan$main.coverage" NAME="main Coverage Results" MODIFIED="1688642904171" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/Wakhan$main.coverage" NAME="main Coverage Results" MODIFIED="1688729851487" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
     <SUITE FILE_PATH="coverage/SomaticCNA$main.coverage" NAME="main Coverage Results" MODIFIED="1682722202731" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
   </component>
 </project>

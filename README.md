@@ -75,7 +75,6 @@ Few cell lines arbitrary phasing output with coverage profile is included in the
 
 * `--phased-vcf` phased VCF file for the corresponding haplotagged BAM
 
-* `--contigs` List of contigs (choromosomes) to be included in the plots [e.g., chr1-22,X,Y]
   
 ## Optional parameters
   
@@ -85,8 +84,10 @@ Few cell lines arbitrary phasing output with coverage profile is included in the
 
 * `--phaseblocks-enable` enabling phaseblocks display in coverage plots
 
-* `--het-phased-snps-freq-enable` enabling hetrozygous phased snps frequencies in coverage plots
+* `--het-phased-snps-freq-enable` enabling heterozygous phased snps frequencies in coverage plots
 
 * `--breakpoints-enable` enabling breakpoints in coverage plots
 
 * `--phased-vcf-snps-freqs` phased VCF file to plot snps frequencies coverages along BAM coverage
+
+* `--contigs` List of contigs (chromosomes) to be included in the plots [e.g., chr1-22,X,Y]
