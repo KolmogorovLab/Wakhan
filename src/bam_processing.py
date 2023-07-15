@@ -224,6 +224,7 @@ def segment_coverage(histograms, genome_id, ref_id, ref_start, ref_end, haplotyp
     if not cov_list:
         return 0
     return round(np.mean(cov_list), 2)
+
 def get_segments_coverage(segments, coverage_histograms):
     genomic_segments = []
     for (genome_id, seg_ref, seg_start, seg_end) in segments: # TODO Parallize it through threads pool with tasks
@@ -234,6 +235,7 @@ def get_segments_coverage(segments, coverage_histograms):
     return genomic_segments
 
 COV_WINDOW = 500
+
 def update_coverage_hist(genome_ids, ref_lengths, segments_by_read, min_mapq, max_read_error, arguments):
     NUM_HAPLOTYPES = 3
     segments_by_read_filtered = filter_all_reads(segments_by_read, min_mapq, max_read_error, arguments)
@@ -249,13 +251,48 @@ def update_coverage_hist(genome_ids, ref_lengths, segments_by_read, min_mapq, ma
         for i in range(hist_start, hist_end + 1):  ## Check with (hist_start, hist_end + 1)
             coverage_histograms[(read.genome_id, read.haplotype, read.ref_id)][i] += 1
 
-    # cov_bp = coverage_histograms[('colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam', 1, 'chr7')][
-    #          78318498 // COV_WINDOW:78486891 // COV_WINDOW]  # 78318498//COV_WINDOW
-    # print(genome_id)
-    # print(cov_bp)
-    # print(int(np.median(cov_bp)))
-    # cov_bp = coverage_histograms[('colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam', 2, 'chr7')][
-    #          78318498 // COV_WINDOW:78486891 // COV_WINDOW]  # 78486891//COV_WINDOW
-    # print(cov_bp)
-    # print(int(np.median(cov_bp)))
     return coverage_histograms
+
+def get_snps_frequencies(bam, snp_segments, thread_pool):
+    tasks = [(bam, region) for region in snp_segments]
+    snps_results = None
+    snps_results = thread_pool.starmap(compute_snp_frequency, tasks)
+    return snps_results
+
+def compute_snp_frequency(bam, region):
+    from collections import Counter
+    contig, start, ref, alt, gt = region
+    bam = pysam.AlignmentFile(bam, 'rb')
+    for pileupcolumn in bam.pileup(contig, start - 1, start, truncate=True): #truncate=True #, fastafile=fasta
+        #pileupcolumn.set_min_base_quality(0)
+        #base = pileupcolumn.get_query_sequences()
+        bases = []
+        #print('coverage at base %s = %s' % (pileupcolumn.pos, pileupcolumn.n))
+        for pileupread in pileupcolumn.pileups:
+            if not pileupread.is_del and not pileupread.is_refskip:
+                bases.append(pileupread.alignment.query_sequence[pileupread.query_position])
+
+    acgts = {}
+    acgts['A'] = Counter(bases)['A']
+    acgts['C'] = Counter(bases)['C']
+    acgts['G'] = Counter(bases)['G']
+    acgts['T'] = Counter(bases)['T']
+
+    #acgts_all = dict(sorted(acgts.items(), key=lambda item: item[1], reverse=True))
+    #acgts = sorted(acgts, key=acgts.get, reverse=True)[:2]
+    #print([ref, alt], acgts)
+    hp = 0
+    if gt == '1|0': #ref freqs
+        hp = 1
+    elif gt == '0|1': #alt freqs
+        hp = 2
+
+    ref_value_new = acgts.get(ref)
+    alt_value_new = acgts.get(alt)
+
+    #if ref in acgts:
+    #    print('not same')
+    #    print(contig, start, [ref, alt], acgts, hp)
+
+    #return 'A:'+str(Counter(bases)['A'])+' C:'+str(Counter(bases)['C'])+' G:'+str(Counter(bases)['G'])+' T:'+str(Counter(bases)['T'])
+    return (contig+'\t'+str(start)+'\t'+ref+'\t'+alt+'\t'+str(ref_value_new)+'\t'+str(alt_value_new)+'\t'+str(hp))

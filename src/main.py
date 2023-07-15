@@ -11,13 +11,14 @@ import os
 
 from multiprocessing import Pool
 from collections import defaultdict
-from bam_processing import get_all_reads_parallel, update_coverage_hist, get_segments_coverage, haplotype_update_all_bins_parallel
+from bam_processing import get_all_reads_parallel, update_coverage_hist, get_segments_coverage, haplotype_update_all_bins_parallel, get_snps_frequencies
 from cnvlib import descriptives
 from cnvlib import cluster
 from utils import get_chromosomes_bins, write_segments_coverage, csv_df_chromosomes_sorter, generate_phasesets_bins, csv_df_chromosomes_sorter_snps,\
-    apply_copynumbers, csv_df_chromosomes_sorter_copyratios, seperate_dfs_coverage, flatten_smooth, get_contigs_list
+    apply_copynumbers, csv_df_chromosomes_sorter_copyratios, seperate_dfs_coverage, flatten_smooth, get_contigs_list, \
+    csv_df_chromosomes_sorter_snps_from_bam
 from plots import coverage_plots_chromosomes, copy_number_plots_genome, plots_genome_coverage, copy_number_plots_chromosomes
-from vcf_processing import vcf_parse_to_csv_for_het_phased_snps_phasesets
+from vcf_processing import vcf_parse_to_csv_for_het_phased_snps_phasesets, get_snp_segments
 
 
 #remove
@@ -114,6 +115,7 @@ def main():
     args = parser.parse_args()
 
     arguments = {
+        "target_bam": args.target_bam,
         "phaseblock_flipping_enable": args.phaseblock_flipping_enable,
         "unphased_reads_coverage_enable": args.unphased_reads_coverage_enable,
         "smoothing_enable": args.smoothing_enable,
@@ -172,6 +174,10 @@ def main():
     #haplotype_update_all_bins_parallel(bam_file, thread_pool, bins, bin_size)
     #TODO Merge and index
 
+    if arguments['het_phased_snps_freq_enable']:
+        get_snp_segments(arguments, args.target_bam, thread_pool)
+        csv_df_snps = csv_df_chromosomes_sorter_snps_from_bam('data/snps_frequencies.csv')
+
     logging.info('Computing coverage histogram')
     coverage_histograms = update_coverage_hist(genome_ids, ref_lengths, segments_by_read, args.min_mapping_quality,
                                                args.max_read_error, arguments)
@@ -198,7 +204,7 @@ def main():
     #csv_df_coverage = csv_df_chromosomes_sorter('/home/rezkuh/gits/data/'+arguments['genome_name']+'/coverage.csv')
 
     logging.info('Generating coverage plots chromosomes-wise')
-    haplotype_1_values_updated, haplotype_2_values_updated, unphased = coverage_plots_chromosomes(csv_df_coverage, csv_df_phasesets, arguments)
+    haplotype_1_values_updated, haplotype_2_values_updated, unphased = coverage_plots_chromosomes(csv_df_coverage, csv_df_phasesets, csv_df_snps, arguments)
 
     csv_df_coverage = csv_df_coverage.drop(csv_df_coverage[(csv_df_coverage.chr == "chrX") | (csv_df_coverage.chr == "chrY")].index)
     df_hp1, df_hp2, df_unphased = seperate_dfs_coverage(csv_df_coverage, haplotype_1_values_updated, haplotype_2_values_updated, unphased)
@@ -215,10 +221,10 @@ def main():
     #df_cnr_hp2, df_segs_hp2 = apply_copynumber_log2_ratio(csv_df_coverage, haplotype_2_values_updated, args.control_bam[0])
 
     logging.info('Generating copy number log2 ratios plots chromosomes-wise')
-    copy_number_plots_chromosomes(df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, arguments)
+    #copy_number_plots_chromosomes(df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, arguments)
 
     logging.info('Generating coverage/copy numbers plots genome wide')
-    copy_number_plots_genome(df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, arguments)
+    copy_number_plots_genome(df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, df_unphased, arguments)
 
 if __name__ == "__main__":
     main()

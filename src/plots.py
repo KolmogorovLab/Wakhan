@@ -12,7 +12,7 @@ import logging
 from phasing_correction import phaseblock_flipping
 from smoothing import smoothing
 from vcf_processing import get_snps_frquncies_coverage, vcf_parse_to_csv_for_het_phased_snps_phasesets
-from utils import csv_df_chromosomes_sorter_snps, get_breakpoints, flatten, get_contigs_list
+from utils import csv_df_chromosomes_sorter_snps, get_breakpoints, flatten, get_contigs_list, get_snps_frquncies_coverage_from_bam, csv_df_chromosomes_sorter_snps_from_bam
 
 def copy_number_plots_chromosomes(df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, arguments):
     filename = f"{os.path.join(arguments['out_dir_plots'], 'COPY_NUMBERS.html')}"
@@ -77,7 +77,7 @@ def copy_number_plots_chromosomes(df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_h
 
     html_graphs.write("</body></html>")
 
-def coverage_plots_chromosomes(df, df_phasesets, arguments):
+def coverage_plots_chromosomes(df, df_phasesets, df_snps, arguments):
     filename = f"{os.path.join(arguments['out_dir_plots'], 'COVERAGE.html')}"
     html_graphs = open(filename, 'w')
     html_graphs.write("<html><head></head><body>" + "\n")
@@ -125,16 +125,25 @@ def coverage_plots_chromosomes(df, df_phasesets, arguments):
             add_scatter_trace_coverage(fig, ref_start_values, haplotype_2_values, name='HP-2', text=None, yaxis=None, opacity=0.7, color='steelblue')
 
             if arguments['unphased_reads_coverage_enable']:
-                add_scatter_trace_coverage(fig, ref_start_values, unphased_reads_values, name='Unphased reads', text=None, yaxis=None, opacity=0.7, color='olive')
+                add_scatter_trace_coverage(fig, ref_start_values, unphased_reads_values, name='Unphased', text=None, yaxis=None, opacity=0.7, color='olive')
 
-            if arguments['het_phased_snps_freq_enable']:
+            # if arguments['het_phased_snps_freq_enable']:
+            #     logging.info('hetrozygous phased snps frequencies coverage module')
+            #     output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(arguments['phased_vcf_snps_freqs'])
+            #     csv_df_snps = csv_df_chromosomes_sorter_snps(output_phasesets_file_path)
+            #     haplotype_1_snps_freqs, haplotype_2_snps_freqs = get_snps_frquncies_coverage(csv_df_snps, chrom, ref_start_values, arguments['bin_size'])
+            #     add_scatter_trace_coverage(fig, ref_start_values, haplotype_1_snps_freqs, name='HP-1 SNPs Freqs', text=None, yaxis=None,
+            #                                opacity=0.7, color=None)
+            #     add_scatter_trace_coverage(fig, ref_start_values, haplotype_2_snps_freqs, name='HP-2 SNPs Freqs', text=None, yaxis=None,
+            #                                opacity=0.7, color=None)
+            # plots_add_markers_lines(fig)
+
+            if arguments['het_phased_snps_freq_enable'] and chrom == 'chr7':
                 logging.info('hetrozygous phased snps frequencies coverage module')
-                output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(arguments['phased_vcf_snps_freqs'])
-                csv_df_snps = csv_df_chromosomes_sorter_snps(output_phasesets_file_path)
-                haplotype_1_snps_freqs, haplotype_2_snps_freqs = get_snps_frquncies_coverage(csv_df_snps, chrom, ref_start_values, arguments['bin_size'])
-                add_scatter_trace_coverage(fig, ref_start_values, haplotype_1_snps_freqs, name='HP-1 SNPs Freqs', text=None, yaxis=None,
+                haplotype_1_snps_pos, haplotype_1_snps_freqs, haplotype_2_snps_pos, haplotype_2_snps_freqs = get_snps_frquncies_coverage_from_bam(df_snps)
+                add_scatter_trace_coverage(fig, haplotype_1_snps_pos, haplotype_1_snps_freqs, name='HP-1 SNPs Freqs', text=None, yaxis=None,
                                            opacity=0.7, color=None)
-                add_scatter_trace_coverage(fig, ref_start_values, haplotype_2_snps_freqs, name='HP-2 SNPs Freqs', text=None, yaxis=None,
+                add_scatter_trace_coverage(fig, haplotype_2_snps_pos, haplotype_2_snps_freqs, name='HP-2 SNPs Freqs', text=None, yaxis=None,
                                            opacity=0.7, color=None)
             plots_add_markers_lines(fig)
 
@@ -228,7 +237,7 @@ def plots_genome_coverage(df_hp1, df_hp2, df_unphased, arguments):
 
     fig.write_html(arguments['out_dir_plots'] +'/'+ arguments['genome_name'] + "_genome_coverage.html")
 
-def copy_number_plots_genome(df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, arguments):
+def copy_number_plots_genome(df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, df_unphased, arguments):
     # TODO genome-wide plots
 
     lengths = []
@@ -244,6 +253,10 @@ def copy_number_plots_genome(df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, a
                                yaxis=None, opacity=0.7, color='firebrick')
     add_scatter_trace_coverage(fig, indices, df_cnr_hp2.log2.values.tolist(), name='HP-2', text=None,
                                yaxis=None, opacity=0.7, color='steelblue')
+    if arguments['unphased_reads_coverage_enable']:
+        add_scatter_trace_coverage(fig, indices, df_unphased.hp3.values.tolist(), name='Unphased', text=None,
+                               yaxis=None, opacity=0.7, color='olive', visibility='legendonly')
+
     plots_add_markers_lines(fig)
 
     current = 0
@@ -302,8 +315,9 @@ def copy_number_plots_genome(df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, a
 
     plots_layout_settings(fig, 'Genome', arguments, indices[-1:][0])
     fig.update_yaxes(range=[-1, arguments['cut_threshold']])
-    #fig.update_yaxes(title='copy ratio (log2)')
-    fig.update_layout(width=1080, height=400,)
+    #fig.update_yaxes(title='coverge (mean depth)')
+    #fig.update_yaxes(title_text="<b>secondary</b> yaxis title", secondary_y=True)
+    fig.update_layout(width=1480, height=600,)
 
     if arguments['pdf_enable']:
         print_genome_pdf(fig, arguments['genome_name']+'_copynumbers', arguments['out_dir_plots'])
@@ -320,7 +334,7 @@ def plots_add_markers_lines(fig):
         showlegend=True
     )
 
-def add_scatter_trace_coverage(fig, x, y, name, text, yaxis, opacity, color):
+def add_scatter_trace_coverage(fig, x, y, name, text, yaxis, opacity, color, visibility=True):
 
     fig.add_trace(go.Scatter(
         x=x,
@@ -330,6 +344,7 @@ def add_scatter_trace_coverage(fig, x, y, name, text, yaxis, opacity, color):
         yaxis="y5",
         opacity=opacity,
         marker_color=color,
+        visible=visibility,
     ))
 
 def add_scatter_trace_phaseblocks(fig, phaseblocks_positions, haplotype_1_phaseblocks_values, haplotype_2_phaseblocks_values):
@@ -375,11 +390,11 @@ def add_scatter_trace_copyratios(fig, haplotype_1_copyratios_positions, haplotyp
         name="HP-1 Copy-numbers",
         text=haplotype_1_copyratios_positions,
         yaxis="y5",
-        line = dict(shape = 'spline', color = 'gray', width= 5, dash = 'solid'),
+        line = dict(shape = 'spline', color = 'firebrick', width= 5, dash = 'solid'),
         mode='lines',
         #marker={"size": 5},
-        opacity=0.5,
-        marker_color=['dimgray', 'darkgray', 'white']*len(haplotype_1_copyratios_positions),
+        opacity=0.9,
+        marker_color=['firebrick', 'firebrick', 'white']*len(haplotype_1_copyratios_positions),
         showlegend=True,
         #marker_symbol='diamond-wide',
         #hoverinfo = "x+name+y+text",
@@ -393,11 +408,11 @@ def add_scatter_trace_copyratios(fig, haplotype_1_copyratios_positions, haplotyp
         name="HP-2 Copy-numbers",
         text=haplotype_2_copyratios_positions,
         yaxis="y5",
-        line = dict(shape = 'spline', color = 'green', width= 5, dash = 'solid'),
+        line = dict(shape = 'spline', color = 'steelblue', width= 5, dash = 'solid'),
         mode='lines',
         #marker={"size": 5},
-        opacity=0.5,
-        marker_color=['darkgreen', 'limegreen', 'white']*len(haplotype_2_copyratios_positions),
+        opacity=0.9,
+        marker_color=['steelblue', 'steelblue', 'white']*len(haplotype_2_copyratios_positions),
         showlegend=True,
         #marker_symbol='diamond-wide',
         #hoverinfo = "x+name+y+text",
@@ -454,7 +469,7 @@ def plots_layout_settings(fig, chrom, arguments, limit):
     )
     #Legend
     fig.update_layout(legend=dict(
-        orientation = 'h', xanchor = "center", x = 0.5, y= 1.2
+        orientation = 'h', xanchor = "center", x = 0.5, y= 1.1
     ))
     fig.update_layout(margin=dict(l=5, r=5, b=5, pad=1))
     fig.update_xaxes(tick0=0.0, rangemode="nonnegative")
@@ -465,7 +480,7 @@ def plots_layout_settings(fig, chrom, arguments, limit):
 
     fig.update_layout(
         title={
-            'text': arguments['genome_name'] + ' - ' +chrom,
+            'text': chrom + ' - ' +arguments['genome_name'],
             'y':0.96,
             'x':0.5,
             'xanchor': 'center',

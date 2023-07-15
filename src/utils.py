@@ -151,6 +151,14 @@ def csv_df_chromosomes_sorter_snps(path):
     dataframe.sort_values(by=['chr', 'pos'], ascending=[True, True], inplace=True)
     return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
 
+def csv_df_chromosomes_sorter_snps_from_bam(path):
+    dataframe = pd.read_csv(path, sep='\t', names=['chr', 'pos', 'ref', 'alt', 'ref_value', 'alt_value', 'hp'])
+    if not dataframe['chr'].iloc[0].startswith('chr'):
+        dataframe['chr'] = 'chr' + dataframe['chr'].astype(str)
+    dataframe.sort_values(by=['chr', 'pos'], ascending=[True, True], inplace=True)
+    return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
+
+
 def get_breakpoints(chrom, bp_file_path): #TODO add call in plots
     break_points = []
     with open(bp_file_path) as bp_file:
@@ -273,3 +281,13 @@ def flatten_smooth(hp1, hp2, unphased):
     unphased, hp1, hp2 = smoothing(unphased, hp1, hp2, conv_window_size=15)
 
     return hp1, hp2, unphased
+
+def get_snps_frquncies_coverage_from_bam(df):
+    #df = df[df['chr'] == chrom]
+    df = dict(tuple(df.groupby('hp')))
+    haplotype_1_position = df[2].pos.values.tolist()
+    haplotype_1_coverage = df[2].ref_value.values.tolist()
+    haplotype_2_position = df[1].pos.values.tolist()
+    haplotype_2_coverage = df[1].ref_value.values.tolist()
+
+    return haplotype_1_position, haplotype_1_coverage, haplotype_2_position, haplotype_2_coverage

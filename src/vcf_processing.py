@@ -3,6 +3,9 @@ import subprocess
 import statistics
 import logging
 import os
+import pandas as pd
+from bam_processing import get_snps_frequencies
+from utils import write_segments_coverage
 
 def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, bin_size): #TODO This module needs better implementation, currently slow
     snps_df = snps_df_sorted[snps_df_sorted['chr'] == chrom]
@@ -73,4 +76,22 @@ def vcf_parse_to_csv_for_het_phased_snps_phasesets(input_vcf):
 
     return output_csv
 
+def get_snp_segments(arguments, target_bam, thread_pool):
+    basefile = pathlib.Path(arguments['phased_vcf']).stem
+    output_csv = basefile + '_het_snps.csv'
+    output_csv = f"{os.path.join('data', output_csv)}"
 
+    logging.info('bcftools -> Query for het SNPs and creating a CSV file')
+    # bcftools query for phasesets and GT,DP,VAF
+    cmd = ['bcftools', 'query', '-f',  '%CHROM\t%POS\t%REF\t%ALT\t[%GT]\n', arguments['phased_vcf'], '-o', output_csv] #
+    process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+    process.wait()
+
+    dataframe = pd.read_csv(output_csv, sep='\t', names=['chr', 'start', 'ref', 'alt', 'gt'])
+    #dataframe = dataframe[dataframe['chr'] == 'chr7']
+    snp_segments = dataframe.values.tolist()
+
+    snp_segments_frequencies = get_snps_frequencies(target_bam, snp_segments, thread_pool)
+    write_segments_coverage(snp_segments_frequencies, 'snps_frequencies.csv')
+
+    return output_csv

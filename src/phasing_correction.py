@@ -24,6 +24,7 @@ def remove_overlapping_and_small_phasesets(phasesets, bin_size, arguments):
     indices_all = []
     from utils import get_contigs_list
     chroms = get_contigs_list(arguments['contigs'])
+    #
     for index, chrom in enumerate(chroms):
         df = dfs[dfs['chr'] == chrom]
         unique_ps_by_chr = df.groupby('chr', group_keys=True)['ps'].apply(lambda x: list(np.unique(x)))
