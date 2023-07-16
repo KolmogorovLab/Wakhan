@@ -175,7 +175,7 @@ def main():
     #TODO Merge and index
 
     if arguments['het_phased_snps_freq_enable']:
-        get_snp_segments(arguments, args.target_bam, thread_pool)
+        get_snp_segments(arguments, args.target_bam[0], thread_pool)
         csv_df_snps = csv_df_chromosomes_sorter_snps_from_bam('data/snps_frequencies.csv')
 
     logging.info('Computing coverage histogram')

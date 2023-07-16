@@ -182,7 +182,8 @@ def get_breakpoints(chrom, bp_file_path): #TODO add call in plots
 def write_segments_coverage(coverage_segments, output):
     with open('data/' + output, 'w') as fp:
         for items in coverage_segments:
-            fp.write("%s\n" % items)
+            if not items == None:
+                fp.write("%s\n" % items)
 
 def seperate_dfs_coverage(df, haplotype_1_values_updated, haplotype_2_values_updated, unphased):
     #haplotype_1_values_updated = flatten(haplotype_1_values_updated)

@@ -263,15 +263,19 @@ def compute_snp_frequency(bam, region):
     from collections import Counter
     contig, start, ref, alt, gt = region
     bam = pysam.AlignmentFile(bam, 'rb')
+    bases = []
     for pileupcolumn in bam.pileup(contig, start - 1, start, truncate=True): #truncate=True #, fastafile=fasta
         #pileupcolumn.set_min_base_quality(0)
         #base = pileupcolumn.get_query_sequences()
-        bases = []
         #print('coverage at base %s = %s' % (pileupcolumn.pos, pileupcolumn.n))
         for pileupread in pileupcolumn.pileups:
             if not pileupread.is_del and not pileupread.is_refskip:
                 bases.append(pileupread.alignment.query_sequence[pileupread.query_position])
 
+    if not bases:
+        return None
+
+    print(region)
     acgts = {}
     acgts['A'] = Counter(bases)['A']
     acgts['C'] = Counter(bases)['C']
