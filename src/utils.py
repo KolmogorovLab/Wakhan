@@ -152,10 +152,17 @@ def csv_df_chromosomes_sorter_snps(path):
     return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
 
 def csv_df_chromosomes_sorter_snps_from_bam(path):
-    dataframe = pd.read_csv(path, sep='\t', names=['chr', 'pos', 'ref', 'alt', 'ref_value', 'alt_value', 'hp'])
+    dataframe = pd.read_csv(path, sep='\t', names=['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])
     if not dataframe['chr'].iloc[0].startswith('chr'):
         dataframe['chr'] = 'chr' + dataframe['chr'].astype(str)
     dataframe.sort_values(by=['chr', 'pos'], ascending=[True, True], inplace=True)
+    return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
+
+def csv_df_chromosomes_sorter_snps_frequency(path):
+    dataframe = pd.read_csv(path, sep=',', names=['chr', 'start', 'a', 'c', 'g', 't'])
+    if not dataframe['chr'].iloc[0].startswith('chr'):
+        dataframe['chr'] = 'chr' + dataframe['chr'].astype(str)
+    dataframe.sort_values(by=['chr', 'start'], ascending=[True, True], inplace=True)
     return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
 
 
@@ -186,9 +193,6 @@ def write_segments_coverage(coverage_segments, output):
                 fp.write("%s\n" % items)
 
 def seperate_dfs_coverage(df, haplotype_1_values_updated, haplotype_2_values_updated, unphased):
-    #haplotype_1_values_updated = flatten(haplotype_1_values_updated)
-    #haplotype_2_values_updated = flatten(haplotype_2_values_updated)
-    #unphased = flatten(unphased)
 
     df_hp1 = df[['chr', 'start','end', 'hp1']].copy()
     df_hp2 = df[['chr', 'start','end', 'hp2']].copy()
@@ -226,8 +230,12 @@ def apply_copynumbers(csv_df_coverage, depth_values, depth_values1, arguments):
     #csv_df_coverage1.loc[ok_idx, "log2"] = numpy.log2(csv_df_coverage1.loc[ok_idx, "depth"])
 
     csv_df_coverage = pd.concat([csv_df_coverage, csv_df_coverage1], ignore_index=True)
-
     depth_values.extend(depth_values1)
+
+    from cnvlib import cluster
+    #cluster.clusters_tests(depth_values, depth_values1)
+
+    #cluster.hmm_validation()
 
     # Fill in CNA required columns
     if "gene" in csv_df_coverage:
@@ -256,9 +264,12 @@ def apply_copynumbers(csv_df_coverage, depth_values, depth_values1, arguments):
 
     #TODO variants = load_het_snps()
     #cnarr = read_cna('data/coverage_cnvkit.cnr')
-    segs = segmentation.do_segmentation(depth_values, arguments, cnarr, 'hmm', threshold=None, variants=None, skip_low=False, skip_outliers=0,
+    #PT8 cnarr.center_all(skip_low=True), skip_low=True, skip_outliers=20
+    segs = segmentation.do_segmentation(depth_values, arguments, cnarr, 'hmm', threshold=None, variants=None, skip_low=True, skip_outliers=20,
                                         min_weight=0, save_dataframe=False, rscript_path="Rscript", processes=1,
                                         smooth_cbs=False)
+
+
 
     #seg_metrics = segmetrics.do_segmetrics(cnarr, segs, interval_stats=["ci"], alpha=0.5, smoothed=True, skip_low=True,)
     #seg_call = call.do_call(seg_metrics, method="none", filters=["ci"])
@@ -283,12 +294,12 @@ def flatten_smooth(hp1, hp2, unphased):
 
     return hp1, hp2, unphased
 
-def get_snps_frquncies_coverage_from_bam(df):
-    #df = df[df['chr'] == chrom]
-    df = dict(tuple(df.groupby('hp')))
-    haplotype_1_position = df[2].pos.values.tolist()
-    haplotype_1_coverage = df[2].ref_value.values.tolist()
-    haplotype_2_position = df[1].pos.values.tolist()
-    haplotype_2_coverage = df[1].ref_value.values.tolist()
+def get_snps_frquncies_coverage_from_bam(df, chrom):
+    df = df[df['chr'] == chrom]
+    #df = dict(tuple(df.groupby('hp')))
+    haplotype_1_position = df.pos.values.tolist()
+    haplotype_1_coverage = df.freq_value_b.values.tolist()
+    haplotype_2_position = df.pos.values.tolist()
+    haplotype_2_coverage = df.freq_value_a.values.tolist()
 
     return haplotype_1_position, haplotype_1_coverage, haplotype_2_position, haplotype_2_coverage

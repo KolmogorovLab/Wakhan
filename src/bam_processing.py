@@ -3,6 +3,10 @@ from multiprocessing import Pool
 import numpy as np
 from collections import defaultdict
 
+import subprocess
+import pathlib
+import os
+
 class ReadSegment(object):
     __slots__ = ("read_start", "read_end", "ref_start", "ref_end", "read_id", "ref_id",
                  "strand", "read_length", 'segment_length', "haplotype", "mapq", "genome_id", 'mismatch_rate',
@@ -275,7 +279,7 @@ def compute_snp_frequency(bam, region):
     if not bases:
         return None
 
-    print(region)
+    #print(region)
     acgts = {}
     acgts['A'] = Counter(bases)['A']
     acgts['C'] = Counter(bases)['C']
@@ -300,3 +304,78 @@ def compute_snp_frequency(bam, region):
 
     #return 'A:'+str(Counter(bases)['A'])+' C:'+str(Counter(bases)['C'])+' G:'+str(Counter(bases)['G'])+' T:'+str(Counter(bases)['T'])
     return (contig+'\t'+str(start)+'\t'+ref+'\t'+alt+'\t'+str(ref_value_new)+'\t'+str(alt_value_new)+'\t'+str(hp))
+
+def process_bam_for_snps_freqs(arguments, thread_pool):
+    basefile = pathlib.Path(arguments['target_bam']).stem
+    output_bam = f"{os.path.join('data', basefile + '_reduced.bam')}"
+
+    samtools_cmd = ['samtools', 'view', '-@', str(arguments['threads']), '-F', '3844', '-q', '5', '-h', arguments['target_bam']]
+    awk_cmd = ['awk', '-v', 'OFS=\t', '{if($0 ~ /^@/){print $0} else {print $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, "*"}}']
+    samtools_bam_cmd = ['samtools', 'view', '-@', str(arguments['threads']), '-Sb', '-o', output_bam]
+
+    st_1 = subprocess.Popen(samtools_cmd, stdout=subprocess.PIPE)
+    awk = subprocess.Popen(awk_cmd, stdin=st_1.stdout, stdout=subprocess.PIPE)
+    st_2 = subprocess.Popen(samtools_bam_cmd, stdin=awk.stdout, stdout=subprocess.PIPE)
+
+    st_1.wait()
+    awk.wait()
+    st_2.wait()
+
+    if st_1.returncode != 0:
+        raise ValueError('samtools view subprocess returned nonzero value: {}'.format(st_1.returncode))
+    if awk.returncode != 0:
+        raise ValueError('awk subprocess returned nonzero value: {}'.format(awk.returncode))
+    if st_2.returncode != 0:
+        raise ValueError('samtools view for bam output subprocess returned nonzero value: {}'.format(st_2.returncode))
+
+    basefile = pathlib.Path(arguments['phased_vcf']).stem
+    output_csv = basefile + '_het_snps.csv'
+    output_csv = f"{os.path.join('data', output_csv)}"
+
+    output_vcf = basefile + '_het_phased_snps.vcf.gz'
+    output_vcf = f"{os.path.join('data', output_vcf)}"
+
+    cmd = ['bcftools', 'view', '--threads', str(arguments['threads']),  '--phased', '-g', 'het', '--types', 'snps', arguments['phased_vcf'], '-o', output_vcf]
+    process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+    process.wait()
+
+    cmd = ['bcftools', 'query', '-i', 'GT="het"', '-f',  '%CHROM\t%POS\n', output_vcf,  '-o', output_csv]
+    process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+    process.wait()
+
+    beds = split_file(output_csv, 4)
+    pileups_outputs = process_pileups(arguments['target_bam'], arguments['reference'], beds, thread_pool)
+
+    output_pileup = f"{os.path.join('data', arguments['genome_name'] + '_SNPs.csv')}"
+
+    for i in pileups_outputs:
+        with open(i, 'r') as content_file:
+            content = content_file.read()
+        with open(output_pileup, 'a') as target_device:
+            target_device.write(content)
+
+    return output_pileup
+def split_file(fname, parts):
+    out_beds = []
+    for i in range(parts):
+        out_beds.append(f"{os.path.join('data', '%d.bed' % i)}")
+    with open(fname) as infp:
+        files = [open(f"{os.path.join('data', '%d.bed' % i)}", 'w') for i in range(int(parts))]
+        for i, line in enumerate(infp):
+            files[i % int(parts)].write(line)
+        for f in files:
+            f.close()
+    return out_beds
+def process_pileups(bam, ref, input_beds, thread_pool):
+    tasks = [(bam, ref, bed) for bed in input_beds]
+    pileups_outputs = thread_pool.starmap(process_pileups_parallel, tasks)
+    return pileups_outputs
+
+def process_pileups_parallel(bam, ref, bed):
+    basefile = pathlib.Path(bed).stem
+    output_csv = f"{os.path.join('data', basefile + '_SNPs.csv')}"
+    cmd = ['samtools', 'mpileup', '-l', bed, '-f', ref, bam,  '-o', output_csv]
+    process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+    process.wait()
+
+    return output_csv

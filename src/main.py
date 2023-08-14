@@ -19,7 +19,7 @@ from utils import get_chromosomes_bins, write_segments_coverage, csv_df_chromoso
     csv_df_chromosomes_sorter_snps_from_bam
 from plots import coverage_plots_chromosomes, copy_number_plots_genome, plots_genome_coverage, copy_number_plots_chromosomes
 from vcf_processing import vcf_parse_to_csv_for_het_phased_snps_phasesets, get_snp_segments
-
+from bam_processing import process_bam_for_snps_freqs
 
 #remove
 from utils import get_chromosomes_bins_replica
@@ -47,6 +47,9 @@ def main():
     parser.add_argument("--control-bam", dest="control_bam",
                         metavar="path", required=False, default=None, nargs="+",
                         help="path to one or multiple control haplotagged bam files (must be indexed)")
+    parser.add_argument("--reference", dest="reference",
+                        metavar="path", required=False, default=None,
+                        help="path to reference")
 
     parser.add_argument("--out-dir-plots", dest="out_dir_plots",
                         default=None, required=True,
@@ -101,9 +104,11 @@ def main():
                         default=False, help="Enabling breakpoints in coverage plots")
     parser.add_argument('--copynumbers-enable', dest="copynumbers_enable", required=False,
                         default=False, help="Enabling copy number in coverage plots")
+    parser.add_argument('--copynumbers-subclonal-enable', dest="copynumbers_subclonal_enable", required=False,
+                        default=False, help="Enabling subclonal copy number in coverage plots")
 
     parser.add_argument("-t", "--threads", dest="threads",
-                        default=8, metavar="int", type=int, help="number of parallel threads [8]")
+                        default=1, metavar="int", type=int, help="number of parallel threads [8]")
 
     parser.add_argument("--max-read-error", dest="max_read_error",
                         default=MAX_READ_ERROR, metavar="float", type=float,
@@ -116,11 +121,13 @@ def main():
 
     arguments = {
         "target_bam": args.target_bam,
+        "reference": args.reference,
         "phaseblock_flipping_enable": args.phaseblock_flipping_enable,
         "unphased_reads_coverage_enable": args.unphased_reads_coverage_enable,
         "smoothing_enable": args.smoothing_enable,
         "phaseblocks_enable": args.phaseblocks_enable,
         "copynumbers_enable": args.copynumbers_enable,
+        "copynumbers_subclonal_enable": args.copynumbers_subclonal_enable,
         "het_phased_snps_freq_enable": args.het_phased_snps_freq_enable,
         "out_dir_plots": args.out_dir_plots,
         "phased_vcf": args.phased_vcf,
@@ -134,6 +141,7 @@ def main():
         "min_aligned_length": args.min_aligned_length,
         "no_of_clusters": args.no_of_clusters,
         "contigs": args.contigs,
+        "threads": args.threads,
     }
     logging.basicConfig(level=logging.DEBUG)
 
@@ -171,9 +179,6 @@ def main():
         segments_by_read.update(segments_by_read_bam)
         print("Parsed {0} segments".format(len(segments_by_read_bam)), file=sys.stderr)
 
-    #haplotype_update_all_bins_parallel(bam_file, thread_pool, bins, bin_size)
-    #TODO Merge and index
-
     if arguments['het_phased_snps_freq_enable']:
         get_snp_segments(arguments, args.target_bam[0], thread_pool)
         csv_df_snps = csv_df_chromosomes_sorter_snps_from_bam('data/snps_frequencies.csv')
@@ -204,10 +209,13 @@ def main():
     #csv_df_coverage = csv_df_chromosomes_sorter('/home/rezkuh/gits/data/'+arguments['genome_name']+'/coverage.csv')
 
     logging.info('Generating coverage plots chromosomes-wise')
-    haplotype_1_values_updated, haplotype_2_values_updated, unphased = coverage_plots_chromosomes(csv_df_coverage, csv_df_phasesets, csv_df_snps, arguments)
+    haplotype_1_values_updated, haplotype_2_values_updated, unphased, csv_df_snps_mean = \
+        coverage_plots_chromosomes(csv_df_coverage, csv_df_phasesets, csv_df_snps, arguments)
 
     csv_df_coverage = csv_df_coverage.drop(csv_df_coverage[(csv_df_coverage.chr == "chrX") | (csv_df_coverage.chr == "chrY")].index)
     df_hp1, df_hp2, df_unphased = seperate_dfs_coverage(csv_df_coverage, haplotype_1_values_updated, haplotype_2_values_updated, unphased)
+
+    #cluster.plot_optimal_clusters(haplotype_1_values_updated, haplotype_1_values_updated, unphased,  arguments, "coverage")
 
     logging.info('Generating coverage plots genome wide')
     plots_genome_coverage(df_hp1, df_hp2, df_unphased, arguments)
@@ -215,10 +223,20 @@ def main():
     logging.info('Generating optimal clusters plots for bins')
 
     #haplotype_1_values_updated, haplotype_2_values_updated, unphased = flatten_smooth(haplotype_1_values_updated, haplotype_2_values_updated, unphased)
-    cluster.plot_optimal_clusters(haplotype_1_values_updated, haplotype_2_values_updated, unphased,  arguments)
+    #cluster.plot_optimal_clusters(haplotype_1_values_updated, haplotype_2_values_updated, unphased,  arguments)
 
-    df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2 = apply_copynumbers(csv_df_coverage, haplotype_1_values_updated, haplotype_2_values_updated, arguments)
-    #df_cnr_hp2, df_segs_hp2 = apply_copynumber_log2_ratio(csv_df_coverage, haplotype_2_values_updated, args.control_bam[0])
+    #TODO Covergae CopyNumbers
+    #df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2 = apply_copynumbers(csv_df_coverage, haplotype_1_values_updated, haplotype_2_values_updated, arguments)
+    #csv_df_snps_mean_clean = csv_df_snps_mean[(csv_df_snps_mean['hp1'] > 3) & (csv_df_snps_mean['hp2'] > 3)]
+
+    cluster.plot_optimal_clusters(csv_df_snps_mean.hp1.values, csv_df_snps_mean.hp2.values, unphased,  arguments, None)
+    #cluster.plot_optimal_clusters(csv_df_snps_mean.hp1.clip(upper=arguments['cut_threshold']).values, csv_df_snps_mean.hp2.clip(upper=arguments['cut_threshold']).values, unphased,  arguments, None)
+
+    ############################################
+    #csv_df_snps_mean.to_csv('data/'+arguments['genome_name']+'_snps.csv', sep='\t')
+    ############################################
+    #TODO SNPs CopyNumbers
+    df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2 = apply_copynumbers(csv_df_snps_mean, csv_df_snps_mean.hp1.values.tolist(), csv_df_snps_mean.hp2.values.tolist(), arguments)
 
     logging.info('Generating copy number log2 ratios plots chromosomes-wise')
     #copy_number_plots_chromosomes(df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, arguments)

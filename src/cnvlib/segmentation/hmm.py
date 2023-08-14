@@ -10,7 +10,7 @@ import scipy.special
 from ..cnary import CopyNumArray as CNA
 from ..descriptives import biweight_midvariance
 from ..segfilters import squash_by_groups
-from ..cluster import kmeans_clustering
+from ..cluster import kmeans_clustering, hmm_model_select_hatchet
 
 
 
@@ -45,7 +45,12 @@ def segment_hmm(depth, arguments, cnarr, method, window=None, variants=None, pro
     cnarr.data = cnarr.data.reset_index(drop=True)
 
     logging.info("Building model from observations")
-    model = hmm_get_model(depth, arguments, cnarr, method, processes)
+    model, centers = hmm_get_model(depth, arguments, cnarr, method, processes)
+
+    #mus = np.ravel(model.means_)
+    #sigmas = np.ravel(np.sqrt([np.diag(c) for c in model.covars_]))
+    #P = model.transmat_
+    #print(mus, sigmas, P)
 
     logging.info("Predicting states from model")
     observations = observations_matrix(cnarr)#as_observation_matrix(cnarr)
@@ -99,7 +104,8 @@ def segment_hmm(depth, arguments, cnarr, method, window=None, variants=None, pro
 
         for i in range(len(np.unique(df['group']))):
             mean.append(np.mean(df[df['group'] == i]['depth']))
-            segarr['state'] = np.where(segarr['state'] == i, mean[i], segarr['state'])
+            #segarr['state'] = np.where(segarr['state'] == i, mean[i], segarr['state'])
+            segarr['state'] = np.where(segarr['state'] == i, centers[i], segarr['state'])
         segs.append(segarr)
 
     return segs
@@ -124,17 +130,36 @@ def hmm_get_model(depth_values, arguments, cnarr, method, processes):
     model :
         A pomegranate HiddenMarkovModel trained on the given dataset.
     """
+
+    #Standard Normal Distribution
+    #Mean (μ, mu) -> 0, variance -> σ2 -> 1 (std deviation (σ, sigma))
+
     assert method in ("hmm-tumor", "hmm-germline", "hmm")
     observations = observations_matrix(cnarr)#as_observation_matrix(cnarr.autosomes())
 
     # Estimate standard deviation from the full distribution, robustly
     stdev = biweight_midvariance(np.concatenate(observations), initial=0)
 
-    u_labels, labels, centers, stdev, clusters = kmeans_clustering(depth_values, arguments['no_of_clusters'])
+    depth_values = np.clip(depth_values, a_min=1, a_max=250)
+    depth_values = depth_values.reshape(-1, 1)
+    X = np.concatenate([depth_values, depth_values])
+    lengths = [len(depth_values), len(depth_values)]
+    #centers, stdev, clusters = hmm_model_select_hatchet(X, lengths, minK=2, maxK=10, tau=10e-6, tmat='diag', decode_alg='viterbi', covar='diag', restarts=15, )
+    #print(centers, covars, clusters)
 
+    #u_labels, labels, centers, stdev, clusters = kmeans_clustering(depth_values, arguments['no_of_clusters'])
+    #print(centers)
+    ####################################
+    #centers = [3, 12, 27, 54, 81, 113]#1437
+    #stdev = [1.5, 6, 13.5, 27.5, 40, 56]#1437
+
+    centers = [1.5, 30, 55, 103, 160, 220]#1937
+    stdev = [.75, 15, 27.5, 52.5, 80, 110]#1937
+
+    ####################################
     state_names = []#["copy_1", "copy_2", "copy_3", "copy_4", "copy_5"]
     distributions = []
-    for i in range(len(u_labels)):
+    for i in range(len(centers)):
         state_names.append("copy_"+str(i))
         distributions.append(pom.NormalDistribution(centers[i], stdev[i], frozen=False))
 
@@ -178,7 +203,7 @@ def hmm_get_model(depth_values, arguments, cnarr, method, processes):
         verbose=False,
     )
 
-    return model
+    return model, centers
 
 
 def as_observation_matrix(cnarr, variants=None):

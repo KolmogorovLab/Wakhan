@@ -6,10 +6,13 @@ import numpy as np
 def convolve_sma(x, N):
     return np.convolve(x, np.ones((N,))/N)[(N-1):]
 
-def smoothing(unphased_reads_values, haplotype_1_values, haplotype_2_values, conv_window_size):
-    return convolve_sma(unphased_reads_values, conv_window_size), \
-        convolve_sma(haplotype_1_values, conv_window_size), \
-        convolve_sma(haplotype_2_values, conv_window_size)
+def smoothing(haplotype_1_values, haplotype_2_values, unphased_reads_values = None, conv_window_size = 5):
+    if not unphased_reads_values == None:
+        smooth_triangle(unphased_reads_values, conv_window_size)
+
+    smooth_triangle(haplotype_1_values, conv_window_size)
+    smooth_triangle(haplotype_2_values, conv_window_size)
+    return haplotype_1_values, haplotype_2_values, unphased_reads_values
 
 def smooth_triangle(data, degree):
     triangle=np.concatenate((np.arange(degree + 1), np.arange(degree)[::-1])) # up then down

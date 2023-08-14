@@ -92,7 +92,7 @@ def phaseblock_flipping(is_simple_correction, haplotype_1_values, haplotype_2_va
             diff.append(ref_end_values_phasesets[index] - ref_start_values_phasesets[index])
             values_ps.append([ref_start_values_phasesets[index], ref_end_values_phasesets[index]])
         max_value_index = diff.index(max(diff))
-        print(ref_start_values_phasesets[max_value_index], ref_end_values_phasesets[max_value_index])
+        #print(ref_start_values_phasesets[max_value_index], ref_end_values_phasesets[max_value_index])
 
         #phaseblocks switch errors
         scan_and_update_phaseblocks_switch_errors(max_value_index, values_ps, haplotype_1_values, haplotype_2_values, ref_start_values, ref_end_values, \
@@ -147,9 +147,9 @@ def phaseblock_flipping(is_simple_correction, haplotype_1_values, haplotype_2_va
 def scan_and_update_phaseswitches_inside_phaseblocks(values_ps, haplotype_1_values, haplotype_2_values, ref_start_values, ref_end_values, \
                     haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets):
     for index, value_ps in enumerate(values_ps):
-        if value_ps[0] == 42066420 or value_ps[0] == 72346221 or value_ps[0] == 72108881:#72346221:#132135757:#177448845:#81331913:#72346221:
-            print("here")
-        print(value_ps[0])
+        #if value_ps[0] == 42066420 or value_ps[0] == 72346221 or value_ps[0] == 72108881:#72346221:#132135757:#177448845:#81331913:#72346221:
+        #    print("here")
+        #print(value_ps[0])
 
         internal_bins = [i for i in ref_start_values if i >= value_ps[0] and i <= value_ps[1]]
         if internal_bins:
@@ -250,8 +250,8 @@ def scan_and_update_phaseblocks_switch_errors(max_value_index, values_ps, haplot
         values_ps_new = values_ps[max_value_index + 1:]
         if not max_value_index == len(ref_start_values_phasesets) - 1:
             for j, value_ps in enumerate(values_ps_new):
-                if value_ps[0] == 93800001:  # 101790293 or value_ps[0] == 104622049:
-                    print("here")
+                #if value_ps[0] == 93800001:  # 101790293 or value_ps[0] == 104622049:
+                #    print("here")
                 if not ref_start_values_phasesets.index(value_ps[0]) == 0 and \
                         not ref_end_values_phasesets.index(value_ps[1]) == len(ref_start_values_phasesets):
 
@@ -305,8 +305,8 @@ def scan_and_update_phaseblocks_switch_errors(max_value_index, values_ps, haplot
         if not max_value_index == 0:
             values_ps_new = values_ps[0:max_value_index:]
             for j, value_ps in reversed(list(enumerate(values_ps_new))):
-                if value_ps[0] == 93800001:  # 101790293 or value_ps[0] == 104622049:
-                    print("here")
+                #if value_ps[0] == 93800001:  # 101790293 or value_ps[0] == 104622049:
+                #    print("here")
                 if not ref_end_values_phasesets.index(value_ps[1]) == len(ref_start_values_phasesets):
 
                     next_ps_start = max([t for t in ref_start_values if
@@ -360,8 +360,9 @@ def scan_and_update_phaseblocks_switch_errors(max_value_index, values_ps, haplot
         if not max_value_index == len(ref_start_values_phasesets) - 1:
             values_ps_new = values_ps[max_value_index + 1:]
             for j, value_ps in enumerate(values_ps_new):
-                if value_ps[0] == 93800001:  # 101790293:
-                    print("here")
+                #if value_ps[0] == 181412991:  # 101790293:
+                #    print("here")
+
                 if not ref_start_values_phasesets.index(value_ps[0]) == 0 and \
                         not ref_end_values_phasesets.index(value_ps[1]) == len(ref_start_values_phasesets):
 
@@ -394,10 +395,11 @@ def scan_and_update_phaseblocks_switch_errors(max_value_index, values_ps, haplot
                                      ref_start_values.index(next_ps_start) - 3] \
                                  or haplotype_1_values[ref_start_values.index(next_ps_start) - 4] < haplotype_2_values[
                                      ref_start_values.index(next_ps_start) - 4])
-                                and (haplotype_1_values[i] > haplotype_2_values[i] or haplotype_1_values[i + 1] >
-                                     haplotype_2_values[i + 1] or haplotype_1_values[i + 2] > haplotype_2_values[
-                                         i + 2] or haplotype_1_values[i + 3] > haplotype_2_values[i + 3] or
-                                     haplotype_1_values[i + 4] > haplotype_2_values[i + 4]))) \
+                                #and (haplotype_1_values[i] > haplotype_2_values[i] or haplotype_1_values[i + 1] >
+                                #     haplotype_2_values[i + 1] or haplotype_1_values[i + 2] > haplotype_2_values[
+                                #         i + 2] or haplotype_1_values[i + 3] > haplotype_2_values[i + 3] or
+                                #     haplotype_1_values[i + 4] > haplotype_2_values[i + 4])
+                                and (mean_values(haplotype_1_values, i, i + 4) > mean_values(haplotype_2_values, i, i + 4)) )) \
                             or (abs(haplotype_1_values_phasesets[ref_start_values_phasesets.index(value_ps[0])] - \
                                     haplotype_1_values_phasesets[
                                         ref_start_values_phasesets.index(value_ps[0]) - 1]) < PHASESETS_DIFF_THRESHOLD)) \
@@ -415,8 +417,8 @@ def scan_and_update_phaseblocks_switch_errors(max_value_index, values_ps, haplot
         if not max_value_index == 0:
             values_ps_new = values_ps[0:max_value_index:]
             for j, value_ps in reversed(list(enumerate(values_ps_new))):
-                if value_ps[0] == 93800001:  # 101790293:
-                    print("here")
+                #if value_ps[0] == 93800001:  # 101790293:
+                #    print("here")
                 if not ref_end_values_phasesets.index(value_ps[1]) == len(ref_start_values_phasesets):
 
                     next_ps_start = max([t for t in ref_start_values if
@@ -498,8 +500,8 @@ def phase_switch_spanning_haplotypes(max_value_index, values_ps, haplotype_1_val
                     haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets):
     MIN_PHASESETS_DIFF_THRESHOLD = 3
     for index, value_ps in enumerate(values_ps):
-        if value_ps[0] == 93800001 and value_ps[1] == 66901398:
-            print("here")
+        #if value_ps[0] == 93800001 and value_ps[1] == 66901398:
+        #    print("here")
         if not ref_end_values_phasesets.index(value_ps[1]) == len(ref_start_values_phasesets)-1:
             if (abs(haplotype_2_values_phasesets[ref_start_values_phasesets.index(value_ps[0])] - \
                    haplotype_1_values_phasesets[ref_start_values_phasesets.index(value_ps[0])+1])  < MIN_PHASESETS_DIFF_THRESHOLD and \
@@ -525,6 +527,18 @@ def phase_switch_spanning_haplotypes(max_value_index, values_ps, haplotype_1_val
                         haplotype_2_values[i] = new_hp1
                         i = i + 1
                 break
+
+def mean_values(selected_list, start_index, end_index):
+    result = []
+    for i in range(end_index - start_index):
+        try:
+            result.append(selected_list[start_index + i])
+        except IndexError:
+            break
+    if result:
+        return np.mean(result)
+    else:
+        return 0.0
 
 
 #Apmlification cases
