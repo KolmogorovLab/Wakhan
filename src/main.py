@@ -254,3 +254,4 @@ if __name__ == "__main__":
 #--pdf-enable True
 #--copynumbers-enable True
 
+#python main.py --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --out-dir-plots coverage_plots  --phased-vcf /home/rezkuh/gits/data/1937/1937BL.vcf.gz --smoothing-enable True --copynumbers-enable True  --unphased-reads-coverage-enable True --het-phased-snps-freq-enable True --phaseblock-flipping-enable True  --genome-name 1937 --cut-threshold 250

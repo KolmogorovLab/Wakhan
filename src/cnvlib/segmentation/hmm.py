@@ -144,8 +144,8 @@ def hmm_get_model(depth_values, arguments, cnarr, method, processes):
     depth_values = depth_values.reshape(-1, 1)
     X = np.concatenate([depth_values, depth_values])
     lengths = [len(depth_values), len(depth_values)]
-    #centers, stdev, clusters = hmm_model_select_hatchet(X, lengths, minK=2, maxK=10, tau=10e-6, tmat='diag', decode_alg='viterbi', covar='diag', restarts=15, )
-    #print(centers, covars, clusters)
+    centers, stdev, clusters = hmm_model_select_hatchet(X, lengths, minK=2, maxK=10, tau=10e-6, tmat='diag', decode_alg='viterbi', covar='diag', restarts=15, )
+    print(centers, stdev, clusters)
 
     #u_labels, labels, centers, stdev, clusters = kmeans_clustering(depth_values, arguments['no_of_clusters'])
     #print(centers)
@@ -153,8 +153,8 @@ def hmm_get_model(depth_values, arguments, cnarr, method, processes):
     #centers = [3, 12, 27, 54, 81, 113]#1437
     #stdev = [1.5, 6, 13.5, 27.5, 40, 56]#1437
 
-    centers = [1.5, 30, 55, 103, 160, 220]#1937
-    stdev = [.75, 15, 27.5, 52.5, 80, 110]#1937
+    #centers = [1.5, 30, 55, 103, 160, 220]#1937
+    #stdev = [.75, 15, 27.5, 52.5, 80, 110]#1937
 
     ####################################
     state_names = []#["copy_1", "copy_2", "copy_3", "copy_4", "copy_5"]

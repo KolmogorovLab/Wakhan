@@ -378,18 +378,18 @@ def copy_number_plots_genome(df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, d
             haplotype_2_copyratios_values_sub = [x if x == 'None' else x - OFFSET for x in
                                                     haplotype_2_copyratios_values_sub]
 
-            names = ["HP-1", "HP-1"]
-            add_scatter_trace_copyratios(fig, ['firebrick','steelblue'], names, haplotype_1_copyratios_positions, haplotype_2_copyratios_positions, haplotype_1_copyratios_values_normal, haplotype_2_copyratios_values_normal)
-            names = ["HP-1 (subclonal)", "HP-1 (subclonal)"]
-            add_scatter_trace_copyratios(fig, ['#E95F0A','#6EC5E9'], names, haplotype_1_copyratios_positions, haplotype_2_copyratios_positions, haplotype_1_copyratios_values_sub, haplotype_2_copyratios_values_sub)
+            name = "Copynumbers"
+            add_scatter_trace_copyratios(fig, ['firebrick','steelblue'], name, haplotype_1_copyratios_positions, haplotype_2_copyratios_positions, haplotype_1_copyratios_values_normal, haplotype_2_copyratios_values_normal)
+            name = "Copynumbers (subclonal)"
+            add_scatter_trace_copyratios(fig, ['#E95F0A','#6EC5E9'], name, haplotype_1_copyratios_positions, haplotype_2_copyratios_positions, haplotype_1_copyratios_values_sub, haplotype_2_copyratios_values_sub)
         else:
             OFFSET = 1
             haplotype_1_copyratios_values = [x if x == 'None' else x + OFFSET for x in
                                                     haplotype_1_copyratios_values]
             haplotype_2_copyratios_values = [x if x == 'None' else x - OFFSET for x in
                                                     haplotype_2_copyratios_values]
-            names = ["HP-1", "HP-1"]
-            add_scatter_trace_copyratios(fig, ['firebrick', 'steelblue'], names, haplotype_1_copyratios_positions,
+            name = "Copynumbers"
+            add_scatter_trace_copyratios(fig, ['firebrick', 'steelblue'], name, haplotype_1_copyratios_positions,
                                          haplotype_2_copyratios_positions, haplotype_1_copyratios_values,
                                          haplotype_2_copyratios_values)
 
@@ -468,13 +468,13 @@ def add_scatter_trace_phaseblocks(fig, phaseblocks_positions, haplotype_1_phaseb
         #legendgroup="group2",
     ))
 
-def add_scatter_trace_copyratios(fig, colors, names, haplotype_1_copyratios_positions, haplotype_2_copyratios_positions, haplotype_1_copyratios_values, haplotype_2_copyratios_values):
+def add_scatter_trace_copyratios(fig, colors, name, haplotype_1_copyratios_positions, haplotype_2_copyratios_positions, haplotype_1_copyratios_values, haplotype_2_copyratios_values):
     fig.add_trace(go.Scatter(
         legendgroup="group2",
-        legendgrouptitle_text="Copynumbers",
+        legendgrouptitle_text=name,
         x=haplotype_1_copyratios_positions,
         y= haplotype_1_copyratios_values,
-        name=names[0],
+        name='HP-1',
         text=haplotype_1_copyratios_positions,
         yaxis="y5",
         line = dict(shape = 'spline', color = colors[0], width= 5, dash = 'solid'),
@@ -493,7 +493,7 @@ def add_scatter_trace_copyratios(fig, colors, names, haplotype_1_copyratios_posi
         legendgroup="group2",
         x=haplotype_2_copyratios_positions,
         y=haplotype_2_copyratios_values,
-        name=names[1],
+        name='HP-2',
         text=haplotype_2_copyratios_positions,
         yaxis="y5",
         line = dict(shape = 'spline', color = colors[1], width= 5, dash = 'solid'),
@@ -544,7 +544,22 @@ def plots_layout_settings(fig, chrom, arguments, limit):
             type="linear",
             showline=True,
             zeroline=True,
-        )
+        ),
+        # yaxis6=dict(
+        #     linecolor="dimgray",
+        #     range=[1, arguments['cut_threshold'] + 5],
+        #     side="right",
+        #     tickfont={"color": "dimgray"},
+        #     tickmode="auto",
+        #     ticks="outside",
+        #     title="copynumbers (integer)",
+        #     titlefont={"color": "dimgray"},
+        #     type="linear",
+        #     # showline=True,
+        #     # zeroline=True,
+        #     anchor="x",
+        #     overlaying="y",
+        # )
     )
     # Update layout
     fig.update_layout(

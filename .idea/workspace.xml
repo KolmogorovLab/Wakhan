@@ -6,15 +6,9 @@
   <component name="ChangeListManager">
     <list default="true" id="9513539d-f724-42bd-a012-0e30316556a5" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/bam_processing.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/bam_processing.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/cnvlib/cluster.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/cnvlib/cluster.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/cnvlib/segmentation/hmm.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/cnvlib/segmentation/hmm.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/phasing_correction.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/phasing_correction.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/plots.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/plots.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/smoothing.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/smoothing.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/utils.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/vcf_processing.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/vcf_processing.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -80,7 +74,7 @@
       <option name="presentableId" value="Default" />
       <updated>1691665153459</updated>
       <workItem from="1691665155486" duration="30227000" />
-      <workItem from="1691751515633" duration="46758000" />
+      <workItem from="1691751515633" duration="53418000" />
     </task>
     <servers />
   </component>
@@ -114,6 +108,6 @@
     </breakpoint-manager>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/Wakhan$Wakhan.coverage" NAME="Wakhan Coverage Results" MODIFIED="1692028248076" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/Wakhan$Wakhan.coverage" NAME="Wakhan Coverage Results" MODIFIED="1692035709717" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
   </component>
 </project>
