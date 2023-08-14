@@ -144,7 +144,7 @@ def hmm_get_model(depth_values, arguments, cnarr, method, processes):
     depth_values = depth_values.reshape(-1, 1)
     X = np.concatenate([depth_values, depth_values])
     lengths = [len(depth_values), len(depth_values)]
-    centers, stdev, clusters = hmm_model_select_hatchet(X, lengths, minK=2, maxK=10, tau=10e-6, tmat='diag', decode_alg='viterbi', covar='diag', restarts=15, )
+    clusters, centers, stdev  = hmm_model_select_hatchet(X, lengths, minK=2, maxK=10, tau=10e-6, tmat='diag', decode_alg='viterbi', covar='diag', restarts=15, )
     print(centers, stdev, clusters)
 
     #u_labels, labels, centers, stdev, clusters = kmeans_clustering(depth_values, arguments['no_of_clusters'])
@@ -159,7 +159,7 @@ def hmm_get_model(depth_values, arguments, cnarr, method, processes):
     ####################################
     state_names = []#["copy_1", "copy_2", "copy_3", "copy_4", "copy_5"]
     distributions = []
-    for i in range(len(centers)):
+    for i in range(clusters):
         state_names.append("copy_"+str(i))
         distributions.append(pom.NormalDistribution(centers[i], stdev[i], frozen=False))
 
