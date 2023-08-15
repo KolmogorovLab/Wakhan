@@ -182,6 +182,7 @@ def main():
     logging.info('Computing coverage histogram')
     coverage_histograms = update_coverage_hist(genome_ids, ref_lengths, segments_by_read, args.min_mapping_quality,
                                                args.max_read_error, arguments)
+    del segments_by_read
 
     logging.info('Computing coverage for bins')
     segments = get_chromosomes_bins(args.target_bam[0], arguments['bin_size'], arguments)
@@ -197,6 +198,7 @@ def main():
     phasesets_coverage = get_segments_coverage(phasesets_segments, coverage_histograms)
     logging.info('Writing coverage for phaseblocks')
     write_segments_coverage(phasesets_coverage, 'coverage_ps.csv')
+    del coverage_histograms
 
     logging.info('Loading coverage (bins) and coverage (phaseblocks) files...')
     csv_df_phasesets = csv_df_chromosomes_sorter('data/coverage_ps.csv')
