@@ -216,7 +216,7 @@ def coverage_plots_chromosomes(df, df_phasesets, df_snps, arguments):
 
     df_snps_freqs = pd.DataFrame(list(zip(chr_all, ref_start_values_all, ref_end_values_all, haplotype_1_snps_freqs_updated, haplotype_2_snps_freqs_updated, haplotype_2_snps_freqs_updated)), columns=['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
 
-    plot_bins_histograms(haplotype_1_values_updated, haplotype_2_values_updated, ref_start_values, arguments)
+    #plot_bins_histograms(haplotype_1_values_updated, haplotype_2_values_updated, ref_start_values, arguments)
     #plot_bins_ratios(flatten(haplotype_1_values_updated), flatten(haplotype_2_values_updated), arguments)
     html_graphs.write("</body></html>")
 

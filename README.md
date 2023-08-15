@@ -16,7 +16,7 @@ advantage of the CNA differences between the haplotypes. Wakhan then generates i
 ```
 conda create -y -n wakhan python=3.8
 conda activate wakhan
-conda install -y -c bioconda samtools bcftools
+module load samtools #on NIH Biowulf
 pip install pysam pyfaidx numpy pandas Bio scipy ReportLab==3.6.12 matplotlib py plotly hmmlearn tqdm>=4.24.0 numba>=0.43.0 nose pomegranate==0.14.8 scikit-genome==0.0.1 scikit-learn==1.2.0 scipy==1.9.2  matplotlib==3.6.2 kneed
 ```
 

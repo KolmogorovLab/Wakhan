@@ -6,6 +6,7 @@ from collections import defaultdict
 import subprocess
 import pathlib
 import os
+import pandas
 
 class ReadSegment(object):
     __slots__ = ("read_start", "read_end", "ref_start", "ref_end", "read_id", "ref_id",
@@ -343,7 +344,7 @@ def process_bam_for_snps_freqs(arguments, thread_pool):
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     process.wait()
 
-    beds = split_file(output_csv, 4)
+    beds = split_file(output_csv, arguments['threads'])
     pileups_outputs = process_pileups(output_bam, arguments['reference'], beds, thread_pool)
 
     output_pileup = f"{os.path.join('data', arguments['genome_name'] + '_SNPs.csv')}"
@@ -357,15 +358,14 @@ def process_bam_for_snps_freqs(arguments, thread_pool):
     return output_pileup
 def split_file(fname, parts):
     out_beds = []
-    for i in range(parts):
-        out_beds.append(f"{os.path.join('data', '%d.bed' % i)}")
-    with open(fname) as infp:
-        files = [open(f"{os.path.join('data', '%d.bed' % i)}", 'w') for i in range(int(parts))]
-        for i, line in enumerate(infp):
-            files[i % int(parts)].write(line)
-        for f in files:
-            f.close()
+    lines  = pandas.read_csv(fname)
+    df_iterator = pandas.read_csv(fname, chunksize=int(len(lines)/parts) + 1, sep='\t', index_col=False, header=None)
+    for i, chunk in enumerate(df_iterator):
+        fname = f"{os.path.join('data', '%d.bed' % i)}"
+        out_beds.append(fname)
+        chunk.to_csv(fname, index=False, sep='\t', header=None)
     return out_beds
+
 def process_pileups(bam, ref, input_beds, thread_pool):
     tasks = [(bam, ref, bed) for bed in input_beds]
     pileups_outputs = thread_pool.starmap(process_pileups_parallel, tasks)
