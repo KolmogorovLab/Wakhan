@@ -12,11 +12,12 @@ advantage of the CNA differences between the haplotypes. Wakhan then generates i
 #### Coverage display & Copy numbers:
 <img width="1373" alt="plots_example" src="examples/images/copynumbers.gif">
 
-## Requirements (enabling through conda environment):
+## Requirements (enabling through conda environment)
 ```
-conda create -n wakhan python=3.8
+conda create -y -n wakhan python=3.8
 conda activate wakhan
-pip install samtools pysam bcftools faidx pyfaidx numpy pandas Bio scipy ReportLab==3.6.12 matplotlib py plotly hmmlearn tqdm>=4.24.0 numba>=0.43.0 nose pomegranate==0.14.8 scikit-genome==0.0.1 scikit-learn==1.2.0 scipy==1.9.2  matplotlib==3.6.2 kneed
+conda install -y -c bioconda samtools bcftools
+pip install pysam pyfaidx numpy pandas Bio scipy ReportLab==3.6.12 matplotlib py plotly hmmlearn tqdm>=4.24.0 numba>=0.43.0 nose pomegranate==0.14.8 scikit-genome==0.0.1 scikit-learn==1.2.0 scipy==1.9.2  matplotlib==3.6.2 kneed
 ```
 
 ## Installation

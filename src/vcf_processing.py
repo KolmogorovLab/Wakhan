@@ -155,8 +155,8 @@ def get_snp_segments(arguments, target_bam, thread_pool):
     logging.info('SNPs frequency -> Comuting het SNPs frequency from tumor BAM')
 
     #output_pileups = bam_pileups_snps(output_bed, target_bam, arguments)
-    output_pileups = process_bam_for_snps_freqs(arguments, thread_pool) #TODO Updated
-    #output_pileups = '/home/rezkuh/gits/data/'+arguments['genome_name']+'/'+arguments['genome_name']+'_SNPs.csv'
+    #output_pileups = process_bam_for_snps_freqs(arguments, thread_pool) #TODO Updated
+    output_pileups = '/home/rezkuh/gits/data/'+arguments['genome_name']+'/'+arguments['genome_name']+'_SNPs.csv'
 
     compute_acgt_frequency(output_pileups, output_acgts)
     dataframe_acgt_frequency = csv_df_chromosomes_sorter_snps_frequency(output_acgts)
