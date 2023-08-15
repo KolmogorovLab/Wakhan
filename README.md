@@ -12,22 +12,22 @@ advantage of the CNA differences between the haplotypes. Wakhan then generates i
 #### Coverage display & Copy numbers:
 <img width="1373" alt="plots_example" src="examples/images/copynumbers.gif">
 
-## Requirements:
-* Python3.8
-* Plotly
-* Samtools
-* Pysam
-* Bcftools
-
-## For NIH Biowulf HPC
+## Requirements (enabling through conda environment):
 ```
-module load samtools
+conda create -n wakhan python=3.8
+conda activate wakhan
+pip install samtools pysam bcftools faidx pyfaidx numpy pandas Bio scipy ReportLab==3.6.12 matplotlib py plotly hmmlearn tqdm>=4.24.0 numba>=0.43.0 nose pomegranate==0.14.8 scikit-genome==0.0.1 scikit-learn==1.2.0 scipy==1.9.2  matplotlib==3.6.2 kneed
 ```
 
 ## Installation
 ```
 git clone https://github.com/KolmogorovLab/Wakhan.git
 cd Wakhan/src
+```
+
+## Usage
+```
+python3.8 main.py --target-bam <tumor_haplotagged.bam> --out-dir-plots <coverage_plots> --genome-name <cellline/sample name> --phased-vcf <phased.vcf.gz> --contigs <chr1-22,X,Y>
 ```
 
 ## Prerequisite
@@ -58,10 +58,6 @@ or
 pepper_margin_deepvariant call_variant -b tumor.bam -f ref.fasta -o pepper/output -t 56 --ont_r9_guppy5_sup -p pepper --phased_output
 ```
 
-## Usage
-```
-python3.8 main.py --target-bam <tumor_haplotagged.bam> --out-dir-plots <coverage_plots> --genome-name <cellline/sample name> --phased-vcf <phased.vcf.gz> --contigs <chr1-22,X,Y>
-```
 ## Examples
 Few cell lines arbitrary phasing output with coverage profile is included in the [examples](https://github.com/KolmogorovLab/Wakhan/tree/devel/examples) directory. 
 
