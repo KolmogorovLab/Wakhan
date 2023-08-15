@@ -179,10 +179,6 @@ def main():
         segments_by_read.update(segments_by_read_bam)
         print("Parsed {0} segments".format(len(segments_by_read_bam)), file=sys.stderr)
 
-    if arguments['het_phased_snps_freq_enable']:
-        get_snp_segments(arguments, args.target_bam[0], thread_pool)
-        csv_df_snps = csv_df_chromosomes_sorter_snps_from_bam('data/snps_frequencies.csv')
-
     logging.info('Computing coverage histogram')
     coverage_histograms = update_coverage_hist(genome_ids, ref_lengths, segments_by_read, args.min_mapping_quality,
                                                args.max_read_error, arguments)
@@ -207,6 +203,10 @@ def main():
     csv_df_coverage = csv_df_chromosomes_sorter('data/coverage.csv')
     #csv_df_phasesets = csv_df_chromosomes_sorter('/home/rezkuh/gits/data/'+arguments['genome_name']+'/coverage_ps.csv')
     #csv_df_coverage = csv_df_chromosomes_sorter('/home/rezkuh/gits/data/'+arguments['genome_name']+'/coverage.csv')
+
+    if arguments['het_phased_snps_freq_enable']:
+        get_snp_segments(arguments, args.target_bam[0], thread_pool)
+        csv_df_snps = csv_df_chromosomes_sorter_snps_from_bam('data/snps_frequencies.csv')
 
     logging.info('Generating coverage plots chromosomes-wise')
     haplotype_1_values_updated, haplotype_2_values_updated, unphased, csv_df_snps_mean = \

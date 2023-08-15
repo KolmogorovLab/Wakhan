@@ -306,10 +306,10 @@ def compute_snp_frequency(bam, region):
     return (contig+'\t'+str(start)+'\t'+ref+'\t'+alt+'\t'+str(ref_value_new)+'\t'+str(alt_value_new)+'\t'+str(hp))
 
 def process_bam_for_snps_freqs(arguments, thread_pool):
-    basefile = pathlib.Path(arguments['target_bam']).stem
+    basefile = pathlib.Path(arguments['target_bam'][0]).stem
     output_bam = f"{os.path.join('data', basefile + '_reduced.bam')}"
 
-    samtools_cmd = ['samtools', 'view', '-@', str(arguments['threads']), '-F', '3844', '-q', '5', '-h', arguments['target_bam']]
+    samtools_cmd = ['samtools', 'view', '-@', str(arguments['threads']), '-F', '3844', '-q', '5', '-h', arguments['target_bam'][0]]
     awk_cmd = ['awk', '-v', 'OFS=\t', '{if($0 ~ /^@/){print $0} else {print $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, "*"}}']
     samtools_bam_cmd = ['samtools', 'view', '-@', str(arguments['threads']), '-Sb', '-o', output_bam]
 
@@ -344,7 +344,7 @@ def process_bam_for_snps_freqs(arguments, thread_pool):
     process.wait()
 
     beds = split_file(output_csv, 4)
-    pileups_outputs = process_pileups(arguments['target_bam'], arguments['reference'], beds, thread_pool)
+    pileups_outputs = process_pileups(arguments['target_bam'][0], arguments['reference'], beds, thread_pool)
 
     output_pileup = f"{os.path.join('data', arguments['genome_name'] + '_SNPs.csv')}"
 
