@@ -275,7 +275,7 @@ def plots_genome_coverage(df_hp1, df_hp2, df_unphased, arguments):
     plots_layout_settings(fig, 'Genome', arguments, indices[-1:][0])
     #fig.update_yaxes(range=[-10, 10])
     #fig.update_yaxes(title='copy ratio (log2)')
-    fig.update_layout(width=1080, height=400,)
+    fig.update_layout(width=1280, height=450,)
 
     if arguments['pdf_enable']:
         print_genome_pdf(fig, arguments['genome_name'], arguments['out_dir_plots'])
