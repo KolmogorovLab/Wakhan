@@ -230,7 +230,7 @@ def apply_copynumbers(csv_df_coverage, depth_values, depth_values1, arguments):
     #csv_df_coverage1.loc[ok_idx, "log2"] = numpy.log2(csv_df_coverage1.loc[ok_idx, "depth"])
 
     csv_df_coverage = pd.concat([csv_df_coverage, csv_df_coverage1], ignore_index=True)
-    depth_values.extend(depth_values1)
+    #depth_values.extend(depth_values1)
 
     from cnvlib import cluster
     #cluster.clusters_tests(depth_values, depth_values1)
@@ -265,7 +265,7 @@ def apply_copynumbers(csv_df_coverage, depth_values, depth_values1, arguments):
     #TODO variants = load_het_snps()
     #cnarr = read_cna('data/coverage_cnvkit.cnr')
     #PT8 cnarr.center_all(skip_low=True), skip_low=True, skip_outliers=20
-    segs = segmentation.do_segmentation(depth_values, arguments, cnarr, 'hmm', threshold=None, variants=None, skip_low=True, skip_outliers=20,
+    segs = segmentation.do_segmentation(depth_values, depth_values1, arguments, cnarr, 'hmm', threshold=None, variants=None, skip_low=True, skip_outliers=20,
                                         min_weight=0, save_dataframe=False, rscript_path="Rscript", processes=1,
                                         smooth_cbs=False)
 

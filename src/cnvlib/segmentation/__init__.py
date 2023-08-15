@@ -18,7 +18,7 @@ SEGMENT_METHODS = ("cbs", "flasso", "haar", "none", "hmm", "hmm-tumor", "hmm-ger
 
 
 def do_segmentation(
-    depth_values,
+    depth_values_hp1, depth_values_hp2,
     arguments,
     cnarr,
     method,
@@ -62,7 +62,7 @@ def do_segmentation(
         # ENH segment p/q arms separately
         # -> assign separate identifiers via chrom name suffix?
         cna = _do_segmentation(
-            depth_values,
+            depth_values_hp1, depth_values_hp2,
             arguments,
             cnarr,
             method,
@@ -128,7 +128,7 @@ def _ds(args):
 
 
 def _do_segmentation(
-    depth_values,
+    depth_values_hp1, depth_values_hp2,
     arguments,
     cnarr,
     method,
@@ -183,7 +183,7 @@ def _do_segmentation(
         segarr = none.segment_none(filtered_cn)
 
     elif method.startswith("hmm"):
-        segarr = hmm.segment_hmm(depth_values, arguments, filtered_cn, method, threshold, variants)
+        segarr = hmm.segment_hmm(depth_values_hp1, depth_values_hp2, arguments, filtered_cn, method, threshold, variants)
 
     elif method in ("cbs", "flasso"):
         # Run R scripts to calculate copy number segments

@@ -17,7 +17,7 @@ from ..cluster import kmeans_clustering, hmm_model_select_hatchet
 from pomegranate import State, NormalDistribution, IndependentComponentsDistribution, DiscreteDistribution
 from pomegranate import HiddenMarkovModel as HMM
 
-def segment_hmm(depth, arguments, cnarr, method, window=None, variants=None, processes=1):
+def segment_hmm(depth_values_hp1, depth_values_hp2, arguments, cnarr, method, window=None, variants=None, processes=1):
     """Segment bins by Hidden Markov Model.
 
     Use Viterbi method to infer copy number segments from sequential data.
@@ -45,7 +45,7 @@ def segment_hmm(depth, arguments, cnarr, method, window=None, variants=None, pro
     cnarr.data = cnarr.data.reset_index(drop=True)
 
     logging.info("Building model from observations")
-    model, centers = hmm_get_model(depth, arguments, cnarr, method, processes)
+    model, centers = hmm_get_model(depth_values_hp1, depth_values_hp2, arguments, cnarr, method, processes)
 
     #mus = np.ravel(model.means_)
     #sigmas = np.ravel(np.sqrt([np.diag(c) for c in model.covars_]))
@@ -113,7 +113,7 @@ def segment_hmm(depth, arguments, cnarr, method, window=None, variants=None, pro
 def squash_regions(df):
 
     return pd.DataFrame(df)
-def hmm_get_model(depth_values, arguments, cnarr, method, processes):
+def hmm_get_model(depth_values_hp1, depth_values_hp2, arguments, cnarr, method, processes):
     """
 
     Parameters
@@ -140,10 +140,12 @@ def hmm_get_model(depth_values, arguments, cnarr, method, processes):
     # Estimate standard deviation from the full distribution, robustly
     stdev = biweight_midvariance(np.concatenate(observations), initial=0)
 
-    depth_values = np.clip(depth_values, a_min=1, a_max=250)
-    depth_values = depth_values.reshape(-1, 1)
-    X = np.concatenate([depth_values, depth_values])
-    lengths = [len(depth_values), len(depth_values)]
+    depth_values_hp1 = np.clip(depth_values_hp1, a_min=1, a_max=150)
+    depth_values_hp2 = np.clip(depth_values_hp2, a_min=1, a_max=150)
+    depth_values_hp1 = depth_values_hp1.reshape(-1, 1)
+    depth_values_hp2 = depth_values_hp2.reshape(-1, 1)
+    X = np.concatenate([depth_values_hp1, depth_values_hp2])
+    lengths = [len(depth_values_hp1), len(depth_values_hp2)]
     clusters, centers, stdev  = hmm_model_select_hatchet(X, lengths, minK=2, maxK=10, tau=10e-6, tmat='diag', decode_alg='viterbi', covar='diag', restarts=15, )
     print(centers, stdev, clusters)
 

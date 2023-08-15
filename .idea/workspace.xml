@@ -6,9 +6,9 @@
   <component name="ChangeListManager">
     <list default="true" id="9513539d-f724-42bd-a012-0e30316556a5" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/bam_processing.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/bam_processing.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/plots.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/plots.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/cnvlib/segmentation/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/cnvlib/segmentation/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/cnvlib/segmentation/hmm.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/cnvlib/segmentation/hmm.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/utils.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -75,7 +75,7 @@
       <updated>1691665153459</updated>
       <workItem from="1691665155486" duration="30227000" />
       <workItem from="1691751515633" duration="61899000" />
-      <workItem from="1692132175500" duration="6833000" />
+      <workItem from="1692132175500" duration="7793000" />
     </task>
     <servers />
   </component>
@@ -87,7 +87,7 @@
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/src/cnvlib/segmentation/hmm.py</url>
-          <line>149</line>
+          <line>151</line>
           <option name="timeStamp" value="1" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
