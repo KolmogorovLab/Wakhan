@@ -981,15 +981,20 @@ def hmm_model_select_hatchet(X, lengths, minK=20, maxK=50, tau=10e-6, tmat='diag
     # scaler = StandardScaler()
     # X_scaled = scaler.fit_transform(X)
     # C = squareform(pdist(X_scaled))
-
+    means = []
+    stdev = []
     rs = {}
+    repeats = False
     for K in range(minK, maxK + 1):
         # print(K, datetime.now())
-
+        if repeats == True:
+            break
         my_best_ll = -1 * np.inf
         my_best_labels = None
         my_best_model = None
         for s in range(restarts):
+            if repeats == True:
+                break
             # construct initial transition matrix
             A = make_transmat(1 - tau, K)
             assert np.all(A > 0), (
@@ -1028,15 +1033,26 @@ def hmm_model_select_hatchet(X, lengths, minK=20, maxK=50, tau=10e-6, tmat='diag
             model.transmat_ = A
             model.fit(X, lengths)
 
-            print(K, s)
+            #print(K, s)
 
             prob, labels = model.decode(X, lengths, algorithm=decode_alg)
+            #print(sorted(list(model.means_)), model.n_components)
+
+            res = np.concatenate(sorted(list(model.means_))).ravel().tolist()
+            for x in range(len(res) - 1):
+                if (res[x + 1] - res[x] < 15):
+                    repeats = True
+            means.append(res)
+            stdev.append(np.concatenate(sorted(list(model.covars_))).ravel().tolist())
+
+            #print(res, model.n_components)
+
             if prob > my_best_ll:
                 my_best_labels = labels
                 my_best_ll = prob
                 my_best_model = model
 
-        score = silhouette_score(X, my_best_labels, metric="euclidean", sample_size=3000)
+        score = silhouette_score(X, my_best_labels, metric="euclidean", sample_size=6000)
 
         rs[K] = my_best_ll, score, my_best_labels
         if score > best_score:
@@ -1045,7 +1061,7 @@ def hmm_model_select_hatchet(X, lengths, minK=20, maxK=50, tau=10e-6, tmat='diag
             best_labels = my_best_labels
             best_K = K
 
-    print(best_model.means_, best_model.n_components)
+    #print(sorted(list(best_model.means_)), best_model.n_components)
 
     import matplotlib.pyplot as plt
     # plot the transition matrix
@@ -1059,9 +1075,11 @@ def hmm_model_select_hatchet(X, lengths, minK=20, maxK=50, tau=10e-6, tmat='diag
         ax.set_ylabel('State From')
 
     fig.tight_layout()
-    plt.savefig("tmat.pdf", format="pdf", bbox_inches="tight")
+    plt.savefig("data/tmat.pdf", format="pdf", bbox_inches="tight")
 
-    return best_model.n_components, best_model.means_, best_model.covars_
+    print(means)
+    return means[-2], stdev[-2]
+    #return best_model.n_components, best_model.means_, best_model.covars_
 
 
 class DiagGHMM(hmm.GaussianHMM):

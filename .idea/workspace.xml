@@ -6,6 +6,9 @@
   <component name="ChangeListManager">
     <list default="true" id="9513539d-f724-42bd-a012-0e30316556a5" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/cnvlib/cluster.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/cnvlib/cluster.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/cnvlib/segmentation/hmm.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/cnvlib/segmentation/hmm.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/plots.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/plots.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -54,7 +57,7 @@
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/main.py" />
-      <option name="PARAMETERS" value="--threads 8 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --out-dir-plots coverage_plots  --phased-vcf /home/rezkuh/gits/data/1937/1937BL.vcf.gz --smoothing-enable True --copynumbers-enable True  --unphased-reads-coverage-enable True --het-phased-snps-freq-enable True --phaseblock-flipping-enable True  --genome-name 1937 --cut-threshold 250" />
+      <option name="PARAMETERS" value="--threads 8 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --out-dir-plots coverage_plots  --phased-vcf /home/rezkuh/gits/data/1937/1937BL.vcf.gz --smoothing-enable True --copynumbers-enable True  --unphased-reads-coverage-enable True --het-phased-snps-freq-enable True --phaseblock-flipping-enable True  --genome-name 1937 --cut-threshold 150" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
@@ -73,7 +76,7 @@
       <updated>1691665153459</updated>
       <workItem from="1691665155486" duration="30227000" />
       <workItem from="1691751515633" duration="61899000" />
-      <workItem from="1692132175500" duration="7936000" />
+      <workItem from="1692132175500" duration="26487000" />
     </task>
     <servers />
   </component>
@@ -85,7 +88,7 @@
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/src/cnvlib/segmentation/hmm.py</url>
-          <line>151</line>
+          <line>153</line>
           <option name="timeStamp" value="1" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
@@ -107,6 +110,6 @@
     </breakpoint-manager>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/Wakhan$Wakhan.coverage" NAME="Wakhan Coverage Results" MODIFIED="1692140058367" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/Wakhan$Wakhan.coverage" NAME="Wakhan Coverage Results" MODIFIED="1692193466875" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
   </component>
 </project>

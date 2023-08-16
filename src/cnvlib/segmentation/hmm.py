@@ -140,14 +140,16 @@ def hmm_get_model(depth_values_hp1, depth_values_hp2, arguments, cnarr, method, 
     # Estimate standard deviation from the full distribution, robustly
     stdev = biweight_midvariance(np.concatenate(observations), initial=0)
 
-    depth_values_hp1 = np.clip(depth_values_hp1, a_min=1, a_max=150)
-    depth_values_hp2 = np.clip(depth_values_hp2, a_min=1, a_max=150)
+    depth_values_hp1 = np.clip(depth_values_hp1, a_min=1, a_max=180)
+    depth_values_hp2 = np.clip(depth_values_hp2, a_min=1, a_max=180)
+    depth_values_hp1 = depth_values_hp1.astype(int)
+    depth_values_hp2 = depth_values_hp2.astype(int)
     depth_values_hp1 = depth_values_hp1.reshape(-1, 1)
     depth_values_hp2 = depth_values_hp2.reshape(-1, 1)
     X = np.concatenate([depth_values_hp1, depth_values_hp2])
     lengths = [len(depth_values_hp1), len(depth_values_hp2)]
-    clusters, centers, stdev  = hmm_model_select_hatchet(X, lengths, minK=2, maxK=10, tau=10e-6, tmat='diag', decode_alg='viterbi', covar='diag', restarts=15, )
-    print(centers, stdev, clusters)
+    centers, stdev  = hmm_model_select_hatchet(X, lengths, minK=2, maxK=10, tau=10e-6, tmat='diag', decode_alg='viterbi', covar='diag', restarts=5, )
+    print(centers, stdev)
 
     #u_labels, labels, centers, stdev, clusters = kmeans_clustering(depth_values, arguments['no_of_clusters'])
     #print(centers)
@@ -158,10 +160,19 @@ def hmm_get_model(depth_values_hp1, depth_values_hp2, arguments, cnarr, method, 
     #centers = [1.5, 30, 55, 103, 160, 220]#1937
     #stdev = [.75, 15, 27.5, 52.5, 80, 110]#1937
 
+    #diff not > 10 between each pair
+    #when more than one pairs start < 10 - stop
+
+    stdev = []
+    #centers = [1.06164962, 14.74069362, 27.21298619, 55.05099708, 134.37462712, 78.00189026] #1437
+    #centers = [1.37287895, 149.12153768, 54.32031415, 102.23449339, 23.6867503, 80.60718194, 126.76419107] #1937
+    for i in centers:
+       stdev.append(i / 2)
+
     ####################################
     state_names = []#["copy_1", "copy_2", "copy_3", "copy_4", "copy_5"]
     distributions = []
-    for i in range(clusters):
+    for i in range(len(centers)):
         state_names.append("copy_"+str(i))
         distributions.append(pom.NormalDistribution(centers[i], stdev[i], frozen=False))
 

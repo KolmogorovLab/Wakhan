@@ -210,11 +210,15 @@ def main():
         get_snp_segments(arguments, args.target_bam[0], thread_pool)
         csv_df_snps = csv_df_chromosomes_sorter_snps_from_bam('data/snps_frequencies.csv')
 
+    #TODO add chrX,chrY support later on
+    csv_df_coverage = csv_df_coverage.drop(csv_df_coverage[(csv_df_coverage.chr == "chrX") | (csv_df_coverage.chr == "chrY")].index)
+    csv_df_snps = csv_df_snps.drop(csv_df_snps[(csv_df_snps.chr == "chrX") | (csv_df_snps.chr == "chrY")].index)
+    csv_df_phasesets = csv_df_phasesets.drop(csv_df_phasesets[(csv_df_phasesets.chr == "chrX") | (csv_df_phasesets.chr == "chrY")].index)
+
     logging.info('Generating coverage plots chromosomes-wise')
     haplotype_1_values_updated, haplotype_2_values_updated, unphased, csv_df_snps_mean = \
         coverage_plots_chromosomes(csv_df_coverage, csv_df_phasesets, csv_df_snps, arguments)
 
-    csv_df_coverage = csv_df_coverage.drop(csv_df_coverage[(csv_df_coverage.chr == "chrX") | (csv_df_coverage.chr == "chrY")].index)
     df_hp1, df_hp2, df_unphased = seperate_dfs_coverage(csv_df_coverage, haplotype_1_values_updated, haplotype_2_values_updated, unphased)
 
     #cluster.plot_optimal_clusters(haplotype_1_values_updated, haplotype_1_values_updated, unphased,  arguments, "coverage")
