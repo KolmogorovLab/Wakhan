@@ -3,7 +3,10 @@ import statistics
 import pandas as pd
 import numpy as np
 import os
+from utils import csv_df_chromosomes_sorter_snps
 
+def generate_phasesets_bins(bam, path, bin_size, arguments):
+    return get_phasesets_bins(bam, path, bin_size, arguments)
 def get_phasesets_bins(bam, phasesets, bin_size, arguments):
     indices, values = remove_overlapping_and_small_phasesets(phasesets, bin_size, arguments)
     head, tail = os.path.split(bam)
@@ -19,7 +22,8 @@ def get_phasesets_bins(bam, phasesets, bin_size, arguments):
     return bed
 
 def remove_overlapping_and_small_phasesets(phasesets, bin_size, arguments):
-    dfs = pd.read_csv(phasesets, sep='\t', names=['chr', 'pos', 'qual', 'filter', 'ps', 'gt', 'dp', 'vaf'])
+    #dfs = pd.read_csv(phasesets, sep='\t', names=['chr', 'pos', 'ps'])
+    dfs = csv_df_chromosomes_sorter_snps(phasesets)
     values_all = []
     indices_all = []
     from utils import get_contigs_list

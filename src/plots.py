@@ -216,7 +216,8 @@ def coverage_plots_chromosomes(df, df_phasesets, df_snps, arguments):
 
     df_snps_freqs = pd.DataFrame(list(zip(chr_all, ref_start_values_all, ref_end_values_all, haplotype_1_snps_freqs_updated, haplotype_2_snps_freqs_updated, haplotype_2_snps_freqs_updated)), columns=['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
 
-    #plot_bins_histograms(haplotype_1_values_updated, haplotype_2_values_updated, ref_start_values, arguments)
+    #plot_bins_histograms(haplotype_1_values_updated, haplotype_2_values_updated, arguments)
+    #plot_bins_distributions(haplotype_1_values_updated, haplotype_2_values_updated, arguments)
     #plot_bins_ratios(flatten(haplotype_1_values_updated), flatten(haplotype_2_values_updated), arguments)
     html_graphs.write("</body></html>")
 
@@ -613,7 +614,7 @@ def plot_bins_ratios(hp1,hp2, arguments):
 
     fig.write_html(arguments['out_dir_plots'] +'/'+ arguments['genome_name'] + "_genome_ratio.html")
 
-def plot_bins_histograms(hp1,hp2, start, arguments):
+def plot_bins_histograms(hp1,hp2, arguments):
     import plotly.express as px
     from sklearn.cluster import KMeans
     import plotly.figure_factory as ff
@@ -621,9 +622,21 @@ def plot_bins_histograms(hp1,hp2, start, arguments):
     hp1=numpy.clip(hp1, a_min=1, a_max=300)
     hp2=numpy.clip(hp2, a_min=1, a_max=300)
 
+    from sklearn.neighbors import KernelDensity
+    from numpy import exp
+    model = KernelDensity(bandwidth=2, kernel='gaussian')
+    values = np.concatenate((hp1, hp2))
+    values = values.reshape(-1, 1)
+    model.fit(values)
+    probabilities_hp1 = model.score_samples(hp1.reshape(-1, 1))
+    probabilities_hp1 = exp(probabilities_hp1)
+    probabilities_hp2 = model.score_samples(hp2.reshape(-1, 1))
+    probabilities_hp2 = exp(probabilities_hp2)
+
     df = pd.DataFrame(dict(
         Haplotypes=np.concatenate((["HP-1"] * len(hp1), ["HP-2"] * len(hp2))),
-        coverage=np.concatenate((hp1, hp2))
+        coverage=np.concatenate((hp1, hp2)),
+        probabilities = np.concatenate((probabilities_hp1, probabilities_hp2))
     ))
 
     # df = pd.DataFrame(dict(
@@ -682,8 +695,7 @@ def plot_bins_histograms(hp1,hp2, start, arguments):
     fig = ff.create_distplot(hist_data, group_labels, curve_type='normal', # override default 'kde'
     )
 
-    fig = px.histogram(df, x="coverage", color="Haplotypes", barmode="overlay", marginal="violin")#, log_y=True)
-
+    fig = px.histogram(df, x="coverage", y="probabilities", color="Haplotypes", barmode="overlay", marginal="violin")#, log_y=True)
 
     #fig.update_yaxes(range=[1, 1000])
     #fig.update_xaxes(range=[1, 36])
@@ -704,3 +716,30 @@ def plot_bins_histograms(hp1,hp2, start, arguments):
     )
 
     fig.write_html(arguments['out_dir_plots'] +'/'+ arguments['genome_name'] + "_genome_histogram.html")
+
+def plot_bins_distributions(hp1,hp2, arguments):
+    import plotly.express as px
+    from sklearn.cluster import KMeans
+    import plotly.figure_factory as ff
+
+    hp1=numpy.clip(hp1, a_min=1, a_max=300)
+    hp2=numpy.clip(hp2, a_min=1, a_max=300)
+
+    import plotly.figure_factory as ff
+    import numpy as np
+
+    group_labels = ['Group 1', 'Group 2']
+
+    colors = ['slategray', 'magenta']
+
+    # Create distplot with curve_type set to 'normal'
+    fig = ff.create_distplot([hp1, hp2], group_labels, bin_size=.5,
+                             curve_type='normal',  # override default 'kde'
+                             colors=colors)
+
+    # Add title
+    fig.update_layout(title_text='Distplot with Normal Distribution')
+
+    fig.write_html(arguments['out_dir_plots'] +'/'+ arguments['genome_name'] + "_genome_histogram_distplot.html")
+
+

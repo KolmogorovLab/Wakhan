@@ -983,6 +983,9 @@ def hmm_model_select_hatchet(X, lengths, minK=20, maxK=50, tau=10e-6, tmat='diag
     # C = squareform(pdist(X_scaled))
     means = []
     stdev = []
+    models = []
+    scores = []
+
     rs = {}
     repeats = False
     for K in range(minK, maxK + 1):
@@ -1038,12 +1041,10 @@ def hmm_model_select_hatchet(X, lengths, minK=20, maxK=50, tau=10e-6, tmat='diag
             prob, labels = model.decode(X, lengths, algorithm=decode_alg)
             #print(sorted(list(model.means_)), model.n_components)
 
-            res = np.concatenate(sorted(list(model.means_))).ravel().tolist()
-            for x in range(len(res) - 1):
-                if (res[x + 1] - res[x] < 15):
-                    repeats = True
-            means.append(res)
-            stdev.append(np.concatenate(sorted(list(model.covars_))).ravel().tolist())
+            #res = np.concatenate(sorted(list(model.means_))).ravel().tolist()
+            # for x in range(len(res) - 1):
+            #     if (res[x + 1] - res[x] < 15):
+            #         repeats = True
 
             #print(res, model.n_components)
 
@@ -1052,7 +1053,13 @@ def hmm_model_select_hatchet(X, lengths, minK=20, maxK=50, tau=10e-6, tmat='diag
                 my_best_ll = prob
                 my_best_model = model
 
-        score = silhouette_score(X, my_best_labels, metric="euclidean", sample_size=6000)
+        means.append(np.concatenate(sorted(list(my_best_model.means_))).ravel().tolist())
+        stdev.append(np.concatenate(sorted(list(my_best_model.covars_))).ravel().tolist())
+        models.append(my_best_model)
+
+        score = silhouette_score(X, my_best_labels, metric="euclidean", sample_size=2000)
+        scores.append(score)
+        print(score, K, np.concatenate(sorted(list(my_best_model.means_))).ravel().tolist())
 
         rs[K] = my_best_ll, score, my_best_labels
         if score > best_score:
@@ -1061,7 +1068,15 @@ def hmm_model_select_hatchet(X, lengths, minK=20, maxK=50, tau=10e-6, tmat='diag
             best_labels = my_best_labels
             best_K = K
 
-    #print(sorted(list(best_model.means_)), best_model.n_components)
+    for i in range(len(scores)-1):
+        best_score_final = scores[i]
+        means_diff = [j-i for i, j in zip(means[i][:-1], means[i][1:])]
+        print(means_diff)
+        best_model = models[i]
+        if abs(scores[i] - scores[i+1]) > 0.08 and all(i >= 12 for i in means_diff):
+            break
+
+    print(sorted(list(best_model.means_)), best_model.n_components)
 
     import matplotlib.pyplot as plt
     # plot the transition matrix
@@ -1078,9 +1093,18 @@ def hmm_model_select_hatchet(X, lengths, minK=20, maxK=50, tau=10e-6, tmat='diag
     plt.savefig("data/tmat.pdf", format="pdf", bbox_inches="tight")
 
     print(means)
-    return means[-2], stdev[-2]
-    #return best_model.n_components, best_model.means_, best_model.covars_
+    #return means[-1], stdev[-1]
+    return best_model.means_, best_model.covars_
 
+def pairwise_diff(means_list):
+    N = len(means_list)
+    pair_wise_diff = np.zeros((N, N))
+
+    for n in range(1, N):
+        pair_wise_diff[n, n:N] = means_list[n:N] - means_list[0:N - n]
+        print(n, means_list[n:N])
+
+    return pair_wise_diff
 
 class DiagGHMM(hmm.GaussianHMM):
     def _accumulate_sufficient_statistics(self, stats, obs, framelogprob, posteriors, fwdlattice, bwdlattice):

@@ -14,12 +14,13 @@ from collections import defaultdict
 from bam_processing import get_all_reads_parallel, update_coverage_hist, get_segments_coverage, haplotype_update_all_bins_parallel, get_snps_frequencies
 from cnvlib import descriptives
 from cnvlib import cluster
-from utils import get_chromosomes_bins, write_segments_coverage, csv_df_chromosomes_sorter, generate_phasesets_bins, csv_df_chromosomes_sorter_snps,\
+from utils import get_chromosomes_bins, write_segments_coverage, csv_df_chromosomes_sorter, csv_df_chromosomes_sorter_snps,\
     apply_copynumbers, csv_df_chromosomes_sorter_copyratios, seperate_dfs_coverage, flatten_smooth, get_contigs_list, \
     csv_df_chromosomes_sorter_snps_from_bam
 from plots import coverage_plots_chromosomes, copy_number_plots_genome, plots_genome_coverage, copy_number_plots_chromosomes
 from vcf_processing import vcf_parse_to_csv_for_het_phased_snps_phasesets, get_snp_segments
 from bam_processing import process_bam_for_snps_freqs
+from phasing_correction import generate_phasesets_bins
 
 #remove
 from utils import get_chromosomes_bins_replica
@@ -36,7 +37,7 @@ def main():
     SAMTOOLS_BIN = "samtools"
     BCFTOOLS_BIN = "bcftools"
 
-    DEFAULT_CONTIGS = 'chr1-22'
+    DEFAULT_CONTIGS = 'chr1-22' #('chr1-22' '1-22') ('chr1-22,chrX' '1-22,X')
 
     parser = argparse.ArgumentParser \
         (description="Find breakpoints and build breakpoint graph from a bam file")

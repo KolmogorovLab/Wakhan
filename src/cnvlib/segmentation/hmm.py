@@ -71,6 +71,7 @@ def segment_hmm(depth_values_hp1, depth_values_hp2, arguments, cnarr, method, wi
 
     segs = []
     start = 0
+    haplotype_dfs = pd.DataFrame()
     for i in range(2): #range(0, len(values), 49592):#len(values) // 2):
         state = states[start:half_values]
         cnarray = values.data.iloc[start:half_values, ]
@@ -90,6 +91,10 @@ def segment_hmm(depth_values_hp1, depth_values_hp2, arguments, cnarr, method, wi
             bad_segs = segarr[segarr.start >= segarr.end]
             logging.warning("Bad segments:\n%s", bad_segs.data)
 
+        haplotype_df = segarr.data
+        haplotype_df['haplotype'] = i
+        haplotype_dfs = haplotype_dfs.append(haplotype_df)
+
         mean = []
         df = cnarray.data.assign(group=state)
         for i, row in segarr.data.iterrows():
@@ -107,6 +112,9 @@ def segment_hmm(depth_values_hp1, depth_values_hp2, arguments, cnarr, method, wi
             #segarr['state'] = np.where(segarr['state'] == i, mean[i], segarr['state'])
             segarr['state'] = np.where(segarr['state'] == i, centers[i], segarr['state'])
         segs.append(segarr)
+
+    header = ['chromosome', 'start', 'end', 'state', 'haplotype']
+    haplotype_dfs.to_csv('data/copynumbers_segments.csv', sep='\t', columns=header, index=False)
 
     return segs
 
@@ -140,8 +148,8 @@ def hmm_get_model(depth_values_hp1, depth_values_hp2, arguments, cnarr, method, 
     # Estimate standard deviation from the full distribution, robustly
     stdev = biweight_midvariance(np.concatenate(observations), initial=0)
 
-    depth_values_hp1 = np.clip(depth_values_hp1, a_min=1, a_max=180)
-    depth_values_hp2 = np.clip(depth_values_hp2, a_min=1, a_max=180)
+    depth_values_hp1 = np.clip(depth_values_hp1, a_min=1, a_max=250)
+    depth_values_hp2 = np.clip(depth_values_hp2, a_min=1, a_max=250)
     depth_values_hp1 = depth_values_hp1.astype(int)
     depth_values_hp2 = depth_values_hp2.astype(int)
     depth_values_hp1 = depth_values_hp1.reshape(-1, 1)

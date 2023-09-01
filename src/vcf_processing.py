@@ -5,7 +5,7 @@ import logging
 import os
 import pandas as pd
 from bam_processing import get_snps_frequencies, process_bam_for_snps_freqs
-from utils import write_segments_coverage, csv_df_chromosomes_sorter_snps_frequency
+from utils import write_segments_coverage, csv_df_chromosomes_sorter_snps_frequency, csv_df_chromosomes_sorter_snps_alts_gts
 
 import csv
 import multiprocessing
@@ -113,7 +113,7 @@ def vcf_parse_to_csv_for_het_phased_snps_phasesets(input_vcf):
 
     logging.info('bcftools -> Query for phasesets and GT, DP, VAF feilds by creating a CSV file')
     # bcftools query for phasesets and GT,DP,VAF
-    cmd = ['bcftools', 'query', '-f',  '%CHROM\t%POS\t%QUAL\t%FILTER\t[%PS]\t[%GT]\t[%DP]\t[%VAF]\n', '-i PS>1', output_vcf, '-o', output_csv] #
+    cmd = ['bcftools', 'query', '-f',  '%CHROM\t%POS\t[%PS]\n', '-i PS>1', output_vcf, '-o', output_csv] #
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     process.wait()
 
@@ -150,7 +150,8 @@ def get_snp_segments(arguments, target_bam, thread_pool):
     #output_bed = '/home/rezkuh/GenData/COLO829/colo829_chr7.csv'
 
     logging.info('SNPs frequency -> CSV to dataframe conversion')
-    dataframe_snps = pd.read_csv(output_csv, sep='\t', names=['chr', 'start', 'ref', 'alt', 'gt'])
+    dataframe_snps = csv_df_chromosomes_sorter_snps_alts_gts(output_csv)
+    #dataframe_snps = pd.read_csv(output_csv, sep='\t', names=['chr', 'start', 'ref', 'alt', 'gt'])
 
     logging.info('SNPs frequency -> Comuting het SNPs frequency from tumor BAM')
 

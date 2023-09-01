@@ -12,11 +12,6 @@ from smoothing import smoothing
 
 from pomegranate import HiddenMarkovModel as Model
 
-from phasing_correction import get_phasesets_bins
-
-def generate_phasesets_bins(bam, path, bin_size, arguments):
-    return get_phasesets_bins(bam, path, bin_size, arguments)
-
 def get_chromosomes_bins_replica(bam_file, bin_size, arguments):
     bed=[]
     bam_alignment = pysam.AlignmentFile(bam_file)
@@ -77,7 +72,9 @@ def get_contigs_list(contigs):
         else:
             chroms_list_final.extend(chrom)
 
-    chroms_list_final = ['chr' + x if not x.startswith('chr') else x for x in map(str, chroms_list_final)]
+    #if chroms[0].startswith('chr'):
+    chroms_list_final = ['chr' + x if chroms[0].startswith('chr') else x for x in map(str, chroms_list_final)]
+
     return chroms_list_final
 
 def update_bins_with_bps(bins):
@@ -132,36 +129,49 @@ def chromosomes_sorter(label):
 
 def csv_df_chromosomes_sorter(path):
     dataframe = pd.read_csv(path, sep='\t', names=['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
-    if not dataframe['chr'].iloc[0].startswith('chr'):
-        dataframe['chr'] = 'chr' + dataframe['chr'].astype(str)
+    dataframe['chr'] = dataframe['chr'].astype(str)
+    #if not dataframe['chr'].iloc[0].startswith('chr'):
+    #    dataframe['chr'] = 'chr' + dataframe['chr'].astype(str)
     dataframe.sort_values(by=['chr', 'start'], ascending=[True, True], inplace=True)
     return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
 
 def csv_df_chromosomes_sorter_copyratios(path):
     dataframe = pd.read_csv(path, sep='\t', names=['chr', 'start', 'end', 'gene', 'log2', 'depth', 'probes', 'weight'])
-    if not dataframe['chr'].iloc[0].startswith('chr'):
-        dataframe['chr'] = 'chr' + dataframe['chr'].astype(str)
+    dataframe['chr'] = dataframe['chr'].astype(str)
+    #if not dataframe['chr'].iloc[0].startswith('chr'):
+    #    dataframe['chr'] = 'chr' + dataframe['chr'].astype(str)
     dataframe.sort_values(by=['chr', 'start'], ascending=[True, True], inplace=True)
     return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
 
 def csv_df_chromosomes_sorter_snps(path):
-    dataframe = pd.read_csv(path, sep='\t', names=['chr', 'pos', 'qual', 'filter', 'ps', 'gt', 'dp', 'vaf'])
-    if not dataframe['chr'].iloc[0].startswith('chr'):
-        dataframe['chr'] = 'chr' + dataframe['chr'].astype(str)
+    dataframe = pd.read_csv(path, sep='\t', names=['chr', 'pos', 'ps'])
+    dataframe['chr'] = dataframe['chr'].astype(str)
+    #if not dataframe['chr'].iloc[0].startswith('chr'):
+    #    dataframe['chr'] = 'chr' + dataframe['chr'].astype(str)
     dataframe.sort_values(by=['chr', 'pos'], ascending=[True, True], inplace=True)
     return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
 
 def csv_df_chromosomes_sorter_snps_from_bam(path):
     dataframe = pd.read_csv(path, sep='\t', names=['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])
-    if not dataframe['chr'].iloc[0].startswith('chr'):
-        dataframe['chr'] = 'chr' + dataframe['chr'].astype(str)
+    dataframe['chr'] = dataframe['chr'].astype(str)
+    #if not dataframe['chr'].iloc[0].startswith('chr'):
+    #    dataframe['chr'] = 'chr' + dataframe['chr'].astype(str)
     dataframe.sort_values(by=['chr', 'pos'], ascending=[True, True], inplace=True)
     return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
 
 def csv_df_chromosomes_sorter_snps_frequency(path):
     dataframe = pd.read_csv(path, sep=',', names=['chr', 'start', 'a', 'c', 'g', 't'])
-    if not dataframe['chr'].iloc[0].startswith('chr'):
-        dataframe['chr'] = 'chr' + dataframe['chr'].astype(str)
+    dataframe['chr'] = dataframe['chr'].astype(str)
+    #if not dataframe['chr'].iloc[0].startswith('chr'):
+    #    dataframe['chr'] = 'chr' + dataframe['chr'].astype(str)
+    dataframe.sort_values(by=['chr', 'start'], ascending=[True, True], inplace=True)
+    return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
+
+def csv_df_chromosomes_sorter_snps_alts_gts(path):
+    dataframe = pd.read_csv(path, sep='\t', names=['chr', 'start', 'ref', 'alt', 'gt'])
+    dataframe['chr'] = dataframe['chr'].astype(str)
+    #if not dataframe['chr'].iloc[0].startswith('chr'):
+    #    dataframe['chr'] = 'chr' + dataframe['chr'].astype(str)
     dataframe.sort_values(by=['chr', 'start'], ascending=[True, True], inplace=True)
     return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
 
