@@ -13,12 +13,12 @@ advantage of the CNA differences between the haplotypes. Wakhan then generates i
 <img width="1373" alt="plots_example" src="examples/images/2.png">
 
 #### Copy number segmentation:
-<img width="1373" alt="plots_example" src="examples/images/1937.png">
+<img width="1373" alt="plots_example" src="examples/images/1437.png">
 
 #### LOH detection, phasing correction and CopyNumbers profiling:
-<img width="1373" alt="plots_example" src="examples/images/loh1.png">
-<img width="1373" alt="plots_example" src="examples/images/loh2.png">
-<img width="1373" alt="plots_example" src="examples/images/loh3.png">
+<img width="873" alt="plots_example" src="examples/images/loh1.png">
+<img width="873" alt="plots_example" src="examples/images/loh2.png">
+<img width="873" alt="plots_example" src="examples/images/loh3.png">
 
 ## Installation (enabling through conda environment)
 ```
