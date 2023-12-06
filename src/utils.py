@@ -9,6 +9,7 @@ from cnvlib.cnary import CopyNumArray as CNA
 from cnvlib import segmentation, coverage, batch, fix, segmetrics, call, scatter
 from skgenome import tabio
 from smoothing import smoothing
+from hmm import call_copynumbers
 
 from pomegranate import HiddenMarkovModel as Model
 
@@ -127,53 +128,69 @@ def chromosomes_sorter(label):
             key = (3000 + nums, chars)
     return key
 
-def csv_df_chromosomes_sorter(path):
-    dataframe = pd.read_csv(path, sep='\t', names=['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
+def csv_df_chromosomes_sorter(path, names, sept='\t'):
+    dataframe = pd.read_csv(path, sep=sept, names=names)
     dataframe['chr'] = dataframe['chr'].astype(str)
     #if not dataframe['chr'].iloc[0].startswith('chr'):
     #    dataframe['chr'] = 'chr' + dataframe['chr'].astype(str)
-    dataframe.sort_values(by=['chr', 'start'], ascending=[True, True], inplace=True)
+    dataframe.sort_values(by=['chr', names[1]], ascending=[True, True], inplace=True)
     return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
 
-def csv_df_chromosomes_sorter_copyratios(path):
-    dataframe = pd.read_csv(path, sep='\t', names=['chr', 'start', 'end', 'gene', 'log2', 'depth', 'probes', 'weight'])
-    dataframe['chr'] = dataframe['chr'].astype(str)
-    #if not dataframe['chr'].iloc[0].startswith('chr'):
-    #    dataframe['chr'] = 'chr' + dataframe['chr'].astype(str)
-    dataframe.sort_values(by=['chr', 'start'], ascending=[True, True], inplace=True)
-    return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
+# def csv_df_chromosomes_sorter_coverage(path):
+#     dataframe = pd.read_csv(path, sep='\t', names=['chr', 'start', 'end', 'coverage'])
+#     dataframe['chr'] = dataframe['chr'].astype(str)
+#     #if not dataframe['chr'].iloc[0].startswith('chr'):
+#     #    dataframe['chr'] = 'chr' + dataframe['chr'].astype(str)
+#     dataframe.sort_values(by=['chr', 'start'], ascending=[True, True], inplace=True)
+#     return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
 
-def csv_df_chromosomes_sorter_snps(path):
-    dataframe = pd.read_csv(path, sep='\t', names=['chr', 'pos', 'ps'])
-    dataframe['chr'] = dataframe['chr'].astype(str)
-    #if not dataframe['chr'].iloc[0].startswith('chr'):
-    #    dataframe['chr'] = 'chr' + dataframe['chr'].astype(str)
-    dataframe.sort_values(by=['chr', 'pos'], ascending=[True, True], inplace=True)
-    return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
+# def csv_df_chromosomes_sorter_copyratios(path):
+#     dataframe = pd.read_csv(path, sep='\t', names=['chr', 'start', 'end', 'gene', 'log2', 'depth', 'probes', 'weight'])
+#     dataframe['chr'] = dataframe['chr'].astype(str)
+#     #if not dataframe['chr'].iloc[0].startswith('chr'):
+#     #    dataframe['chr'] = 'chr' + dataframe['chr'].astype(str)
+#     dataframe.sort_values(by=['chr', 'start'], ascending=[True, True], inplace=True)
+#     return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
 
-def csv_df_chromosomes_sorter_snps_from_bam(path):
-    dataframe = pd.read_csv(path, sep='\t', names=['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])
-    dataframe['chr'] = dataframe['chr'].astype(str)
-    #if not dataframe['chr'].iloc[0].startswith('chr'):
-    #    dataframe['chr'] = 'chr' + dataframe['chr'].astype(str)
-    dataframe.sort_values(by=['chr', 'pos'], ascending=[True, True], inplace=True)
-    return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
-
-def csv_df_chromosomes_sorter_snps_frequency(path):
-    dataframe = pd.read_csv(path, sep=',', names=['chr', 'start', 'a', 'c', 'g', 't'])
-    dataframe['chr'] = dataframe['chr'].astype(str)
-    #if not dataframe['chr'].iloc[0].startswith('chr'):
-    #    dataframe['chr'] = 'chr' + dataframe['chr'].astype(str)
-    dataframe.sort_values(by=['chr', 'start'], ascending=[True, True], inplace=True)
-    return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
-
-def csv_df_chromosomes_sorter_snps_alts_gts(path):
-    dataframe = pd.read_csv(path, sep='\t', names=['chr', 'start', 'ref', 'alt', 'gt'])
-    dataframe['chr'] = dataframe['chr'].astype(str)
-    #if not dataframe['chr'].iloc[0].startswith('chr'):
-    #    dataframe['chr'] = 'chr' + dataframe['chr'].astype(str)
-    dataframe.sort_values(by=['chr', 'start'], ascending=[True, True], inplace=True)
-    return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
+# def csv_df_chromosomes_sorter_snps(path, name):
+#     dataframe = pd.read_csv(path, sep='\t', names=['chr', 'pos', 'ps'])
+#     dataframe['chr'] = dataframe['chr'].astype(str)
+#     #if not dataframe['chr'].iloc[0].startswith('chr'):
+#     #    dataframe['chr'] = 'chr' + dataframe['chr'].astype(str)
+#     dataframe.sort_values(by=['chr', 'pos'], ascending=[True, True], inplace=True)
+#     return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
+#
+# def csv_df_chromosomes_sorter_snps_vcf(path):
+#     dataframe = pd.read_csv(path, sep='\t', names=['chr', 'pos', 'qual', 'gt', 'dp', 'vaf'])
+#     dataframe['chr'] = dataframe['chr'].astype(str)
+#     #if not dataframe['chr'].iloc[0].startswith('chr'):
+#     #    dataframe['chr'] = 'chr' + dataframe['chr'].astype(str)
+#     dataframe.sort_values(by=['chr', 'pos'], ascending=[True, True], inplace=True)
+#     return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
+#
+# def csv_df_chromosomes_sorter_snps_from_bam(path):
+#     dataframe = pd.read_csv(path, sep='\t', names=['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])
+#     dataframe['chr'] = dataframe['chr'].astype(str)
+#     #if not dataframe['chr'].iloc[0].startswith('chr'):
+#     #    dataframe['chr'] = 'chr' + dataframe['chr'].astype(str)
+#     dataframe.sort_values(by=['chr', 'pos'], ascending=[True, True], inplace=True)
+#     return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
+#
+# def csv_df_chromosomes_sorter_snps_frequency(path):
+#     dataframe = pd.read_csv(path, sep=',', names=['chr', 'start', 'a', 'c', 'g', 't'])
+#     dataframe['chr'] = dataframe['chr'].astype(str)
+#     #if not dataframe['chr'].iloc[0].startswith('chr'):
+#     #    dataframe['chr'] = 'chr' + dataframe['chr'].astype(str)
+#     dataframe.sort_values(by=['chr', 'start'], ascending=[True, True], inplace=True)
+#     return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
+#
+# def csv_df_chromosomes_sorter_snps_alts_gts(path):
+#     dataframe = pd.read_csv(path, sep='\t', names=['chr', 'start', 'ref', 'alt', 'gt'])
+#     dataframe['chr'] = dataframe['chr'].astype(str)
+#     #if not dataframe['chr'].iloc[0].startswith('chr'):
+#     #    dataframe['chr'] = 'chr' + dataframe['chr'].astype(str)
+#     dataframe.sort_values(by=['chr', 'start'], ascending=[True, True], inplace=True)
+#     return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
 
 
 def get_breakpoints(chrom, bp_file_path): #TODO add call in plots
@@ -202,24 +219,31 @@ def write_segments_coverage(coverage_segments, output):
             if not items == None:
                 fp.write("%s\n" % items)
 
-def seperate_dfs_coverage(df, haplotype_1_values_updated, haplotype_2_values_updated, unphased):
-
-    df_hp1 = df[['chr', 'start','end', 'hp1']].copy()
-    df_hp2 = df[['chr', 'start','end', 'hp2']].copy()
-    df_unphased = df[['chr', 'start','end', 'hp3']].copy()
-    df_hp1['hp1'] = haplotype_1_values_updated
-    df_hp2['hp2'] = haplotype_2_values_updated
-    df_unphased['hp3'] = unphased
-    return df_hp1, df_hp2, df_unphased
+def seperate_dfs_coverage(arguments, df, haplotype_1_values_updated, haplotype_2_values_updated, unphased):
+    if arguments['without_phasing']:
+        return df[['chr', 'start', 'end', 'coverage']].copy()
+    else:
+        df_hp1 = df[['chr', 'start','end', 'hp1']].copy()
+        df_hp2 = df[['chr', 'start','end', 'hp2']].copy()
+        df_unphased = df[['chr', 'start','end', 'hp3']].copy()
+        df_hp1['hp1'] = haplotype_1_values_updated
+        df_hp2['hp2'] = haplotype_2_values_updated
+        df_unphased['hp3'] = unphased
+        return df_hp1, df_hp2, df_unphased
 
 def flatten(values):
     return [item for sublist in values for item in sublist]
 
-def apply_copynumbers(csv_df_coverage, depth_values, depth_values1, arguments):
+def apply_copynumbers(csv_df_coverage, depth_values, depth_values1, arguments, snps_cpd_means):
 
     #depth_values = flatten(haplotype_1_values_updated)
     #depth_values1 = flatten(haplotype_2_values_updated)
     NULL_LOG2_COVERAGE = -20.0
+
+    df_coverage = csv_df_coverage
+
+    depth_values1 = numpy.clip(depth_values1, a_min=0, a_max=600)
+    depth_values = numpy.clip(depth_values, a_min=0, a_max=600)
 
     csv_df_coverage.drop(csv_df_coverage[(csv_df_coverage.chr == "chrX") | (csv_df_coverage.chr == "chrY")].index, inplace=True)
 
@@ -253,12 +277,15 @@ def apply_copynumbers(csv_df_coverage, depth_values, depth_values1, arguments):
     else:
         csv_df_coverage["gene"] = "-"
     csv_df_coverage.rename(columns={"chr": "chromosome"}, inplace=True)
-    csv_df_coverage.drop(columns=['hp1', 'hp2', 'hp3'], inplace=True)
+    if arguments['without_phasing']:
+        csv_df_coverage.drop(columns=['coverage'], inplace=True)
+    else:
+        csv_df_coverage.drop(columns=['hp1', 'hp2', 'hp3'], inplace=True)
 
     #fasta = '/home/rezkuh/GenData/reference/parts/chr7.fasta'
     #annot = '/home/rezkuh/gits/Wakhan/src/data/refflat.bed'
     #ref_fname, tgt_bed_fname, _ = batch.batch_make_reference([normal_bam], 'data/bins.bed', None, True, fasta, annot, True, 50000, None, None, None, None, "build", 8, False, "wgs", False, )
-    ref_fname = '/home/rezkuh/gits/Wakhan/src/data/colo829/reference.cnn'
+    #ref_fname = '/home/rezkuh/gits/Wakhan/src/data/colo829/reference.cnn'
 
     meta = {"sample_id": 'sample'}
     cnarr = CNA(csv_df_coverage, meta)
@@ -267,7 +294,7 @@ def apply_copynumbers(csv_df_coverage, depth_values, depth_values1, arguments):
     #cnarr, ref_matched = fix.load_adjust_coverages(cnarr, read_cna(ref_fname), True, False, False, False)
     #cnarr.data["log2"] -= ref_matched[log2_key]
     cnarr = fix.apply_weights_replica(cnarr, None, log2_key, spread_key)
-    cnarr.center_all(skip_low=True)
+    cnarr.center_all(skip_low=False)
 
     cnarr['log2'] =cnarr['depth']
     #tabio.write(cnarr, "colo829_normal_grch38_md_chr7_haplotagged.cnr")
@@ -275,11 +302,12 @@ def apply_copynumbers(csv_df_coverage, depth_values, depth_values1, arguments):
     #TODO variants = load_het_snps()
     #cnarr = read_cna('data/coverage_cnvkit.cnr')
     #PT8 cnarr.center_all(skip_low=True), skip_low=True, skip_outliers=20
-    segs = segmentation.do_segmentation(depth_values, depth_values1, arguments, cnarr, 'hmm', threshold=None, variants=None, skip_low=True, skip_outliers=20,
-                                        min_weight=0, save_dataframe=False, rscript_path="Rscript", processes=1,
-                                        smooth_cbs=False)
 
+    #segs, states, centers, stdev, cnarr, snps_cpd_means = segmentation.do_segmentation(depth_values, depth_values1, snps_cpd_means, arguments, cnarr, 'hmm', threshold=None, variants=None, skip_low=False, skip_outliers=0,
+    #                                    min_weight=0, save_dataframe=False, rscript_path="Rscript", processes=1,
+    #                                    smooth_cbs=False)
 
+    segs, states, centers, stdev, snps_cpd_means = call_copynumbers(arguments, cnarr, df_coverage, snps_cpd_means)
 
     #seg_metrics = segmetrics.do_segmetrics(cnarr, segs, interval_stats=["ci"], alpha=0.5, smoothed=True, skip_low=True,)
     #seg_call = call.do_call(seg_metrics, method="none", filters=["ci"])
@@ -294,7 +322,7 @@ def apply_copynumbers(csv_df_coverage, depth_values, depth_values1, arguments):
     values = cnarr.as_dataframe(cnarr.data)
     half_values = len(values) // 2
 
-    return values.data.iloc[:half_values, ], segs[0].as_dataframe(segs[0].data), values.data.iloc[half_values:,], segs[1].as_dataframe(segs[1].data)
+    return values.data.iloc[:half_values, ], segs[0].as_dataframe(segs[0].data), values.data.iloc[half_values:,], segs[1].as_dataframe(segs[1].data), states, centers, stdev, snps_cpd_means
 
 def flatten_smooth(hp1, hp2, unphased):
     hp1 = flatten(hp1)
@@ -313,3 +341,25 @@ def get_snps_frquncies_coverage_from_bam(df, chrom):
     haplotype_2_coverage = df.freq_value_a.values.tolist()
 
     return haplotype_1_position, haplotype_1_coverage, haplotype_2_position, haplotype_2_coverage
+
+def detect_alter_loh_regions(ref_ends, haplotype_1_values, haplotype_2_values, unphased_reads_values, starts, ends):
+    if ends[-1] > ref_ends[-1]:
+        ends[-1] = ref_ends[-1]
+
+    region_starts = []
+    region_ends = []
+    for i, (start,end) in enumerate(zip(starts,ends)):
+        if end - start > 2000000:
+            region_starts.append(start)
+            region_ends.append(end)
+
+    print(region_starts)
+    print(region_ends)
+
+    for j, (starts,ends) in enumerate(zip(region_starts, region_ends)):
+        for i in range(starts//50000,ends//50000):
+            haplotype_1_values[i] = haplotype_1_values[i] + haplotype_2_values[i] + unphased_reads_values[i]
+            haplotype_2_values[i] = 0
+            unphased_reads_values[i] = 0
+
+    return haplotype_1_values, haplotype_2_values, unphased_reads_values

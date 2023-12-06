@@ -1,12 +1,115 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="AutoImportSettings">
-    <option name="autoReloadType" value="SELECTIVE" />
-  </component>
   <component name="ChangeListManager">
-    <list default="true" id="9513539d-f724-42bd-a012-0e30316556a5" name="Changes" comment="">
+    <list default="true" id="d55f6c14-a9d2-4fc8-a2b4-3002ce70ef44" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/environment.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/clustering.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/hmm.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/Wakhan.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/Wakhan.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/DASHBOARD.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr1.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr10.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr11.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr12.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr13.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr14.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr15.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr16.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr17.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr18.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr19.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr2.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr20.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr21.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr22.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr3.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr4.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr5.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr6.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr7.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr8.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr9.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/DASHBOARD.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr1.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr10.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr11.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr12.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr13.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr14.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr15.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr16.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr17.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr18.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr19.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr2.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr20.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr21.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr22.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr3.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr4.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr5.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr6.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr7.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr8.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr9.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/DASHBOARD.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr1.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr10.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr11.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr12.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr13.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr14.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr15.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr16.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr17.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr18.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr19.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr2.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr20.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr21.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr22.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr3.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr4.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr5.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr6.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr7.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr8.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr9.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/DASHBOARD.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr1.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr10.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr11.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr12.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr13.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr14.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr15.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr16.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr17.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr18.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr19.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr2.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr20.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr21.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr22.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr3.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr4.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr5.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr6.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr7.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr8.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr9.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/bam_processing.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/bam_processing.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/cnvlib/cluster.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/cnvlib/cluster.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/cnvlib/segmentation/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/cnvlib/segmentation/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/cnvlib/segmentation/hmm.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/cnvlib/segmentation/hmm.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/phasing_correction.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/phasing_correction.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/plots.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/plots.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/vcf_processing.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/vcf_processing.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -19,25 +122,21 @@
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
   </component>
-  <component name="ProjectId" id="2Tn3iXdqjk61VtGCxYNgmUC1VHN" />
+  <component name="ProjectId" id="2Z8zbPfYDZwI8LA244Dwwo2p8fg" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
-    &quot;last_opened_file_path&quot;: &quot;//wsl$/Ubuntu/home/rezkuh/gits/backup/hps togather/Wakhan/src/main.py&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "WebServerToolWindowFactoryState": "false",
+    "last_opened_file_path": "//wsl$/Ubuntu/home/rezkuh/gits/backup/12042023/segmentation/Wakhan/src/main.py",
+    "nodejs_package_manager_path": "npm",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RunManager">
     <configuration name="Wakhan" type="PythonConfigurationType" factoryName="Python">
       <module name="Wakhan" />
@@ -46,15 +145,15 @@
       <envs>
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
-      <option name="SDK_HOME" value="/usr/bin/python3" />
-      <option name="SDK_NAME" value="/usr/bin/python3" />
+      <option name="SDK_HOME" value="/usr/bin/python3.8" />
+      <option name="SDK_NAME" value="Python 3.8.10 WSL (Ubuntu): (/usr/bin/python3.8)" />
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src" />
       <option name="IS_MODULE_SDK" value="false" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/main.py" />
-      <option name="PARAMETERS" value="--threads 8 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --out-dir-plots coverage_plots  --phased-vcf /home/rezkuh/gits/data/1937/1937BL.vcf.gz --smoothing-enable True --copynumbers-enable True  --unphased-reads-coverage-enable True --het-phased-snps-freq-enable True --phaseblock-flipping-enable True  --genome-name 1937 --cut-threshold 150" />
+      <option name="PARAMETERS" value="--dryrun True --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --out-dir-plots coverage_plots  --phased-vcf /home/rezkuh/gits/data/1437/1437BL.vcf.gz --smoothing-enable True --copynumbers-enable True  --unphased-reads-coverage-enable True --het-phased-snps-freq-enable True --phaseblock-flipping-enable True  --genome-name 1437 --cut-threshold 150" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
@@ -66,47 +165,19 @@
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="9513539d-f724-42bd-a012-0e30316556a5" name="Changes" comment="" />
-      <created>1691665153459</created>
+      <changelist id="d55f6c14-a9d2-4fc8-a2b4-3002ce70ef44" name="Changes" comment="" />
+      <created>1701818564955</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1691665153459</updated>
-      <workItem from="1691665155486" duration="30227000" />
-      <workItem from="1691751515633" duration="61899000" />
-      <workItem from="1692132175500" duration="26708000" />
+      <updated>1701818564955</updated>
+      <workItem from="1701818566130" duration="4920000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
   </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/src/cnvlib/segmentation/hmm.py</url>
-          <line>153</line>
-          <option name="timeStamp" value="1" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/src/plots.py</url>
-          <line>381</line>
-          <option name="timeStamp" value="7" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/src/plots.py</url>
-          <line>360</line>
-          <option name="timeStamp" value="8" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/src/bam_processing.py</url>
-          <line>367</line>
-          <option name="timeStamp" value="12" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
-  </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/Wakhan$Wakhan.coverage" NAME="Wakhan Coverage Results" MODIFIED="1692193466875" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/Wakhan$Wakhan.coverage" NAME="Wakhan Coverage Results" MODIFIED="1701825034489" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
   </component>
 </project>

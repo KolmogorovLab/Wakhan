@@ -1,12 +1,10 @@
 import pysam
-from multiprocessing import Pool
 import numpy as np
-from collections import defaultdict
-
 import subprocess
 import pathlib
 import os
 import pandas
+from collections import defaultdict
 
 class ReadSegment(object):
     __slots__ = ("read_start", "read_end", "ref_start", "ref_end", "read_id", "ref_id",

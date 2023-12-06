@@ -3,60 +3,194 @@ import subprocess
 import statistics
 import logging
 import os
+import gzip
 import pandas as pd
-from bam_processing import get_snps_frequencies, process_bam_for_snps_freqs
-from utils import write_segments_coverage, csv_df_chromosomes_sorter_snps_frequency, csv_df_chromosomes_sorter_snps_alts_gts
+from utils import write_segments_coverage, csv_df_chromosomes_sorter
+from bam_processing import process_bam_for_snps_freqs
 
 import csv
 import multiprocessing
 from collections import Counter
 from typing import List, Tuple
 
+def af_field_selection(vcf_path):
+    vcf_file = open(vcf_path, "r") if "gz" not in vcf_path else gzip.open(vcf_path, "rt")
+    af_field = 'NULL'
+    for line in vcf_file:
+        line = line.rstrip("\n")
+        # skip header
+        if not line.startswith("#"):
+            [_,_, _, _, _, _,_,_, format_, sample_] = line.split("\t")
+            # searching in INFO for AF/VAF
+            if format_.__contains__("AF"):
+                try:
+                    format_.split(":").index("AF")
+                    af_index = format_.split(":").index("AF")
+                    af = float(sample_.split(":")[af_index])
+                    af_field = 'AF'
+                except ValueError:
+                    if format_.__contains__("VAF"):
+                        af_index = format_.split(":").index("VAF")
+                        af = float(sample_.split(":")[af_index])
+                        af_field = 'VAF'
+            break
+    vcf_file.close()
+    return af_field
+
 def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, bin_size): #TODO This module needs better implementation, currently slow
     snps_df = snps_df_sorted[snps_df_sorted['chr'] == chrom]
     snps_df['gt'].astype(str)
 
-    snps_df_haplotype1 = snps_df[(snps_df['gt'] == '0|1') | (snps_df['gt'] == '0|2')]
-    snps_df_haplotype1.reindex(snps_df_haplotype1)
-    snps_df_haplotype1_list = snps_df_haplotype1['vaf'].str.split(',').str[0].values.tolist()
-    snps_df_haplotype1_vaf = [eval(i) for i in snps_df_haplotype1_list]
-    snps_df_haplotype1_dp = snps_df_haplotype1.dp.values.tolist()
-    snps_haplotype1 = []
-    for i in range(0, len(snps_df_haplotype1_vaf)):
-        snps_haplotype1.append(snps_df_haplotype1_vaf[i] * snps_df_haplotype1_dp[i])
+    snps_df = snps_df[(snps_df['qual'] > 15)]
 
-    snps_df_haplotype2 = snps_df[(snps_df['gt'] == '1|0') | (snps_df['gt'] == '2|0') ]
-    snps_df_haplotype2.reindex(snps_df_haplotype2)
-    snps_df_haplotype2_list = snps_df_haplotype2['vaf'].str.split(',').str[0].values.tolist()
-    snps_df_haplotype2_vaf = [eval(i) for i in snps_df_haplotype2_list]
-    snps_df_haplotype2_dp = snps_df_haplotype2.dp.values.tolist()
-    snps_haplotype2 = []
-    for i in range(0, len(snps_df_haplotype2_vaf)):
-        snps_haplotype2.append(snps_df_haplotype2_vaf[i] * snps_df_haplotype2_dp[i])
+    # snps_df_haplotype1 = snps_df[(snps_df['gt'] == '0|1') | (snps_df['gt'] == '1|0')]
+    # snps_df_haplotype1.reindex(snps_df_haplotype1)
+    # #snps_df_haplotype1_list = snps_df_haplotype1['vaf'].str.split(',').str[0].values.tolist()
+    # snps_df_haplotype1_vaf = snps_df_haplotype1.vaf.values.tolist() #[eval(i) for i in snps_df_haplotype1_list]
+    # snps_df_haplotype1_dp = snps_df_haplotype1.dp.values.tolist()
+    # snps_df_haplotype1_pos = snps_df_haplotype1.pos.values.tolist()
+    # snps_haplotype1 = []
+    # snps_haplotype1_pos = []
+    # for i in range(0, len(snps_df_haplotype1_vaf)):
+    #     snps_haplotype1.append(snps_df_haplotype1_vaf[i] * snps_df_haplotype1_dp[i])
+    #     snps_haplotype1_pos.append(snps_df_haplotype1_pos[i])
+    #
+    # snps_df_haplotype2 = snps_df[(snps_df['gt'] == '0/0') | (snps_df['gt'] == '1/1') ]
+    # snps_df_haplotype2.reindex(snps_df_haplotype2)
+    # #snps_df_haplotype2_list = snps_df_haplotype2['vaf'].str.split(',').str[0].values.tolist()
+    # snps_df_haplotype2_vaf = snps_df_haplotype2.vaf.values.tolist() #[eval(i) for i in snps_df_haplotype2_list]
+    # snps_df_haplotype2_dp = snps_df_haplotype2.dp.values.tolist()
+    # snps_df_haplotype2_pos = snps_df_haplotype2.pos.values.tolist()
+    # snps_haplotype2 = []
+    # snps_haplotype2_pos = []
+    # for i in range(0, len(snps_df_haplotype2_vaf)):
+    #     snps_haplotype2.append(snps_df_haplotype2_vaf[i] * snps_df_haplotype2_dp[i])
+    #     snps_haplotype2_pos.append(snps_df_haplotype2_pos[i])
+    #
+    # snps_haplotype1_mean = []
+    # total = 0
+    # for index, i in enumerate(ref_start_values):
+    #     len_cov = len(snps_df_haplotype1[(snps_df_haplotype1.pos >= i) & (snps_df_haplotype1.pos < i + bin_size)])
+    #     if len_cov == 0:
+    #         snps_haplotype1_mean.append(0)
+    #     else:
+    #         sub_list = snps_haplotype1[total:(total + len_cov)]
+    #         snps_haplotype1_mean.append(statistics.median(sub_list))
+    #     total += len_cov
+    #
+    # snps_haplotype2_mean = []
+    # total = 0
+    # for index, i in enumerate(ref_start_values):
+    #     len_cov = len(snps_df_haplotype2[(snps_df_haplotype2.pos >= i) & (snps_df_haplotype2.pos < i + bin_size)])
+    #     if len_cov == 0:
+    #         snps_haplotype2_mean.append(0)
+    #     else:
+    #         sub_list = snps_haplotype2[total:(total + len_cov)]
+    #         snps_haplotype2_mean.append(statistics.median(sub_list))
+    #     total += len_cov
+    #
+    # snps_haplotype1_counts = []
+    # total = 0
+    # for index, i in enumerate(ref_start_values):
+    #     len_cov = len(snps_df_haplotype1[(snps_df_haplotype1.pos >= i) & (snps_df_haplotype1.pos < i + bin_size)])
+    #     if len_cov == 0:
+    #         snps_haplotype1_counts.append(0)
+    #     else:
+    #         sub_list = snps_haplotype1[total:(total + len_cov)]
+    #         snps_haplotype1_counts.append(len(sub_list))
+    #     total += len_cov
+    #
+    # snps_haplotype2_counts = []
+    # total = 0
+    # for index, i in enumerate(ref_start_values):
+    #     len_cov = len(snps_df_haplotype2[(snps_df_haplotype2.pos >= i) & (snps_df_haplotype2.pos < i + bin_size)])
+    #     if len_cov == 0:
+    #         snps_haplotype2_counts.append(0)
+    #     else:
+    #         sub_list = snps_haplotype2[total:(total + len_cov)]
+    #         snps_haplotype2_counts.append(len(sub_list))
+    #     total += len_cov
 
-    snps_haplotype1_mean=[]
-    total=0
-    for index, i in enumerate(ref_start_values):
-        len_cov= len(snps_df_haplotype1[(snps_df_haplotype1.pos >= i) & (snps_df_haplotype1.pos < i + bin_size)])
-        if len_cov ==0:
-            snps_haplotype1_mean.append(0)
+    #snps_df_vaf = [eval(i) for i in snps_df.vaf.str.split(',').str[0].values.tolist()
+    snps_df_vaf = snps_df.vaf.values.tolist()
+    snps_df_pos = snps_df.pos.values.tolist()
+    snps_het = []
+    snps_homo = []
+    snps_het_pos = []
+    snps_homo_pos = []
+    for index, vaf in enumerate(snps_df_vaf):
+        if vaf > 0.75 or vaf < 0.25:
+            snps_homo.append(vaf)
+            snps_homo_pos.append(snps_df_pos[index])
         else:
-            sub_list=snps_haplotype1[total:(total + len_cov)]
-            snps_haplotype1_mean.append(statistics.median(sub_list))
-        total += len_cov
+            snps_het.append(vaf)
+            snps_het_pos.append(snps_df_pos[index])
 
-    snps_haplotype2_mean = []
-    total = 0
-    for index, i in enumerate(ref_start_values):
-        len_cov= len(snps_df_haplotype2[(snps_df_haplotype2.pos >= i) & (snps_df_haplotype2.pos < i + bin_size)])
-        if len_cov ==0:
-            snps_haplotype2_mean.append(0)
+    snps_het_counts = []
+    for index, pos in enumerate(ref_start_values):
+        l2 = [i for i in snps_het_pos if i > pos and i < pos+bin_size]
+        #snps_het_counts.append(len(l2)/len(snps_het_pos)*bin_size)#((len(l2)/bin_size)*100)
+        #snps_het_counts.append(len(l2))
+        if l2:
+            snps_het_counts.append(snps_het[snps_het_pos.index(max(l2))])
         else:
-            sub_list=snps_haplotype2[total:(total + len_cov)]
-            snps_haplotype2_mean.append(statistics.median(sub_list))
-        total += len_cov
-    return snps_haplotype1_mean, snps_haplotype2_mean
+            snps_het_counts.append(0)
 
+    snps_homo_counts = []
+    for index, pos in enumerate(ref_start_values):
+        l2 = [i for i in snps_homo_pos if i > pos and i < pos+bin_size]
+        #snps_homo_counts.append(len(l2)/len(snps_homo_pos)*bin_size)
+        if l2:
+            snps_homo_counts.append(snps_homo[snps_homo_pos.index(max(l2))])
+        else:
+            snps_homo_counts.append(0)
+
+    snps_homo_counts = []
+    snps_het_counts = []
+    loh_regions = []
+    centromere_region = []
+    for index, pos in enumerate(ref_start_values):
+        l1 = [i for i in snps_het_pos if i > pos and i < pos + bin_size]
+        l2 = [i for i in snps_homo_pos if i > pos and i < pos + bin_size]
+        # snps_homo_counts.append(len(l2)/len(snps_homo_pos)*bin_size)
+        if l1:
+            het_ratio = len(l1) / (len(l1) + len(l2))
+            snps_het_counts.append(het_ratio)
+        else:
+            snps_het_counts.append(0)
+            het_ratio = 0
+        if l2:
+            homo_ratio = len(l2) / (len(l1) + len(l2))
+            snps_homo_counts.append(homo_ratio)
+        else:
+            snps_homo_counts.append(0)
+            homo_ratio = 0
+
+        if len(l1) == 0 and len(l2) == 0:
+            centromere_region.append(pos)
+            centromere_region.append(pos + bin_size)
+
+        elif homo_ratio > 0.8 and het_ratio < 0.2:
+            loh_regions.append(pos)
+            loh_regions.append(pos + bin_size)
+
+    centromere_region_starts, centromere_region_ends = squash_regions(centromere_region, bin_size)
+    loh_region_starts, loh_region_ends = squash_regions(loh_regions, bin_size)
+
+    return snps_het_counts, snps_homo_counts, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends
+    #return snps_het_counts, snps_homo_counts
+    #return snps_het, snps_homo, snps_het_pos, snps_homo_pos
+    #return snps_haplotype1, snps_haplotype2, snps_haplotype1_mean, snps_haplotype2_mean, snps_het_counts, snps_homo_counts
+
+def squash_regions(region, bin_size):
+    region = pd.Series(region).drop_duplicates().tolist()
+    region_starts = [v for i, v in enumerate(region) if i == 0 or region[i] > region[i - 1] + bin_size]
+    region_ends = []
+    for i, val in enumerate(region_starts):
+        region_ends.append(region[region.index(val) - 1] + bin_size - 1)
+    region_ends = sorted(region_ends)
+
+    return region_starts, region_ends
 def snps_mean(df_snps, ref_start_values, chrom):
     df = df_snps[df_snps['chr'] == chrom]
 
@@ -95,6 +229,94 @@ def snps_mean(df_snps, ref_start_values, chrom):
         total += len_cov
     return snps_haplotype1_mean, snps_haplotype2_mean
 
+def cpd_mean(haplotype1_means, haplotype2_means, ref_values, chrom):
+    import ruptures as rpt
+    import numpy as np
+
+    data = np.array(haplotype1_means, dtype='int') #numpy.clip(haplotype1_means, a_min=1, a_max=300)
+    algo = rpt.Pelt(model="rbf").fit(data)
+    result = algo.predict(pen=10)
+    change_points = [i for i in result if i <= len(data)]
+
+    snps_haplotype1_mean = []
+    snps_haplotype1_pos = []
+    start = 0
+    snps_haplotype1_pos.append(0)
+    for index, point in enumerate(change_points):
+        sub_list=haplotype1_means[start:point]
+        if sub_list:
+            snps_haplotype1_mean.append(statistics.mean(sub_list))
+        else:
+            snps_haplotype1_mean.append(0)
+        start = point + 1
+        snps_haplotype1_pos.append(point * 50000)
+    snps_haplotype1_pos.append(ref_values[-1] * 50000)
+    ############################################################
+    data = np.array(haplotype2_means, dtype='int') #numpy.clip(haplotype2_means, a_min=1, a_max=300)
+    algo = rpt.Pelt(model="rbf").fit(data)
+    result = algo.predict(pen=10)
+    change_points = [i for i in result if i <= len(data)]
+
+    snps_haplotype2_mean = []
+    snps_haplotype2_pos = []
+    start = 0
+    snps_haplotype2_pos.append(0)
+    for index, point in enumerate(change_points):
+        sub_list=haplotype2_means[start:point]
+        if sub_list:
+            snps_haplotype2_mean.append(statistics.mean(sub_list))
+        else:
+            snps_haplotype2_mean.append(0)
+        start = point + 1
+        snps_haplotype2_pos.append(point * 50000)
+    snps_haplotype2_pos.append(ref_values[-1] * 50000)
+
+    chr = range(len(snps_haplotype1_pos))
+    df_cpd_hp1 = pd.DataFrame(list(zip([chrom for ch in chr], snps_haplotype1_pos, snps_haplotype1_mean)), columns=['chr', 'start', 'hp1'])
+    df_cpd_hp2 = pd.DataFrame(list(zip([chrom for ch in chr], snps_haplotype2_pos, snps_haplotype2_mean)), columns=['chr', 'start', 'hp2'])
+
+    slices = slice_when(lambda x, y: y - x > 10, sorted(snps_haplotype1_mean + snps_haplotype2_mean))
+    data = list(slices)
+    print(data)
+    print([sum(sub_list) / len(sub_list) for sub_list in data])
+
+
+    return df_cpd_hp1, df_cpd_hp2
+
+def slice_when(predicate, iterable):
+  i, x, size = 0, 0, len(iterable)
+  while i < size-1:
+    if predicate(iterable[i], iterable[i+1]):
+      yield iterable[x:i+1]
+      x = i + 1
+    i += 1
+  yield iterable[x:size]
+
+
+def vcf_parse_to_csv_for_snps(input_vcf):
+    # pathlib.Path(input_vcf).suffix #extension
+    # TODO add output check conditions with all these processes
+    basefile = pathlib.Path(input_vcf).stem  # filename without extension
+    output_vcf = basefile + '_snps.vcf.gz'
+    output_vcf = f"{os.path.join('data', output_vcf)}"
+
+    output_csv = basefile + '_snps.csv'
+    output_csv = f"{os.path.join('data', output_csv)}"
+
+    # logging.info('bcftools -> Filtering out hetrozygous and phased SNPs and generating a new VCF')
+    # # Filter out het, phased SNPs
+    # cmd = ['bcftools', 'view', '--threads', '$(nproc)', input_vcf, '-Oz', '-o', output_vcf]
+    # process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+    # process.wait()
+    af_field = af_field_selection(input_vcf)
+    logging.info('bcftools -> Query for phasesets and GT, DP, VAF feilds by creating a CSV file')
+    # bcftools query for phasesets and GT,DP,VAF
+    query = '%CHROM\t%POS\t%QUAL\t[%GT]\t[%DP]\t[%'+af_field+']\n'
+    cmd = ['bcftools', 'query', '-f', query, '-i', 'FILTER="PASS"', input_vcf, '-o', output_csv]  #
+    process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+    process.wait()
+
+    return output_csv
 def vcf_parse_to_csv_for_het_phased_snps_phasesets(input_vcf):
     #pathlib.Path(input_vcf).suffix #extension
     # TODO add output check conditions with all these processes
@@ -150,17 +372,19 @@ def get_snp_segments(arguments, target_bam, thread_pool):
     #output_bed = '/home/rezkuh/GenData/COLO829/colo829_chr7.csv'
 
     logging.info('SNPs frequency -> CSV to dataframe conversion')
-    dataframe_snps = csv_df_chromosomes_sorter_snps_alts_gts(output_csv)
+    dataframe_snps = csv_df_chromosomes_sorter(output_csv, ['chr', 'start', 'ref', 'alt', 'gt'])
     #dataframe_snps = pd.read_csv(output_csv, sep='\t', names=['chr', 'start', 'ref', 'alt', 'gt'])
 
     logging.info('SNPs frequency -> Comuting het SNPs frequency from tumor BAM')
 
     #output_pileups = bam_pileups_snps(output_bed, target_bam, arguments)
-    output_pileups = process_bam_for_snps_freqs(arguments, thread_pool) #TODO Updated
-    #output_pileups = '/home/rezkuh/gits/data/'+arguments['genome_name']+'/'+arguments['genome_name']+'_SNPs.csv'
+    if arguments['dryrun']:
+        output_pileups = '/home/rezkuh/gits/data/'+arguments['genome_name']+'/'+arguments['genome_name']+'_SNPs.csv'
+    else:
+        output_pileups = process_bam_for_snps_freqs(arguments, thread_pool)  # TODO Updated
 
     compute_acgt_frequency(output_pileups, output_acgts)
-    dataframe_acgt_frequency = csv_df_chromosomes_sorter_snps_frequency(output_acgts)
+    dataframe_acgt_frequency = csv_df_chromosomes_sorter(output_acgts, ['chr', 'start', 'a', 'c', 'g', 't'], ',')
     dataframe_acgt_frequency = pd.merge(dataframe_snps, dataframe_acgt_frequency, on=['chr', 'start'])
     snp_segments_frequencies = get_snp_segments_frequencies_final(dataframe_acgt_frequency)
     write_segments_coverage(snp_segments_frequencies, 'snps_frequencies.csv')

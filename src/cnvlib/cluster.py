@@ -9,13 +9,14 @@ See:
 
 """
 import logging
+import statistics
 
 from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score
 from kneed import KneeLocator
 import plotly.figure_factory as ff
 import numpy as np
 from hmmlearn import hmm
-from sklearn.metrics import silhouette_score
 from scipy.special import logsumexp
 
 
@@ -257,6 +258,7 @@ def pca_plain(data, n_components=None):
     data /= data.std(axis=0)
     # Covariance matrix
     C = np.cov(data)
+    C = np.cov(data)
     # Eigenvectors & eigenvalues of covariance matrix
     # ('eigh' rather than 'eig' since C is symmetric, for performance)
     E, V = np.linalg.eigh(C)
@@ -297,7 +299,7 @@ def plot_clusters(M, cluster_indices):
 
 def kmeans_clustering_seed(depth_values):
     sum_of_squared_distances = []
-    K = range(1, 15)
+    K = range(2, 15)
     for k in K:
         km = KMeans(n_clusters=k)
         km = km.fit(depth_values)
@@ -306,7 +308,7 @@ def kmeans_clustering_seed(depth_values):
     kn = optimal_clusters_size_knee(K, sum_of_squared_distances)
     return kn.knee
 def kmeans_clustering(depth_values, no_of_clusters=None):
-    depth_values = np.clip(depth_values, a_min=1, a_max=150)
+    depth_values = np.clip(depth_values, a_min=0, a_max=600)
     depth_values[depth_values != 0]
 
     hp = list(depth_values)
@@ -321,19 +323,21 @@ def kmeans_clustering(depth_values, no_of_clusters=None):
     u_labels = np.unique(labels)
     centers = list(np.concatenate(km.cluster_centers_))
 
+    score = silhouette_score(depth_values, labels, metric="euclidean")
+
     stdev = []
     clusters = []
     for i in range(len(u_labels)):
         clusters.append([int(a) for a, b in zip(hp, labels) if b == i])
         stdev.append(np.std([(a, b) for a, b in zip(hp, labels) if b == i]))
 
-    return u_labels, labels, centers, stdev, clusters
+    return centers, stdev, score
 
 def optimal_clusters_size_knee(K, sum_of_squared_distances):
     return KneeLocator(x=K, y=sum_of_squared_distances, curve='convex', direction='decreasing')
 
 def optimal_clusters_size_silhouette_score(depth_values, km):
-    score = silhouette_score(depth_values, km.labels_, sample_size=200)
+    score = silhouette_score(depth_values, km.labels_, sample_size=2000)
 def plot_optimal_clusters(hp1, hp2, unphased, arguments, chrom=None):
 
     hp1=np.clip(hp1, a_min=1, a_max=300)
@@ -686,6 +690,40 @@ def hmm_validation():
     fig.show()
 
 ##############################################################################
+def hmm_validation_custom(depth, lengths,  means):
+    startprob = 1. / len(means) * np.ones(len(means))
+    transmat = np.diag(np.full(len(means),1))
+    means = [1, 46, 88, 132, 200]
+    means_new = np.array(list([[i] for i in means]))
+    covars = []
+    for i in range(len(means)):
+        if i == 0:
+            covars.append(5)
+        else:
+           covars.append(20)
+    covars_new = np.array(list([[i] for i in covars]))
+
+    #covars_new = np.array([l[0] for l in x])
+    #covars_new = 400 * np.tile(np.identity(1), (len(means), 1))
+    #covars_new = 400 * np.tile(np.identity(2), (len(means), 1, 1))
+    #means_new = np.array([[[1]], [[46]], [[88]], [[132]], [[180]]])
+    covars_new = np.array([[[5]], [[20]], [[20]], [[20]], [[50]]])
+
+    gen_model = hmm.GaussianHMM(n_components=len(means), covariance_type="full")
+    gen_model.startprob_ = startprob
+    gen_model.transmat_ = transmat
+    gen_model.means_ = means_new
+    gen_model.covars_ = covars_new
+
+    gen_model.fit(depth, lengths)
+    states = gen_model.predict(depth)
+    score = silhouette_score(depth, states, metric="euclidean")
+    means = gen_model.means_
+    covars = gen_model.covars_
+    return means, covars, score
+
+
+
 
 def hmm_validation_depth(hp1, hp2):
     import numpy as np
@@ -1010,7 +1048,7 @@ def hmm_model_select_hatchet(X, lengths, minK=20, maxK=50, tau=10e-6, tmat='diag
             if tmat == 'fixed':
                 model = hmm.GaussianHMM(
                     n_components=K,
-                    init_params='mc',
+                    init_params='m',
                     params='smc',
                     covariance_type=covar,
                     random_state=s,
@@ -1018,7 +1056,7 @@ def hmm_model_select_hatchet(X, lengths, minK=20, maxK=50, tau=10e-6, tmat='diag
             elif tmat == 'free':
                 model = hmm.GaussianHMM(
                     n_components=K,
-                    init_params='mc',
+                    init_params='m',
                     params='smct',
                     covariance_type=covar,
                     random_state=s,
@@ -1032,8 +1070,15 @@ def hmm_model_select_hatchet(X, lengths, minK=20, maxK=50, tau=10e-6, tmat='diag
                     random_state=s,
                 )
 
+            x = [[[50]] for i in range(K)]
+            #np.array(x).shape
+            #np.array([l[0] for l in x]).shape
+
             model.startprob_ = np.ones(K) / K
             model.transmat_ = A
+            #model.covars_ = np.array([l[0] for l in x])
+            #model.covars_ = 400 * np.tile(np.identity(1), (K, 1))
+
             model.fit(X, lengths)
 
             #print(K, s)
@@ -1057,9 +1102,12 @@ def hmm_model_select_hatchet(X, lengths, minK=20, maxK=50, tau=10e-6, tmat='diag
         stdev.append(np.concatenate(sorted(list(my_best_model.covars_))).ravel().tolist())
         models.append(my_best_model)
 
-        score = silhouette_score(X, my_best_labels, metric="euclidean", sample_size=2000)
+        score = silhouette_score(X, my_best_labels, metric="euclidean")
         scores.append(score)
         print(score, K, np.concatenate(sorted(list(my_best_model.means_))).ravel().tolist())
+        #print(score, K, np.concatenate(sorted(list(my_best_model.covars_))).ravel().tolist())
+
+        add_scatter_trace_coverage(None, K, X, my_best_labels, np.concatenate(list(my_best_model.means_)).ravel().tolist(), np.concatenate(list(my_best_model.covars_)).ravel().tolist())
 
         rs[K] = my_best_ll, score, my_best_labels
         if score > best_score:
@@ -1068,13 +1116,13 @@ def hmm_model_select_hatchet(X, lengths, minK=20, maxK=50, tau=10e-6, tmat='diag
             best_labels = my_best_labels
             best_K = K
 
-    for i in range(len(scores)-1):
-        best_score_final = scores[i]
-        means_diff = [j-i for i, j in zip(means[i][:-1], means[i][1:])]
-        print(means_diff)
-        best_model = models[i]
-        if abs(scores[i] - scores[i+1]) > 0.08 and all(i >= 12 for i in means_diff):
-            break
+    # for i in range(len(scores)-1):
+    #     best_score_final = scores[i]
+    #     means_diff = [j-i for i, j in zip(means[i][:-1], means[i][1:])]
+    #     print(means_diff)
+    #     best_model = models[i]
+    #     if abs(scores[i] - scores[i+1]) > 0.08 and all(i >= 12 for i in means_diff):
+    #         break
 
     print(sorted(list(best_model.means_)), best_model.n_components)
 
@@ -1090,21 +1138,14 @@ def hmm_model_select_hatchet(X, lengths, minK=20, maxK=50, tau=10e-6, tmat='diag
         ax.set_ylabel('State From')
 
     fig.tight_layout()
-    plt.savefig("data/tmat.pdf", format="pdf", bbox_inches="tight")
+    #plt.savefig("data/tmat.pdf", format="pdf", bbox_inches="tight")
 
-    print(means)
+    #plot_clusters_means(X, lengths)
+
+    #print(means)
     #return means[-1], stdev[-1]
     return best_model.means_, best_model.covars_
 
-def pairwise_diff(means_list):
-    N = len(means_list)
-    pair_wise_diff = np.zeros((N, N))
-
-    for n in range(1, N):
-        pair_wise_diff[n, n:N] = means_list[n:N] - means_list[0:N - n]
-        print(n, means_list[n:N])
-
-    return pair_wise_diff
 
 class DiagGHMM(hmm.GaussianHMM):
     def _accumulate_sufficient_statistics(self, stats, obs, framelogprob, posteriors, fwdlattice, bwdlattice):
@@ -1158,3 +1199,274 @@ def make_transmat(diag, K):
     transmat_ += offdiag
     return transmat_
 ########################################################
+
+def plot_clusters_means(X, lengths):
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import pandas as pd
+    from scipy.optimize import curve_fit
+
+    # data generation
+    np.random.seed(123)
+    data = np.concatenate((np.random.normal(1, .2, 5000), np.random.normal(1.6, .3, 2500)))
+    y, x, _ = plt.hist(X, alpha=.3, label='data')
+    #x = (x[1:] + x[:-1]) / 2  # for len(x)==len(y)
+
+    # x, y inputs can be lists or 1D numpy arrays
+
+    def gauss(x, mu, sigma, A):
+        res = A * np.exp(-(x - mu) ** 2 / 2 / sigma ** 2)
+        return res
+
+    def bimodal(x, mu1, sigma1, A1, mu2, sigma2, A2, mu3, sigma3, A3, mu4, sigma4, A4, mu5, sigma5, A5, mu6, sigma6, A6):
+        res = gauss(x, mu1, sigma1, A1) + gauss(x, mu2, sigma2, A2) + gauss(x, mu3, sigma3, A3) + gauss(x, mu4, sigma4, A4) + \
+              gauss(x, mu5, sigma5, A5) + gauss(x, mu6, sigma6, A6)
+        return res
+
+    expected = (1, .2, 250, 2, .2, 125)
+    params, cov = curve_fit(bimodal, x, y, expected)
+    sigma = np.sqrt(np.diag(cov))
+    x_fit = np.linspace(x.min(), x.max(), 500)
+    # plot combined...
+    plt.plot(x_fit, bimodal(x_fit, *params), color='red', lw=3, label='model')
+    # ...and individual Gauss curves
+    plt.plot(x_fit, gauss(x_fit, *params[:3]), color='red', lw=1, ls="--", label='distribution 1')
+    plt.plot(x_fit, gauss(x_fit, *params[3:]), color='red', lw=1, ls=":", label='distribution 2')
+    # and the original data points if no histogram has been created before
+    # plt.scatter(x, y, marker="X", color="black", label="original data")
+    plt.legend()
+    print(pd.DataFrame(data={'params': params, 'sigma': sigma}, index=bimodal.__code__.co_varnames[1:]))
+    plt.show()
+
+
+def hmm_pome_test(cnarr, X, means, stdev, snps_cpd_means_input):
+    import scipy
+    import pomegranate as pom
+    import scipy.special
+
+    #X = np.concatenate(list(X)).ravel().tolist()
+
+    from src.cnvlib.segmentation.hmm import observations_matrix
+    observations = observations_matrix(cnarr, snps_cpd_means_input)
+
+    state_names = []#["copy_1", "copy_2", "copy_3", "copy_4", "copy_5"]
+    distributions = []
+    for i in range(len(means)):
+        state_names.append("copy_"+str(i))
+        distributions.append(pom.NormalDistribution(means[i], stdev[i], frozen=False))
+
+    n_states = len(distributions)
+    # Starts -- prefer neutral
+    binom_coefs = scipy.special.binom(n_states - 1, range(n_states))
+    start_probabilities = binom_coefs / binom_coefs.sum()
+
+    # Prefer to keep the current state in each transition
+    # All other transitions are equally likely, to start
+    transition_matrix = (
+        np.identity(n_states) * 100 + np.ones((n_states, n_states)) / n_states
+    )
+
+    model = pom.HiddenMarkovModel.from_matrix(
+        transition_matrix,
+        distributions,
+        start_probabilities,
+        state_names=state_names,
+        name='hmm',
+    )
+
+    model.fit(
+        sequences=observations,
+        weights=[len(obs) for obs in observations],
+        distribution_inertia=0.9,  # Allow updating dists, but slowly
+        edge_inertia=0.05,
+        # lr_decay=.75,
+        pseudocount=5,
+        use_pseudocount=True,
+        max_iterations=100000,
+        n_jobs=1,
+        verbose=False,
+    )
+    states = np.concatenate(
+        [np.array(model.predict(obs, algorithm="map")) for obs in observations]
+    )
+
+    y = np.concatenate(list(X)).ravel().tolist()
+    lst = [i for i in range(0, (len(y) // 2) * 50000, 50000)]
+    x = lst + lst
+    stdev = []
+    means = []
+    for g in np.unique(states):
+        ix = [index for index, i in enumerate(x) if states[index] == g]
+        xn = [x[i] for i in ix]
+        yn = [y[i] for i in ix]
+        if len(yn) > 1:
+            stdev.append(statistics.stdev(yn))
+            means.append(statistics.mean(yn))
+
+    score = silhouette_score(X, states, metric="euclidean")
+    #print(score)
+
+    #chroms = cnarr.as_dataframe(cnarr.data)
+    #chrom = chroms.chromosome.values.tolist()[0]
+    #add_scatter_trace_coverage(chrom, X, states, means, stdev)
+    return means, stdev, score
+
+def add_scatter_trace_coverage(chrom, depth_values_hp1, depth_values_hp2, labels, means, covar):
+    from plotly.subplots import make_subplots
+    import plotly.graph_objects as go
+    import math
+    #fig = go.Figure()
+
+    depth_values_hp1 = np.array(depth_values_hp1, dtype='int')
+    depth_values_hp2 = np.array(depth_values_hp2, dtype='int')
+
+    depth_values_hp1 = depth_values_hp1.reshape(-1, 1)
+    depth_values_hp2 = depth_values_hp2.reshape(-1, 1)
+    Y = np.concatenate([depth_values_hp1, depth_values_hp2])
+
+    fig = make_subplots(rows=1, cols=2, shared_yaxes=True, column_widths=[0.8, 0.2], vertical_spacing=0.01, horizontal_spacing=0.01)
+
+    y = np.concatenate(list(Y)).ravel().tolist()
+    lst = [i for i in range(0, (len(y) // 2) * 50000, 50000)]
+    x = lst + lst
+
+    cdict = {0: '#1f77b4',  # muted blue
+    1: '#ff7f0e',  # safety orange
+    2: '#2ca02c',  # cooked asparagus green
+    3: '#d62728',  # brick red
+    4: '#9467bd',  # muted purple
+    5: '#8c564b',  # chestnut brown
+    6: '#e377c2',  # raspberry yogurt pink
+    7: '#7f7f7f',  # middle gray
+    8: '#bcbd22',  # curry yellow-green
+    9: '#17becf'   # blue-teal
+                 }
+    ldict = {0: 'Cluster_1', 1: 'Cluster_2', 2: 'Cluster_3', 3: 'Cluster_4', 4: 'Cluster_5',\
+             5: 'Cluster_6', 6: 'Cluster_7', 7: 'Cluster_8', 8: 'Cluster_9', 9: 'Cluster_10'}
+
+    for g in np.unique(labels):
+        ix = [index for index, i in enumerate(x) if labels[index] == g]
+        xn = [x[i] for i in ix]
+        yn = [y[i] for i in ix]
+        fig.add_trace(go.Scatter(x=xn, y=yn, mode='markers', marker=dict(color=cdict[g]), name=ldict[g], opacity=0.7,),
+                      row=1, col=1)
+
+    for i in range(len(means)):
+        fig.add_hline(y=means[i], line_width=2,
+                  line=dict(dash='solid'), line_color=cdict[i], annotation_text="mean_"+str(i+1))
+
+        fig.add_hline(y=means[i] + covar[i], line_width=2,
+                      line=dict(dash='dash'), line_color=cdict[i], annotation_text="stdev_"+str(i+1))
+        fig.add_hline(y=means[i] - covar[i], line_width=2,
+                      line=dict(dash='dash'), line_color=cdict[i], annotation_text="stdev_" + str(i + 1))
+    fig.update_yaxes(range=[0, 150])
+
+    #fig.add_trace(go.Histogram(y=y, orientation='h', nbinsy=5000,), row=1, col=2)
+    fig.add_trace(go.Histogram(y=np.concatenate(list(Y)).ravel().tolist(), orientation='h', marker_color='gray', name='Histogram', nbinsy=8000), row=1, col=2)
+    fig.update_layout(xaxis2=dict(range=[0, 200]))
+    #fig.add_trace(go.Histogram(y=np.concatenate(list(Y[0:len(Y)//2-1])).ravel().tolist(), name='HP-1', orientation='h', nbinsy=8000, marker_color='#6A5ACD'), row=1, col=2)
+    #fig.add_trace(go.Histogram(y=np.concatenate(list(Y[len(Y)//2:len(Y)])).ravel().tolist(), name='HP-2', orientation='h', nbinsy=8000, marker_color='#2E8B57'), row=1, col=2)
+
+    # Overlay both histograms
+    #fig.update_layout(barmode='overlay')
+    # Reduce opacity to see both histograms
+    #fig.update_traces(opacity=0.75)
+
+    score = silhouette_score(Y, labels, metric="euclidean")
+    print(score)
+
+    fig.write_html("coverage_plots/"+chrom+"_cluster_"+str(K)+".html")
+
+def cpd_mean_hps(haplotype1_means, haplotype2_means):
+    import ruptures as rpt
+    import numpy as np
+    import statistics
+    from random import randint
+
+    data = np.array(haplotype1_means, dtype='uint8') #numpy.clip(haplotype1_means, a_min=1, a_max=300)
+    algo = rpt.Pelt(model="rbf").fit(data)
+    result = algo.predict(pen=10)
+    change_points = [i for i in result if i <= len(data)]
+    strong_candidates = []
+    snps_haplotype1_mean = []
+    snps_haplotype1_pos = []
+    snps_haplotype1_len = []
+    start = 0
+    snps_haplotype1_pos.append(0)
+    for index, point in enumerate(change_points):
+        sub_list=haplotype1_means[start:point]
+        if len(sub_list) < 25:
+            continue
+        else:
+            count = 0
+            sub_list = [int(i) for i in sub_list]
+            mode_hp1 = max(set(sub_list), key=sub_list.count)
+            means_hp1 = statistics.mean(sub_list)
+            means_hp1 = mode_hp1 if mode_hp1 > means_hp1  else means_hp1
+            means_hp1 = statistics.median(sub_list)
+            #means_hp1 = statistics.mean(sub_list)
+            for i in range(len(sub_list)):
+                if means_hp1 - 20 <= sub_list[i] <= means_hp1 + 20:
+                    count += 1
+            if count > len(sub_list)//3:
+                snps_haplotype1_mean.append(means_hp1)
+                snps_haplotype1_len.append(len(sub_list))
+
+            if count > len(sub_list)/1.1:
+                strong_candidates.append(int(means_hp1))
+
+            for i in range(len(sub_list)):
+                if sub_list[i] >= means_hp1 + 10 or sub_list[i] <= means_hp1 - 10:
+                    sub_list[i] = randint(int(means_hp1)-10, int(means_hp1)+10)
+            haplotype1_means[start:point] = [sub_list[i] for i in range(len(sub_list))]
+
+        start = point + 1
+        snps_haplotype1_pos.append(point * 50000)
+    ############################################################
+    data = np.array(haplotype2_means, dtype='uint8') #numpy.clip(haplotype2_means, a_min=1, a_max=300)
+    algo = rpt.Pelt(model="rbf").fit(data)
+    result = algo.predict(pen=10)
+    change_points = [i for i in result if i <= len(data)]
+
+    snps_haplotype2_mean = []
+    snps_haplotype2_pos = []
+    snps_haplotype2_len = []
+
+    start = 0
+    snps_haplotype2_pos.append(0)
+    for index, point in enumerate(change_points):
+        sub_list=haplotype2_means[start:point]
+        if len(sub_list) < 25:
+            continue
+        else:
+            count = 0
+            sub_list = [int(i) for i in sub_list]
+            mode_hp2 = max(set(sub_list), key=sub_list.count)
+            means_hp2 = statistics.mean(sub_list)
+            means_hp2 = mode_hp2 if mode_hp2 > means_hp2  else means_hp2
+            means_hp2 = statistics.median(sub_list)
+            for i in range(len(sub_list)):
+                if means_hp2 - 20 <= sub_list[i] <= means_hp2 + 20:
+                    count += 1
+            if count > len(sub_list)//3:
+                snps_haplotype2_mean.append(means_hp2)
+                snps_haplotype2_len.append(len(sub_list))
+
+            if count > len(sub_list)/1.1:
+                strong_candidates.append(int(means_hp2))
+
+            for i in range(len(sub_list)):
+                if sub_list[i] >= means_hp2 + 10 or sub_list[i] <= means_hp2 - 10:
+                    sub_list[i] = randint(int(means_hp2)-10, int(means_hp2)+10)
+            haplotype2_means[start:point] = [sub_list[i] for i in range(len(sub_list))]
+
+        start = point + 1
+        snps_haplotype2_pos.append(point * 50000)
+
+    # print(snps_haplotype1_mean, snps_haplotype1_len)
+    # print(snps_haplotype2_mean, snps_haplotype2_len)
+
+    # return [i for i in final if i >= 1]
+
+    return snps_haplotype1_mean, snps_haplotype1_len, snps_haplotype2_mean, snps_haplotype2_len, haplotype1_means, haplotype2_means, strong_candidates
+

@@ -18,7 +18,7 @@ SEGMENT_METHODS = ("cbs", "flasso", "haar", "none", "hmm", "hmm-tumor", "hmm-ger
 
 
 def do_segmentation(
-    depth_values_hp1, depth_values_hp2,
+    depth_values_hp1, depth_values_hp2, snps_cpd_means,
     arguments,
     cnarr,
     method,
@@ -61,8 +61,8 @@ def do_segmentation(
     if method == "flasso" or method.startswith("hmm"):
         # ENH segment p/q arms separately
         # -> assign separate identifiers via chrom name suffix?
-        cna = _do_segmentation(
-            depth_values_hp1, depth_values_hp2,
+        cna, states, centers, stdev, cnarr, snps_cpd_means = _do_segmentation(
+            depth_values_hp1, depth_values_hp2, snps_cpd_means,
             arguments,
             cnarr,
             method,
@@ -113,7 +113,7 @@ def do_segmentation(
     #cna.sort_columns()
     if save_dataframe:
         return cna, rstr
-    return cna
+    return cna, states, centers, stdev, cnarr, snps_cpd_means
 
 
 def _to_str(s, enc=locale.getpreferredencoding()):
@@ -128,7 +128,7 @@ def _ds(args):
 
 
 def _do_segmentation(
-    depth_values_hp1, depth_values_hp2,
+    depth_values_hp1, depth_values_hp2, snps_cpd_means,
     arguments,
     cnarr,
     method,
@@ -183,7 +183,7 @@ def _do_segmentation(
         segarr = none.segment_none(filtered_cn)
 
     elif method.startswith("hmm"):
-        segarr = hmm.segment_hmm(depth_values_hp1, depth_values_hp2, arguments, filtered_cn, method, threshold, variants)
+        segarr, states, centers, stdev, cnarr, snps_cpd_means  = hmm.segment_hmm(depth_values_hp1, depth_values_hp2, snps_cpd_means, arguments, filtered_cn, method, threshold, variants)
 
     elif method in ("cbs", "flasso"):
         # Run R scripts to calculate copy number segments
@@ -240,7 +240,7 @@ def _do_segmentation(
     #segarr = transfer_fields(segarr, cnarr)
     if save_dataframe:
         return segarr, seg_out
-    return segarr
+    return segarr, states, centers, stdev, cnarr, snps_cpd_means
 
 
 def drop_outliers(cnarr, width, factor):
