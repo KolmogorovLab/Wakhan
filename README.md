@@ -1,6 +1,6 @@
 # Wakhan
 
-###### Note: This repository is under extensive updates. Currently, only haplotagged BAM file phasing correction and coverage plots modules are working.
+###### Note: This repository is under extensive updates. Please use devel branch for latest updates.
 
 A tool to analyze haplotype-specific chromosome-scale somatic copy number aberrations and aneuploidy using long reads (Oxford Nanopore, PacBio). 
 Wakhan takes long-read alignment and phased heterozygous variants as input, and first uses extends the phased blocks, taking
