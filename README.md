@@ -17,9 +17,9 @@ advantage of the CNA differences between the haplotypes. Wakhan then generates i
 
 #### LOH detection, phasing correction and CopyNumbers profiling:
 <p float="left">
-  <img src="examples/images/loh1.png" width="300" />
-  <img src="examples/images/loh2.png" width="300" /> 
-  <img src="examples/images/loh3.png" width="300" />
+  <img src="examples/images/loh1.png" width="250" />
+  <img src="examples/images/loh2.png" width="250" /> 
+  <img src="examples/images/loh3.png" width="250" />
 </p>
 
 ## Installation (enabling through conda environment)
