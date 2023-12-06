@@ -2,114 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="d55f6c14-a9d2-4fc8-a2b4-3002ce70ef44" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/environment.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/clustering.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/hmm.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/Wakhan.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/Wakhan.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/DASHBOARD.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr1.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr10.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr11.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr12.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr13.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr14.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr15.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr16.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr17.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr18.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr19.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr2.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr20.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr21.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr22.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr3.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr4.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr5.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr6.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr7.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr8.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/arbitrary/chr9.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/default/DASHBOARD.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr1.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr10.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr11.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr12.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr13.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr14.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr15.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr16.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr17.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr18.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr19.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr2.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr20.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr21.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr22.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr3.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr4.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr5.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr6.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr7.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr8.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/H2009/default/chr9.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/DASHBOARD.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr1.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr10.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr11.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr12.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr13.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr14.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr15.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr16.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr17.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr18.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr19.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr2.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr20.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr21.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr22.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr3.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr4.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr5.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr6.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr7.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr8.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/arbitrary/chr9.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/DASHBOARD.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr1.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr10.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr11.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr12.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr13.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr14.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr15.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr16.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr17.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr18.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr19.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr2.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr20.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr21.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr22.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr3.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr4.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr5.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr6.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr7.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr8.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/HCC1437/default/chr9.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/bam_processing.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/bam_processing.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/cnvlib/cluster.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/cnvlib/cluster.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/cnvlib/segmentation/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/cnvlib/segmentation/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/cnvlib/segmentation/hmm.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/cnvlib/segmentation/hmm.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/phasing_correction.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/phasing_correction.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/plots.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/plots.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/utils.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/vcf_processing.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/vcf_processing.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -170,7 +64,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1701818564955</updated>
-      <workItem from="1701818566130" duration="4920000" />
+      <workItem from="1701818566130" duration="6806000" />
     </task>
     <servers />
   </component>
