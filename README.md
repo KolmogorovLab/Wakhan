@@ -15,7 +15,7 @@ advantage of the CNA differences between the haplotypes. Wakhan then generates i
 #### Copy number segmentation:
 <img width="1373" alt="plots_example" src="examples/images/1437.png">
 
-#### LOH detection, phasing correction and CopyNumbers profiling:
+#### LOH detection, phasing correction and CopyNumbers profiling (COLO357):
 <p float="left">
   <img src="examples/images/loh1.png" width="250" />
   <img src="examples/images/loh2.png" width="250" /> 
