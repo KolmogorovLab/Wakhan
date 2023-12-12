@@ -24,10 +24,11 @@ advantage of the CNA differences between the haplotypes. Wakhan then generates i
 
 ## Installation (enabling through conda environment)
 ```
-git clone https://github.com/KolmogorovLab/Wakhan.git
-cd Wakhan/src
+git clone -b devel https://github.com/KolmogorovLab/Wakhan.git
+cd Wakhan/
 conda env create -f environment.yml -n Wakhan
 conda activate Wakhan
+cd src/
 ```
 
 ## Usage
