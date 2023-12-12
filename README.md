@@ -22,18 +22,25 @@ advantage of the CNA differences between the haplotypes. Wakhan then generates i
   <img src="examples/images/loh3.png" width="270" />
 </p>
 
-## Installation (enabling through conda environment)
+## Installation (individual packages through conda and pip)
 ```
 git clone https://github.com/KolmogorovLab/Wakhan.git
 cd Wakhan/
 conda create --name Wakhan python=3.8
 conda activate Wakhan
-pip install  pysam  pyfaidx numpy pandas Bio scipy ReportLab==3.6.12 matplotlib py plotly hmmlearn tqdm>=4.24.0 numba>=0.43.0 nose pomegranate==0.14.8 scikit-genome==0.0.1 scikit-learn==1.2.0 scipy==1.9.2  matplotlib==3.6.2 kneed ruptures
+pip install pysam pyfaidx numpy pandas Bio scipy ReportLab==3.6.12 matplotlib py plotly hmmlearn tqdm>=4.24.0 numba>=0.43.0 nose pomegranate==0.14.8 scikit-genome==0.0.1 scikit-learn==1.2.0 scipy==1.9.2  matplotlib==3.6.2 kneed ruptures
 conda install -c bioconda samtools bcftools
 cd src/
 ```
 
-<!-- conda env create -f environment.yml -n Wakhan -->
+## Installation (enabling through conda environment)
+```
+git clone https://github.com/KolmogorovLab/Wakhan.git
+cd Wakhan/
+conda env create -f environment.yml -n Wakhan
+conda activate Wakhan
+cd src/
+```
 
 ## Usage
 ```
