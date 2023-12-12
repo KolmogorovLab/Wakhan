@@ -24,16 +24,17 @@ advantage of the CNA differences between the haplotypes. Wakhan then generates i
 
 ## Installation (enabling through conda environment)
 ```
-git clone -b devel https://github.com/KolmogorovLab/Wakhan.git
+git clone https://github.com/KolmogorovLab/Wakhan.git
 cd Wakhan/
 conda env create -f environment.yml -n Wakhan
 conda activate Wakhan
+conda install -c bioconda samtools bcftools
 cd src/
 ```
 
 ## Usage
 ```
-python3.8 main.py --target-bam <tumor_haplotagged.bam> --out-dir-plots <coverage_plots> --genome-name <cellline/sample name> --phased-vcf <phased.vcf.gz> --contigs <chr1-22,X,Y>
+python main.py --threads 4 --reference <ref.fa>  --target-bam <data.haplotagged.bam>  --out-dir-plots coverage_plots  --phased-vcf <data.phased.vcf.gz>  --smoothing-enable True --copynumbers-enable True  --unphased-reads-coverage-enable True --phaseblock-flipping-enable True  --genome-name <cellline/dataset name> --cut-threshold 150 --het-phased-snps-freq-enable True
 ```
 
 ## Prerequisite
