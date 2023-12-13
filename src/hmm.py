@@ -79,6 +79,7 @@ def call_copynumbers(arguments, cnarr, df_chrom, cpd_means_collective):
     segs = []
     start = 0
     haplotype_dfs = pd.DataFrame()
+
     for i in range(2): #range(0, len(values), 49592):#len(values) // 2):
         state = states[start:half_values]
         cnarray = values.data.iloc[start:half_values, ]
@@ -100,7 +101,7 @@ def call_copynumbers(arguments, cnarr, df_chrom, cpd_means_collective):
 
         haplotype_df = segarr.data
         haplotype_df['haplotype'] = i
-        haplotype_dfs = haplotype_dfs.append(haplotype_df)
+        haplotype_dfs = pd.concat([haplotype_df, haplotype_df])
 
         mean = []
         df = cnarray.data.assign(group=state)
