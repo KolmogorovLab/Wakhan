@@ -111,8 +111,14 @@ def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, bin_siz
     #         snps_haplotype2_counts.append(len(sub_list))
     #     total += len_cov
 
-    #snps_df_vaf = [eval(i) for i in snps_df.vaf.str.split(',').str[0].values.tolist()
-    snps_df_vaf = snps_df.vaf.values.tolist()
+
+    #snps_df['vaf'] = snps_df['vaf'].astype(float)
+
+    if snps_df.vaf.dtype == object:
+        snps_df_vaf = [eval(i) for i in snps_df.vaf.str.split(',').str[0].values.tolist()]
+    else:
+        snps_df_vaf = snps_df.vaf.values.tolist()
+
     snps_df_pos = snps_df.pos.values.tolist()
     snps_het = []
     snps_homo = []
