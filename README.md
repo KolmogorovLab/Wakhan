@@ -53,12 +53,13 @@ conda activate Wakhan
 cd src/
 ```
 
-## Usage - Tumor-Normal Mode (requires normal phased VCF)
+## Usage 
+### Tumor-Normal Mode (requires normal phased VCF)
 ```
 python main.py --threads 4 --reference <ref.fa>  --target-bam <data.tumor.bam>  --out-dir-plots genome_abc_output  --normal-phased-vcf <data.normal_phased.vcf.gz> --tumor-vcf <data.tumor.vcf.gz>  --smoothing-enable True --copynumbers-enable True  --unphased-reads-coverage-enable True --phaseblock-flipping-enable True  --genome-name <cellline/dataset name> --cut-threshold 150
 ```
 
-## Usage Tumor-only (requires tumor phased/haplotagged BAM and phased VCF)
+### Tumor-only (requires tumor phased/haplotagged BAM and phased VCF)
 ```
 python main.py --threads 4 --reference <ref.fa>  --target-bam <data.tumor_haplotagged.bam>  --out-dir-plots genome_abc_output  --tumor-vcf <data.tumor_phased.vcf.gz>  --smoothing-enable True --copynumbers-enable True  --unphased-reads-coverage-enable True --phaseblock-flipping-enable True  --genome-name <cellline/dataset name> --cut-threshold 150
 ```
