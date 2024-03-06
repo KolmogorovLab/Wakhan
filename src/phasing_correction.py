@@ -83,8 +83,6 @@ def closest(lst):
 # def inside_phaseblock_switch_correction_coverage_update(chrom, arguments, is_simple_correction, haplotype_1_values, haplotype_2_values, ref_start_values, ref_end_values, \
 #                     haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets):
 
-
-
 def phaseblock_flipping(chrom, arguments, is_simple_correction, haplotype_1_values, haplotype_2_values, ref_start_values, ref_end_values, \
                     haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets):
 

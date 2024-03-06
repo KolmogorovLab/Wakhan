@@ -53,13 +53,17 @@ conda activate Wakhan
 cd src/
 ```
 
-## Usage
+## Usage - Tumor-Normal Mode (requires normal phased VCF)
 ```
-python main.py --threads 4 --reference <ref.fa>  --target-bam <data.haplotagged.bam>  --out-dir-plots genome_abc_output  --phased-vcf <data.phased.vcf.gz>  --smoothing-enable True --copynumbers-enable True  --unphased-reads-coverage-enable True --phaseblock-flipping-enable True  --genome-name <cellline/dataset name> --cut-threshold 150 --het-phased-snps-freq-enable True
+python main.py --threads 4 --reference <ref.fa>  --target-bam <data.tumor.bam>  --out-dir-plots genome_abc_output  --normal-phased-vcf <data.phased.vcf.gz> --tumor-vcf <data.tumor.vcf.gz>  --smoothing-enable True --copynumbers-enable True  --unphased-reads-coverage-enable True --phaseblock-flipping-enable True  --genome-name <cellline/dataset name> --cut-threshold 150
 ```
 
+## Usage Tumor-only (Tumor BAM should be phased and haplotagged)
+```
+python main.py --threads 4 --reference <ref.fa>  --target-bam <data.tumor_haplotagged.bam>  --out-dir-plots genome_abc_output  --tumor-vcf <data.tumor.vcf.gz>  --smoothing-enable True --copynumbers-enable True  --unphased-reads-coverage-enable True --phaseblock-flipping-enable True  --genome-name <cellline/dataset name> --cut-threshold 150
+```
 ## Prerequisite
-This tool requires haplotagged BAM and phased VCF. This can be done through any phasing tools like Margin, Whatshap and Longphase. 
+This tool requires haplotagged tumor BAM and phased VCF in case tumor-only mode and normal phased VCF in case tumor-normal mode. This can be done through any phasing tools like Margin, Whatshap and Longphase. 
 Following commands could be helpful for phasing VCFs and haplotagging BAMs.
 
 #### For normal/tumor pair:

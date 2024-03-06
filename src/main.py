@@ -226,7 +226,10 @@ def main():
         write_segments_coverage(segments_coverage, 'coverage.csv')
 
         logging.info('Parsing phaseblocks information')
-        output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(arguments['normal_phased_vcf'])
+        if arguments['normal_phased_vcf']:
+            output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(arguments['normal_phased_vcf'])
+        else:
+            output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(arguments['tumor_vcf'])
         phasesets_segments = generate_phasesets_bins(args.target_bam[0], output_phasesets_file_path, arguments['bin_size'], arguments) #TODO update for multiple bam files
         logging.info('Computing coverage for phaseblocks')
         phasesets_coverage = get_segments_coverage(phasesets_segments, coverage_histograms)
