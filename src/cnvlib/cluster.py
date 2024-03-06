@@ -1304,11 +1304,7 @@ def hmm_pome_test(cnarr, X, means, stdev, snps_cpd_means_input):
             means.append(statistics.mean(yn))
 
     score = silhouette_score(X, states, metric="euclidean")
-    #print(score)
 
-    #chroms = cnarr.as_dataframe(cnarr.data)
-    #chrom = chroms.chromosome.values.tolist()[0]
-    #add_scatter_trace_coverage(chrom, X, states, means, stdev)
     return means, stdev, score
 
 def add_scatter_trace_coverage(chrom, depth_values_hp1, depth_values_hp2, labels, means, covar):

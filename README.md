@@ -44,7 +44,7 @@ cd src/
 
 ## Usage
 ```
-python main.py --threads 4 --reference <ref.fa>  --target-bam <data.haplotagged.bam>  --out-dir-plots coverage_plots  --phased-vcf <data.phased.vcf.gz>  --smoothing-enable True --copynumbers-enable True  --unphased-reads-coverage-enable True --phaseblock-flipping-enable True  --genome-name <cellline/dataset name> --cut-threshold 150 --het-phased-snps-freq-enable True
+python main.py --threads 4 --reference <ref.fa>  --target-bam <data.haplotagged.bam>  --out-dir-plots genome_abc_output  --phased-vcf <data.phased.vcf.gz>  --smoothing-enable True --copynumbers-enable True  --unphased-reads-coverage-enable True --phaseblock-flipping-enable True  --genome-name <cellline/dataset name> --cut-threshold 150 --het-phased-snps-freq-enable True
 ```
 
 ## Prerequisite
@@ -80,27 +80,27 @@ Few cell lines arbitrary phasing output with coverage profile is included in the
 
 ## Required parameters
 
-* `--target-bam` path to one or multiple target bam files (must be indexed)
+* `--target-bam` path to target bam files (must be indexed)
   
 * `--out-dir-plots` path to output coverage plots
 
 * `--genome-name` genome cellline/sample name to be displayed on plots
 
-* `--phased-vcf` phased VCF file for the corresponding haplotagged BAM
+* `--normal-phased-vcf` normal phased VCF file to generate het SNPs frequncies pileup for tumor BAM (if tumor-only mode, use `--tumor-vcf` instead)
 
   
 ## Optional parameters
   
+* `--tumor-vcf` VCF file to plot snps frequencies, ratios and LOH regions also this is necessary in tumor-only mode
+
 * `--phaseblock-flipping-enable` enabling phaseblock flipping in coverage plots
   
 * `--smoothing-enable` enabling smoothing in coverage plots
 
 * `--phaseblocks-enable` enabling phaseblocks display in coverage plots
 
-* `--het-phased-snps-freq-enable` enabling heterozygous phased snps frequencies in coverage plots
-
 * `--breakpoints-enable` enabling breakpoints in coverage plots
 
-* `--phased-vcf-snps-freqs` phased VCF file to plot snps frequencies coverages along BAM coverage
-
 * `--contigs` List of contigs (chromosomes, default:chr1-22) to be included in the plots [e.g., chr1-22,X,Y]
+
+* `--without-phasing` enable it if CNA analysis is being performed without phasing 

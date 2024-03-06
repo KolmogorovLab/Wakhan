@@ -534,7 +534,7 @@ def hmm_get_model(depth_values_hp1, depth_values_hp2, snps_cpd_means_input, argu
     #centers = [2, 44, 84, 120, 180]
     #stdev = [20, 20, 20, 20, 20]
 
-    #stdev, centers  = hmm_pome_test(cnarr, X, centers, stdev)
+    stdev, centers, score  = hmm_pome_test(cnarr, X, centers, stdev)
     #print(stdev, centers)
 
     # centers_change = []

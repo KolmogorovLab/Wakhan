@@ -5,7 +5,7 @@ import logging
 import os
 import gzip
 import pandas as pd
-from utils import write_segments_coverage, csv_df_chromosomes_sorter
+from utils import write_segments_coverage_dict, csv_df_chromosomes_sorter, smoothing
 from bam_processing import process_bam_for_snps_freqs
 
 import csv
@@ -26,22 +26,146 @@ def af_field_selection(vcf_path):
                 try:
                     format_.split(":").index("AF")
                     af_index = format_.split(":").index("AF")
-                    af = float(sample_.split(":")[af_index])
+                    #af = float(sample_.split(":")[af_index])
                     af_field = 'AF'
                 except ValueError:
                     if format_.__contains__("VAF"):
                         af_index = format_.split(":").index("VAF")
-                        af = float(sample_.split(":")[af_index])
+                        #af = float(sample_.split(":")[af_index])
                         af_field = 'VAF'
             break
     vcf_file.close()
     return af_field
 
-def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, bin_size): #TODO This module needs better implementation, currently slow
+def get_snps_counts(snps_df_sorted, chrom, ref_start_values, bin_size):  # TODO This module needs better implementation, currently slow
+    snps_df = snps_df_sorted[snps_df_sorted['chr'] == chrom]
+    snps_df['gt'].astype(str)
+    #snps_df = snps_df[(snps_df['qual'] > 15)]
+
+    if snps_df.vaf.dtype == object:
+        snps_df_vaf = [eval(i) for i in snps_df.vaf.str.split(',').str[0].values.tolist()]
+    else:
+        snps_df_vaf = snps_df.vaf.values.tolist()
+
+    snps_df_pos = snps_df.pos.values.tolist()
+    snps_het = []
+    snps_homo = []
+    snps_het_pos = []
+    snps_homo_pos = []
+    for index, vaf in enumerate(snps_df_vaf):
+        if vaf > 0.75 or vaf < 0.25:
+            snps_homo.append(vaf)
+            snps_homo_pos.append(snps_df_pos[index])
+        else:
+            snps_het.append(vaf)
+            snps_het_pos.append(snps_df_pos[index])
+
+    snps_het_counts = []
+    snps_het_pos_bins = []
+    for index, pos in enumerate(ref_start_values):
+        l2 = [i for i in snps_het_pos if i > pos and i < pos+bin_size]
+        snps_het_counts.append(len(l2))
+        snps_het_pos_bins.append(pos)
+
+    snps_homo_counts = []
+    snps_homo_pos_bins = []
+    for index, pos in enumerate(ref_start_values):
+        l2 = [i for i in snps_homo_pos if i > pos and i < pos+bin_size]
+        snps_homo_counts.append(len(l2))
+        snps_homo_pos_bins.append(pos)
+
+    return snps_het_counts, snps_homo_counts, snps_het_pos_bins, snps_homo_pos_bins
+
+def get_snps_counts_cn_regions(snps_df_sorted, chrom, ref_start_values, ref_end_values):  # TODO This module needs better implementation, currently slow
+    snps_df = snps_df_sorted[snps_df_sorted['chr'] == chrom]
+    snps_df['gt'].astype(str)
+    #snps_df = snps_df[(snps_df['qual'] > 15)]
+
+    if snps_df.vaf.dtype == object:
+        snps_df_vaf = [eval(i) for i in snps_df.vaf.str.split(',').str[0].values.tolist()]
+    else:
+        snps_df_vaf = snps_df.vaf.values.tolist()
+
+    snps_df_pos = snps_df.pos.values.tolist()
+    snps_het = []
+    snps_homo = []
+    snps_het_pos = []
+    snps_homo_pos = []
+    for index, vaf in enumerate(snps_df_vaf):
+        if vaf > 0.75 or vaf < 0.25:
+            snps_homo.append(vaf)
+            snps_homo_pos.append(snps_df_pos[index])
+        else:
+            snps_het.append(vaf)
+            snps_het_pos.append(snps_df_pos[index])
+
+    snps_het_counts = []
+    snps_het_pos_bins = []
+    for index, (start,end) in enumerate(zip(ref_start_values, ref_end_values)):
+        l2 = [i for i in snps_het_pos if i > start and i < end]
+        snps_het_counts.append(len(l2))
+
+    snps_homo_counts = []
+    snps_homo_pos_bins = []
+    for index, (start,end) in enumerate(zip(ref_start_values,ref_end_values)):
+        l2 = [i for i in snps_homo_pos if i > start and i < end]
+        snps_homo_counts.append(len(l2))
+
+    return snps_het_counts, snps_homo_counts, ref_start_values, ref_end_values
+def get_snps_frquncies(snps_df_sorted, chrom):  # TODO This module needs better implementation, currently slow
+    snps_df = snps_df_sorted[snps_df_sorted['chr'] == chrom]
+    snps_df['gt'].astype(str)
+    #snps_df = snps_df[(snps_df['qual'] > 15)]
+
+    if snps_df.vaf.dtype == object:
+        snps_df_vaf = [eval(i) for i in snps_df.vaf.str.split(',').str[0].values.tolist()]
+    else:
+        snps_df_vaf = snps_df.vaf.values.tolist()
+
+    snps_df_pos = snps_df.pos.values.tolist()
+    snps_het = []
+    snps_homo = []
+    snps_het_pos = []
+    snps_homo_pos = []
+    for index, vaf in enumerate(snps_df_vaf):
+        if vaf > 0.75 or vaf < 0.25:
+            snps_homo.append(vaf)
+            snps_homo_pos.append(snps_df_pos[index])
+        else:
+            snps_het.append(vaf)
+            snps_het_pos.append(snps_df_pos[index])
+
+    return snps_het, snps_homo, snps_het_pos, snps_homo_pos
+
+def het_homo_snps_gts(snps_df_sorted, chrom, ref_start_values,
+                                bin_size):
     snps_df = snps_df_sorted[snps_df_sorted['chr'] == chrom]
     snps_df['gt'].astype(str)
 
     snps_df = snps_df[(snps_df['qual'] > 15)]
+
+    snps_df_haplotype1 = snps_df[(snps_df['gt'] == '0|1') | (snps_df['gt'] == '1|0')]
+    snps_df_haplotype1.reindex(snps_df_haplotype1)
+    if snps_df.vaf.dtype == object:
+        snps_df_haplotype1_vaf = [eval(i) for i in snps_df.vaf.str.split(',').str[0].values.tolist()]
+    else:
+        snps_df_haplotype1_vaf = snps_df.vaf.values.tolist()
+    snps_df_haplotype1_pos = snps_df_haplotype1.pos.values.tolist()
+
+    snps_df_haplotype2 = snps_df[(snps_df['gt'] == '0/0') | (snps_df['gt'] == '1/1') ]
+    snps_df_haplotype2.reindex(snps_df_haplotype2)
+    if snps_df.vaf.dtype == object:
+        snps_df_haplotype2_vaf = [eval(i) for i in snps_df.vaf.str.split(',').str[0].values.tolist()]
+    else:
+        snps_df_haplotype2_vaf = snps_df.vaf.values.tolist()
+    snps_df_haplotype2_pos = snps_df_haplotype2.pos.values.tolist()
+
+    return snps_df_haplotype1_vaf, snps_df_haplotype2_vaf, snps_df_haplotype1_pos, snps_df_haplotype2_pos
+def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, bin_size): #TODO This module needs better implementation, currently slow
+    snps_df = snps_df_sorted[snps_df_sorted['chr'] == chrom]
+    snps_df['gt'].astype(str)
+
+    #snps_df = snps_df[(snps_df['qual'] > 15)]
 
     # snps_df_haplotype1 = snps_df[(snps_df['gt'] == '0|1') | (snps_df['gt'] == '1|0')]
     # snps_df_haplotype1.reindex(snps_df_haplotype1)
@@ -111,7 +235,6 @@ def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, bin_siz
     #         snps_haplotype2_counts.append(len(sub_list))
     #     total += len_cov
 
-
     #snps_df['vaf'] = snps_df['vaf'].astype(float)
 
     if snps_df.vaf.dtype == object:
@@ -126,6 +249,7 @@ def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, bin_siz
     snps_homo_pos = []
     for index, vaf in enumerate(snps_df_vaf):
         if vaf > 0.75 or vaf < 0.25:
+        #if vaf > 0.9 or vaf < 0.1:
             snps_homo.append(vaf)
             snps_homo_pos.append(snps_df_pos[index])
         else:
@@ -176,14 +300,30 @@ def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, bin_siz
             centromere_region.append(pos)
             centromere_region.append(pos + bin_size)
 
-        elif homo_ratio > 0.8 and het_ratio < 0.2:
+    snps_het_counts_updated = []
+    snps_homo_counts_updated = []
+    ref_start_values_updated = []
+    for i, (het_counts, homo_counts, start_values) in enumerate(zip(snps_het_counts, snps_homo_counts, ref_start_values)):
+        if not (het_counts == 0 and homo_counts == 0):
+            snps_het_counts_updated.append(het_counts)
+            snps_homo_counts_updated.append(homo_counts)
+            ref_start_values_updated.append(start_values)
+
+    if snps_het_counts:
+        snps_het_counts_updated, snps_homo_counts_updated, _ = smoothing(snps_het_counts_updated, snps_homo_counts_updated, snps_homo_counts_updated, conv_window_size=45)
+
+    for index, pos in enumerate(ref_start_values_updated):
+        #if snps_het_counts[index] < 0.7 and snps_homo_counts[index] > 0.14:
+        if snps_het_counts_updated[index] < 0.3 and snps_homo_counts_updated[index] > 0.7:
             loh_regions.append(pos)
             loh_regions.append(pos + bin_size)
 
     centromere_region_starts, centromere_region_ends = squash_regions(centromere_region, bin_size)
     loh_region_starts, loh_region_ends = squash_regions(loh_regions, bin_size)
 
-    return snps_het_counts, snps_homo_counts, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends
+    return ref_start_values_updated, snps_het_counts_updated, snps_homo_counts_updated, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends
+
+
     #return snps_het_counts, snps_homo_counts
     #return snps_het, snps_homo, snps_het_pos, snps_homo_pos
     #return snps_haplotype1, snps_haplotype2, snps_haplotype1_mean, snps_haplotype2_mean, snps_het_counts, snps_homo_counts
@@ -283,8 +423,8 @@ def cpd_mean(haplotype1_means, haplotype2_means, ref_values, chrom):
 
     slices = slice_when(lambda x, y: y - x > 10, sorted(snps_haplotype1_mean + snps_haplotype2_mean))
     data = list(slices)
-    print(data)
-    print([sum(sub_list) / len(sub_list) for sub_list in data])
+    #print(data)
+    #print([sum(sub_list) / len(sub_list) for sub_list in data])
 
 
     return df_cpd_hp1, df_cpd_hp2
@@ -348,7 +488,7 @@ def vcf_parse_to_csv_for_het_phased_snps_phasesets(input_vcf):
     return output_csv
 
 def get_snp_segments(arguments, target_bam, thread_pool):
-    basefile = pathlib.Path(arguments['phased_vcf']).stem
+    basefile = pathlib.Path(arguments['normal_phased_vcf']).stem
     output_csv = basefile + '_het_snps.csv'
     output_csv = f"{os.path.join('data', output_csv)}"
 
@@ -366,11 +506,11 @@ def get_snp_segments(arguments, target_bam, thread_pool):
 
     logging.info('bcftools -> Query for het SNPs and creating a %s CSV file', output_csv)
     # bcftools query for phasesets and GT,DP,VAF
-    cmd = ['bcftools', 'query', '-i', 'GT="het"', '-f',  '%CHROM\t%POS\t%REF\t%ALT\t[%GT]\n', arguments['phased_vcf'], '-o', output_csv] #
+    cmd = ['bcftools', 'query', '-i', 'GT="het"', '-f',  '%CHROM\t%POS\t%REF\t%ALT\t[%GT]\n', arguments['normal_phased_vcf'], '-o', output_csv] #
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     process.wait()
 
-    cmd = ['bcftools', 'query', '-i', 'GT="het"', '-f',  '%CHROM\t%POS\n', arguments['phased_vcf'], '-o', output_bed] #
+    cmd = ['bcftools', 'query', '-i', 'GT="het"', '-f',  '%CHROM\t%POS\n', arguments['normal_phased_vcf'], '-o', output_bed] #
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     process.wait()
 
@@ -393,7 +533,7 @@ def get_snp_segments(arguments, target_bam, thread_pool):
     dataframe_acgt_frequency = csv_df_chromosomes_sorter(output_acgts, ['chr', 'start', 'a', 'c', 'g', 't'], ',')
     dataframe_acgt_frequency = pd.merge(dataframe_snps, dataframe_acgt_frequency, on=['chr', 'start'])
     snp_segments_frequencies = get_snp_segments_frequencies_final(dataframe_acgt_frequency)
-    write_segments_coverage(snp_segments_frequencies, 'snps_frequencies.csv')
+    write_segments_coverage_dict(snp_segments_frequencies, 'snps_frequencies.csv')
 
 def get_snp_segments_frequencies_final(dataframe_acgt_frequency):
     snp_segments = dataframe_acgt_frequency.values.tolist()

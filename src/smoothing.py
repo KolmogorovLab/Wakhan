@@ -8,10 +8,10 @@ def convolve_sma(x, N):
 
 def smoothing(haplotype_1_values, haplotype_2_values, unphased_reads_values = None, conv_window_size = 5):
     if not unphased_reads_values == None:
-        smooth_triangle(unphased_reads_values, conv_window_size)
+        unphased_reads_values = smooth_triangle(unphased_reads_values, conv_window_size)
 
-    smooth_triangle(haplotype_1_values, conv_window_size)
-    smooth_triangle(haplotype_2_values, conv_window_size)
+    haplotype_1_values = smooth_triangle(haplotype_1_values, conv_window_size)
+    haplotype_2_values = smooth_triangle(haplotype_2_values, conv_window_size)
     return haplotype_1_values, haplotype_2_values, unphased_reads_values
 
 def smooth_triangle(data, degree):

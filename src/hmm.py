@@ -12,7 +12,8 @@ import scipy
 from cnvlib.cnary import CopyNumArray as CNA
 from cnvlib.segfilters import squash_by_groups
 
-from clustering import cluster_coverage_data, change_point_detection_means
+from clustering import cluster_coverage_data, stdev_calc
+from extras import get_contigs_list
 def hmm_model_creation(data, observations, means, stdev):
     state_names = []
     distributions = []
@@ -49,21 +50,60 @@ def hmm_model_creation(data, observations, means, stdev):
     )
     return model
 
-def call_copynumbers(arguments, cnarr, df_chrom, cpd_means_collective):
-    observations = observations_matrix(cnarr, cpd_means_collective)
+def call_copynumbers(arguments, cnarr, df_chrom, cpd_means, cpd_means_collective):
+    observations = observations_matrix(cnarr, cpd_means_collective, arguments)
 
     if cpd_means_collective:
-        means, stdev = cluster_coverage_data(cpd_means_collective)
+        print(cpd_means_collective)
+        means, stdev = cluster_coverage_data(cpd_means_collective, True)
         individual_cpd_means = None
+        print(cpd_means_collective)
         print(means, stdev)
-        #means = [0.0, 9.0, 22.105, 33.3, 46.0]
-        #stdev = [2, 10, 20, 20, 10]
-        #means = [7, 26.105, 46.3, 68]
-        #stdev = [7, 10, 15, 15]
+
+        #means = [0.0, 2.0, 6.583333333333333, 12.0, 15.75, 19.0, 23.428571428571427, 31.0]
+        #stdev = stdev_calc(means)
+
+        # depth_values_hp1 = np.array(cnarr.data['depth'], dtype='int')
+        # depth_values_hp2 = np.array(cnarr.data['depth'], dtype='int')
+        # depth_values_hp1 = depth_values_hp1.reshape(-1, 1)
+        # depth_values_hp2 = depth_values_hp2.reshape(-1, 1)
+        # X = np.concatenate([depth_values_hp1])
+        # means_, stdev_, score_ = hmm_pome_test(cnarr, X, means, stdev, cpd_means_collective, arguments)
+        # print(score_, means_)
+        # for i in range(len(means)):
+        #     means_, stdev_, score_ = hmm_pome_test(cnarr, X, means[i], stdev[i], cpd_means_collective, arguments)
+        #     print(score_, means_)
+
+        #means = [0.0, 33, 66, 99, 133]
+        #means = [0.19, 9.0, 19.793, 29.714, 38.5]
+        #stdev = [5, 5, 5, 5, 5]
+        #means = [0, 16*1, 16*2, 16*3, 16*4, 16*5, 16*6]
+        #stdev = [5, 10, 10, 10, 10, 10, 10]
+        #means = [0, 6,12,18,24]#[0,11,22,33,44]
+        #means = [0, 10, 18, 29, 39, 49, 59, 84, 118, 218]
+        #stdev = [1, 5,5,5,5,5,5,5,5,5]
+        #means = [0, 11, 27, 41]
+        #stdev = [1, 5,5,5]
+        #means = [0, 8.0, 11.2, 17.75, 22.608695652173914, 34, 44.0, 56.0]
+        #stdev = [1, 5, 5, 5, 5, 5, 5, 5]
+        #means = [0, 9.285714285714286, 14.0, 19.85185185185185, 29.4, 39.0]
+        #stdev = [1, 5, 5, 5, 5, 5]
+        #means = [0, 10.833333333333334, 17.0, 24.047619047619047, 36.8, 45.0]
+        #stdev = [1, 5, 5, 5, 5, 5]
+
+        means = [0, 28, 40, 55, 108]
+        stdev = [1, 10, 10, 10, 20]
+
+        means = [mean + 0.025 for mean in means]
+        #stdev  = stdev_
+
+        #df_means_chr = df_means_chr_all
     else:
-        individual_cpd_means = change_point_detection_means(arguments, df_chrom)
-        means, stdev = cluster_coverage_data(individual_cpd_means)
+        print(cpd_means)
+        #individual_cpd_means = [0.0,0.2,0.3, 33,34,35, 66,67,68, 99,98,97]
+        means, stdev = cluster_coverage_data(cpd_means, False)
         print(means, stdev)
+
     model = hmm_model_creation(cnarr, observations, means, stdev)
     logging.info("Predicting states from model")
     states = np.concatenate(
@@ -72,15 +112,15 @@ def call_copynumbers(arguments, cnarr, df_chrom, cpd_means_collective):
     values = cnarr.as_dataframe(cnarr.data)
     values.data.reset_index(drop=True, inplace=True)
     if cpd_means_collective:
-        half_values = values.data[(values.data['chromosome'] == "chr1") & (values.data['start'] == 0)].index[1]
+        half_values = values.data[(values.data['chromosome'] == arguments['contigs'].split('-')[0]) & (values.data['start'] == 0)].index[1]
     else:
         half_values = values.data[(values.data['start'] == 0)].index[1]
 
     segs = []
     start = 0
-    haplotype_dfs = pd.DataFrame()
 
-    for i in range(2): #range(0, len(values), 49592):#len(values) // 2):
+    write_csv = True
+    for k in range(2): #range(0, len(values), 49592):#len(values) // 2):
         state = states[start:half_values]
         cnarray = values.data.iloc[start:half_values, ]
         start = half_values
@@ -99,34 +139,67 @@ def call_copynumbers(arguments, cnarr, df_chrom, cpd_means_collective):
             bad_segs = segarr[segarr.start >= segarr.end]
             logging.warning("Bad segments:\n%s", bad_segs.data)
 
-        haplotype_df = segarr.data
-        haplotype_df['haplotype'] = i
-        haplotype_dfs = pd.concat([haplotype_df, haplotype_df])
-
         mean = []
         df = cnarray.data.assign(group=state)
 
-        # for i, row in segarr.data.iterrows():
-        #     size = len(segarr.data.index)
-        #     #if row.chromosome == 'chr15':
-        #     #    print("here")
-        #     if (row.end - row.start < 1000000) and (i > 0 and i < size-1):
-        #         if segarr.data.at[i - 1, 'state'] == segarr.data.at[i + 1, 'state'] and segarr.data.at[i, 'chromosome'] == segarr.data.at[i - 1, 'chromosome']:
-        #             segarr.data.at[i, 'state'] = segarr.data.at[i+1, 'state']
-        #         elif (not segarr.data.at[i - 1, 'state'] == segarr.data.at[i + 1, 'state']) and segarr.data.at[i, 'chromosome'] == segarr.data.at[i - 1, 'chromosome']:
-        #                 segarr.data.at[i, 'state'] = segarr.data.at[i - 1, 'state']
+        if cpd_means_collective:
+            for i, row in segarr.data.iterrows():
+                size = len(segarr.data.index)
+                if (row.end - row.start < 100000) and (i > 0 and i < size-1):
+                    if segarr.data.at[i - 1, 'state'] == segarr.data.at[i + 1, 'state'] and segarr.data.at[i, 'chromosome'] == segarr.data.at[i - 1, 'chromosome']:
+                        segarr.data.at[i, 'state'] = segarr.data.at[i+1, 'state']
+                    elif (not segarr.data.at[i - 1, 'state'] == segarr.data.at[i + 1, 'state']) and segarr.data.at[i, 'chromosome'] == segarr.data.at[i - 1, 'chromosome']:
+                            segarr.data.at[i, 'state'] = segarr.data.at[i - 1, 'state']
+
+        for i, val in enumerate(np.unique(df['group'])):
+            segarr['depth'] = np.where(segarr['state'] == val, i, segarr['state'])  #TODO Bug, when same center and state values
 
         for i, val in enumerate(np.unique(df['group'])):
             #mean.append(np.mean(df[df['group'] == i]['depth']))
             #segarr['state'] = np.where(segarr['state'] == i, mean[i], segarr['state'])
             segarr['state'] = np.where(segarr['state'] == val, means[val], segarr['state'])  #TODO Bug, when same center and state values
+
+        # if cpd_means_collective:
+        #     steps = np.array(means)
+        #     df_means_chr_all["state"] = df_means_chr_all["mean"].apply(lambda x: steps[np.argmin(np.abs(x - steps))])
+
+        if cpd_means_collective:
+            segarr = merge_adjacent_regions(segarr, arguments)
+            #TODO: merge_adjacent_regions prior?
+            # haplotype_df = segarr
+            # if not arguments['without_phasing']:
+            #     haplotype_df['haplotype'] = k + 1
+            #     header = ['chromosome', 'start', 'end', 'depth', 'state', 'haplotype']
+            # else:
+            #     header = ['chromosome', 'start', 'end', 'depth', 'state']
+            # if write_csv:
+            #     haplotype_df.to_csv('data/' + arguments['genome_name'] + '_copynumbers_segments.csv', sep='\t', columns=header,
+            #                      index=False, mode='a', header=False)
+            #     if arguments['without_phasing']:
+            #         write_csv = False
+        else:
+            segarr = merge_adjacent_regions_1(segarr)
+
         segs.append(segarr)
 
-    header = ['chromosome', 'start', 'end', 'state', 'haplotype']
-    haplotype_dfs.to_csv('data/copynumbers_segments.csv', sep='\t', columns=header, index=False)
+    return segs, states, means, stdev
 
-    return segs, states, means, stdev, individual_cpd_means
+def merge_adjacent_regions(segarr, arguments):
+    chroms = get_contigs_list(arguments['contigs'])
+    dfs = []
+    for index, chrom in enumerate(chroms):
+        seg = segarr.data[segarr.data['chromosome'] == chrom]
+        label_groups = seg['state'].ne(seg['state'].shift()).cumsum()
+        df = (seg.groupby(label_groups).agg({'chromosome': 'first', 'start': 'min', 'end': 'max', 'depth': 'first', 'state': 'first'}).reset_index(drop=True))
+        dfs.append(df)
+    out = pd.concat(dfs)
+    return out
 
+def merge_adjacent_regions_1(segarr):
+    #label_groups = segarr.data['state'].ne(segarr.data['state'].shift()).cumsum()
+    #out = (segarr.data.groupby(label_groups).agg({'chromosome': 'first', 'start': 'min', 'end': 'max', 'depth': 'first', 'state': 'first'}).reset_index(drop=True))
+    out = segarr.data
+    return out
 def silhouette_score_from_states(X, states):
     y = np.concatenate(list(X)).ravel().tolist()
     lst = [i for i in range(0, (len(y) // 2) * 50000, 50000)]
@@ -142,12 +215,12 @@ def silhouette_score_from_states(X, states):
             means.append(statistics.mean(yn))
     return silhouette_score(X, states, metric="euclidean")
 
-def observations_matrix(cnarray, snps_cpd_means):
+def observations_matrix(cnarray, snps_cpd_means, arguments):
     obs = []
     values = cnarray.as_dataframe(cnarray.data)
     values.data.reset_index(drop=True, inplace=True)
     if snps_cpd_means:
-        half_values = values.data[(values.data['chromosome'] == "chr1") & (values.data['start'] == 0)].index[1]
+        half_values = values.data[(values.data['chromosome'] == arguments['contigs'].split('-')[0]) & (values.data['start'] == 0)].index[1]
     else:
         half_values = values.data[(values.data['start'] == 0)].index[1]
 
@@ -159,10 +232,75 @@ def observations_matrix(cnarray, snps_cpd_means):
 
         meta = {"sample_id": 'sample'}
         cnarr = CNA(cnarr, meta)
-        obs.extend(as_observation_matrix(cnarr.autosomes()))
+        obs.extend(as_observation_matrix(cnarr))
 
     return obs
 
 def as_observation_matrix(cnarr):
     observations = [arm.log2.values for _c, arm in cnarr.by_arm()]
     return observations
+
+def hmm_pome_test(cnarr, X, means, stdev, snps_cpd_means_input, arguments):
+    import scipy
+    import pomegranate as pom
+    import scipy.special
+
+    observations = observations_matrix(cnarr, snps_cpd_means_input, arguments)
+
+    state_names = []#["copy_1", "copy_2", "copy_3", "copy_4", "copy_5"]
+    distributions = []
+    for i in range(len(means)):
+        state_names.append("copy_"+str(i))
+        distributions.append(pom.NormalDistribution(means[i], stdev[i], frozen=False))
+
+    n_states = len(distributions)
+    # Starts -- prefer neutral
+    binom_coefs = scipy.special.binom(n_states - 1, range(n_states))
+    start_probabilities = binom_coefs / binom_coefs.sum()
+
+    # Prefer to keep the current state in each transition
+    # All other transitions are equally likely, to start
+    transition_matrix = (
+        np.identity(n_states) * 100 + np.ones((n_states, n_states)) / n_states
+    )
+
+    model = pom.HiddenMarkovModel.from_matrix(
+        transition_matrix,
+        distributions,
+        start_probabilities,
+        state_names=state_names,
+        name='hmm',
+    )
+
+    model.fit(
+        sequences=observations,
+        weights=[len(obs) for obs in observations],
+        distribution_inertia=0.9,  # Allow updating dists, but slowly
+        edge_inertia=0.05,
+        # lr_decay=.75,
+        pseudocount=5,
+        use_pseudocount=True,
+        max_iterations=100000,
+        n_jobs=1,
+        verbose=False,
+    )
+    states = np.concatenate(
+        [np.array(model.predict(obs, algorithm="map")) for obs in observations]
+    )
+
+    # y = np.concatenate(list(X)).ravel().tolist()
+    # lst = [i for i in range(0, (len(y) // 2) * 50000, 50000)]
+    # x = lst + lst
+    # stdev = []
+    # means = []
+    # for g in np.unique(states):
+    #     ix = [index for index, i in enumerate(x) if states[index] == g]
+    #     xn = [x[i] for i in ix]
+    #     yn = [y[i] for i in ix]
+    #     if len(yn) > 1:
+    #         stdev.append(statistics.stdev(yn))
+    #         means.append(statistics.mean(yn))
+
+    score = silhouette_score(X, states, metric="euclidean")
+
+    return means, stdev, score
