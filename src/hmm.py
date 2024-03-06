@@ -90,12 +90,10 @@ def call_copynumbers(arguments, cnarr, df_chrom, cpd_means, cpd_means_collective
         #stdev = [1, 5, 5, 5, 5, 5]
         #means = [0, 10.833333333333334, 17.0, 24.047619047619047, 36.8, 45.0]
         #stdev = [1, 5, 5, 5, 5, 5]
-
-        means = [0, 28, 40, 55, 108]
-        stdev = [1, 10, 10, 10, 20]
+        #means = [0, 28, 40, 55, 108]
+        #stdev = [1, 10, 10, 10, 20]
 
         means = [mean + 0.025 for mean in means]
-        #stdev  = stdev_
 
         #df_means_chr = df_means_chr_all
     else:
