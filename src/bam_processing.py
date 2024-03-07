@@ -327,14 +327,14 @@ def process_bam_for_snps_freqs(arguments, thread_pool):
     if st_2.returncode != 0:
         raise ValueError('samtools view for bam output subprocess returned nonzero value: {}'.format(st_2.returncode))
 
-    basefile = pathlib.Path(arguments['phased_vcf']).stem
+    basefile = pathlib.Path(arguments['normal_phased_vcf']).stem
     output_csv = basefile + '_het_snps.csv'
     output_csv = f"{os.path.join('data', output_csv)}"
 
     output_vcf = basefile + '_het_phased_snps.vcf.gz'
     output_vcf = f"{os.path.join('data', output_vcf)}"
 
-    cmd = ['bcftools', 'view', '--threads', str(arguments['threads']),  '--phased', '-g', 'het', '--types', 'snps', arguments['phased_vcf'], '-o', output_vcf]
+    cmd = ['bcftools', 'view', '--threads', str(arguments['threads']),  '--phased', '-g', 'het', '--types', 'snps', arguments['normal_phased_vcf'], '-o', output_vcf]
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     process.wait()
 
