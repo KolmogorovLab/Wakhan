@@ -223,7 +223,7 @@ def main():
         segments = get_chromosomes_bins(args.target_bam[0], arguments['bin_size'], arguments)
         segments_coverage = get_segments_coverage(segments, coverage_histograms)
         logging.info('Writing coverage for bins')
-        write_segments_coverage(segments_coverage, 'coverage.csv')
+        write_segments_coverage(segments_coverage, 'coverage.csv', arguments)
 
         logging.info('Parsing phaseblocks information')
         if arguments['normal_phased_vcf']:
@@ -234,12 +234,12 @@ def main():
         logging.info('Computing coverage for phaseblocks')
         phasesets_coverage = get_segments_coverage(phasesets_segments, coverage_histograms)
         logging.info('Writing coverage for phaseblocks')
-        write_segments_coverage(phasesets_coverage, 'coverage_ps.csv')
+        write_segments_coverage(phasesets_coverage, 'coverage_ps.csv', arguments)
         del coverage_histograms
 
         logging.info('Loading coverage (bins) and coverage (phaseblocks) files...')
-        csv_df_phasesets = csv_df_chromosomes_sorter('data/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
-        csv_df_coverage = csv_df_chromosomes_sorter('data/coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
+        csv_df_phasesets = csv_df_chromosomes_sorter(arguments['out_dir_plots']+'/bed_output/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
+        csv_df_coverage = csv_df_chromosomes_sorter(arguments['out_dir_plots']+'/bed_output/coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
 
     #TODO add chrX,chrY support later on
     csv_df_coverage = csv_df_coverage.drop(csv_df_coverage[(csv_df_coverage.chr == "chrX") | (csv_df_coverage.chr == "chrY")].index)
@@ -285,6 +285,7 @@ def main():
         write_copynumber_segments_csv(df_segs_hp1, arguments, centers, integer_fractional_means, 1)
         write_copynumber_segments_csv(df_segs_hp2, arguments, centers, integer_fractional_means, 2)
         copy_number_plots_genome(centers, integer_fractional_means, df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, df_unphased, arguments)
+
     #SNPs LOH and plots
     plot_snps_frequencies(arguments, csv_df_snps_mean, df_segs_hp1, df_segs_hp2, centers, integer_fractional_means)
 
