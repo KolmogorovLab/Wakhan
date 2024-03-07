@@ -102,21 +102,16 @@ Few cell lines arbitrary phasing output with coverage profile is included in the
 
 * `--genome-name` genome cellline/sample name to be displayed on plots
 
-* `--normal-phased-vcf` normal phased VCF file to generate het SNPs frequncies pileup for tumor BAM (if tumor-only mode, use `--tumor-vcf` instead)
+* `--normal-phased-vcf` normal phased VCF file to generate het SNPs frequncies pileup for tumor BAM (if tumor-only mode, use phased `--tumor-vcf` instead)
 
-  
+* `--tumor-vcf` VCF file to plot snps frequencies, ratios and LOH regions (Note: phased VCF is required in tumor-only mode)
+
 ## Optional parameters
-  
-* `--tumor-vcf` VCF file to plot snps frequencies, ratios and LOH regions also this is necessary in tumor-only mode
 
 * `--phaseblock-flipping-enable` enabling phaseblock flipping in coverage plots
-  
-* `--smoothing-enable` enabling smoothing in coverage plots
 
 * `--phaseblocks-enable` enabling phaseblocks display in coverage plots
 
-* `--breakpoints-enable` enabling breakpoints in coverage plots
-
-* `--contigs` List of contigs (chromosomes, default:chr1-22) to be included in the plots [e.g., chr1-22,X,Y]
+* `--contigs` List of contigs (chromosomes, default:chr1-22) to be included in the plots (Note: chrX, chrY support in CNA plots is not included yet) [e.g., chr1-22,X,Y]
 
 * `--without-phasing` enable it if CNA analysis is being performed without phasing 

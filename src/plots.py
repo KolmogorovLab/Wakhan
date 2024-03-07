@@ -229,7 +229,7 @@ def coverage_plots_chromosomes(df, df_phasesets, arguments, thread_pool):
                 phaseblock_flipping(chrom, arguments, is_simple_heuristics, haplotype_1_values, haplotype_2_values, ref_start_values, ref_end_values, \
                         haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
 
-                if is_simple_heuristics == False:
+                if not is_simple_heuristics:
                     #detect centromeres
                     ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets = detect_centromeres(ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets, haplotype_1_values, haplotype_2_values, ref_start_values, arguments['bin_size'])
                     # infer missing phaseblocks
@@ -242,7 +242,7 @@ def coverage_plots_chromosomes(df, df_phasesets, arguments, thread_pool):
             ################################################################################
             if arguments['smoothing_enable']:
                 logging.info('smoothing module')
-                haplotype_1_values, haplotype_2_values, unphased_reads_values = smoothing(haplotype_1_values, haplotype_2_values, unphased_reads_values, conv_window_size=5)
+                #haplotype_1_values, haplotype_2_values, unphased_reads_values = smoothing(haplotype_1_values, haplotype_2_values, unphased_reads_values, conv_window_size=5)
             ################################################################################
             #Plots
             if arguments['without_phasing']:
