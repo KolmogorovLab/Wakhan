@@ -13,7 +13,7 @@ from collections import defaultdict
 from bam_processing import get_all_reads_parallel, update_coverage_hist, get_segments_coverage, haplotype_update_all_bins_parallel, get_snps_frequencies
 from cnvlib import descriptives
 from cnvlib import cluster
-from utils import get_chromosomes_bins, write_segments_coverage, csv_df_chromosomes_sorter,\
+from utils import get_chromosomes_bins, write_segments_coverage, write_segments_coverage_dict, csv_df_chromosomes_sorter,\
     apply_copynumbers, seperate_dfs_coverage, flatten_smooth, get_contigs_list, write_copynumber_segments_csv, integer_fractional_cluster_means, \
     adjust_diversified_segments
 from plots import coverage_plots_chromosomes, copy_number_plots_genome, plots_genome_coverage, copy_number_plots_chromosomes
@@ -223,7 +223,7 @@ def main():
         segments = get_chromosomes_bins(args.target_bam[0], arguments['bin_size'], arguments)
         segments_coverage = get_segments_coverage(segments, coverage_histograms)
         logging.info('Writing coverage for bins')
-        write_segments_coverage(segments_coverage, 'coverage.csv', arguments)
+        write_segments_coverage_dict(segments_coverage, 'coverage.csv')
 
         logging.info('Parsing phaseblocks information')
         if arguments['normal_phased_vcf']:
@@ -234,12 +234,12 @@ def main():
         logging.info('Computing coverage for phaseblocks')
         phasesets_coverage = get_segments_coverage(phasesets_segments, coverage_histograms)
         logging.info('Writing coverage for phaseblocks')
-        write_segments_coverage(phasesets_coverage, 'coverage_ps.csv', arguments)
+        write_segments_coverage_dict(phasesets_coverage, 'coverage_ps.csv')
         del coverage_histograms
 
         logging.info('Loading coverage (bins) and coverage (phaseblocks) files...')
-        csv_df_phasesets = csv_df_chromosomes_sorter(arguments['out_dir_plots']+'/bed_output/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
-        csv_df_coverage = csv_df_chromosomes_sorter(arguments['out_dir_plots']+'/bed_output/coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
+        csv_df_phasesets = csv_df_chromosomes_sorter('data/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
+        csv_df_coverage = csv_df_chromosomes_sorter('data/coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
 
     #TODO add chrX,chrY support later on
     csv_df_coverage = csv_df_coverage.drop(csv_df_coverage[(csv_df_coverage.chr == "chrX") | (csv_df_coverage.chr == "chrY")].index)
