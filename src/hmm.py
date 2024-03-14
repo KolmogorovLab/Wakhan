@@ -73,23 +73,7 @@ def call_copynumbers(arguments, cnarr, df_chrom, cpd_means, cpd_means_collective
         # for i in range(len(means)):
         #     means_, stdev_, score_ = hmm_pome_test(cnarr, X, means[i], stdev[i], cpd_means_collective, arguments)
         #     print(score_, means_)
-
-        #means = [0.0, 33, 66, 99, 133]
-        #means = [0.19, 9.0, 19.793, 29.714, 38.5]
-        #stdev = [5, 5, 5, 5, 5]
-        #means = [0, 16*1, 16*2, 16*3, 16*4, 16*5, 16*6]
-        #stdev = [5, 10, 10, 10, 10, 10, 10]
-        #means = [0, 6,12,18,24]#[0,11,22,33,44]
-        #means = [0, 10, 18, 29, 39, 49, 59, 84, 118, 218]
-        #stdev = [1, 5,5,5,5,5,5,5,5,5]
-        #means = [0, 11, 27, 41]
-        #stdev = [1, 5,5,5]
-        #means = [0, 8.0, 11.2, 17.75, 22.608695652173914, 34, 44.0, 56.0]
-        #stdev = [1, 5, 5, 5, 5, 5, 5, 5]
-        #means = [0, 9.285714285714286, 14.0, 19.85185185185185, 29.4, 39.0]
-        #stdev = [1, 5, 5, 5, 5, 5]
-        #means = [0, 10.833333333333334, 17.0, 24.047619047619047, 36.8, 45.0]
-        #stdev = [1, 5, 5, 5, 5, 5]
+        #Debug
         #means = [0, 28, 40, 55, 108]
         #stdev = [1, 10, 10, 10, 20]
 

@@ -57,7 +57,7 @@ def main():
                         metavar="path", help="Output directory")
 
     parser.add_argument("--normal-phased-vcf", dest="normal_phased_vcf",
-                        metavar="path", required=True, default=None,
+                        metavar="path", required=False, default=None,
                         help="Path to normal phased vcf")
     parser.add_argument("--tumor-vcf", dest="tumor_vcf",
                         metavar="path", required=False, default=None,
