@@ -310,7 +310,7 @@ def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, bin_siz
             ref_start_values_updated.append(start_values)
 
     if snps_het_counts:
-        snps_het_counts_updated, snps_homo_counts_updated, _ = smoothing(snps_het_counts_updated, snps_homo_counts_updated, snps_homo_counts_updated, conv_window_size=45)
+        snps_het_counts_updated, snps_homo_counts_updated, _ = smoothing(snps_het_counts_updated, snps_homo_counts_updated, snps_homo_counts_updated, conv_window_size=10)
 
     for index, pos in enumerate(ref_start_values_updated):
         #if snps_het_counts[index] < 0.7 and snps_homo_counts[index] > 0.14:
@@ -525,7 +525,7 @@ def get_snp_segments(arguments, target_bam, thread_pool):
 
     #output_pileups = bam_pileups_snps(output_bed, target_bam, arguments)
     if arguments['dryrun']:
-        output_pileups = '/home/rezkuh/gits/data/'+arguments['genome_name']+'/'+arguments['genome_name']+'_SNPs.csv'
+        output_pileups = arguments['dryrun_path'] + arguments['genome_name']+'/'+arguments['genome_name']+'_SNPs.csv'
     else:
         output_pileups = process_bam_for_snps_freqs(arguments, thread_pool)  # TODO Updated
 

@@ -33,6 +33,7 @@ def main():
     BIN_SIZE_SNPS = 50000
     MAX_CUT_THRESHOLD = 100
     MIN_ALIGNED_LENGTH = 5000
+    MAX_CUT_THRESHOLD_SNPS_COUNTS = 50
 
     SAMTOOLS_BIN = "samtools"
     BCFTOOLS_BIN = "bcftools"
@@ -81,6 +82,10 @@ def main():
 
     parser.add_argument("--cut-threshold", "--cut_threshold", dest="cut_threshold",
                         default=MAX_CUT_THRESHOLD, metavar="int", type=int, help="Maximum cut threshold for coverage (readdepth) [100]")
+    parser.add_argument("--cut-threshold-snps-counts", "--cut_threshold_snps_counts", dest="cut_threshold_snps_counts",
+                        default=MAX_CUT_THRESHOLD_SNPS_COUNTS, metavar="int", type=int,
+                        help="Maximum cut threshold for SNPs counts [50]")
+
     parser.add_argument("--no-of-clusters", dest="no_of_clusters",
                         required=False, default=None, metavar="int", type=int,
                         help="Number of clusters for bins clustering")
@@ -123,6 +128,9 @@ def main():
                         default=1, metavar="int", type=int, help="number of parallel threads [8]")
     parser.add_argument('--dryrun', dest="dryrun", required=False,
                         default=False, help="Enabling dryrun")
+    parser.add_argument("--dryrun-path", dest="dryrun_path",
+                        default=None, required=False,
+                        metavar="path", help="dryrun data directory")
 
     parser.add_argument("--max-read-error", dest="max_read_error",
                         default=MAX_READ_ERROR, metavar="float", type=float,
@@ -155,11 +163,13 @@ def main():
         "bin_size_snps": args.bin_size_snps,
         "pdf_enable": args.pdf_enable,
         "cut_threshold": args.cut_threshold,
+        "cut_threshold_snps_counts": args.cut_threshold_snps_counts,
         "min_aligned_length": args.min_aligned_length,
         "no_of_clusters": args.no_of_clusters,
         "contigs": args.contigs,
         "threads": args.threads,
         "dryrun": args.dryrun,
+        "dryrun_path": args.dryrun_path,
         "enable_debug": args.enable_debug,
     }
     logging.basicConfig(level=logging.DEBUG)
@@ -208,16 +218,16 @@ def main():
 
     if arguments['dryrun']:
         if arguments['without_phasing']:
-            df = pd.read_csv('/home/rezkuh/gits/data/' + arguments['genome_name'] + '/coverage_hps.csv', sep='\t', names=['chr', 'start', 'end', 'hp1', 'hp2', 'un'])
+            df = pd.read_csv(arguments['dryrun_path'] + arguments['genome_name'] + '/coverage_hps.csv', sep='\t', names=['chr', 'start', 'end', 'hp1', 'hp2', 'un'])
             df['hp1'] = df['hp1'] + df['hp2'] + df['un']
-            df.to_csv('/home/rezkuh/gits/data/' + arguments['genome_name'] + '/coverage.csv', sep='\t', columns=['chr', 'start', 'end', 'hp1'], index=False, header=False)
+            df.to_csv(arguments['dryrun_path'] + arguments['genome_name'] + '/coverage.csv', sep='\t', columns=['chr', 'start', 'end', 'hp1'], index=False, header=False)
 
-            csv_df_coverage = csv_df_chromosomes_sorter('/home/rezkuh/gits/data/' + arguments['genome_name'] + '/coverage.csv', ['chr', 'start', 'end', 'coverage'])
-            csv_df_phasesets = csv_df_chromosomes_sorter('/home/rezkuh/gits/data/' + arguments['genome_name'] + '/coverage_ps.csv', ['chr', 'start', 'end', 'coverage'])
+            csv_df_coverage = csv_df_chromosomes_sorter(arguments['dryrun_path'] + arguments['genome_name'] + '/coverage.csv', ['chr', 'start', 'end', 'coverage'])
+            csv_df_phasesets = csv_df_chromosomes_sorter(arguments['dryrun_path'] + arguments['genome_name'] + '/coverage_ps.csv', ['chr', 'start', 'end', 'coverage'])
 
         else:
-            csv_df_phasesets = csv_df_chromosomes_sorter('/home/rezkuh/gits/data/' + arguments['genome_name'] + '/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
-            csv_df_coverage = csv_df_chromosomes_sorter('/home/rezkuh/gits/data/' + arguments['genome_name'] + '/coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
+            csv_df_phasesets = csv_df_chromosomes_sorter(arguments['dryrun_path'] + arguments['genome_name'] + '/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
+            csv_df_coverage = csv_df_chromosomes_sorter(arguments['dryrun_path'] + arguments['genome_name'] + '/coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
     else:
         logging.info('Computing coverage for bins')
         segments = get_chromosomes_bins(args.target_bam[0], arguments['bin_size'], arguments)
@@ -294,32 +304,21 @@ def main():
 if __name__ == "__main__":
     main()
 
-#--phaseblock-flipping-enable True
-# --phaseblocks-enable True --unphased-reads-coverage-enable True
+#UCSC tumor/normal celllines
+#--dryrun True --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --out-dir-plots 1437  --normal-phased-vcf /home/rezkuh/gits/data/HG008_HiFi/HG008BL_HiFi.vcf.gz --copynumbers-enable True  --unphased-reads-coverage-enable True  --phaseblock-flipping-enable True --phaseblocks-enable True   --genome-name 1437  --cut-threshold 150
 
-#--smoothing-enable True
-#--pdf-enable True
-#--copynumbers-enable True
-
-#--threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --out-dir-plots coverage_plots  --phased-vcf /home/rezkuh/gits/data/C1/C1.vcf.gz    --copynumbers-enable True  --without-phasing True   --genome-name C1  --cut-threshold 60 --contigs 1-19
-
-#--snps-freq-vcf-enable True
-#--dryrun True --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --out-dir-plots coverage_plots  --phased-vcf /home/rezkuh/gits/data/colo357/colo357.vcf.gz    --unphased-reads-coverage-enable True --smoothing-enable True --copynumbers-enable True  --unphased-reads-coverage-enable True --snps-freq-vcf-enable True --phaseblock-flipping-enable True   --genome-name colo357  --cut-threshold 150
-
-#--het-phased-snps-freq-enable
-#--dryrun True --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --out-dir-plots coverage_plots  --phased-vcf /home/rezkuh/gits/data/1937/1937BL.vcf.gz --smoothing-enable True --copynumbers-enable True  --unphased-reads-coverage-enable True --het-phased-snps-freq-enable True --phaseblock-flipping-enable True  --genome-name 1937 --cut-threshold 250
-#--dryrun True --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --out-dir-plots coverage_plots  --phased-vcf /home/rezkuh/gits/data/1395/1395BL.vcf.gz --copynumbers-enable True  --unphased-reads-coverage-enable True --het-phased-snps-freq-enable True --phaseblock-flipping-enable True  --genome-name 1395 --cut-threshold 150
+#Dog data
 #--dryrun True --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --out-dir-plots coverage_plots  --phased-vcf /home/rezkuh/gits/data/OT4/ON2.vcf.gz    --copynumbers-enable True --het-phased-snps-freq-enable True   --genome-name OT4  --cut-threshold 60 --phaseblock-flipping-enable True --contigs chr1-38
 
-#--dryrun True --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --out-dir-plots coverage_plots  --phased-vcf /home/rezkuh/gits/data/CBL/CBL.vcf.gz --smoothing-enable True --copynumbers-enable True  --unphased-reads-coverage-enable True --snps-freq-vcf-enable True  --genome-name C13 --cut-threshold 1 --without-phasing True --contigs 1-19
-
+#pancreatic_organoid data
 #--dryrun True --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --out-dir-plots coverage_plots  --phased-vcf /home/rezkuh/gits/data/pancreatic_organoid/pancBL.vcf.gz  --copynumbers-enable True  --unphased-reads-coverage-enable True --snps-freq-vcf-enable True --phaseblock-flipping-enable True --phaseblocks-enable True  --genome-name pancreatic_organoid  --cut-threshold 150
 
-#--dryrun True --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --out-dir-plots coverage_plots  --phased-vcf /home/rezkuh/gits/data/mouse/somatic_calls/C14_somatic_calls_pass.vcf.gz    --unphased-reads-coverage-enable True --snps-freq-vcf-enable True   --cut-threshold 0 --genome-name C14 --without-phasing True  --contigs 1-19,X,Y
-
-
-#--dryrun True --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --out-dir-plots coverage_plots --snps-freq-vcf-enable True --cut-threshold 70 --copynumbers-enable True --without-phasing True  --contigs 1-19,X,Y --phased-vcf /home/rezkuh/gits/data/mouse/somatic_calls/C13_somatic_calls_pass_snp.vcf.gz  --genome-name C13
+#Tumor only (HPV)
 #--dryrun True --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --out-dir-plots coverage_plots --snps-freq-vcf-enable True --cut-threshold 50 --copynumbers-enable True --phaseblock-flipping-enable True   --snps-freq-vcf-enable True  --phased-vcf /home/rezkuh/gits/data/R10/HT3/HT3.vcf.gz  --genome-name R10/HT3
 #--dryrun True --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --out-dir-plots coverage_plots --snps-freq-vcf-enable True --cut-threshold 50 --copynumbers-enable True --phaseblock-flipping-enable True   --snps-freq-vcf-enable True  --phased-vcf /home/rezkuh/gits/data/R10/CaSki/CaSki.vcf.gz  --genome-name R10/CaSki
 
+#NIST GIAB HG008
 #--dryrun True --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --out-dir-plots HG008_HiFi  --normal-phased-vcf /home/rezkuh/gits/data/HG008_HiFi/HG008BL_HiFi.vcf.gz --tumor-vcf /home/rezkuh/gits/data/HG008_HiFi/HG008_HiFi.vcf.gz --copynumbers-enable True  --unphased-reads-coverage-enable True  --phaseblock-flipping-enable True --phaseblocks-enable True   --genome-name HG008_HiFi  --cut-threshold 150
+
+#Mouse unphased data
+#--dryrun True --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam    --copynumbers-enable True    --unphased-reads-coverage-enable True    --cut-threshold 75  --without-phasing True --tumor-vcf /home/rezkuh/gits/data/mouse/somatic_calls/C13_somatic_calls_pass_snp.vcf.gz --out-dir-plots C13 --contigs 1-19,X,Y --genome-name C13 --bin-size-snps 1000000

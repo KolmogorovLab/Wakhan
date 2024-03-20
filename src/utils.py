@@ -467,7 +467,7 @@ def detect_first_copy_integers_fractional_cluster_means(arguments, df_segs_hp1, 
 def write_copynumber_segments_csv(haplotype_df, arguments, centers, integer_fractional_means, hp):
     fp = open(arguments['out_dir_plots']+'/bed_output/' + arguments['genome_name'] + '_copynumbers_segments.bed', 'a')
 
-    for i in range(len(centers)):
+    for i in range(len(integer_fractional_means)):
         haplotype_df['depth'].mask(haplotype_df['depth'] == i, integer_fractional_means[i], inplace=True)
 
     haplotype_df = haplotype_df.rename(columns={'chromosome': 'chr', 'start': 'start', 'end': 'end', 'depth':'copynumber_state', 'state':'coverage'})

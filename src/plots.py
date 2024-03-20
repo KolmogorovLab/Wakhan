@@ -202,7 +202,7 @@ def coverage_plots_chromosomes(df, df_phasesets, arguments, thread_pool):
             ################################################################################
             if arguments['tumor_vcf']:
                 logging.info('hetrozygous phased snps frequencies coverage module')
-                ref_start_values_updated, snps_het_counts, snps_homo_counts, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends = get_snps_frquncies_coverage(df_snps_in_csv, chrom, ref_start_values, arguments['bin_size'])
+                ref_start_values_updated, snps_het_counts, snps_homo_counts, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends = get_snps_frquncies_coverage(df_snps_in_csv, chrom, ref_start_values, arguments['bin_size_snps'])
                 if arguments['without_phasing']:
                     if centromere_region_starts:
                         _,_,_, centromere_region_starts, centromere_region_ends  = detect_alter_loh_regions(arguments, 'centromere/no-coverage', chrom, ref_end_values, values, values, values, centromere_region_starts, centromere_region_ends, True)
@@ -281,6 +281,8 @@ def coverage_plots_chromosomes(df, df_phasesets, arguments, thread_pool):
 
             if arguments['without_phasing']:
                 df_snps_freqs_chr = whole_genome_combined_df(arguments, chrom, chr, ref_start_values, ref_end_values, values, values, values)
+                # change point detection
+                snps_cpd_means, df_means_chr = change_point_detection_means(arguments, df_snps_freqs_chr)
                 df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, states, centers, stdev = apply_copynumbers(df_snps_freqs_chr, values, values, arguments, snps_cpd_means, [])
                 snps_cpd_points.extend(snps_cpd_means)
                 if arguments['enable_debug']:
@@ -326,7 +328,10 @@ def coverage_plots_chromosomes(df, df_phasesets, arguments, thread_pool):
             print_chromosome_html(fig, chrom + '_cov', html_graphs, arguments['out_dir_plots']+'/coverage_plots/')
             html_graphs.write("  <object data=\"" + chrom + '_cov' + '.html' + "\" width=\"700\" height=\"420\"></object>" + "\n")
 
-    df_snps_freqs = pd.DataFrame(list(zip(chr_all, ref_start_values_all, ref_end_values_all, haplotype_1_values_updated, haplotype_2_values_updated, hunphased_updated)), columns=['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
+    if arguments['without_phasing']:
+        df_snps_freqs = pd.DataFrame(list(zip(chr_all, ref_start_values_all, ref_end_values_all, values_extended)), columns=['chr', 'start', 'end', 'coverage'])
+    else:
+        df_snps_freqs = pd.DataFrame(list(zip(chr_all, ref_start_values_all, ref_end_values_all, haplotype_1_values_updated, haplotype_2_values_updated, hunphased_updated)), columns=['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
 
     if not arguments['without_phasing']:
         df_means_chr_all_.append(pd.concat(df_means_chr_all_hp1))

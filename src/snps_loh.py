@@ -74,10 +74,11 @@ def plot_snps(chrom, index, df_snps_in_csv, html_graphs, arguments, df_chrom):
 
     snps_het, snps_homo, snps_het_pos, snps_homo_pos = get_snps_frquncies(df_snps_in_csv, chrom)
 
-    # add_scatter_trace_coverage(fig, snps_het_pos, snps_het, name='Het SNPs Freqs', text=None, yaxis=None,
-    #                            opacity=0.7, color='#E3B448')
-    # add_scatter_trace_coverage(fig, snps_homo_pos, snps_homo, name='Homo SNPs Freqs', text=None, yaxis=None,
-    #                            opacity=0.7, color='#3A6B35')
+    #for debug purpose, all SNPs Freqs
+    add_scatter_trace_coverage(fig, snps_het_pos, snps_het, name='Het SNPs Freqs', text=None, yaxis=None,
+                               opacity=0.7, color='#E3B448', visibility='legendonly')
+    add_scatter_trace_coverage(fig, snps_homo_pos, snps_homo, name='Homo SNPs Freqs', text=None, yaxis=None,
+                               opacity=0.7, color='#3A6B35', visibility='legendonly')
 
     ref_start_values = [i for i in range(0, snps_homo_pos[-1:][0], arguments['bin_size_snps'])]
     ref_start_values_updated, snps_het_counts, snps_homo_counts, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends = get_snps_frquncies_coverage(
@@ -103,13 +104,13 @@ def plot_snps(chrom, index, df_snps_in_csv, html_graphs, arguments, df_chrom):
 def save_snps_counts_per_bin(hets,homos,ref_start, chrom, coverage, arguments, index):
     import pandas as pd
     fp = open(arguments['out_dir_plots']+'/bed_output/' + arguments['genome_name'] + '_snps_counts.bed', 'a')
-    header_insert = False
+
     if index == 0:
-        header_insert  = True
+        header = '#chr: chromosome number\n#start: start address for SNPs bin\n#hets_count: number of hetrozygous SNPs\n#homo_counts: number of homozygous SNPs\n#coverage: mean coverage in this bin\nchr\tstart\thets_count\thomos_count\tcoverage\n'
+        fp.write(header)
     chr_list = [chrom for ch in range(len(ref_start))]
     snps_counts_df = pd.DataFrame(list(zip(chr_list, ref_start, hets, homos, coverage)), columns=['chr','start','hets_count','homos_count','coverage'])
-    header = ['chr','start','hets_count','homos_count','coverage']
-    snps_counts_df.to_csv(fp, sep='\t', columns=header, index=False, mode='a', header=header_insert)
+    snps_counts_df.to_csv(fp, sep='\t', index=False, mode='a', header=False)
 
 def snps_counts_per_cn_region(hets, homos, ref_start, ref_end, chrom):
     import pandas as pd
@@ -144,15 +145,18 @@ def plot_snps_counts(chrom, index, ref_start_values, df_snps_in_csv, html_graphs
     fig = go.Figure()
 
     snps_het_counts, snps_homo_counts, snps_het_pos, snps_homo_pos = get_snps_counts(df_snps_in_csv, chrom, ref_start_values, arguments['bin_size_snps'])
-    #coverage = coverage_bins(df_chrom)
-    #save_snps_counts_per_bin(snps_het_counts, snps_homo_counts, ref_start_values, chrom, coverage, arguments, index)
+
+    #BED output SNPs counts per bin
+    coverage = coverage_bins(df_chrom)
+    save_snps_counts_per_bin(snps_het_counts, snps_homo_counts, ref_start_values, chrom, coverage, arguments, index)
+
     add_scatter_trace_coverage(fig, snps_het_pos, snps_het_counts, name='Het SNPs counts', text=None, yaxis=None,
                                opacity=1, color='#E3B448')
     add_scatter_trace_coverage(fig, snps_homo_pos, snps_homo_counts, name='Homo SNPs counts', text=None, yaxis=None,
                                opacity=1, color='#3A6B35')
 
     plots_add_markers_lines(fig)
-    plots_layout_settings(fig, chrom, arguments, snps_homo_pos[-1:][0], 250)
+    plots_layout_settings(fig, chrom, arguments, snps_homo_pos[-1:][0], arguments['cut_threshold_snps_counts'])
     fig.update_layout(yaxis_title="<b>SNPs counts</b> (per bin)", )
 
     print_chromosome_html(fig, chrom + '_snps_counts', html_graphs, arguments['out_dir_plots']+'/variation_plots/')
