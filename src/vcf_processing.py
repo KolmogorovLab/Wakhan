@@ -137,6 +137,30 @@ def get_snps_frquncies(snps_df_sorted, chrom):  # TODO This module needs better 
 
     return snps_het, snps_homo, snps_het_pos, snps_homo_pos
 
+def get_snps_frquncies_genome(snps_df):  # TODO This module needs better implementation, currently slow
+    snps_df['gt'].astype(str)
+    #snps_df = snps_df[(snps_df['qual'] > 15)]
+
+    if snps_df.vaf.dtype == object:
+        snps_df_vaf = [eval(i) for i in snps_df.vaf.str.split(',').str[0].values.tolist()]
+    else:
+        snps_df_vaf = snps_df.vaf.values.tolist()
+
+    snps_df_pos = snps_df.pos.values.tolist()
+    snps_het = []
+    snps_homo = []
+    snps_het_pos = []
+    snps_homo_pos = []
+    for index, vaf in enumerate(snps_df_vaf):
+        if vaf > 0.75 or vaf < 0.25:
+            snps_homo.append(vaf)
+            snps_homo_pos.append(snps_df_pos[index])
+        else:
+            snps_het.append(vaf)
+            snps_het_pos.append(snps_df_pos[index])
+
+    return snps_het, snps_homo, snps_het_pos, snps_homo_pos
+
 def het_homo_snps_gts(snps_df_sorted, chrom, ref_start_values,
                                 bin_size):
     snps_df = snps_df_sorted[snps_df_sorted['chr'] == chrom]
@@ -310,7 +334,7 @@ def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, bin_siz
             ref_start_values_updated.append(start_values)
 
     if snps_het_counts:
-        snps_het_counts_updated, snps_homo_counts_updated, _ = smoothing(snps_het_counts_updated, snps_homo_counts_updated, snps_homo_counts_updated, conv_window_size=10)
+        snps_het_counts_updated, snps_homo_counts_updated, _ = smoothing(snps_het_counts_updated, snps_homo_counts_updated, snps_homo_counts_updated, conv_window_size=15) #40, 15
 
     for index, pos in enumerate(ref_start_values_updated):
         #if snps_het_counts[index] < 0.7 and snps_homo_counts[index] > 0.14:
@@ -337,7 +361,7 @@ def squash_regions(region, bin_size):
     region_ends = sorted(region_ends)
 
     return region_starts, region_ends
-def snps_mean(df_snps, ref_start_values, chrom):
+def snps_mean(df_snps, ref_start_values, chrom, arguments):
     df = df_snps[df_snps['chr'] == chrom]
 
     #df = dict(tuple(df_snps.groupby('hp')))
@@ -349,7 +373,7 @@ def snps_mean(df_snps, ref_start_values, chrom):
     snps_haplotype1_mean=[]
     total=0
     for index, i in enumerate(ref_start_values):
-        len_cov= len(df[(df.pos >= i) & (df.pos < i + 50000)])
+        len_cov= len(df[(df.pos >= i) & (df.pos < i + arguments['bin_size'])])
         if len_cov ==0:
             snps_haplotype1_mean.append(0)
         else:
@@ -363,7 +387,7 @@ def snps_mean(df_snps, ref_start_values, chrom):
     snps_haplotype2_mean = []
     total = 0
     for index, i in enumerate(ref_start_values):
-        len_cov= len(df[(df.pos >= i) & (df.pos < i + 50000)])
+        len_cov= len(df[(df.pos >= i) & (df.pos < i + arguments['bin_size'])])
         if len_cov ==0:
             snps_haplotype2_mean.append(0)
         else:
@@ -375,7 +399,7 @@ def snps_mean(df_snps, ref_start_values, chrom):
         total += len_cov
     return snps_haplotype1_mean, snps_haplotype2_mean
 
-def cpd_mean(haplotype1_means, haplotype2_means, ref_values, chrom):
+def cpd_mean(haplotype1_means, haplotype2_means, ref_values, chrom, arguments):
     import ruptures as rpt
     import numpy as np
 
@@ -395,8 +419,8 @@ def cpd_mean(haplotype1_means, haplotype2_means, ref_values, chrom):
         else:
             snps_haplotype1_mean.append(0)
         start = point + 1
-        snps_haplotype1_pos.append(point * 50000)
-    snps_haplotype1_pos.append(ref_values[-1] * 50000)
+        snps_haplotype1_pos.append(point * arguments['bin_size'])
+    snps_haplotype1_pos.append(ref_values[-1] * arguments['bin_size'])
     ############################################################
     data = np.array(haplotype2_means, dtype='int') #numpy.clip(haplotype2_means, a_min=1, a_max=300)
     algo = rpt.Pelt(model="rbf").fit(data)
@@ -414,8 +438,8 @@ def cpd_mean(haplotype1_means, haplotype2_means, ref_values, chrom):
         else:
             snps_haplotype2_mean.append(0)
         start = point + 1
-        snps_haplotype2_pos.append(point * 50000)
-    snps_haplotype2_pos.append(ref_values[-1] * 50000)
+        snps_haplotype2_pos.append(point * arguments['bin_size'])
+    snps_haplotype2_pos.append(ref_values[-1] * arguments['bin_size'])
 
     chr = range(len(snps_haplotype1_pos))
     df_cpd_hp1 = pd.DataFrame(list(zip([chrom for ch in chr], snps_haplotype1_pos, snps_haplotype1_mean)), columns=['chr', 'start', 'hp1'])

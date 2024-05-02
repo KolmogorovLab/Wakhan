@@ -366,7 +366,7 @@ def detect_alter_loh_regions(arguments, event, chrom, ref_ends, haplotype_1_valu
         for j, (starts,ends) in enumerate(zip(region_starts, region_ends)):
             #TODO Discuss with Ayse, alternate approach on what HP should be selected for each region
             #if mean_values(haplotype_1_values, starts - 1, starts - 4) > mean_values(haplotype_2_values, starts - 1, starts - 4):
-            for i in range(starts//50000,ends//50000):
+            for i in range(starts//arguments['bin_size'],ends//arguments['bin_size']):
                     haplotype_1_values[i] = haplotype_1_values[i] + haplotype_2_values[i] + unphased_reads_values[i]
                     haplotype_2_values[i] = 0
                     unphased_reads_values[i] = 0
@@ -431,6 +431,7 @@ def detect_first_copy_integers_fractional_cluster_means(arguments, df_segs_hp1, 
     centers_count = len(centers)
     diff_lists = [[] for i in range(0, centers_count)]
 
+    #TODO for HP2
     for i, (start, end, value) in enumerate(zip(haplotype_1_start_values_copy, haplotype_1_end_values_copy, haplotype_1_values_copy)):
         k = 0
         for i in range(len(centers)):

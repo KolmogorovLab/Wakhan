@@ -54,6 +54,10 @@ cd src/
 ```
 
 ## Usage 
+
+## For phase-switch errors correction
+Input tumor BAM should be haplotagged with `--phaseblock-flipping-enable True` enabled (default: disabled).
+
 ### Tumor-Normal Mode (requires normal phased VCF)
 ```
 python main.py --threads <4> --reference <ref.fa>  --target-bam <data.tumor.bam>  --tumor-vcf <data.tumor.vcf.gz>  --normal-phased-vcf <data.normal_phased.vcf.gz>  --smoothing-enable True --copynumbers-enable True  --unphased-reads-coverage-enable True --phaseblock-flipping-enable True  --genome-name <cellline/dataset name> --cut-threshold <150> --out-dir-plots <genome_abc_output>
@@ -63,6 +67,15 @@ python main.py --threads <4> --reference <ref.fa>  --target-bam <data.tumor.bam>
 ```
 python main.py --threads <4> --reference <ref.fa>  --target-bam <data.tumor_haplotagged.bam>  --tumor-vcf <data.tumor_phased.vcf.gz>  --smoothing-enable True --copynumbers-enable True  --unphased-reads-coverage-enable True --phaseblock-flipping-enable True  --genome-name <cellline/dataset name> --cut-threshold <150> --out-dir-plots <genome_abc_output>
 ```
+
+## Note
+If for some reason you have already generated coverage and pileup data from Wakhan (as pileup takes some time) and want to rerun the tool, you can avoid generating coverage/pileup data again by copying this data and using it again:
+1. Copy coverage.csv, coverage_ps.csv and <Your genome name>_SNPs.csv files from data/ output dir (it should be in src) of your current run to some separate directory i.e.,  /home/abc/dry_run_data.
+2. Then run again the tool with adding this command additional to what you use already: --dryrun True --dryrun-path <This is the path where you copied CSVs files in step-1, ie. like, /home/abc/dry_run_data/>
+
+## Known Issue
+Sometimes in case of higher noise in data, bins are not being clusterd correctly (missing overlapping coverage segments), we plan to use GMM and Kmeans combine to fix this issue, for the time being user can enter possible bins means (looking at the coverage of whole genome [like](https://github.com/KolmogorovLab/Wakhan?tab=readme-ov-file#copy-number-segmentation-1) with parameter i,e., --bins-cluster-means 0,27,42,58,106)
+
 ## Prerequisite
 This tool requires haplotagged tumor BAM and phased VCF in case tumor-only mode and normal phased VCF in case tumor-normal mode. This can be done through any phasing tools like Margin, Whatshap and Longphase. 
 Following commands could be helpful for phasing VCFs and haplotagging BAMs.

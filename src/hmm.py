@@ -74,8 +74,12 @@ def call_copynumbers(arguments, cnarr, df_chrom, cpd_means, cpd_means_collective
         #     means_, stdev_, score_ = hmm_pome_test(cnarr, X, means[i], stdev[i], cpd_means_collective, arguments)
         #     print(score_, means_)
         #Debug
-        #means = [0, 8, 19, 35, 46, 58, 120]
-        #stdev = [1, 5, 5, 5, 5, 5, 5]
+        #HG008
+        #means = [0, 27, 42, 58, 106]
+        #stdev = [1, 5, 5, 5, 5]
+        if arguments['bins_cluster_means']:
+            means = arguments['bins_cluster_means']
+            stdev = stdev_calc(means)
 
         #C21
         #means = [0, 11, 22, 26.5, 32, 37, 41]
@@ -83,6 +87,44 @@ def call_copynumbers(arguments, cnarr, df_chrom, cpd_means, cpd_means_collective
 
         #C18
         #means = [0, 6, 12, 18, 25]
+        #stdev = [1, 5, 5, 5, 5]
+
+        #C23
+        #means = [0, 8, 12, 17, 23, 32, 44, 56]
+        #stdev = [1,5,5,5,5,5,5,5]
+
+        #colo829
+        #means = [0, 40, 75, 112, 145]
+        #stdev = [1, 5, 5, 5, 5]
+
+        #1395
+        #means = [0, 20, 28, 42, 55, 66, 82, 106, 133]
+        #stdev = [1, 5,5,5,5,5,5,5,5]
+
+        #1437
+        #means = [0, 10, 28, 51, 77, 93, 133]
+        #stdev = [1, 5, 5, 5, 5, 5, 5]
+
+        #1937
+        #means = [0, 30, 52, 78, 101, 127, 156, 210]
+        #stdev = [1, 5, 5, 5, 5, 5, 5, 5]
+
+        #1954
+        #means = [0, 18, 34, 50, 68, 94, 117, 160, 194]
+        #stdev = [1, 5, 5, 5, 5, 5, 5, 5, 5]
+
+        #2009
+        #means = [0, 20, 45, 65, 86, 120, 164, 202]
+        #stdev = [1, 5, 5, 5, 5, 5, 5, 5]
+
+
+
+
+        #OT2
+        #means = [0, 11, 23, 36, 50, 65, 88]
+        #stdev = [1, 5, 5, 5, 5, 5, 5]
+        #PT8
+        #means = [0, 8, 25, 40, 54]
         #stdev = [1, 5, 5, 5, 5]
 
         means = [mean + 0.025 for mean in means]
