@@ -10,13 +10,14 @@ import math
 import statistics
 import itertools
 import logging
-from cnvlib import cluster
-from phasing_correction import phaseblock_flipping, phase_correction_centers, contiguous_phaseblocks, detect_centromeres, flip_phaseblocks_contigous, remove_overlaping_contiguous
+
+#from cnvlib import cluster
+from phasing_correction import phaseblock_flipping, phase_correction_centers, contiguous_phaseblocks, detect_centromeres, flip_phaseblocks_contigous, remove_overlaping_contiguous, switch_inter_phaseblocks_bins
 from smoothing import smoothing
 from vcf_processing import get_snps_frquncies_coverage, get_snps_frquncies, het_homo_snps_gts, vcf_parse_to_csv_for_het_phased_snps_phasesets, snps_mean, cpd_mean, get_snp_segments, vcf_parse_to_csv_for_snps
-from utils import csv_df_chromosomes_sorter, get_breakpoints, flatten, get_snps_frquncies_coverage_from_bam, apply_copynumbers, detect_alter_loh_regions, is_phasesets_check_simple_heuristics, change_point_detection_means, loh_regions_phasesets
-from extras import get_contigs_list
-from breakpoints_arcs import sv_vcf_bps_cn_check
+from utils import get_chromosomes_bins, csv_df_chromosomes_sorter, get_breakpoints, flatten, get_snps_frquncies_coverage_from_bam, detect_alter_loh_regions, is_phasesets_check_simple_heuristics, change_point_detection_means, loh_regions_phasesets, get_chromosomes_regions, adjust_extreme_outliers
+from extras import get_contigs_list, sv_vcf_bps_cn_check
+
 
 def copy_number_plots_chromosomes(df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, arguments, loh_region_starts, loh_region_ends):
     filename = f"{os.path.join(arguments['out_dir_plots'], 'COPY_NUMBERS.html')}"
@@ -126,11 +127,13 @@ def plot_copynumbers_scatter_lines(arguments, fig,haplotype_1_values_copyratios,
     if arguments['without_phasing']:
         add_scatter_trace_copyratios(arguments, fig, ['darkolivegreen'], name, haplotype_1_copyratios_positions, haplotype_2_copyratios_positions, haplotype_1_copyratios_values, haplotype_2_copyratios_values, [],[], [],[], mul_cols=False)
     else:
-        add_scatter_trace_copyratios(arguments, fig, ['firebrick','steelblue'], name, haplotype_1_copyratios_positions, haplotype_2_copyratios_positions, haplotype_1_copyratios_values, haplotype_2_copyratios_values, [],[], [],[], mul_cols=False)
+        add_scatter_trace_copyratios(arguments, fig, ['firebrick','steelblue'], name, haplotype_1_copyratios_positions, haplotype_2_copyratios_positions, haplotype_1_copyratios_values, haplotype_2_copyratios_values, haplotype_1_start_values_copyratios, haplotype_1_end_values_copyratios, haplotype_2_start_values_copyratios, haplotype_2_end_values_copyratios, mul_cols=False)
 
 def coverage_plots_chromosomes(df, df_phasesets, arguments, thread_pool):
     if not os.path.isdir(arguments['out_dir_plots']+'/coverage_plots'):
         os.mkdir(arguments['out_dir_plots']+'/coverage_plots')
+    if not os.path.isdir(arguments['out_dir_plots']+'/variation_plots'):
+        os.mkdir(arguments['out_dir_plots']+'/variation_plots')
     if not os.path.isdir(arguments['out_dir_plots']+'/bed_output'):
         os.mkdir(arguments['out_dir_plots']+'/bed_output')
 
@@ -162,20 +165,25 @@ def coverage_plots_chromosomes(df, df_phasesets, arguments, thread_pool):
         get_snp_segments(arguments, arguments['target_bam'][0], thread_pool)
         df_snps = csv_df_chromosomes_sorter('data/snps_frequencies.csv', ['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])
         df_snps = df_snps.drop(df_snps[(df_snps.chr == "chrX") | (df_snps.chr == "chrY")].index)
-    if arguments['tumor_vcf']:
+    if arguments['tumor_vcf']: #only for LOH
         output_phasesets_file_path = vcf_parse_to_csv_for_snps(arguments['tumor_vcf'])
         df_snps_in_csv = csv_df_chromosomes_sorter(output_phasesets_file_path, ['chr', 'pos', 'qual', 'gt', 'dp', 'vaf'])
 
+    if arguments['breakpoints']:
+        df_var_bins, df_var_bins_1 = get_chromosomes_bins(arguments['target_bam'][0], arguments['bin_size'], arguments)
+
     chroms = get_contigs_list(arguments['contigs'])
+    df_centm = csv_df_chromosomes_sorter('grch38.cen_coord.curated.bed', ['chr', 'start', 'end'])
 
     haplotype_1_segs_dfs = [] #pd.DataFrame()
     haplotype_2_segs_dfs = [] #pd.DataFrame()
     for index, chrom in enumerate(chroms):
-        if chrom in chroms:# and (chrom == '1' or chrom == '18'):# and (chrom == 'chr5' or chrom == 'chr16'):
+        if chrom in chroms and not chrom == 'chrX' and not chrom == 'chrY':# and (chrom == '1' or chrom == '18'):# and (chrom == 'chr5' or chrom == 'chr16'):
             logging.info('Plots generation for ' + chrom)
             fig = go.Figure()
 
             df_chrom = df[df['chr'] == chrom]
+            df_centm_chrom = df_centm[df_centm['chr'] == chrom]
 
             if arguments['without_phasing']:
                 values = df_chrom.coverage.values.tolist()
@@ -197,11 +205,29 @@ def coverage_plots_chromosomes(df, df_phasesets, arguments, thread_pool):
                 haplotype_2_values_phasesets = df_chrom_phasesets.hp2.clip(upper=arguments['cut_threshold']).values.tolist()
                 ref_start_values_phasesets = df_chrom_phasesets.start.values.tolist()
                 ref_end_values_phasesets = df_chrom_phasesets.end.values.tolist()
+                ref_start_values_1 = []
+            ################################################################################
+            #debug var_bins
+            if arguments['variable_size_bins']:
+                df_var_bins_chr = df_var_bins[df_var_bins['chr'] == chrom]
+                ref_start_values = df_var_bins_chr.start.values.tolist()
+                ref_end_values = df_var_bins_chr.end.values.tolist()
 
+            if arguments['breakpoints']:
+                df_var_bins_chr_1 = df_var_bins_1[df_var_bins_1['chr'] == chrom]
+                ref_start_values_1 = df_var_bins_chr_1.start.values.tolist()
+                ref_end_values_1 = df_var_bins_chr_1.end.values.tolist()
+            else:
+                ref_start_values_1 = []
             ################################################################################
+            if arguments['normal_phased_vcf'] and not arguments['tumor_vcf']:
+                haplotype_1_values, haplotype_2_values = snps_mean(df_snps, ref_start_values, ref_end_values, chrom, arguments)
+                # debug var_bins
+                if arguments['variable_size_bins']:
+                    unphased_reads_values = haplotype_1_values
             ################################################################################
-            if arguments['normal_phased_vcf']:
-                haplotype_1_values, haplotype_2_values = snps_mean(df_snps, ref_start_values, chrom, arguments)
+            haplotype_1_values = adjust_extreme_outliers(haplotype_1_values)
+            haplotype_2_values = adjust_extreme_outliers(haplotype_2_values)
             ################################################################################
             if arguments['tumor_vcf']:
                 logging.info('hetrozygous phased snps frequencies coverage module')
@@ -225,28 +251,31 @@ def coverage_plots_chromosomes(df, df_phasesets, arguments, thread_pool):
                 loh_region_ends = []
             ################################################################################
             #Raw coverage data plot before phase correction
-            if arguments['phaseblock_flipping_enable']:
-                plot_coverage_raw(arguments, chrom, html_graphs, ref_start_values, ref_end_values, haplotype_1_values, haplotype_2_values, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
+            # if arguments['phaseblock_flipping_enable']:
+            #     plot_coverage_raw(arguments, chrom, html_graphs, ref_start_values, ref_end_values, haplotype_1_values, haplotype_2_values, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
             ################################################################################
-            if arguments['phaseblock_flipping_enable']:
-                logging.info('phaseblock flipping module')
-                is_simple_heuristics = True
-                if len(ref_start_values_phasesets) >= 1:
-                    is_simple_heuristics = False
-                haplotype_1_values, haplotype_2_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets = \
-                phaseblock_flipping(chrom, arguments, is_simple_heuristics, haplotype_1_values, haplotype_2_values, ref_start_values, ref_end_values, \
-                        haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
-
-                if not is_simple_heuristics:
-                    #detect centromeres
-                    ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets = detect_centromeres(ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets, haplotype_1_values, haplotype_2_values, ref_start_values, arguments['bin_size'])
-                    # infer missing phaseblocks
-                    # ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets = infer_missing_phaseblocks(ref_start_values, ref_end_values, ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets, haplotype_1_values, haplotype_2_values, arguments['bin_size'])
-                    # create more contiguous phaseblocks
-                    haplotype_1_values_phasesets_conti, ref_start_values_phasesets_hp1, ref_end_values_phasesets_hp1, haplotype_2_values_phasesets_conti, ref_start_values_phasesets_hp2, ref_end_values_phasesets_hp2 = contiguous_phaseblocks(haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
-
-                    # flip phaseblocks based on more contiguous phaseblocks
-                    haplotype_1_values_phasesets, haplotype_2_values_phasesets, haplotype_1_values, haplotype_2_values = flip_phaseblocks_contigous(chrom, arguments, haplotype_1_values_phasesets_conti, ref_start_values_phasesets_hp1, ref_end_values_phasesets_hp1, haplotype_2_values_phasesets_conti, ref_start_values_phasesets_hp2, ref_end_values_phasesets_hp2, ref_start_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values, haplotype_2_values)
+            # if arguments['phaseblock_flipping_enable']:
+            #     logging.info('phaseblock flipping module')
+            #     is_simple_heuristics = True
+            #     if len(ref_start_values_phasesets) >= 1:
+            #         is_simple_heuristics = False
+            #     haplotype_1_values, haplotype_2_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets = \
+            #     phaseblock_flipping(chrom, arguments, is_simple_heuristics, haplotype_1_values, haplotype_2_values, ref_start_values, ref_end_values, \
+            #             haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
+            #
+            #     if not is_simple_heuristics:
+            #         #detect centromeres
+            #         ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets = detect_centromeres(ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets, haplotype_1_values, haplotype_2_values, ref_start_values, arguments['bin_size'])
+            #         switch_inter_phaseblocks_bins(chrom, arguments, ref_start_values, haplotype_1_values, haplotype_2_values, ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets)
+            #
+            #         # infer missing phaseblocks
+            #         # ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets = infer_missing_phaseblocks(ref_start_values, ref_end_values, ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets, haplotype_1_values, haplotype_2_values, arguments['bin_size'])
+            #         # create more contiguous phaseblocks
+            #         haplotype_1_values_phasesets_conti, ref_start_values_phasesets_hp1, ref_end_values_phasesets_hp1, haplotype_2_values_phasesets_conti, ref_start_values_phasesets_hp2, ref_end_values_phasesets_hp2 = contiguous_phaseblocks(haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
+            #
+            #         # flip phaseblocks based on more contiguous phaseblocks
+            #         haplotype_1_values_phasesets, haplotype_2_values_phasesets, haplotype_1_values, haplotype_2_values = flip_phaseblocks_contigous(chrom, arguments, haplotype_1_values_phasesets_conti, ref_start_values_phasesets_hp1, ref_end_values_phasesets_hp1, haplotype_2_values_phasesets_conti, ref_start_values_phasesets_hp2, ref_end_values_phasesets_hp2, ref_start_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values, haplotype_2_values)
+            #
             ################################################################################
             if arguments['smoothing_enable']:
                 logging.info('smoothing module')
@@ -260,7 +289,7 @@ def coverage_plots_chromosomes(df, df_phasesets, arguments, thread_pool):
                 add_scatter_trace_coverage(fig, ref_start_values, haplotype_2_values, name='HP-2', text=None, yaxis=None, opacity=0.7, color='steelblue')
 
                 if arguments['unphased_reads_coverage_enable']:
-                    add_scatter_trace_coverage(fig, ref_start_values, unphased_reads_values, name='Unphased', text=None, yaxis=None, opacity=0.7, color='olive')
+                    add_scatter_trace_coverage(fig, ref_start_values, unphased_reads_values, name='Unphased', text=None, yaxis=None, opacity=0.7, color='olive', visibility=False)
 
             #plots_add_markers_lines(fig)
             ################################################################################
@@ -290,11 +319,13 @@ def coverage_plots_chromosomes(df, df_phasesets, arguments, thread_pool):
             if arguments['without_phasing']:
                 df_snps_freqs_chr = whole_genome_combined_df(arguments, chrom, chr, ref_start_values, ref_end_values, values, values, values)
                 # change point detection
-                snps_cpd_means, df_means_chr = change_point_detection_means(arguments, df_snps_freqs_chr)
-                df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, states, centers, stdev = apply_copynumbers(df_snps_freqs_chr, values, values, arguments, snps_cpd_means, [])
+                snps_cpd_means, snps_cpd_lens, df_means_chr = change_point_detection_means(arguments, df_snps_freqs_chr, ref_start_values, ref_start_values_1, df_centm_chrom)
+                #df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, states, centers, stdev = apply_copynumbers(df_snps_freqs_chr, values, values, arguments, snps_cpd_means, [])
                 snps_cpd_points.extend(snps_cpd_means)
-                if arguments['enable_debug']:
-                    copy_number_plots_per_chromosome(centers, centers, ref_start_values, values, df_segs_hp1, values, df_segs_hp2, arguments, chrom, html_graphs, loh_region_starts, loh_region_ends)
+                #if arguments['enable_debug']:
+                #    copy_number_plots_per_chromosome(centers, centers, ref_start_values, values, df_segs_hp1, values, df_segs_hp2, arguments, chrom, html_graphs, loh_region_starts, loh_region_ends)
+                df_segs_hp1 = df_means_chr[0]
+                df_segs_hp2 = df_means_chr[1]
                 haplotype_1_segs_dfs.append(df_segs_hp1)
                 haplotype_2_segs_dfs.append(df_segs_hp2)
                 if arguments['enable_debug']:
@@ -304,17 +335,24 @@ def coverage_plots_chromosomes(df, df_phasesets, arguments, thread_pool):
                 df_snps_freqs_chr = whole_genome_combined_df(arguments, chrom, chr, ref_start_values, ref_end_values, haplotype_1_values, haplotype_2_values, unphased_reads_values)
 
                 #change point detection
-                snps_cpd_means, df_means_chr = change_point_detection_means(arguments, df_snps_freqs_chr)
-                df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, states, centers, stdev = apply_copynumbers(df_snps_freqs_chr, haplotype_1_values, haplotype_2_values, arguments, snps_cpd_means, [])
+                snps_cpd_means, snps_cpd_lens, df_means_chr = change_point_detection_means(arguments, df_snps_freqs_chr, ref_start_values, ref_start_values_1, df_centm_chrom)
+                #df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, states, centers, stdev = apply_copynumbers(df_snps_freqs_chr, haplotype_1_values, haplotype_2_values, arguments, snps_cpd_means, [])
                 snps_cpd_points.extend(snps_cpd_means)
+                snps_cpd_points_weights.extend(snps_cpd_lens)
+
+                df_segs_hp1 = df_means_chr[0]
+                df_segs_hp2 = df_means_chr[1]
 
                 #TODO For debug - histo_clusters and cpds
                 #add_histo_clusters_plot(df_cnr_hp1.log2.values.tolist(), df_cnr_hp2.log2.values.tolist(), states, centers, stdev, arguments, chrom, html_graphs)
                 if arguments['enable_debug']:
-                    change_point_detection(haplotype_1_values, ref_start_values, ref_end_values, arguments, chrom, html_graphs, 1, color='#6A5ACD')
-                    change_point_detection(haplotype_2_values, ref_start_values, ref_end_values, arguments, chrom, html_graphs, 2, color='#2E8B57')
-                if arguments['enable_debug']:
-                    copy_number_plots_per_chromosome(centers, ref_start_values, haplotype_1_values, df_segs_hp1, haplotype_2_values, df_segs_hp2, arguments, chrom, html_graphs, loh_region_starts, loh_region_ends)
+                    change_point_detection(haplotype_1_values, ref_start_values, ref_end_values, ref_start_values_1, arguments, chrom, html_graphs, 1, color='#6A5ACD')
+                    change_point_detection(haplotype_2_values, ref_start_values, ref_end_values, ref_start_values_1, arguments, chrom, html_graphs, 2, color='#2E8B57')
+                #if arguments['enable_debug']:
+                #    copy_number_plots_per_chromosome(centers, centers, ref_start_values, haplotype_1_values, df_segs_hp1, haplotype_2_values, df_segs_hp2, arguments, chrom, html_graphs, loh_region_starts, loh_region_ends)
+
+                #from gmm import process_gmm
+                #process_gmm(haplotype_1_values, haplotype_2_values)
 
                 haplotype_1_segs_dfs.append(df_segs_hp1)
                 haplotype_2_segs_dfs.append(df_segs_hp2)
@@ -347,9 +385,9 @@ def coverage_plots_chromosomes(df, df_phasesets, arguments, thread_pool):
 
     html_graphs.write("</body></html>")
     if arguments['without_phasing']:
-        return values_extended, values_extended, values_extended, df_snps_freqs, snps_cpd_points, pd.concat(df_means_chr_all)
+        return values_extended, values_extended, values_extended, df_snps_freqs, snps_cpd_points, snps_cpd_points_weights, pd.concat(df_means_chr_all)
     else:
-        return haplotype_1_values_updated, haplotype_2_values_updated, hunphased_updated, df_snps_freqs, snps_cpd_points, df_means_chr_all_
+        return haplotype_1_values_updated, haplotype_2_values_updated, hunphased_updated, df_snps_freqs, snps_cpd_points, snps_cpd_points_weights, df_means_chr_all_
 
 def plot_coverage_raw(arguments, chrom, html_graphs, ref_start_values, ref_end_values, haplotype_1_values, haplotype_2_values, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets):
     fig = go.Figure()
@@ -448,20 +486,31 @@ def plots_genome_coverage(df_hp1, df_hp2, df_unphased, arguments):
 
     fig.write_html(arguments['out_dir_plots'] +'/'+ arguments['genome_name'] + "_genome_coverage.html")
 
-def copy_number_plots_genome(centers, integer_fractional_centers, df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, df_unphased, arguments):
+def copy_number_plots_genome(centers, integer_fractional_centers, df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, df_unphased, arguments, x_axis, observed_hist):
     # TODO genome-wide plots
 
     lengths = []
     chroms = get_contigs_list(arguments['contigs'])
     for index, chrom in enumerate(chroms):
-        df_cnr_hp1_chrom = df_cnr_hp1[df_cnr_hp1['chromosome'] == chrom]
+        df_cnr_hp1_chrom = df_cnr_hp1[df_cnr_hp1['chr'] == chrom]
         lengths.append(len(df_cnr_hp1_chrom))
 
+    regions = get_chromosomes_regions(arguments)
     indices = np.arange(0, len(df_cnr_hp1)*arguments['bin_size'], arguments['bin_size'], dtype=int)
 
-    fig = go.Figure()
-    # fig = make_subplots(rows=1, cols=2, shared_yaxes=False, column_widths=[0.80, 0.10], vertical_spacing=0.01,
-    #                     horizontal_spacing=0.08)
+    df_cnr_hp1_1 = df_cnr_hp1
+    df_1_ = []
+    offset = 0
+    for i, chrom in enumerate(chroms):
+        df_genes_chrom_1 = df_cnr_hp1_1[df_cnr_hp1_1['chr'] == chrom]
+        df_genes_chrom_1['start'] = df_genes_chrom_1['start'].apply(lambda x: x + offset)
+        offset += regions[i]
+        df_1_.append(df_genes_chrom_1)
+    df_1 = pd.concat(df_1_)
+
+    #fig = go.Figure()
+    fig = make_subplots(rows=1, cols=2, shared_yaxes=False, column_widths=[0.80, 0.10], vertical_spacing=0.01,
+                        horizontal_spacing=0.08, specs=[[{"secondary_y":True}, {"type":"xy"}]])
 
     ###########################################################
     # from breakpoints_arcs import get_all_breakpoints_data
@@ -479,33 +528,33 @@ def copy_number_plots_genome(centers, integer_fractional_centers, df_cnr_hp1, df
     custom_text_data_hp1 = df_cnr_hp1.start.values.tolist()
     custom_text_data_hp2 = df_cnr_hp2.start.values.tolist()
     if arguments['without_phasing']:
-        add_scatter_trace_coverage(fig, indices, df_cnr_hp1.log2.values.tolist(), name='Unphased', text=custom_text_data_hp1,
-                                   yaxis=None, opacity=0.7, color='olive', visibility='legendonly', mul_cols=False)
+        add_scatter_trace_coverage(fig, df_1['start'], df_cnr_hp1.hp1.values.tolist(), name='Unphased', text=custom_text_data_hp1,
+                                   yaxis=None, opacity=0.7, color='olive', visibility='legendonly', mul_cols=True, row=1)
     else:
-        add_scatter_trace_coverage(fig, indices, df_cnr_hp1.log2.values.tolist() , name='HP-1', text=custom_text_data_hp1,
-                                   yaxis=None, opacity=0.7, color='firebrick', visibility='legendonly', mul_cols=False)
-        add_scatter_trace_coverage(fig, indices, [ -x for x in df_cnr_hp2.log2.values.tolist()], name='HP-2', text=custom_text_data_hp2,
-                                   yaxis=None, opacity=0.7, color='steelblue', visibility='legendonly', mul_cols=False)
+        add_scatter_trace_coverage(fig, df_1['start'], df_cnr_hp1.hp1.values.tolist() , name='HP-1', text=custom_text_data_hp1,
+                                   yaxis=None, opacity=0.7, color='firebrick', visibility='legendonly', mul_cols=True, row=1)
+        add_scatter_trace_coverage(fig, df_1['start'], df_cnr_hp2.hp2.values.tolist(), name='HP-2', text=custom_text_data_hp2,
+                                   yaxis=None, opacity=0.7, color='steelblue', visibility='legendonly', mul_cols=True, row=1)
         if arguments['unphased_reads_coverage_enable']:
-            add_scatter_trace_coverage(fig, indices, df_unphased.hp3.values.tolist(), name='Unphased', text=None,
-                                   yaxis=None, opacity=0.7, color='olive', visibility='legendonly', mul_cols=False)
+            add_scatter_trace_coverage(fig, df_1['start'], df_unphased.hp3.values.tolist(), name='Unphased', text=None,
+                                   yaxis=None, opacity=0.7, color='olive', visibility='legendonly', mul_cols=True, row=1)
 
     #plots_add_markers_lines(fig)
 
     current = 0
     label_pos = []
+    offset_chroms = 0
+    offset_chroms_1 = 0
     chroms = get_contigs_list(arguments['contigs'])
     for index, chrom in enumerate(chroms):
         current += lengths[index]
-        label_pos.append(round(current - (lengths[index] / 2))*arguments['bin_size']) #y0=-10, y1=arguments['cut_threshold']
-        fig.add_vline(x=current*arguments['bin_size'],  line_width=1, line_dash="solid", line_color="#D7DBDD")
+        label_pos.append(round(offset_chroms+regions[index]//2)) #y0=-10, y1=arguments['cut_threshold']
+        fig.add_vline(x=offset_chroms,  line_width=1, line_dash="solid", line_color="#D7DBDD")
+        offset_chroms_1 += regions[index]
 
-        if index == 0:
-            start_chrom = 0
-        else:
-            start_chrom += lengths[index-1]
         if index % 2 == 0:
-            fig.add_vrect(x0=start_chrom*arguments['bin_size'], x1=current*arguments['bin_size'], fillcolor="#E5E7E9", opacity=0.9, layer="below", line_width=0, )
+            fig.add_vrect(x0=offset_chroms, x1=offset_chroms_1, fillcolor="#E5E7E9", opacity=0.9, layer="below", line_width=0, )
+        offset_chroms += regions[index]
 
     fig.update_layout(
         xaxis=dict(
@@ -517,7 +566,8 @@ def copy_number_plots_genome(centers, integer_fractional_centers, df_cnr_hp1, df
         font=dict(size=18, color="black"))
 
     if arguments['copynumbers_enable']:
-        offset = 0
+        offset_start = 0
+        offset_end = 0
         haplotype_1_start_values = []
         haplotype_1_end_values = []
 
@@ -532,17 +582,20 @@ def copy_number_plots_genome(centers, integer_fractional_centers, df_cnr_hp1, df
                 haplotype_1_end_values_copyratios = df_segs_hp1_chrom.end.values.tolist()
                 haplotype_2_start_values_copyratios = df_segs_hp2_chrom.start.values.tolist()
                 haplotype_2_end_values_copyratios = df_segs_hp2_chrom.end.values.tolist()
+
                 if chrom == arguments['contigs'].split('-')[0]:
                     haplotype_1_start_values.extend(haplotype_1_start_values_copyratios)
                     haplotype_1_end_values.extend(haplotype_1_end_values_copyratios)
                     haplotype_2_start_values.extend(haplotype_2_start_values_copyratios)
                     haplotype_2_end_values.extend(haplotype_2_end_values_copyratios)
                 else:
-                    offset += lengths[index-1] * arguments['bin_size']
-                    haplotype_1_start_values.extend([x + offset for x in haplotype_1_start_values_copyratios])
-                    haplotype_1_end_values.extend([x + offset for x in haplotype_1_end_values_copyratios])
-                    haplotype_2_start_values.extend([x + offset for x in haplotype_2_start_values_copyratios])
-                    haplotype_2_end_values.extend([x + offset for x in haplotype_2_end_values_copyratios])
+                    offset_start += regions[index-1]
+                    #lengths[index-1] * arguments['bin_size']
+                    haplotype_1_start_values.extend([x + offset_start for x in haplotype_1_start_values_copyratios])
+                    haplotype_1_end_values.extend([x + offset_start for x in haplotype_1_end_values_copyratios])
+                    haplotype_2_start_values.extend([x + offset_start for x in haplotype_2_start_values_copyratios])
+                    haplotype_2_end_values.extend([x + offset_start for x in haplotype_2_end_values_copyratios])
+                    #offset_start += regions[index-1]
 
         haplotype_1_gaps_values = np.full(len(df_segs_hp1.state.values.tolist()), 'None')
         haplotype_1_copyratios_values = list(itertools.chain.from_iterable(zip(df_segs_hp1.state.values.tolist(), df_segs_hp1.state.values.tolist(), haplotype_1_gaps_values)))
@@ -565,14 +618,14 @@ def copy_number_plots_genome(centers, integer_fractional_centers, df_cnr_hp1, df
             OFFSET = arguments['cut_threshold']/150
 
             haplotype_1_copyratios_values_normal = [x if x == 'None' else x  for x in haplotype_1_copyratios_values_normal]
-            haplotype_2_copyratios_values_normal = [x if x == 'None' else -x  for x in haplotype_2_copyratios_values_normal]
+            haplotype_2_copyratios_values_normal = [x if x == 'None' else x  for x in haplotype_2_copyratios_values_normal]
             haplotype_1_copyratios_values_sub = [x if x == 'None' else x  for x in haplotype_1_copyratios_values_sub]
-            haplotype_2_copyratios_values_sub = [x if x == 'None' else -x  for x in haplotype_2_copyratios_values_sub]
+            haplotype_2_copyratios_values_sub = [x if x == 'None' else x  for x in haplotype_2_copyratios_values_sub]
 
             name = "Copynumbers"
-            add_scatter_trace_copyratios(arguments, fig, ['firebrick','steelblue'], name, haplotype_1_copyratios_positions, haplotype_2_copyratios_positions, haplotype_1_copyratios_values_normal, haplotype_2_copyratios_values_normal, df_segs_hp1.start.values.tolist(), df_segs_hp1.end.values.tolist(), df_segs_hp2.start.values.tolist(), df_segs_hp2.end.values.tolist(), False)
+            add_scatter_trace_copyratios(arguments, fig, ['firebrick','steelblue'], name, haplotype_1_copyratios_positions, haplotype_2_copyratios_positions, haplotype_1_copyratios_values_normal, haplotype_2_copyratios_values_normal, df_segs_hp1.start.values.tolist(), df_segs_hp1.end.values.tolist(), df_segs_hp2.start.values.tolist(), df_segs_hp2.end.values.tolist(), True, row=1)
             name = "Copynumbers (subclonal)"
-            add_scatter_trace_copyratios(arguments, fig, ['#E95F0A','#6EC5E9'], name, haplotype_1_copyratios_positions, haplotype_2_copyratios_positions, haplotype_1_copyratios_values_sub, haplotype_2_copyratios_values_sub, df_segs_hp1.start.values.tolist(), df_segs_hp1.end.values.tolist(), df_segs_hp2.start.values.tolist(), df_segs_hp2.end.values.tolist(), False)
+            add_scatter_trace_copyratios(arguments, fig, ['#E95F0A','#6EC5E9'], name, haplotype_1_copyratios_positions, haplotype_2_copyratios_positions, haplotype_1_copyratios_values_sub, haplotype_2_copyratios_values_sub, df_segs_hp1.start.values.tolist(), df_segs_hp1.end.values.tolist(), df_segs_hp2.start.values.tolist(), df_segs_hp2.end.values.tolist(), True, row=1)
         else:
             if arguments['without_phasing']:
                 OFFSET = 0
@@ -581,43 +634,46 @@ def copy_number_plots_genome(centers, integer_fractional_centers, df_cnr_hp1, df
                 OFFSET = arguments['cut_threshold']/150
                 colors = ['firebrick', 'steelblue']
             haplotype_1_copyratios_values = [x if x == 'None' else x  for x in haplotype_1_copyratios_values]
-            haplotype_2_copyratios_values = [x if x == 'None' else -(x)  for x in haplotype_2_copyratios_values]
+            haplotype_2_copyratios_values = [x if x == 'None' else x + 0.75  for x in haplotype_2_copyratios_values]
             name = "Copynumbers"
 
             add_scatter_trace_copyratios(arguments, fig, colors, name, haplotype_1_copyratios_positions,
                                          haplotype_2_copyratios_positions, haplotype_1_copyratios_values,
-                                         haplotype_2_copyratios_values, df_segs_hp1.start.values.tolist(), df_segs_hp1.end.values.tolist(), df_segs_hp2.start.values.tolist(), df_segs_hp2.end.values.tolist(), mul_cols=False)
+                                         haplotype_2_copyratios_values, df_segs_hp1.start.values.tolist(), df_segs_hp1.end.values.tolist(), df_segs_hp2.start.values.tolist(), df_segs_hp2.end.values.tolist(), mul_cols=True, row=1)
 
-    # #############################################################
+    #############################################################
     # depth_values_hp1 = np.array(df_cnr_hp1.log2.values.tolist(), dtype='int')
     # depth_values_hp2 = np.array(df_cnr_hp2.log2.values.tolist(), dtype='int')
     #
     # depth_values_hp1 = depth_values_hp1.reshape(-1, 1)
     # depth_values_hp2 = depth_values_hp2.reshape(-1, 1)
     # Y = np.concatenate([depth_values_hp1, depth_values_hp2])
-    # fig.add_trace(
-    #     go.Histogram(y=np.concatenate(list(Y)).ravel().tolist(), orientation='h', marker_color='gray', name='Histogram',
-    #                  nbinsy=8000, visible="legendonly"), row=1, col=2)
-    # fig.update_layout(xaxis2=dict(range=[0, 2000]))
-    # #############################################################
-    plots_layout_settings(fig, 'Genome', arguments, indices[-1:][0], arguments['cut_threshold'])
+    #fig.add_trace(
+    #    go.Histogram(y=observed_hist, orientation='h', marker_color='gray', name='Histogram',
+    #                  visible="legendonly"), row=1, col=2)
+    #fig.update_layout(xaxis2=dict(range=[0, 2000], showticklabels=False))
+    fig.add_trace(go.Bar(x=observed_hist, y=x_axis, marker_color='grey', orientation='h',  name='Histogram'), row=1, col=2)
+    #fig.add_trace(go.Scatter(x=fit_curve, y=x_axis, marker_color='royalblue', orientation='h', name='opt fit', line=dict(color='royalblue', width=4, dash='dot'),), row=1, col=2)
+
+    #############################################################
+    plots_layout_settings(fig, 'Genome', arguments, offset_start+regions[-1], arguments['cut_threshold'])
 
     centers_rev = [-x for x in centers[1:]]
     centers_rev.reverse()
-    tick_vals = centers_rev + centers
+    tick_vals = centers
 
     integer_fractional_means_rev = [x for x in integer_fractional_centers[1:]]
     integer_fractional_means_rev.reverse()
-    tickt_ext = integer_fractional_means_rev + integer_fractional_centers
+    tickt_ext = integer_fractional_centers
     if arguments['without_phasing']:
         fig.update_yaxes(range=[-1, arguments['cut_threshold']])
     else:
-        fig.update_yaxes(range=[-(arguments['cut_threshold']), arguments['cut_threshold']])
+        fig.update_yaxes(range=[-1, arguments['cut_threshold']])
     fig.update_layout(
         yaxis=dict(
             tickmode='array',
-            tickvals=[i for i in range(-1000, 1000, 25)],
-            ticktext=[str(abs(i)) for i in range(-1000, 1000, 25)]
+            tickvals=[i for i in range(0, 1000, 25)],
+            ticktext=[str(abs(i)) for i in range(0, 1000, 25)]
         ),
         yaxis2=dict(
             tickmode='array',
@@ -981,7 +1037,7 @@ def copy_number_plots_genome_breakpoints_unphased_test(centers, integer_fraction
 
     fig.write_html(arguments['out_dir_plots'] +'/'+ arguments['genome_name'] + "_genome_copynumber_breakpoints_test.html")
 
-def copy_number_plots_genome_breakpoints_test(centers, integer_fractional_centers, df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, df_unphased, arguments):
+def copy_number_plots_genome_breakpoints_hps_test(centers, integer_fractional_centers, df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, df_unphased, arguments):
     # TODO genome-wide plots
 
     #coords, coords_chr = sv_vcf_bps_cn_check(arguments['dryrun_path'] + arguments['genome_name'] + '/severus_1954.vcf', df_segs_hp1, df_segs_hp2)
@@ -1148,9 +1204,9 @@ def copy_number_plots_genome_breakpoints_test(centers, integer_fractional_center
         add_scatter_trace_coverage(fig, indices, [-x for x in df_cnr_hp2.log2.values.tolist()], name='HP-2',
                                    text=custom_text_data_hp2,
                                    yaxis=None, opacity=0.7, color='steelblue', visibility='legendonly', mul_cols=True)
-        if arguments['unphased_reads_coverage_enable']:
-            add_scatter_trace_coverage(fig, indices, df_unphased.hp3.values.tolist(), name='Unphased', text=None,
-                                       yaxis=None, opacity=0.7, color='olive', visibility='legendonly', mul_cols=True)
+        # if arguments['unphased_reads_coverage_enable']:
+        #     add_scatter_trace_coverage(fig, indices, df_unphased.hp3.values.tolist(), name='Unphased', text=None,
+        #                                yaxis=None, opacity=0.7, color='olive', visibility='legendonly', mul_cols=True)
 
     fig.add_trace(go.Scatter(x=df_genes_1['start'], y=[1, 2, 3, 4, 5] * (len(df_genes_1)//5),
                              mode='markers',
@@ -1386,6 +1442,433 @@ def copy_number_plots_genome_breakpoints_test(centers, integer_fractional_center
         height=850+250,
        )
 
+
+    #plots_layout_settings_test(fig, 'Genome', arguments, indices[-1:][0], arguments['cut_threshold'])
+
+    fig.write_html(arguments['out_dir_plots'] +'/'+ arguments['genome_name'] + "_genome_copynumber_breakpoints_test.html")
+
+def copy_number_plots_genome_breakpoints_test(centers, integer_fractional_centers, df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, df_unphased, arguments):
+    # TODO genome-wide plots
+
+    coords_single, coords_single_chr, coords, coords_chr, _,_ = sv_vcf_bps_cn_check(arguments['breakpoints'] + 'severus_somatic.vcf', arguments)
+
+    lengths = []
+    regions = get_chromosomes_regions(arguments)
+    chroms = get_contigs_list(arguments['contigs'])
+
+    #chroms = ['chr1', 'chr5','chr8']
+
+    df_cnr_hp1_ = []
+    df_segs_hp1_ = []
+    df_cnr_hp2_ = []
+    df_segs_hp2_ = []
+    df_genes_1_ = []
+    df_genes_2_ = []
+    df_genes = csv_df_chromosomes_sorter("CancerGenes.tsv", ['chr','start','end','gene','size'])
+    genestart_1 = []
+    genestart_2 = []
+    last_len = 0
+    for i, chrom in enumerate(chroms):
+        df_cnr_hp1_.append(df_cnr_hp1[df_cnr_hp1['chr'] == chrom])
+        df_segs_hp1_.append(df_segs_hp1[df_segs_hp1['chromosome'] == chrom])
+        df_cnr_hp2_.append(df_cnr_hp2[df_cnr_hp2['chr'] == chrom])
+        df_segs_hp2_.append(df_segs_hp2[df_segs_hp2['chromosome'] == chrom])
+
+    #coords_chr =  [['chr1',223550001, 'HP-1'],['chr6',60250001, 'HP-1'], ['chr6',27900001, 'HP-1'],['chr15',22200001, 'HP-1'], ['chr1', 144850001, 'HP-2'], ['chr9', 68300001, 'HP-2']]
+    #coords = [['chr1',223550001],['chr6',60250001], ['chr6',27900001],['chr15',22200001], ['chr1', 144850001], ['chr9', 68300001]]
+    #coords_single = [['chr1',22355007, 22355008], ['chr2', 123444555, 123444556], ['chr19', 1355007, 1355008]]
+    #coords_single_chr = [['chr1', 22355007,22355008, 'DEL'], ['chr2', 123444555,123444556, 'DUP'], ['chr19', 1355007,1355008, 'DEL']]
+
+    offset = 0
+    for i, chrom in enumerate(chroms):
+        new_len = len(df_cnr_hp1[df_cnr_hp1['chr'] == chrom])
+        # [[9:64526327,1:9769900],
+        # [6:91468745,1:9769559]]
+        if i > 0:
+            for j, pair in enumerate(coords):
+                if chrom == pair[0]:
+                    coords[j][1] = pair[1] + offset#(last_len * (arguments['bin_size']))
+
+        if i > 0:
+            for k, pair in enumerate(coords_single):
+                if chrom == pair[0]:
+                    coords_single[k][1] = pair[1] + offset  # (last_len * (arguments['bin_size']))
+
+        last_len += new_len
+        offset += regions[i]
+
+    df_cnr_hp1_1 = df_cnr_hp1
+    df_1_ = []
+    offset = 0
+    for i, chrom in enumerate(chroms):
+        df_genes_chrom_1 = df_cnr_hp1_1[df_cnr_hp1_1['chr'] == chrom]
+        df_genes_chrom_1['start'] = df_genes_chrom_1['start'].apply(lambda x: x + offset)
+        offset += regions[i]
+        df_1_.append(df_genes_chrom_1)
+    df_1 = pd.concat(df_1_)
+
+    n = len(coords)
+    coords = [x[1:] for x in coords]
+    coords = [coords[i] + (coords[i + 1] if i + 1 < n else []) for i in range(0, n, 2)]
+    coords = list(map(sorted, coords))
+
+    last_len = 0
+    coords_single = [j for i in [x[1:2] for x in coords_single] for j in i]
+
+    df_cnr_hp1 = pd.concat(df_cnr_hp1_)
+    df_segs_hp1 = pd.concat(df_segs_hp1_)
+
+    df_cnr_hp2 = pd.concat(df_cnr_hp2_)
+    df_segs_hp2 = pd.concat(df_segs_hp2_)
+
+    df_genes_1 = df_genes[df_genes['start'] < df_genes['end']]
+    df_genes_2 = df_genes[df_genes['start'] > df_genes['end']]
+
+    last_len = 0
+    offset = 0
+    for i, chrom in enumerate(chroms):
+        df_cnr_hp1_.append(df_cnr_hp1[df_cnr_hp1['chr'] == chrom])
+        new_len = len(df_cnr_hp1[df_cnr_hp1['chr'] == chrom])
+        if not chrom.startswith('chr'):
+            df_genes_chrom_1 = df_genes_1[df_genes_1['chr'] == 'chr' + chrom]
+            genestart_1.extend(df_genes_chrom_1['start'].values.tolist())
+
+            df_genes_chrom_2 = df_genes_2[df_genes_2['chr'] == 'chr' + chrom]
+            genestart_2.extend(df_genes_chrom_2['start'].values.tolist())
+            if i > 0:
+                df_genes_chrom_1['start'] = df_genes_chrom_1['start'].apply(lambda x: x + offset)
+            df_genes_1_.append(df_genes_chrom_1)
+
+            if i > 0:
+                df_genes_chrom_2['start'] = df_genes_chrom_2['start'].apply(lambda x: x + offset)
+            df_genes_2_.append(df_genes_chrom_2)
+        else:
+            df_genes_chrom_1 = df_genes_1[df_genes_1['chr'] == chrom]
+            genestart_1.extend(df_genes_chrom_1['start'].values.tolist())
+
+            df_genes_chrom_2 = df_genes_2[df_genes_2['chr'] == chrom]
+            genestart_2.extend(df_genes_chrom_2['start'].values.tolist())
+            if i > 0:
+                df_genes_chrom_1['start'] = df_genes_chrom_1['start'].apply(lambda x: x + offset)
+            df_genes_1_.append(df_genes_chrom_1)
+
+            if i > 0:
+                df_genes_chrom_2['start'] = df_genes_chrom_2['start'].apply(lambda x: x + offset)
+            df_genes_2_.append(df_genes_chrom_2)
+        last_len += new_len
+        offset += regions[i]
+
+    df_genes_1 = pd.concat(df_genes_1_)
+    df_genes_2 = pd.concat(df_genes_2_)
+
+    genename_1 = df_genes_1['gene'].values.tolist()
+    genename_2 = df_genes_2['gene'].values.tolist()
+
+    for index, chrom in enumerate(chroms):
+        df_cnr_hp1_chrom = df_cnr_hp1[df_cnr_hp1['chr'] == chrom]
+        lengths.append(len(df_cnr_hp1_chrom))
+
+    indices = np.arange(0, len(df_cnr_hp1)*arguments['bin_size'], arguments['bin_size'], dtype=int)
+
+    ###########################################################
+    from breakpoints_arcs import get_all_breakpoints_data
+
+    arcs_data = get_all_breakpoints_data(coords, coords_chr, 75, arguments['breakpoints']+'severus_somatic.vcf')
+    arcs_data1 = get_all_breakpoints_data(coords, coords_chr, -75, arguments['breakpoints']+'severus_somatic.vcf')
+    # fig = go.Figure(data=arcs_data)
+
+    #fig = go.Figure()
+    #fig = go.Figure().set_subplots(rows=2, cols=1)
+
+    #fig = make_subplots(rows=2, cols=1, shared_yaxes=False, shared_xaxes=True, vertical_spacing=0.02, horizontal_spacing=0.02)
+    fig = make_subplots(rows=3, cols=1, shared_yaxes=False, shared_xaxes='columns',  vertical_spacing=0.01, row_heights=[220, 320, 160],
+                        horizontal_spacing=0.02, specs=[[{"type":"xy"}], [{"secondary_y":True}], [{"type":"xy"}]]) #https://community.plotly.com/t/can-subplot-support-multiple-y-axes/38891/20
+    # #############################################################
+    for i in range(len(arcs_data)):
+        fig.add_trace(go.Scatter(x=arcs_data[i][0],
+                                 y=arcs_data[i][1],
+                                 name=arcs_data[i][2],
+                                 mode=arcs_data[i][3],
+                                 line=arcs_data[i][4],
+                                 yaxis="y",
+                                 text = arcs_data[i][5],
+                                 #hovertemplate=arcs_data[i][6],
+                                 showlegend=arcs_data[i][7]), row=1, col=1,
+                     )
+    # #############################################################
+
+    # #############################################################
+    custom_text_data_hp1 = df_cnr_hp1.start.values.tolist()
+    custom_text_data_hp2 = df_cnr_hp2.start.values.tolist()
+    if arguments['without_phasing']:
+        add_scatter_trace_coverage(fig, df_1['start'], df_cnr_hp1.hp1.values.tolist(), name='Unphased',
+                                   text=custom_text_data_hp1,
+                                   yaxis="y2", opacity=0.7, color='olive', visibility='legendonly', mul_cols=True)
+    else:
+        add_scatter_trace_coverage(fig, df_1['start'], df_cnr_hp1.hp1.values.tolist(), name='HP-1',
+                                   text=custom_text_data_hp1,
+                                   yaxis=None, opacity=0.7, color='firebrick', visibility='legendonly', mul_cols=True)
+        add_scatter_trace_coverage(fig, df_1['start'], [-x for x in df_cnr_hp2.hp2.values.tolist()], name='HP-2',
+                                   text=custom_text_data_hp2,
+                                   yaxis=None, opacity=0.7, color='steelblue', visibility='legendonly', mul_cols=True)
+        # if arguments['unphased_reads_coverage_enable']:
+        #     add_scatter_trace_coverage(fig, indices, df_unphased.hp3.values.tolist(), name='Unphased', text=None,
+        #                                yaxis=None, opacity=0.7, color='olive', visibility='legendonly', mul_cols=True)
+
+    fig.add_trace(go.Scatter(x=df_genes_1['start'], y=[1, 2, 3, 4, 5] * (len(df_genes_1)//5),
+                             mode='markers',
+                             text = genename_1,
+                             customdata = genestart_1,
+                             #hovertext=df_genes['gene'],
+                             hovertemplate=
+                             '<br><b>Gene</b>: %{text}'+
+                             '<br><b>Pos</b>: %{customdata}<br>',
+                             marker=dict(
+                                 symbol="y-left",
+                                 color="#3A6B35",
+                                 size=6,
+                                 line=dict(width=1, color="#7F7F7F"),
+                             ),
+                             yaxis="y4",
+                             name= 'GeneInfo',
+                             showlegend=False,), row=3, col=1,)
+
+    # fig.add_trace(go.Scatter(x=df_genes_2['start'], y=[1, 2, 3, 4, 5] * (len(df_genes_2)//5),
+    #                          mode='markers',
+    #                          text = genename_2,
+    #                          customdata = genestart_2,
+    #                          #hovertext=df_genes['gene'],
+    #                          hovertemplate=
+    #                          '<br><b>Gene</b>: %{text}'+
+    #                          '<br><b>Pos</b>: %{customdata}<br>',
+    #                          marker=dict(
+    #                              symbol="y-right",
+    #                              color="#E3B448",
+    #                              size=6,
+    #                              line=dict(width=1, color="#7F7F7F"),
+    #                          ),
+    #                          yaxis="y4",
+    #                          name= 'GeneInfo',
+    #                          showlegend=False,), row=3, col=1,)
+    current = 0
+    label_pos = []
+    label_pos_chrms = []
+    label_chrms = []
+
+    #coords_lines = [j for i in coords for j in i] + coords_single
+    for i, co in enumerate(coords_single):
+        if coords_single_chr[i][3] == 'DEL':
+            fig.add_vline(x=co,  line_width=1, line_dash="solid", opacity=0.3, line_color="#CF0759", row=1, col=1,)
+        elif coords_single_chr[i][3] == 'DUP' or coords_single_chr[i][3] == 'INS':
+            fig.add_vline(x=co,  line_width=1, line_dash="solid", opacity=0.3, line_color="#178117", row=1, col=1,)
+        else:
+            fig.add_vline(x=co,  line_width=1, line_dash="solid", opacity=0.3, line_color="#2B40A0", row=1, col=1,)
+
+    fig.add_hline(y=6,  line_width=1, line_dash="solid", line_color="black", row=3, col=1,)
+    fig.add_hline(y=-(arguments['cut_threshold'] + 5),  line_width=1, line_dash="solid", line_color="black", row=2, col=1,)
+
+    # for index, chrom in enumerate(chroms):
+    #     current += lengths[index]
+    #     label_pos.append(round(current - (lengths[index] / 2))*arguments['bin_size']) #y0=-10, y1=arguments['cut_threshold']
+    #
+    #     label_pos_chrms.append(round(current - (lengths[index]))*arguments['bin_size'])
+    #     label_pos_chrms.append(round(current - (lengths[index]*.75)) * arguments['bin_size'])
+    #     label_pos_chrms.append(round(current - (lengths[index] / 2))*arguments['bin_size'])
+    #     label_pos_chrms.append(round(current - (lengths[index]*.25)) * arguments['bin_size'])
+    #
+    #     label_chrms.append('0')
+    #     label_chrms.append(str((round((lengths[index] * .25) * arguments['bin_size'])) // 1000000) + 'M')
+    #     label_chrms.append(str(((lengths[index]//2)*arguments['bin_size'])// 1000000)+'M')
+    #     label_chrms.append(str((round((lengths[index] * .75) * arguments['bin_size'])) // 1000000) + 'M')
+    #
+    #     fig.add_vline(x=current*arguments['bin_size'],  line_width=2, line_dash="solid", line_color="black", row=2, col=1,)
+
+    current = 0
+    label_pos = []
+    offset_chroms = 0
+    offset_chroms_1 = 0
+    chroms = get_contigs_list(arguments['contigs'])
+    for index, chrom in enumerate(chroms):
+        current += lengths[index]
+        label_pos.append(round(offset_chroms+regions[index]//2))
+
+        fig.add_vline(x=offset_chroms,  line_width=1, line_dash="solid", line_color="#D7DBDD")
+
+        #label_chrms.append('0')
+        #label_chrms.append(str(((lengths[index]//2) + regions[index])// 1000000)+'M')
+
+
+        offset_chroms_1 += regions[index]
+
+        if index % 2 == 0:
+            fig.add_vrect(x0=offset_chroms, x1=offset_chroms_1, fillcolor="#E5E7E9", opacity=0.9, layer="below", line_width=0, )
+        offset_chroms += regions[index]
+
+    if arguments['copynumbers_enable']:
+        offset_start = 0
+        haplotype_1_start_values = []
+        haplotype_1_end_values = []
+
+        haplotype_2_start_values = []
+        haplotype_2_end_values = []
+        for index, chrom in enumerate(chroms):
+            if not chrom == 'chrX' and not chrom == 'chrY':
+                df_segs_hp1_chrom = df_segs_hp1[df_segs_hp1['chromosome'] == chrom]
+                df_segs_hp2_chrom = df_segs_hp2[df_segs_hp2['chromosome'] == chrom]
+                haplotype_1_start_values_copyratios = df_segs_hp1_chrom.start.values.tolist()
+                haplotype_1_end_values_copyratios = df_segs_hp1_chrom.end.values.tolist()
+                haplotype_2_start_values_copyratios = df_segs_hp2_chrom.start.values.tolist()
+                haplotype_2_end_values_copyratios = df_segs_hp2_chrom.end.values.tolist()
+                if chrom == arguments['contigs'].split('-')[0]:
+                    haplotype_1_start_values.extend(haplotype_1_start_values_copyratios)
+                    haplotype_1_end_values.extend(haplotype_1_end_values_copyratios)
+                    haplotype_2_start_values.extend(haplotype_2_start_values_copyratios)
+                    haplotype_2_end_values.extend(haplotype_2_end_values_copyratios)
+                else:
+                    offset_start += regions[index-1]#lengths[index-1] * arguments['bin_size']
+                    haplotype_1_start_values.extend([x + offset_start for x in haplotype_1_start_values_copyratios])
+                    haplotype_1_end_values.extend([x + offset_start for x in haplotype_1_end_values_copyratios])
+                    haplotype_2_start_values.extend([x + offset_start for x in haplotype_2_start_values_copyratios])
+                    haplotype_2_end_values.extend([x + offset_start for x in haplotype_2_end_values_copyratios])
+
+        haplotype_1_gaps_values = np.full(len(df_segs_hp1.state.values.tolist()), 'None')
+        haplotype_1_copyratios_values = list(itertools.chain.from_iterable(zip(df_segs_hp1.state.values.tolist(), df_segs_hp1.state.values.tolist(), haplotype_1_gaps_values)))
+        haplotype_1_copyratios_positions = list(itertools.chain.from_iterable(zip(haplotype_1_start_values, haplotype_1_end_values, haplotype_1_gaps_values)))
+
+        haplotype_2_gaps_values = np.full(len(df_segs_hp2.state.values.tolist()), 'None')
+        haplotype_2_copyratios_values = list(itertools.chain.from_iterable(zip(df_segs_hp2.state.values.tolist(), df_segs_hp2.state.values.tolist(), haplotype_2_gaps_values)))
+        haplotype_2_copyratios_positions = list(itertools.chain.from_iterable(zip(haplotype_2_start_values, haplotype_2_end_values, haplotype_2_gaps_values)))
+
+        if arguments['copynumbers_subclonal_enable']:
+
+            search_list = [centers[i] for i in [integer_fractional_centers.index(x) for x in integer_fractional_centers if not float(x).is_integer()]] #[27.025, 42.025]
+            search_list_none = search_list + ['None']
+
+            haplotype_1_copyratios_values_normal = [-3300.0 if element in search_list else element for element in haplotype_1_copyratios_values]
+            haplotype_1_copyratios_values_sub = [element if element in search_list_none else -3300.0 for element in haplotype_1_copyratios_values]
+
+            haplotype_2_copyratios_values_normal = [-3300.0 if element in search_list else element for element in haplotype_2_copyratios_values]
+            haplotype_2_copyratios_values_sub = [element if element in search_list_none else -3300.0 for element in haplotype_2_copyratios_values]
+            OFFSET = arguments['cut_threshold']/150
+
+            haplotype_1_copyratios_values_normal = [x if x == 'None' else x  for x in haplotype_1_copyratios_values_normal]
+            haplotype_2_copyratios_values_normal = [x if x == 'None' else -x  for x in haplotype_2_copyratios_values_normal]
+            haplotype_1_copyratios_values_sub = [x if x == 'None' else x  for x in haplotype_1_copyratios_values_sub]
+            haplotype_2_copyratios_values_sub = [x if x == 'None' else -x  for x in haplotype_2_copyratios_values_sub]
+
+            name = "Copynumbers"
+            add_scatter_trace_copyratios(arguments, fig, ['firebrick','steelblue'], name, haplotype_1_copyratios_positions, haplotype_2_copyratios_positions, haplotype_1_copyratios_values_normal, haplotype_2_copyratios_values_normal, df_segs_hp1.start.values.tolist(), df_segs_hp1.end.values.tolist(), df_segs_hp2.start.values.tolist(), df_segs_hp2.end.values.tolist(), mul_cols=True)
+            name = "Copynumbers (subclonal)"
+            add_scatter_trace_copyratios(arguments, fig, ['#E95F0A','#6EC5E9'], name, haplotype_1_copyratios_positions, haplotype_2_copyratios_positions, haplotype_1_copyratios_values_sub, haplotype_2_copyratios_values_sub, df_segs_hp1.start.values.tolist(), df_segs_hp1.end.values.tolist(), df_segs_hp2.start.values.tolist(), df_segs_hp2.end.values.tolist(), mul_cols=True)
+        else:
+            if arguments['without_phasing']:
+                OFFSET = 0
+                colors = ['darkolivegreen']
+            else:
+                OFFSET = arguments['cut_threshold']/150
+                colors = ['firebrick', 'steelblue']
+            haplotype_1_copyratios_values = [x if x == 'None' else x  for x in haplotype_1_copyratios_values]
+            haplotype_2_copyratios_values = [x if x == 'None' else -(x) for x in haplotype_2_copyratios_values]
+            name = "Copynumbers"
+
+            add_scatter_trace_copyratios(arguments, fig, colors, name, haplotype_1_copyratios_positions, haplotype_2_copyratios_positions, haplotype_1_copyratios_values, haplotype_2_copyratios_values, df_segs_hp1.start.values.tolist(), df_segs_hp1.end.values.tolist(), df_segs_hp2.start.values.tolist(), df_segs_hp2.end.values.tolist(), mul_cols=True)
+
+    # #############################################################
+    # #############################################################
+    #fig.update_yaxes(range=[-1, arguments['cut_threshold']])
+    fig.update_layout(yaxis=dict(title="<b>Breakpoints</b>", range=[0, 75], showticklabels = False, showgrid=False, zeroline=False),
+                      yaxis2=dict(range=[-(arguments['cut_threshold'] + 5), arguments['cut_threshold'] + 5], showgrid=False,),
+                      yaxis3=dict(range=[-(arguments['cut_threshold'] + 5), arguments['cut_threshold'] + 5], showgrid=False,),
+                      yaxis4=dict(title="<b>Genes     </b>", range=[0, 6], showticklabels = False, showgrid=False, zeroline=True, zerolinewidth=2, zerolinecolor='black'),
+
+
+                      xaxis=dict(showspikes=True, tick0=0.0, rangemode="nonnegative", range=[0, offset_start+regions[-1]], showticklabels = False, showgrid=False, zeroline=False),
+                      xaxis2=dict(tick0=0.0, rangemode="nonnegative", range=[0, offset_start+regions[-1]], zeroline=True, zerolinewidth=1, zerolinecolor='black', showgrid=False,),
+                      xaxis3=dict(tick0=0.0, rangemode="nonnegative", range=[0, offset_start+regions[-1]],showgrid=False,),
+                      xaxis4=dict(tick0=0.0, rangemode="nonnegative", range=[0, offset_start+regions[-1]], showgrid=False, zeroline=True, zerolinewidth=1, zerolinecolor='black'))
+
+    centers_rev = [-x for x in centers[1:]]
+    centers_rev.reverse()
+    tick_vals = centers_rev + centers
+
+    integer_fractional_means_rev = [x for x in integer_fractional_centers[1:]]
+    integer_fractional_means_rev.reverse()
+    tickt_ext = integer_fractional_means_rev + integer_fractional_centers
+
+    fig.update_layout(
+        yaxis2=dict(
+            title="<b>Coverage depth</b> (per bin)",
+            tickmode='array',
+            tickvals=[i for i in range(-1000, 1000, 25)],
+            ticktext=[str(abs(i)) for i in range(-1000, 1000, 25)]
+        ),
+        yaxis3=dict(
+            title="<b>Copies</b> (integers/fractions)",
+            zeroline=True, zerolinewidth=1, zerolinecolor='black',
+            tickmode='array',
+            tickvals=tick_vals,
+            ticktext=tickt_ext  # ['loss'] + [str(i) + '_copy' for i in range(1,len(centers))]
+        ),
+    )
+    # fig.update_xaxes(
+    #     tickmode='array',
+    #     tickvals=label_pos_chrms,
+    #     ticktext=label_chrms  # ['loss'] + [str(i) + '_copy' for i in range(1,len(centers))]
+    # )
+
+    # fig.update_layout(
+    #     hovermode="x unified",
+    #     legend_traceorder="normal")
+
+    fig.update_xaxes(
+        #xaxis2=dict(
+            tickangle=90,
+            tickmode='array',  # change 1
+            tickvals=label_pos,  # change 2
+            ticktext=chroms,  # change 3
+        #),
+        #font=dict(size=18, color="black")
+    )
+
+    # Update layout
+    fig.update_layout(
+        template="plotly_white",
+        font_family="Times New Roman"
+    )
+
+    fig.update_layout(
+        title=chrom,
+    )
+    # Legend
+    fig.update_layout(legend=dict(
+        orientation='h', xanchor="center", x=0.45, y=1.06,  # orientation = 'v', xanchor = "center", x = 1.08, y= .5
+    ))
+    fig.update_layout(margin=dict(l=5, r=5, b=5, pad=1))
+    #fig.update_xaxes(tick0=0.0, rangemode="nonnegative")
+
+
+    fig.update_layout(legend={'itemsizing': 'constant'})
+
+    fig.update_layout(font_family="Times New Roman")
+
+    fig.update_layout(
+        title={
+            'text': arguments['genome_name'],
+            'y': 0.98,
+            'x': 0.5,
+            'xanchor': 'center',
+            'yanchor': 'top'},
+
+        font_family="Courier New",
+        font_color="dimgray",
+        title_font_family="Times New Roman",
+        title_font_color="red",
+        legend_title_font_color="green",
+    )
+    fig.update_layout(
+        width=1380,
+        height=850+250,
+       )
 
     #plots_layout_settings_test(fig, 'Genome', arguments, indices[-1:][0], arguments['cut_threshold'])
 
@@ -1817,7 +2300,7 @@ def plots_add_markers_lines(fig):
         showlegend=True
     )
 
-def add_scatter_trace_coverage(fig, x, y, name, text, yaxis, opacity, color, visibility=True, mul_cols=False):
+def add_scatter_trace_coverage(fig, x, y, name, text, yaxis, opacity, color, visibility=True, mul_cols=False, row=2):
     if mul_cols:
         fig.add_trace(go.Scatter(
             # legendgroup="group1",  # this can be any string, not just "group"
@@ -1835,7 +2318,7 @@ def add_scatter_trace_coverage(fig, x, y, name, text, yaxis, opacity, color, vis
             visible=visibility,
             marker={"size": 2},
             mode="markers",
-        ), row = 2, col = 1)
+        ), row = row, col = 1)
     else:
         fig.add_trace(go.Scatter(
             # legendgroup="group1",  # this can be any string, not just "group"
@@ -1894,7 +2377,7 @@ def add_scatter_trace_phaseblocks(fig, phaseblocks_positions, haplotype_1_phaseb
         #legendgroup="group2",
     ))
 
-def add_scatter_trace_copyratios(arguments, fig, colors, name, haplotype_1_copyratios_positions, haplotype_2_copyratios_positions, haplotype_1_copyratios_values, haplotype_2_copyratios_values, haplotype_1_copyratios_positions_start, haplotype_1_copyratios_positions_end, haplotype_2_copyratios_positions_start, haplotype_2_copyratios_positions_end, mul_cols):
+def add_scatter_trace_copyratios(arguments, fig, colors, name, haplotype_1_copyratios_positions, haplotype_2_copyratios_positions, haplotype_1_copyratios_values, haplotype_2_copyratios_values, haplotype_1_copyratios_positions_start, haplotype_1_copyratios_positions_end, haplotype_2_copyratios_positions_start, haplotype_2_copyratios_positions_end, mul_cols, row=2):
     hp1_chr_info = [j for i in  [[x,y, None] for (x,y) in zip(haplotype_1_copyratios_positions_start, haplotype_1_copyratios_positions_end)] for j in i]
     hp2_chr_info = [j for i in  [[x,y, None] for (x,y) in zip(haplotype_2_copyratios_positions_start, haplotype_2_copyratios_positions_end)] for j in i]
 
@@ -1924,7 +2407,7 @@ def add_scatter_trace_copyratios(arguments, fig, colors, name, haplotype_1_copyr
             #hoverinfo = "x+name+y+text",
             #legendgroup="group2",
             #legendgrouptitle_text="Phaseblocks",
-        ), row = 2, col = 1, secondary_y=True)
+        ), row = row, col = 1, secondary_y=True)
         if arguments['without_phasing'] == False:
             fig.add_trace(go.Scatter(
                 #legendgroup="group2",
@@ -1945,7 +2428,7 @@ def add_scatter_trace_copyratios(arguments, fig, colors, name, haplotype_1_copyr
                 #marker_symbol='diamond-wide',
                 #hoverinfo = "x+name+y+text",
                 #legendgroup="group2",
-            ), row = 2, col = 1, secondary_y=True)
+            ), row = row, col = 1, secondary_y=True)
     else:
         if arguments['without_phasing']:
             name_leg = 'Unphased'
@@ -2142,27 +2625,145 @@ def plot_bins_ratios(hp1,hp2, arguments):
 
     fig.write_html(arguments['out_dir_plots'] +'/'+ arguments['genome_name'] + "_genome_ratio.html")
 
-def change_point_detection(data, start, ends, arguments, chrom, html_graphs, hp, color):
+def flat_with_diff(A, atol=3):
+    runs = np.split(A, np.where(np.abs(np.diff(A)) >= atol)[0] + 1)
+    return [list(x) for x in runs if len(x) > 1]
+
+def change_point_detection(hp_data, start, ends, ref_start_values_1, arguments, chrom, html_graphs, hp, color):
     import ruptures as rpt
     fig = go.Figure()
-    #starts = [i for i in range(0, len(data), 50000)]
-    add_scatter_trace_coverage(fig, start, data, name='HP-'+str(hp), text=None, yaxis=None,
-                               opacity=0.7, color=color)
 
-    data = np.array(data, dtype='int') #numpy.clip(data, a_min=0, a_max=1000)
+    #starts = [i for i in range(0, len(data), 50000)]
+    add_scatter_trace_coverage(fig, start, hp_data, name='HP-'+str(hp), text=None, yaxis=None, opacity=0.7, color=color)
+
+    ############################################
+    # temp_start = []
+    # extra_cpd_points = []
+    # start_pos = False
+    # for k in range(5, len(start)-5):
+    #     if start_pos == False and statistics.mean(hp_data[k-5:k]) > abs(statistics.mean(hp_data[k-4:k-1]) - hp_data[k])  > statistics.mean(hp_data[k-5:k]):
+    #         temp_start.append(k)
+    #         start_pos = True
+    #     elif start_pos and statistics.mean(hp_data[k-5:k]) > abs(statistics.mean(hp_data[k+1:k+5]) - hp_data[k])  > statistics.mean(hp_data[k:k+5]) :
+    #         temp_start.append(k)
+    #         extra_cpd_points.append(temp_start[0])
+    #         extra_cpd_points.append(temp_start[-1])
+    #         temp_start = []
+    #         start_pos = False
+
+    ##############################################
+    cpd_peaks_points = []
+    # temp_start = []
+    # for k in range(1, len(start) - 1):
+    #     if abs(hp_data[k-1] - hp_data[k]) > 30:
+    #         temp_start.append(k)
+    #         for l in range(k+1,len(start) - 1):
+    #             if abs(hp_data[k] - hp_data[l]) > 30:
+    #                 continue
+    #             else:
+    #                 if l > k:
+    #                     temp_start.append(l)
+    #                 break
+    # temp_start = sorted(list(set(temp_start)))
+    # temp_start_groups = flat_with_diff(temp_start)
+    #
+    # for i, val in enumerate(temp_start_groups):
+    #     if len(val) > 5:
+    #         cpd_peaks_points.append(val[0])
+    #         cpd_peaks_points.append(val[-1])
+
+    ############################################
+    zeros_values = []
+    for i in range(len(hp_data)):
+        if hp_data[i] < 1:
+            zeros_values.append(i)
+
+    from itertools import groupby, count
+    groups = groupby(zeros_values, key=lambda item, c=count(): item - next(c))
+    tmp = [list(g) for k, g in groups]
+
+    cpd_zeros_points = []
+    for i, val in enumerate(tmp):
+        if len(val) == 1:
+            hp_data[i] = statistics.mean(hp_data[val[0]:val[0]+2])
+        else:
+            cpd_zeros_points.append(val[0])
+            cpd_zeros_points.append(val[-1])
+    ####################################################
+    data = np.array(hp_data, dtype='int') #numpy.clip(data, a_min=0, a_max=1000)
     algo = rpt.Pelt(model="rbf", jump=25).fit(data)
     result = algo.predict(pen=10)
     change_points = [i for i in result if i < len(data)]
-    for i, point in enumerate(change_points):
-        fig.add_vline(x=point*arguments['bin_size'], y0=-10, y1=500, line_width=1, line_dash="dash",
-                  line_color=color)
+    ############################################
+    ov_indices = []
+    for i, val1 in enumerate(change_points):
+        for j, val2 in enumerate(tmp):
+            if len(val2) > 2:
+                if val2[-1]>= val1 >= val2[0]:
+                    ov_indices.append(i)
+    if ov_indices:
+        for index in sorted(list(set(ov_indices)), reverse=True):
+            del change_points[index]
+    ############################################
+    change_points = sorted(list(set(change_points + cpd_zeros_points + cpd_peaks_points)))
+    ############################################
+    ############################################
+    from smoothing import smooth_triangle
+    hp_data_new = []
+
+    if len(hp_data[0:change_points[0]]) > 46:
+        hp_data_new.extend(smooth_triangle(hp_data[0:change_points[0]], 15))
+    else:
+        hp_data_new.extend(hp_data[0:change_points[0]])
+
+    for p in range(1, len(change_points)):
+        if change_points[p] - change_points[p - 1] > 46:
+            hp_data_new.extend(smooth_triangle(hp_data[change_points[p - 1]:change_points[p]], 15))
+        else:
+            hp_data_new.extend(hp_data[change_points[p - 1]:change_points[p]])
+
+    if len(hp_data[change_points[-1]:]) > 46:
+        hp_data_new.extend(smooth_triangle(hp_data[change_points[-1]:], 15))
+    else:
+        hp_data_new.extend(hp_data[change_points[-1]:])
+    ############################################
+    add_scatter_trace_coverage(fig, start, hp_data_new, name='HP-' + str(hp), text=None, yaxis=None, opacity=0.7, color='grey')
+    ############################################
+
+    #model = CUSUM(k=1., h=2., burnin=50, mu=0., sigma=1.)
+    #model = EWMA(r=0.15, L=2.4, burnin=50, mu=0., sigma=1.)
+    #model = TwoSample(statistic="Lepage", threshold=3.1)
+
+    # model.process(data)
+    # change_points = model.changepoints
+
+    if arguments['variable_size_bins']:
+        start_pos = 0
+        snps_haplotype_mean = []
+        snps_haplotype_len = []
+        snps_haplotype_pos = []
+        snps_haplotype_pos.append(0)
+        for index, point in enumerate(change_points):
+            i = start[point-1]
+
+            sub_list = hp_data[start_pos:i]
+            if sub_list:
+                snps_haplotype_mean.append(statistics.median(sub_list))
+                snps_haplotype_len.append(len(sub_list))
+                snps_haplotype_pos.append(i)
+            start_pos = point + 1
+
+        for i, point in enumerate(snps_haplotype_pos):
+            fig.add_vline(x=point, line_width=1, line_dash="dash", line_color=color)
+    else:
+        for i, point in enumerate(change_points):
+            fig.add_vline(x=point*arguments['bin_size'], line_width=1, line_dash="dash", line_color=color)
 
     #plots_add_markers_lines(fig)
     plots_layout_settings(fig, chrom, arguments, ends[-1:][0], arguments['cut_threshold'])
 
     print_chromosome_html(fig, chrom + '_hp_'  + str(hp), html_graphs, arguments['out_dir_plots'])
     html_graphs.write("  <object data=\"" + chrom + '_hp_'  + str(hp)  + '.html' + "\" width=\"700\" height=\"420\"></object>" + "\n")
-
 
 
 def plot_bins_histograms(hp1,hp2, arguments, chrom):

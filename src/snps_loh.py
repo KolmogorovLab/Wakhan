@@ -11,7 +11,40 @@ from utils import csv_df_chromosomes_sorter
 from extras import get_contigs_list
 from plots import add_scatter_trace_coverage, print_chromosome_html, plots_add_markers_lines, plots_layout_settings,\
 whole_genome_combined_df, copy_number_plots_per_chromosome, print_genome_pdf
-from utils import apply_copynumbers, detect_alter_loh_regions, loh_regions_events, write_segments_coverage, write_header_comments
+from utils import detect_alter_loh_regions, loh_regions_events, write_segments_coverage, write_header_comments
+
+def plot_snps_ratios_genome(arguments):
+    if arguments['tumor_vcf']:
+        output_phasesets_file_path = vcf_parse_to_csv_for_snps(arguments['tumor_vcf'])
+        df_snps_in_csv = csv_df_chromosomes_sorter(output_phasesets_file_path, ['chr', 'pos', 'qual', 'gt', 'dp', 'vaf'])
+
+    chroms = get_contigs_list(arguments['contigs'])
+    df_snps_ratios = []
+
+    for index, chrom in enumerate(chroms):
+        if chrom in chroms:
+            logging.info('Collecting SNPs for chromosome ' + chrom)
+            snps_het, snps_homo, snps_het_pos, snps_homo_pos = get_snps_frquncies(df_snps_in_csv, chrom)
+            if snps_het or snps_homo:
+                if snps_homo_pos and snps_het_pos:
+                    last_snp_pos = snps_homo_pos[-1:][0] if snps_homo_pos[-1:][0] > snps_het_pos[-1:][0] else \
+                    snps_het_pos[-1:][0]
+                elif snps_het_pos:
+                    last_snp_pos = snps_het_pos[-1:][0]
+                elif snps_homo_pos:
+                    last_snp_pos = snps_homo_pos[-1:][0]
+
+                ref_start_values = [i for i in range(0, last_snp_pos, arguments['bin_size_snps'])]
+                ref_start_values_updated, snps_het_counts, snps_homo_counts, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends = get_snps_frquncies_coverage(
+                    df_snps_in_csv, chrom, ref_start_values, arguments['bin_size_snps'])
+
+                chr_list = [chrom for ch in range(len(ref_start_values_updated))]
+                df_snps_ratios_chrom = pd.DataFrame(list(zip(chr_list, ref_start_values_updated, snps_het_counts, snps_homo_counts)),
+                    columns=['chr', 'start', 'hets_ratios', 'homos_ratios'])
+
+                df_snps_ratios.append(df_snps_ratios_chrom)
+
+    loh_plots_genome(df_snps_in_csv, pd.concat(df_snps_ratios), arguments)
 def plot_snps_frequencies(arguments, df, df_segs_hp1_w, df_segs_hp2_w, centers, integer_fractional_means):
     if not os.path.isdir(arguments['out_dir_plots']+'/variation_plots'):
         os.mkdir(arguments['out_dir_plots']+'/variation_plots')
@@ -70,7 +103,7 @@ def plot_snps_frequencies(arguments, df, df_segs_hp1_w, df_segs_hp2_w, centers, 
         write_header_comments('chr\tstart\tend\n', '#chr: chromosome number\n#start: start address for LOH region\n#end: end address for LOH region\n', arguments['genome_name'] + '_loh_segments.bed', arguments)
         write_segments_coverage(loh_regions_events_all, arguments['genome_name'] + '_loh_segments.bed', arguments)
 
-        loh_plots_genome(df_snps_in_csv, pd.concat(df_snps_ratios), arguments)
+        #loh_plots_genome(df_snps_in_csv, pd.concat(df_snps_ratios), arguments)
 
     html_graphs.write("</body></html>")
 

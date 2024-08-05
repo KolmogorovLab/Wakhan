@@ -361,7 +361,7 @@ def squash_regions(region, bin_size):
     region_ends = sorted(region_ends)
 
     return region_starts, region_ends
-def snps_mean(df_snps, ref_start_values, chrom, arguments):
+def snps_mean(df_snps, ref_start_values, ref_end_values, chrom, arguments):
     df = df_snps[df_snps['chr'] == chrom]
 
     #df = dict(tuple(df_snps.groupby('hp')))
@@ -372,8 +372,8 @@ def snps_mean(df_snps, ref_start_values, chrom, arguments):
 
     snps_haplotype1_mean=[]
     total=0
-    for index, i in enumerate(ref_start_values):
-        len_cov= len(df[(df.pos >= i) & (df.pos < i + arguments['bin_size'])])
+    for index, (i,j) in enumerate(zip(ref_start_values,ref_end_values)):
+        len_cov= len(df[(df.pos >= i) & (df.pos < i + (j-i))])
         if len_cov ==0:
             snps_haplotype1_mean.append(0)
         else:
@@ -386,8 +386,8 @@ def snps_mean(df_snps, ref_start_values, chrom, arguments):
 
     snps_haplotype2_mean = []
     total = 0
-    for index, i in enumerate(ref_start_values):
-        len_cov= len(df[(df.pos >= i) & (df.pos < i + arguments['bin_size'])])
+    for index, (i,j) in enumerate(zip(ref_start_values, ref_end_values)):
+        len_cov= len(df[(df.pos >= i) & (df.pos < i + (j-i))])
         if len_cov ==0:
             snps_haplotype2_mean.append(0)
         else:
@@ -512,7 +512,9 @@ def vcf_parse_to_csv_for_het_phased_snps_phasesets(input_vcf):
     return output_csv
 
 def get_snp_segments(arguments, target_bam, thread_pool):
-    basefile = pathlib.Path(arguments['normal_phased_vcf']).stem
+
+    normal_vcf = os.path.join(arguments['out_dir_plots'], 'phasing_output', arguments['genome_name']+'.rephased.vcf.gz')
+    basefile = pathlib.Path(normal_vcf).stem
     output_csv = basefile + '_het_snps.csv'
     output_csv = f"{os.path.join('data', output_csv)}"
 
@@ -530,11 +532,11 @@ def get_snp_segments(arguments, target_bam, thread_pool):
 
     logging.info('bcftools -> Query for het SNPs and creating a %s CSV file', output_csv)
     # bcftools query for phasesets and GT,DP,VAF
-    cmd = ['bcftools', 'query', '-i', 'GT="het"', '-f',  '%CHROM\t%POS\t%REF\t%ALT\t[%GT]\n', arguments['normal_phased_vcf'], '-o', output_csv] #
+    cmd = ['bcftools', 'query', '-i', 'GT="het"', '-f',  '%CHROM\t%POS\t%REF\t%ALT\t[%GT]\n', normal_vcf, '-o', output_csv] #
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     process.wait()
 
-    cmd = ['bcftools', 'query', '-i', 'GT="het"', '-f',  '%CHROM\t%POS\n', arguments['normal_phased_vcf'], '-o', output_bed] #
+    cmd = ['bcftools', 'query', '-i', 'GT="het"', '-f',  '%CHROM\t%POS\n', normal_vcf, '-o', output_bed] #
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     process.wait()
 

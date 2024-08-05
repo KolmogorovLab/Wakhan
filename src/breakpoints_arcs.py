@@ -1,6 +1,16 @@
 import numpy as np
 
-def get_all_breakpoints_data(edges, edges_chr, height):
+def get_all_breakpoints_data(edges, edges_chr, height, path):
+    from vcf_parser import VCFParser
+    my_parser = VCFParser(infile=path, split_variants=True, check_info=True)
+    bp_junctions_inv = [[]]
+    for variant in my_parser:
+        if "INV" in variant['ID']:
+            if variant['CHROM'] == 'chrX' or variant['CHROM'] == 'chrY':
+                continue
+            else:
+                bp_junctions_inv.append([variant['CHROM'], int(variant['POS'])])
+
     #keys = sorted(set(interact_strength))
     #widths = [0.5 + k * 0.25 for k in range(5)] + [2 + k * 0.25 for k in range(4)] + [3, 3.25, 3.75, 4.25, 5, 5.25, 7]
     #d = dict(zip(keys, widths))
@@ -22,16 +32,19 @@ def get_all_breakpoints_data(edges, edges_chr, height):
     colors = []
     widths = []
     edges_chr = [edges_chr[i] + (edges_chr[i + 1] if i + 1 < n else []) for i in range(0, n, 2)]
+    #BNDs and INVs
     for i, (a,b,c,d,e,f) in enumerate(edges_chr):
         hover_info.append(a+':'+str(b)+'-'+d+':'+str(e))
-        if c == 1 and f == 1:
-            colors.append('#DC3A3A')
-        elif c == 2 and f == 2:
-            colors.append('#1D28C3')
+        # if c == 1 and f == 1:
+        #     colors.append('#DC3A3A')
+        # elif c == 2 and f == 2:
+        #     colors.append('#1D28C3')
+        # else:
+        #     colors.append('#737373')
+        if [a,b] in bp_junctions_inv:
+            colors.append('#2830DE')
         else:
             colors.append('#737373')
-
-
 
     #edges = [[0, 1000000], [0, 100000000], [0, 190000000], [358000001, 234000000], [68754445, 345000000], [6577777, 462000000]]
     #edges = [[358000001, 234000000]]
@@ -103,89 +116,4 @@ def Rational_Bezier_curve(a, nr):
     discrete_curve = Bezier_curve(a, nr )
     return [p[:2]/p[2] for p in discrete_curve]
 
-class bps_sample(object):
-    __slots__ = ('bp_1_id', 'bp_1_pos', 'bp_1_hp', 'bp_2_id', 'bp_2_pos', 'bp_2_hp', 'status')
-    def __init__(self, bp_1_id, bp_1_pos, bp_1_hp, bp_2_id, bp_2_pos, bp_2_hp, status):
-        self.bp_1_id = bp_1_id
-        self.bp_1_pos = bp_1_pos
-        self.bp_2_id = bp_2_id
-        self.bp_2_pos = bp_2_pos
-        self.bp_1_hp = bp_1_hp
-        self.bp_2_hp = bp_2_hp
-        self.status = False
 
-    def call_bp_cn(self):
-        #call CN on BP and check if overlaps
-
-        #if no_overlaps:
-        #    self.status = False
-        print('call CN on BP and check if overlaps')
-        self.status = True
-
-    def bp_cn_overlaps(self):
-        self.call_bp_cn()
-        if self.status == None:
-            return False
-        else:
-            return f"{self.bp_1_id}:{self.bp_1_pos}:{self.bp_1_hp}-{self.bp_2_id}:{self.bp_2_pos}:{self.bp_2_hp}"
-
-def sv_vcf_bps_cn_check(path, df_segs_hp1, df_segs_hp2):
-    #########################################
-    from vcf_parser import VCFParser
-    my_parser = VCFParser(infile=path, split_variants=True, check_info=True)
-    from collections import defaultdict
-    sample_list = defaultdict(list)
-    sample_single_list = defaultdict(list)
-    bp_junctions = [[]]
-    bp_junctions_chr = [[]]
-    for variant in my_parser:
-        if "INV" in variant['ID'] or "INS" in variant['ID']:
-            continue
-        elif "BND" in variant['ID']:
-            s = variant['ALT']
-            for ch in ['[', ']', 'N']:
-                if ch in s:
-                    s = s.replace(ch, '')
-            chr2_id = s.split(':')[0]
-            chr2_end = int(s.split(':')[1])
-            hp = 0
-            if 'HP' in variant['info_dict']:
-                hp = int(variant['info_dict']['HP'][0])
-
-
-
-
-            # for k, v in variant['info_dict'].items():
-            #     if k == 'CHR2':
-            #         chr2_id = v[0]
-            #     elif k == 'END':
-            #         chr2_end = v[0]
-            if chr2_id == '' or chr2_id == 'chrX' or chr2_id == 'chrY' or variant['CHROM'] == 'chrX' or variant['CHROM'] == 'chrY' or \
-                    (variant['CHROM'] == chr2_id and chr2_end - int(variant['POS']) < 50000):
-                continue
-            else:
-                sample_list[variant['ID']] = bps_sample(variant['CHROM'], int(variant['POS']), hp, chr2_id, chr2_end, hp, False)
-        else:
-            hp = 0
-            if 'HP' in variant['info_dict']:
-                hp = int(variant['info_dict']['HP'][0])
-
-            if abs((int(variant['info_dict']['SVLEN'][0]) + int(variant['POS'])) - int(variant['POS'])) < 50000 or \
-                    variant['CHROM'] == 'chrX' or variant['CHROM'] == 'chrY':
-                continue
-            sample_single_list[variant['ID']] = bps_sample(variant['CHROM'], int(variant['POS']), hp, variant['CHROM'],  int(variant['info_dict']['SVLEN'][0]) + int(variant['POS']) + 1, hp, False )
-
-    for j, dict in enumerate(sample_list.items()):
-        if dict[1].bp_1_id == dict[1].bp_2_id and dict[1].bp_1_pos == dict[1].bp_2_pos:
-            continue
-        bp_junctions_chr.append([dict[1].bp_1_id, dict[1].bp_1_pos, dict[1].bp_1_hp])
-        bp_junctions_chr.append([dict[1].bp_2_id, dict[1].bp_2_pos, dict[1].bp_2_hp])
-
-    for j, dict in enumerate(sample_list.items()):
-        if dict[1].bp_1_id == dict[1].bp_2_id and dict[1].bp_1_pos == dict[1].bp_2_pos:
-            continue
-        bp_junctions.append([dict[1].bp_1_id, dict[1].bp_1_pos])
-        bp_junctions.append([dict[1].bp_2_id, dict[1].bp_2_pos])
-
-    return bp_junctions[1:], bp_junctions_chr[1:]
-    #########################################

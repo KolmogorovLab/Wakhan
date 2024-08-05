@@ -8,20 +8,22 @@ import logging
 import os
 import pandas as pd
 
+from hapcorrect.src.main_hapcorrect import main_process
+
 from multiprocessing import Pool
 from collections import defaultdict
 from bam_processing import get_all_reads_parallel, update_coverage_hist, get_segments_coverage, haplotype_update_all_bins_parallel, get_snps_frequencies
-from cnvlib import descriptives
-from cnvlib import cluster
+#from cnvlib import descriptives
+#from cnvlib import cluster
 from utils import get_chromosomes_bins, write_segments_coverage, write_segments_coverage_dict, csv_df_chromosomes_sorter,\
-    apply_copynumbers, seperate_dfs_coverage, flatten_smooth, get_contigs_list, write_copynumber_segments_csv, integer_fractional_cluster_means, \
-    adjust_diversified_segments
+    seperate_dfs_coverage, flatten_smooth, get_contigs_list, write_copynumber_segments_csv, integer_fractional_cluster_means, \
+    adjust_diversified_segments, get_chromosomes_bins_bam
 from plots import coverage_plots_chromosomes, copy_number_plots_genome, plots_genome_coverage, copy_number_plots_chromosomes, copy_number_plots_genome_breakpoints_unphased, \
-    copy_number_plots_genome_breakpoints_unphased_test, copy_number_plots_genome_breakpoints_test
+    copy_number_plots_genome_breakpoints_unphased_test, copy_number_plots_genome_breakpoints_test, copy_number_plots_genome_details
 from vcf_processing import vcf_parse_to_csv_for_het_phased_snps_phasesets
-from snps_loh import plot_snps_frequencies
+from snps_loh import plot_snps_frequencies, plot_snps_ratios_genome
 from phasing_correction import generate_phasesets_bins
-from breakpoints_arcs import sv_vcf_bps_cn_check
+from optimization import peak_detection_optimization
 
 #remove
 from utils import get_chromosomes_bins_replica
@@ -47,7 +49,7 @@ def main():
 
     parser.add_argument("--target-bam", dest="target_bam",
                         metavar="path", required=True, default=None, nargs="+",
-                        help="path to one or1/4 multiple target haplotagged bam files (must be indexed)")
+                        help="path to one or 1/4 multiple target haplotagged bam files (must be indexed)")
     parser.add_argument("--control-bam", dest="control_bam",
                         metavar="path", required=False, default=None, nargs="+",
                         help="path to one or multiple control haplotagged bam files (must be indexed)")
@@ -66,9 +68,13 @@ def main():
                         metavar="path", required=False, default=None,
                         help="Path to tumor VCF for LOH detection")
 
-    parser.add_argument("--breakpoints-file", dest="breakpoints_file",
+    parser.add_argument("--breakpoints", dest="breakpoints",
                         metavar="path", required=False, default=None,
-                        help="Path to breakpoints file to plot inconjunction with coverage plots")
+                        help="Path to breakpoints/SVs VCF file")
+    parser.add_argument("--cpd-internal-segments", dest="cpd_internal_segments",
+                        metavar="path", required=False, default=None,
+                        help="change point detection algo for more precise segments after breakpoint segments")
+
 
     parser.add_argument("--genome-name", dest="genome_name",
                         required=True, default=None,
@@ -125,6 +131,19 @@ def main():
 
     parser.add_argument('--enable-debug', dest="enable_debug", required=False,
                         default=False, help="Enabling debug")
+
+    parser.add_argument('--rephase-normal-vcf', dest="rephase_normal_vcf", required=False,
+                        default=False, help="enable rephase normal vcf")
+    parser.add_argument('--rephase-tumor-vcf', dest="rephase_tumor_vcf", required=False,
+                        default=False, help="enable rephase tumor vcf")
+    parser.add_argument('--rehaplotag-tumor-bam', dest="rehaplotag_tumor_bam", required=False,
+                        default=False, help="enable rehaplotag tumor bam")
+
+    parser.add_argument('--variable-size-bins', dest="variable_size_bins", required=False,
+                        default=False, help="enable variable size bins to use breakpoints")
+    parser.add_argument('--enable-simple-heuristics', dest="enable_simple_heuristics", required=False,
+                        default=False, help="enable simple heuristics")
+
     parser.add_argument("--bins-cluster-means", dest="bins_cluster_means",
                         default=None, required=False, type=lambda s: [int(item) for item in s.split(',')],
                         help="bins cluster means")
@@ -161,7 +180,8 @@ def main():
         "out_dir_plots": args.out_dir_plots,
         "normal_phased_vcf": args.normal_phased_vcf,
         "tumor_vcf": args.tumor_vcf,
-        "breakpoints_file": args.breakpoints_file,
+        "breakpoints": args.breakpoints,
+        "cpd_internal_segments": args.cpd_internal_segments,
         "breakpoints_enable": args.breakpoints_enable,
         "genome_name": args.genome_name,
         "bin_size": args.bin_size,
@@ -177,6 +197,11 @@ def main():
         "dryrun": args.dryrun,
         "dryrun_path": args.dryrun_path,
         "enable_debug": args.enable_debug,
+        "variable_size_bins": args.variable_size_bins,
+        "enable_simple_heuristics": args.enable_simple_heuristics,
+        "rephase_normal_vcf": args.rephase_normal_vcf,
+        "rephase_tumor_vcf": args.rephase_tumor_vcf,
+        "rehaplotag_tumor_bam": args.rehaplotag_tumor_bam,
     }
     logging.basicConfig(level=logging.DEBUG)
 
@@ -218,9 +243,14 @@ def main():
         print("Parsed {0} segments".format(len(segments_by_read_bam)), file=sys.stderr)
 
     logging.info('Computing coverage histogram')
-    coverage_histograms = update_coverage_hist(genome_ids, ref_lengths, segments_by_read, args.min_mapping_quality,
-                                               args.max_read_error, arguments)
+    coverage_histograms = update_coverage_hist(genome_ids, ref_lengths, segments_by_read, args.min_mapping_quality, args.max_read_error, arguments)
     del segments_by_read
+
+    #get_chromosomes_bins(args.target_bam[0], arguments['bin_size'], arguments)
+
+    #sv_vcf_bps_cn_check('/home/rezkuh/gits/data/1954' + '/severus_1954.vcf')
+
+    #plot_snps_ratios_genome(arguments)
 
     if arguments['dryrun']:
         if arguments['without_phasing']:
@@ -230,14 +260,12 @@ def main():
 
             csv_df_coverage = csv_df_chromosomes_sorter(arguments['dryrun_path'] + arguments['genome_name'] + '/coverage.csv', ['chr', 'start', 'end', 'coverage'])
             csv_df_phasesets = csv_df_chromosomes_sorter(arguments['dryrun_path'] + arguments['genome_name'] + '/coverage_ps.csv', ['chr', 'start', 'end', 'coverage'])
-
         else:
             csv_df_phasesets = csv_df_chromosomes_sorter(arguments['dryrun_path'] + arguments['genome_name'] + '/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
             csv_df_coverage = csv_df_chromosomes_sorter(arguments['dryrun_path'] + arguments['genome_name'] + '/coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
     else:
-
         logging.info('Computing coverage for bins')
-        segments = get_chromosomes_bins(args.target_bam[0], arguments['bin_size'], arguments)
+        segments = get_chromosomes_bins_bam(args.target_bam[0], arguments['bin_size'], arguments)
         segments_coverage = get_segments_coverage(segments, coverage_histograms)
         logging.info('Writing coverage for bins')
         write_segments_coverage_dict(segments_coverage, 'coverage.csv')
@@ -258,16 +286,20 @@ def main():
         csv_df_phasesets = csv_df_chromosomes_sorter('data/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
         csv_df_coverage = csv_df_chromosomes_sorter('data/coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
 
+    if arguments['phaseblock_flipping_enable']:
+       main_process() #hapcorrect
+       csv_df_coverage = csv_df_chromosomes_sorter('data_phasing/'+arguments['genome_name']+'_coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
+
     #TODO add chrX,chrY support later on
-    csv_df_coverage = csv_df_coverage.drop(csv_df_coverage[(csv_df_coverage.chr == "chrX") | (csv_df_coverage.chr == "chrY")].index)
-    csv_df_phasesets = csv_df_phasesets.drop(csv_df_phasesets[(csv_df_phasesets.chr == "chrX") | (csv_df_phasesets.chr == "chrY")].index)
+    #csv_df_coverage = csv_df_coverage.drop(csv_df_coverage[(csv_df_coverage.chr == "chrX") | (csv_df_coverage.chr == "chrY")].index)
+    #csv_df_phasesets = csv_df_phasesets.drop(csv_df_phasesets[(csv_df_phasesets.chr == "chrX") | (csv_df_phasesets.chr == "chrY")].index)
 
     logging.info('Generating coverage plots chromosomes-wise')
-    haplotype_1_values_updated, haplotype_2_values_updated, unphased, csv_df_snps_mean, snps_cpd_means, snps_cpd_means_df = \
+    haplotype_1_values_updated, haplotype_2_values_updated, unphased, csv_df_snps_mean, snps_cpd_means, snps_cpd_points_weights, snps_cpd_means_df = \
         coverage_plots_chromosomes(csv_df_coverage, csv_df_phasesets, arguments, thread_pool)
 
     if arguments['without_phasing'] == False:
-        df_hp1, df_hp2, df_unphased = seperate_dfs_coverage(arguments, csv_df_coverage, haplotype_1_values_updated, haplotype_2_values_updated, unphased)
+        df_hp1, df_hp2, df_unphased = seperate_dfs_coverage(arguments, csv_df_snps_mean, csv_df_snps_mean.hp1.tolist(), csv_df_snps_mean.hp2.tolist(), csv_df_snps_mean.hp3.tolist())
 
     logging.info('Generating optimal clusters plots for bins')
 
@@ -284,29 +316,41 @@ def main():
     ############################################
     #csv_df_snps_mean.to_csv('data/'+arguments['genome_name']+'_snps.csv', sep='\t')
     ############################################
+    df_segs_hp1 = snps_cpd_means_df[0]
+    df_segs_hp2 = snps_cpd_means_df[1]
+
+    centers, subclonals, x_axis, observed_hist = peak_detection_optimization(snps_cpd_means, snps_cpd_points_weights)
+    if arguments['copynumbers_subclonal_enable']:
+        integer_fractional_means = sorted([i for i in range(0, len(centers))] + [i / centers[1] for i in subclonals])  # integer_fractional_cluster_means(arguments, df_segs_hp1, df_segs_hp2, centers)
+        centers = sorted(centers + subclonals)
+    else:
+        integer_fractional_means = sorted([i for i in range(0, len(centers))])
+    df_segs_hp1, df_segs_hp2 = adjust_diversified_segments(centers, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, arguments)
 
     if arguments['without_phasing']:
-        df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, states, centers, stdev = apply_copynumbers(csv_df_coverage, csv_df_coverage.coverage.values.tolist(), csv_df_coverage.coverage.values.tolist(), arguments, snps_cpd_means, snps_cpd_means)
-        integer_fractional_means = integer_fractional_cluster_means(arguments, df_segs_hp1, df_segs_hp2, centers)
-        logging.info('Correcting diversified segments')
-        df_segs_hp1, df_segs_hp2 = adjust_diversified_segments(centers, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, arguments)
-        logging.info('Generating copy number plots chromosomes-wise')
         logging.info('Generating coverage/copy numbers plots genome wide')
         write_copynumber_segments_csv(df_segs_hp1, arguments, centers, integer_fractional_means, None)
-        centers, integer_fractional_centers = copy_number_plots_genome(centers, integer_fractional_means, df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, df_cnr_hp1, arguments)
-        #copy_number_plots_genome_breakpoints_unphased_test(centers, integer_fractional_means, df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, df_cnr_hp1, arguments)
+        copy_number_plots_genome(centers, integer_fractional_means, df_hp1, df_segs_hp1, df_hp2, df_segs_hp2, df_hp1, arguments, x_axis, observed_hist)
+        copy_number_plots_genome_breakpoints_unphased_test(centers, integer_fractional_means, df_hp1, df_segs_hp1, df_hp2, df_segs_hp2, df_hp1, arguments)
     else:
-        df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, states, centers, stdev = apply_copynumbers(csv_df_snps_mean, csv_df_snps_mean.hp1.values.tolist(), csv_df_snps_mean.hp2.values.tolist(), arguments, snps_cpd_means, snps_cpd_means)
+        #df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, states, centers, stdev = apply_copynumbers(csv_df_snps_mean, csv_df_snps_mean.hp1.values.tolist(), csv_df_snps_mean.hp2.values.tolist(), arguments, snps_cpd_means, snps_cpd_means)
         logging.info('Generating coverage/copy numbers plots genome wide')
-        integer_fractional_means = integer_fractional_cluster_means(arguments, df_segs_hp1, df_segs_hp2, centers)
-        #df_segs_hp1, df_segs_hp2 = adjust_diversified_segments(centers, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, arguments)
+
         write_copynumber_segments_csv(df_segs_hp1, arguments, centers, integer_fractional_means, 1)
         write_copynumber_segments_csv(df_segs_hp2, arguments, centers, integer_fractional_means, 2)
-        copy_number_plots_genome(centers, integer_fractional_means, df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, df_unphased, arguments)
-        #copy_number_plots_genome_breakpoints_test(centers, integer_fractional_means, df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, df_cnr_hp1, arguments)
+
+        copy_number_plots_genome(centers, integer_fractional_means, df_hp1, df_segs_hp1, df_hp2, df_segs_hp2, df_unphased, arguments, x_axis, observed_hist)
+        copy_number_plots_genome_breakpoints_test(centers, integer_fractional_means, df_hp1, df_segs_hp1, df_hp2, df_segs_hp2, df_hp1, arguments)
 
     #SNPs LOH and plots
-    plot_snps_frequencies(arguments, csv_df_snps_mean, df_segs_hp1, df_segs_hp2, centers, integer_fractional_means)
+    if arguments['tumor_vcf']:
+        plot_snps_ratios_genome(arguments)
+        plot_snps_frequencies(arguments, csv_df_snps_mean, df_segs_hp1, df_segs_hp2, centers, integer_fractional_means)
+
+    if os.path.exists('data'):
+        shutil.rmtree('data')
+    if os.path.exists('data_phasing'):
+        shutil.rmtree('data_phasing')
 
     return 0
 
@@ -338,3 +382,13 @@ if __name__ == "__main__":
 
 #Dog data
 #--dryrun True --dryrun-path /home/rezkuh/gits/data/ --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam   --normal-phased-vcf /home/rezkuh/gits/data/OT4/ON2.vcf.gz --tumor-vcf /home/rezkuh/gits/data/OT2/OT2.vcf.gz     --copynumbers-enable True    --genome-name OT2 --out-dir-plots OT2  --cut-threshold 60 --phaseblock-flipping-enable True --phaseblocks-enable True --contigs chr1-38
+
+#--dryrun True --dryrun-path /home/rezkuh/gits/data/ --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --out-dir-plots 1437  --normal-phased-vcf /home/rezkuh/gits/data/1437_re/1437BL.vcf.gz --copynumbers-enable True  --unphased-reads-coverage-enable True  --phaseblocks-enable True   --genome-name 1437  --cut-threshold 150
+
+
+#--dryrun True --dryrun-path /home/rezkuh/gits/data/ --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --out-dir-plots 1937  --normal-phased-vcf /home/rezkuh/gits/data/1937_re/1937BL.vcf.gz --copynumbers-enable True  --unphased-reads-coverage-enable True  --phaseblocks-enable True   --genome-name 1937 --contigs chr1-22,X --cut-threshold 150 --breakpoints /home/rezkuh/gits/data/1937_re/ --cpd-internal-segments True
+#--dryrun True --dryrun-path /home/rezkuh/gits/data/ --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --out-dir-plots colo357_R10  --tumor-vcf /home/rezkuh/gits/data/colo357_R10/colo357.vcf.gz --copynumbers-enable True  --unphased-reads-coverage-enable True  --phaseblocks-enable True   --genome-name colo357_R10 --contigs chr1-22,X --cut-threshold 150 --breakpoints /home/rezkuh/gits/data/colo357_R10/ --cpd-internal-segments True
+#--dryrun True --dryrun-path /home/rezkuh/gits/data/ --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --out-dir-plots R10/colo357_R10  --tumor-vcf /home/rezkuh/gits/data/R10/colo357_R10/colo357.vcf.gz --copynumbers-enable True  --unphased-reads-coverage-enable True  --phaseblocks-enable True   --genome-name R10/colo357_R10 --contigs chr1-22,X --cut-threshold 150 --breakpoints /home/rezkuh/gits/data/R10/colo357_R10/
+
+
+#--dryrun True --dryrun-path /home/rezkuh/gits/data/ --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --out-dir-plots colo357_R10  --copynumbers-enable True  --unphased-reads-coverage-enable True    --genome-name colo357_R10  --cut-threshold 150  --tumor-vcf /home/rezkuh/gits/data/R10/colo357_R10/colo357.vcf.gz  --phaseblock-flipping-enable True --breakpoints /home/rezkuh/gits/data/R10/colo357_R10/

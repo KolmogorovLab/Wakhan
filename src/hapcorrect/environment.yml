@@ -1,0 +1,27 @@
+name: hapcorrect
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python==3.8
+  - samtools>=1.14
+  - bcftools>=1.14
+  - pysam
+  - pyfaidx
+  - numpy
+  - pandas
+  - Bio
+  - scipy
+  - ReportLab==3.6.12
+  - matplotlib
+  - py
+  - plotly
+  - hmmlearn
+  - tqdm>=4.24.0
+  - numba>=0.43.0
+  - nose
+  - scikit-genome==0.0.1
+  - scikit-learn==1.2.0
+  - scipy==1.9.2
+  - matplotlib==3.6.2
