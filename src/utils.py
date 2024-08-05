@@ -6,12 +6,11 @@ import os
 import statistics
 from random import randint
 import ruptures as rpt
+
 from smoothing import smoothing
 #from hmm import call_copynumbers
 from extras import get_contigs_list, sv_vcf_bps_cn_check
 
-
-from pomegranate import HiddenMarkovModel as Model
 
 def get_chromosomes_bins_replica(bam_file, bin_size, arguments):
     bed=[]
