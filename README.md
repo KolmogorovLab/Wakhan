@@ -57,6 +57,7 @@ cd src/
 
 ## For phase-switch errors correction
 Input tumor BAM should be haplotagged with `--phaseblock-flipping-enable True` enabled (default: disabled).
+For segmentation and CN estimation, structural variations/breakpoints VCF is required with `--breakpoints` (default: disabled).
 
 ### Tumor-Normal Mode (requires normal phased VCF)
 ```

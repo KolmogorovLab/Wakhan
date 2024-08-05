@@ -95,7 +95,7 @@ def get_chromosomes_bins(bam_file, bin_size, arguments):
                 start=end+1
                 end+=bin_size
 
-    _,_,_,_, bps, bps_bnd = sv_vcf_bps_cn_check(arguments['breakpoints'] + 'severus_somatic.vcf', arguments)
+    _,_,_,_, bps, bps_bnd = sv_vcf_bps_cn_check(arguments['breakpoints'], arguments)
     bed = update_bins_with_bps(bed, bps, bps_bnd, arguments, region)
     _, bed_1 = update_bins_with_bps_new(bed, bps, bps_bnd, arguments, region)
 

@@ -1450,7 +1450,7 @@ def copy_number_plots_genome_breakpoints_hps_test(centers, integer_fractional_ce
 def copy_number_plots_genome_breakpoints_test(centers, integer_fractional_centers, df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, df_unphased, arguments):
     # TODO genome-wide plots
 
-    coords_single, coords_single_chr, coords, coords_chr, _,_ = sv_vcf_bps_cn_check(arguments['breakpoints'] + 'severus_somatic.vcf', arguments)
+    coords_single, coords_single_chr, coords, coords_chr, _,_ = sv_vcf_bps_cn_check(arguments['breakpoints'], arguments)
 
     lengths = []
     regions = get_chromosomes_regions(arguments)
@@ -1573,8 +1573,8 @@ def copy_number_plots_genome_breakpoints_test(centers, integer_fractional_center
     ###########################################################
     from breakpoints_arcs import get_all_breakpoints_data
 
-    arcs_data = get_all_breakpoints_data(coords, coords_chr, 75, arguments['breakpoints']+'severus_somatic.vcf')
-    arcs_data1 = get_all_breakpoints_data(coords, coords_chr, -75, arguments['breakpoints']+'severus_somatic.vcf')
+    arcs_data = get_all_breakpoints_data(coords, coords_chr, 75, arguments['breakpoints'])
+    arcs_data1 = get_all_breakpoints_data(coords, coords_chr, -75, arguments['breakpoints'])
     # fig = go.Figure(data=arcs_data)
 
     #fig = go.Figure()
