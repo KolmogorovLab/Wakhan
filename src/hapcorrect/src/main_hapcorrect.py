@@ -13,15 +13,15 @@ import pandas as pd
 from multiprocessing import Pool
 from collections import defaultdict
 
-from src.hapcorrect.src.process_bam import get_all_reads_parallel, update_coverage_hist, get_segments_coverage, haplotype_update_all_bins_parallel, get_snps_frequencies, tumor_bam_haplotag
-from src.hapcorrect.src.process_vcf import vcf_parse_to_csv_for_het_phased_snps_phasesets, get_snp_frequencies_segments, snps_frequencies_chrom_mean, get_snps_frquncies_coverage, vcf_parse_to_csv_for_snps, index_vcf, rephase_vcf, get_phasingblocks
-from src.hapcorrect.src.phase_correction import generate_phasesets_bins, phaseblock_flipping, phase_correction_centers, contiguous_phaseblocks, detect_centromeres, flip_phaseblocks_contigous, remove_overlaping_contiguous, switch_inter_phaseblocks_bins
-from src.hapcorrect.src.utils import get_chromosomes_bins, write_segments_coverage, csv_df_chromosomes_sorter, get_snps_frquncies_coverage_from_bam, \
+from hapcorrect.src.process_bam import get_all_reads_parallel, update_coverage_hist, get_segments_coverage, haplotype_update_all_bins_parallel, get_snps_frequencies, tumor_bam_haplotag
+from hapcorrect.src.process_vcf import vcf_parse_to_csv_for_het_phased_snps_phasesets, get_snp_frequencies_segments, snps_frequencies_chrom_mean, get_snps_frquncies_coverage, vcf_parse_to_csv_for_snps, index_vcf, rephase_vcf, get_phasingblocks
+from hapcorrect.src.phase_correction import generate_phasesets_bins, phaseblock_flipping, phase_correction_centers, contiguous_phaseblocks, detect_centromeres, flip_phaseblocks_contigous, remove_overlaping_contiguous, switch_inter_phaseblocks_bins
+from hapcorrect.src.utils import get_chromosomes_bins, write_segments_coverage, csv_df_chromosomes_sorter, get_snps_frquncies_coverage_from_bam, \
                     infer_missing_phaseblocks, df_chromosomes_sorter, is_phasesets_check_simple_heuristics, write_df_csv, loh_regions_events
-from src.hapcorrect.src.extras import get_contigs_list
-from src.hapcorrect.src.plots import plot_coverage_data, change_point_detection, plot_coverage_data_after_correction
-from src.hapcorrect.src.cpd import cpd_positions_means
-from src.hapcorrect.src.loh import detect_loh_centromere_regions, plot_snps
+from hapcorrect.src.extras import get_contigs_list
+from hapcorrect.src.plots import plot_coverage_data, change_point_detection, plot_coverage_data_after_correction
+from hapcorrect.src.cpd import cpd_positions_means
+from hapcorrect.src.loh import detect_loh_centromere_regions, plot_snps
 
 def main_process():
     # default tunable parameters

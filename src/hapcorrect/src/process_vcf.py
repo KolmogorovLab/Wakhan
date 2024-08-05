@@ -9,9 +9,9 @@ import bisect
 import pandas as pd
 from collections import  defaultdict, Counter
 
-from src.hapcorrect.src.utils import write_segments_coverage, csv_df_chromosomes_sorter
-from src.hapcorrect.src.process_bam import process_bam_for_snps_freqs
-from src.hapcorrect.src.smoothing import smoothing
+from hapcorrect.src.utils import write_segments_coverage, csv_df_chromosomes_sorter
+from hapcorrect.src.process_bam import process_bam_for_snps_freqs
+from hapcorrect.src.smoothing import smoothing
 
 import csv
 import multiprocessing

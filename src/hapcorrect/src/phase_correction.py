@@ -2,8 +2,8 @@ import os
 import statistics
 import numpy as np
 import pandas as pd
-from src.hapcorrect.src.utils import csv_df_chromosomes_sorter, write_segments_coverage, merge_regions, get_contigs_list
-from src.hapcorrect.src.process_vcf import squash_regions
+from hapcorrect.src.utils import csv_df_chromosomes_sorter, write_segments_coverage, merge_regions, get_contigs_list
+from hapcorrect.src.process_vcf import squash_regions
 
 def generate_phasesets_bins(bam, path, bin_size, arguments):
     return get_phasesets_bins(bam, path, bin_size, arguments)
