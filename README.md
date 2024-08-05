@@ -73,8 +73,6 @@ If for some reason you have already generated coverage and pileup data from Wakh
 1. Copy `coverage.csv`, `coverage_ps.csv` and `<Your genome name>_SNPs.csv` files from `data/` output dir (it should be in src) of your current run to some separate directory i.e.,  `/home/abc/dry_run_data`.
 2. Then run again the tool with adding this command additional to what you use already: `--dryrun True` `--dryrun-path` <This is the path where you copied CSVs files in step-1, ie. like, `/home/abc/dry_run_data/`>
 
-## Known Issue
-Sometimes in case of higher noise in data, bins are not being clusterd correctly (missing overlapping coverage segments), we plan to use GMM and Kmeans combine to fix this issue, for the time being user can enter possible bins means (looking at the coverage of segments in whole genome plots [like](https://github.com/KolmogorovLab/Wakhan?tab=readme-ov-file#copy-number-segmentation-1) with parameter i,e., `--bins-cluster-means 0,27,42,58,106` )
 
 ## Prerequisite
 This tool requires haplotagged tumor BAM and phased VCF in case tumor-only mode and normal phased VCF in case tumor-normal mode. This can be done through any phasing tools like Margin, Whatshap and Longphase. 
