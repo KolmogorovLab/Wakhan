@@ -262,32 +262,13 @@ def main():
             csv_df_coverage = csv_df_chromosomes_sorter(arguments['dryrun_path'] + arguments['genome_name'] + '/coverage.csv', ['chr', 'start', 'end', 'coverage'])
             csv_df_phasesets = csv_df_chromosomes_sorter(arguments['dryrun_path'] + arguments['genome_name'] + '/coverage_ps.csv', ['chr', 'start', 'end', 'coverage'])
         else:
+            if arguments['phaseblock_flipping_enable']:
+                main_process()  # hapcorrect
             csv_df_phasesets = csv_df_chromosomes_sorter(arguments['dryrun_path'] + arguments['genome_name'] + '/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
             csv_df_coverage = csv_df_chromosomes_sorter(arguments['dryrun_path'] + arguments['genome_name'] + '/coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
-    elif arguments['phaseblock_flipping_enable']:
-        main_process()  # hapcorrect
-        logging.info('Loading coverage (bins) and coverage (phaseblocks) files...')
-        csv_df_phasesets = csv_df_chromosomes_sorter(arguments['out_dir_plots'] + '/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
-        csv_df_coverage = csv_df_chromosomes_sorter(arguments['out_dir_plots'] + '/coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
     else:
-        logging.info('Computing coverage for bins')
-        segments = get_chromosomes_bins_bam(args.target_bam[0], arguments['bin_size'], arguments)
-        segments_coverage = get_segments_coverage(segments, coverage_histograms)
-        logging.info('Writing coverage for bins')
-        write_segments_coverage_dict(segments_coverage, 'coverage.csv', arguments)
-
-        logging.info('Parsing phaseblocks information')
-        if arguments['normal_phased_vcf']:
-            output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(arguments['normal_phased_vcf'])
-        else:
-            output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(arguments['tumor_vcf'])
-        phasesets_segments = generate_phasesets_bins(args.target_bam[0], output_phasesets_file_path, arguments['bin_size'], arguments) #TODO update for multiple bam files
-        logging.info('Computing coverage for phaseblocks')
-        phasesets_coverage = get_segments_coverage(phasesets_segments, coverage_histograms)
-        logging.info('Writing coverage for phaseblocks')
-        write_segments_coverage_dict(phasesets_coverage, 'coverage_ps.csv', arguments)
-        del coverage_histograms
-
+        if arguments['phaseblock_flipping_enable']:
+            main_process()  # hapcorrect
         logging.info('Loading coverage (bins) and coverage (phaseblocks) files...')
         csv_df_phasesets = csv_df_chromosomes_sorter(arguments['out_dir_plots'] + '/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
         csv_df_coverage = csv_df_chromosomes_sorter(arguments['out_dir_plots'] + '/coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])

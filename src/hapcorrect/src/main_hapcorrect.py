@@ -418,7 +418,7 @@ def main_process():
     if arguments["normal_phased_vcf"]:
         get_phasingblocks(arguments["normal_phased_vcf"])
         logging.info('VCF edit for phase change segments')
-        out_vcf = os.path.join(arguments['out_dir_plots'] + 'hapcorrect_output/' +  arguments['genome_name']+'.rephased.vcf.gz')
+        out_vcf = os.path.join(arguments['out_dir_plots'], arguments['genome_name'] + '.rephased.vcf.gz')
         rephase_vcf(csv_df_phase_change_segments, csv_df_phasesets_segments, arguments["normal_phased_vcf"], out_vcf)
         index_vcf(out_vcf)
         get_phasingblocks(out_vcf)
