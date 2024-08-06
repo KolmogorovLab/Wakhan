@@ -317,7 +317,7 @@ def scan_and_update_phaseblocks_switch_errors(chrom, arguments, max_value_index,
                             #if chrom == 'chr3' and 106100001 in internal_bins:
                             #    print('here')
                             dict.append((chrom + '\t' + str(value_ps[0]) + '\t' + str(value_ps[1])))
-                            write_segments_coverage(dict, arguments['genome_name'] + '_phase_change_segments.csv', arguments)
+                            write_segments_coverage(dict, '/hapcorrect_output/' + arguments['genome_name'] + '_phase_change_segments.csv', arguments)
                             #if chrom == 'chr2' and internal_bins[0] > internal_bins[-1] + arguments['bin_size']-1:
                             #    print('here')
                             new_hp2_ps = haplotype_2_values_phasesets[ref_start_values_phasesets.index(value_ps[0])]
@@ -383,7 +383,7 @@ def scan_and_update_phaseblocks_switch_errors(chrom, arguments, max_value_index,
                             #if chrom == 'chr3' and 106100001 in internal_bins:
                             #    print('here')
                             dict.append((chrom + '\t' + str(value_ps[0]) + '\t' + str(value_ps[1])))
-                            write_segments_coverage(dict, arguments['genome_name'] + '_phase_change_segments.csv', arguments)
+                            write_segments_coverage(dict, '/hapcorrect_output/' + arguments['genome_name'] + '_phase_change_segments.csv', arguments)
                             #if chrom == 'chr2' and internal_bins[0] > internal_bins[-1] + arguments['bin_size']-1:
                             #    print('here')
                             new_hp2_ps = haplotype_2_values_phasesets[ref_start_values_phasesets.index(value_ps[0])]
@@ -453,7 +453,7 @@ def scan_and_update_phaseblocks_switch_errors(chrom, arguments, max_value_index,
                             #if chrom == 'chr3' and 106100001 in internal_bins:
                             #    print('here')
                             dict.append((chrom + '\t' + str(value_ps[0]) + '\t' + str(value_ps[1] )))
-                            write_segments_coverage(dict, arguments['genome_name'] + '_phase_change_segments.csv', arguments)
+                            write_segments_coverage(dict, '/hapcorrect_output/' + arguments['genome_name'] + '_phase_change_segments.csv', arguments)
                             #if chrom == 'chr2' and internal_bins[0] > internal_bins[-1] + arguments['bin_size']-1:
                             #    print('here')
                             new_hp2_ps = haplotype_2_values_phasesets[ref_start_values_phasesets.index(value_ps[0])]
@@ -517,7 +517,7 @@ def scan_and_update_phaseblocks_switch_errors(chrom, arguments, max_value_index,
                             # or haplotype_1_values_phasesets[ref_start_values_phasesets.index(value_ps[0])] > haplotype_2_values_phasesets[ref_start_values_phasesets.index(value_ps[0])]: #3-5 bins check, both  sides of phaseblock
                             dict = []
                             dict.append((chrom + '\t' + str(value_ps[0]) + '\t' + str(value_ps[1])))
-                            write_segments_coverage(dict, arguments['genome_name'] + '_phase_change_segments.csv', arguments)
+                            write_segments_coverage(dict, '/hapcorrect_output/' + arguments['genome_name'] + '_phase_change_segments.csv', arguments)
                             #if chrom == 'chr2' and internal_bins[0] > internal_bins[-1] + arguments['bin_size']-1:
                             #    print('here')
                             new_hp2_ps = haplotype_2_values_phasesets[ref_start_values_phasesets.index(value_ps[0])]
@@ -741,7 +741,7 @@ def flip_phaseblocks_contigous(chrom, arguments, ref_start_values, haplotype_1_v
 
                         dict = []
                         dict.append((chrom + '\t' + str(value_ps[0]) + '\t' + str(value_ps[1])))
-                        write_segments_coverage(dict, arguments['genome_name'] + '_phase_change_segments.csv', arguments)
+                        write_segments_coverage(dict, '/hapcorrect_output/' + arguments['genome_name'] + '_phase_change_segments.csv', arguments)
                         #if chrom == 'chr2' and internal_bins[0] > internal_bins[-1] + arguments['bin_size'] - 1:
                         #    print('here')
                         new_hp2_ps = haplotype_2_values_phasesets[ref_start_values_phasesets.index(value_ps[0])]
@@ -785,7 +785,7 @@ def flip_phaseblocks_contigous(chrom, arguments, ref_start_values, haplotype_1_v
                         i = ref_start_values.index(internal_bins[0])
                         dict = []
                         dict.append((chrom + '\t' + str(value_ps[0]) + '\t' + str(value_ps[1])))
-                        write_segments_coverage(dict, arguments['genome_name'] + '_phase_change_segments.csv', arguments)
+                        write_segments_coverage(dict, '/hapcorrect_output/' + arguments['genome_name'] + '_phase_change_segments.csv', arguments)
                         #if chrom == 'chr2' and internal_bins[0] > internal_bins[-1] + arguments['bin_size'] - 1:
                         #    print('here')
                         new_hp2_ps = haplotype_2_values_phasesets[ref_start_values_phasesets.index(value_ps[0])]
@@ -949,7 +949,7 @@ def switch_inter_phaseblocks_bins(chrom, arguments, ref_start_values, haplotype_
                         haplotype_2_values[i] = new_hp1
                         dict = []
                         dict.append((chrom + '\t' + str(bin) + '\t' + str(bin + arguments['bin_size'] - 1)))
-                        write_segments_coverage(dict, arguments['genome_name'] + '_phase_change_segments.csv', arguments)
+                        write_segments_coverage(dict, '/hapcorrect_output/' + arguments['genome_name'] + '_phase_change_segments.csv', arguments)
                 elif inter_phaseblocks_hp == 2:
                     if haplotype_1_values[i] > haplotype_2_values[i]:
                         new_hp2 = haplotype_2_values[i]
@@ -958,7 +958,7 @@ def switch_inter_phaseblocks_bins(chrom, arguments, ref_start_values, haplotype_
                         haplotype_2_values[i] = new_hp1
                         dict = []
                         dict.append((chrom + '\t' + str(bin) + '\t' + str(bin + arguments['bin_size'] - 1)))
-                        write_segments_coverage(dict, arguments['genome_name'] + '_phase_change_segments.csv', arguments)
+                        write_segments_coverage(dict, '/hapcorrect_output/' + arguments['genome_name'] + '_phase_change_segments.csv', arguments)
                 i = i +1
 
     return haplotype_1_values, haplotype_2_values

@@ -6,9 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="d55f6c14-a9d2-4fc8-a2b4-3002ce70ef44" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/hapcorrect/src/main_hapcorrect.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/hapcorrect/src/main_hapcorrect.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/hapcorrect/src/phase_correction.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/hapcorrect/src/phase_correction.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -105,7 +103,7 @@
       <workItem from="1710533805809" duration="11130000" />
       <workItem from="1710735067428" duration="199309000" />
       <workItem from="1713097553017" duration="157814000" />
-      <workItem from="1722922798940" duration="9486000" />
+      <workItem from="1722922798940" duration="10852000" />
     </task>
     <servers />
   </component>
