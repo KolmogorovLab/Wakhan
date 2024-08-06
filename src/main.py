@@ -231,20 +231,21 @@ def main():
 
     thread_pool = Pool(args.threads)
 
-    segments_by_read = defaultdict(list)
-    genome_ids = []
-    for bam_file in all_bams:
-        genome_id = os.path.basename(bam_file)
-        genome_ids.append(genome_id)
-        print("Parsing reads from", genome_id, file=sys.stderr)
-        segments_by_read_bam = get_all_reads_parallel(bam_file, thread_pool, ref_lengths,
-                                                      args.min_mapping_quality, genome_id, MIN_SV_SIZE)
-        segments_by_read.update(segments_by_read_bam)
-        print("Parsed {0} segments".format(len(segments_by_read_bam)), file=sys.stderr)
+    if not arguments['phaseblock_flipping_enable'] and not arguments['dryrun']:
+        segments_by_read = defaultdict(list)
+        genome_ids = []
+        for bam_file in all_bams:
+            genome_id = os.path.basename(bam_file)
+            genome_ids.append(genome_id)
+            print("Parsing reads from", genome_id, file=sys.stderr)
+            segments_by_read_bam = get_all_reads_parallel(bam_file, thread_pool, ref_lengths,
+                                                          args.min_mapping_quality, genome_id, MIN_SV_SIZE)
+            segments_by_read.update(segments_by_read_bam)
+            print("Parsed {0} segments".format(len(segments_by_read_bam)), file=sys.stderr)
 
-    logging.info('Computing coverage histogram')
-    coverage_histograms = update_coverage_hist(genome_ids, ref_lengths, segments_by_read, args.min_mapping_quality, args.max_read_error, arguments)
-    del segments_by_read
+        logging.info('Computing coverage histogram')
+        coverage_histograms = update_coverage_hist(genome_ids, ref_lengths, segments_by_read, args.min_mapping_quality, args.max_read_error, arguments)
+        del segments_by_read
 
     #get_chromosomes_bins(args.target_bam[0], arguments['bin_size'], arguments)
 

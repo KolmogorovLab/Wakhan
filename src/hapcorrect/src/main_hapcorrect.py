@@ -407,7 +407,7 @@ def main_process():
 
     html_graphs.write("</body></html>")
 
-    write_segments_coverage(loh_regions_events_all, arguments['genome_name'] + '_loh_segments.csv')
+    write_segments_coverage(loh_regions_events_all, arguments['genome_name'] + '_loh_segments.csv', arguments)
     write_df_csv(pd.concat(start_values_phasesets_contiguous_all), arguments['out_dir_plots'] + '/hapcorrect_output/'+arguments['genome_name'] + '_phasesets.csv')
     write_df_csv(pd.concat(df_updated_coverage), arguments['out_dir_plots'] + '/hapcorrect_output/' + arguments['genome_name'] + '_coverage_hapcorrect.csv')
 
