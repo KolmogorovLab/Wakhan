@@ -263,6 +263,11 @@ def main():
         else:
             csv_df_phasesets = csv_df_chromosomes_sorter(arguments['dryrun_path'] + arguments['genome_name'] + '/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
             csv_df_coverage = csv_df_chromosomes_sorter(arguments['dryrun_path'] + arguments['genome_name'] + '/coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
+    elif arguments['phaseblock_flipping_enable']:
+        main_process()  # hapcorrect
+        logging.info('Loading coverage (bins) and coverage (phaseblocks) files...')
+        csv_df_phasesets = csv_df_chromosomes_sorter(arguments['out_dir_plots'] + '/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
+        csv_df_coverage = csv_df_chromosomes_sorter(arguments['out_dir_plots'] + '/coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
     else:
         logging.info('Computing coverage for bins')
         segments = get_chromosomes_bins_bam(args.target_bam[0], arguments['bin_size'], arguments)
@@ -285,10 +290,6 @@ def main():
         logging.info('Loading coverage (bins) and coverage (phaseblocks) files...')
         csv_df_phasesets = csv_df_chromosomes_sorter(arguments['out_dir_plots'] + '/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
         csv_df_coverage = csv_df_chromosomes_sorter(arguments['out_dir_plots'] + '/coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
-
-    if arguments['phaseblock_flipping_enable']:
-       main_process() #hapcorrect
-       csv_df_coverage = csv_df_chromosomes_sorter('hapcorrect_output/' + arguments['genome_name'] + '_coverage_hapcorrect.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
 
     #TODO add chrX,chrY support later on
     #csv_df_coverage = csv_df_coverage.drop(csv_df_coverage[(csv_df_coverage.chr == "chrX") | (csv_df_coverage.chr == "chrY")].index)
