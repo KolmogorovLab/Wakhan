@@ -1053,7 +1053,7 @@ def copy_number_plots_genome_breakpoints_hps_test(centers, integer_fractional_ce
     df_segs_hp2_ = []
     df_genes_1_ = []
     df_genes_2_ = []
-    df_genes = csv_df_chromosomes_sorter("CancerGenes.tsv", ['chr','start','end','gene','size'])
+    df_genes = csv_df_chromosomes_sorter("annotations/CancerGenes.tsv", ['chr','start','end','gene','size'])
     genestart_1 = []
     genestart_2 = []
     last_len = 0
@@ -1464,7 +1464,7 @@ def copy_number_plots_genome_breakpoints_test(centers, integer_fractional_center
     df_segs_hp2_ = []
     df_genes_1_ = []
     df_genes_2_ = []
-    df_genes = csv_df_chromosomes_sorter("CancerGenes.tsv", ['chr','start','end','gene','size'])
+    df_genes = csv_df_chromosomes_sorter("annotations/CancerGenes.tsv", ['chr','start','end','gene','size'])
     genestart_1 = []
     genestart_2 = []
     last_len = 0
