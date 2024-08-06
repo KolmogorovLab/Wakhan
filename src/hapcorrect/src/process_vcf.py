@@ -425,7 +425,7 @@ def get_snp_frequencies_segments(arguments, target_bam, thread_pool):
     dataframe_acgt_frequency = csv_df_chromosomes_sorter(output_acgts, ['chr', 'start', 'a', 'c', 'g', 't'], ',')
     dataframe_acgt_frequency = pd.merge(dataframe_snps, dataframe_acgt_frequency, on=['chr', 'start'])
     snp_segments_frequencies = get_snp_segments_frequencies_final(dataframe_acgt_frequency)
-    write_segments_coverage(snp_segments_frequencies, 'snps_frequencies.csv', arguments)
+    write_segments_coverage(snp_segments_frequencies, 'data_phasing/snps_frequencies.csv', arguments)
 
 def get_snp_segments_frequencies_final(dataframe_acgt_frequency):
     snp_segments = dataframe_acgt_frequency.values.tolist()
