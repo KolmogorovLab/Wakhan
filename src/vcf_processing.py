@@ -555,6 +555,8 @@ def get_snp_segments(arguments, target_bam, thread_pool):
     #output_pileups = bam_pileups_snps(output_bed, target_bam, arguments)
     if arguments['dryrun']:
         output_pileups = arguments['dryrun_path'] + arguments['genome_name']+'/'+arguments['genome_name']+'_SNPs.csv'
+    elif arguments['phaseblock_flipping_enable']:
+        output_pileups = arguments['out_dir_plots'] + '/' + arguments['genome_name']+'_SNPs.csv'
     else:
         output_pileups = process_bam_for_snps_freqs(arguments, thread_pool)  # TODO Updated
 

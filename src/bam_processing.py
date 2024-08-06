@@ -345,7 +345,7 @@ def process_bam_for_snps_freqs(arguments, thread_pool):
     beds = split_file(output_csv, arguments['threads'])
     pileups_outputs = process_pileups(output_bam, arguments['reference'], beds, thread_pool)
 
-    output_pileup = f"{os.path.join('data', arguments['genome_name'] + '_SNPs.csv')}"
+    output_pileup = f"{os.path.join(arguments['out_dir_plots'], arguments['genome_name'] + '_SNPs.csv')}"
 
     for i in pileups_outputs:
         with open(i, 'r') as content_file:
