@@ -283,7 +283,7 @@ def main_process():
 
     if arguments['normal_phased_vcf']:
         get_snp_frequencies_segments(arguments, arguments['target_bam'][0], thread_pool)
-        df_snps_frequencies = csv_df_chromosomes_sorter(arguments['out_dir_plots'] + '/data_phasing/snps_frequencies.csv', ['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])
+        df_snps_frequencies = csv_df_chromosomes_sorter(arguments['out_dir_plots'] + '/snps_frequencies.csv', ['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])
         df_snps_frequencies = df_snps_frequencies.drop(df_snps_frequencies[(df_snps_frequencies.chr == "chrX") | (df_snps_frequencies.chr == "chrY")].index)
 
     if arguments['tumor_vcf']:
