@@ -71,8 +71,8 @@ def df_chromosomes_sorter(dataframe, names, sept='\t'):
 def write_df_csv(df, file_name):
     df.to_csv(file_name, sep='\t', index=False, header=False)
 
-def write_segments_coverage(coverage_segments, output):
-    with open('hapcorrect_output/' + output, 'a') as fp:
+def write_segments_coverage(coverage_segments, output, arguments):
+    with open(arguments['out_dir_plots'] + output, 'a') as fp:
         for items in coverage_segments:
             if not items == None:
                 fp.write("%s\n" % items)

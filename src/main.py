@@ -288,7 +288,7 @@ def main():
 
     if arguments['phaseblock_flipping_enable']:
        main_process() #hapcorrect
-       csv_df_coverage = csv_df_chromosomes_sorter('data_phasing/'+arguments['genome_name']+'_coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
+       csv_df_coverage = csv_df_chromosomes_sorter('hapcorrect_output/' + arguments['genome_name'] + '_coverage_hapcorrect.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
 
     #TODO add chrX,chrY support later on
     #csv_df_coverage = csv_df_coverage.drop(csv_df_coverage[(csv_df_coverage.chr == "chrX") | (csv_df_coverage.chr == "chrY")].index)

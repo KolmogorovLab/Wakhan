@@ -256,7 +256,7 @@ def main_process():
         segments = get_chromosomes_bins(args.target_bam[0], arguments['bin_size'], arguments)
         segments_coverage = get_segments_coverage(segments, coverage_histograms)
         logging.info('Writing coverage for bins')
-        write_segments_coverage(segments_coverage, 'coverage.csv')
+        write_segments_coverage(segments_coverage, '/coverage.csv', arguments)
 
         logging.info('Parsing phaseblocks information')
         if arguments['normal_phased_vcf']:
@@ -268,11 +268,11 @@ def main_process():
         phasesets_coverage = get_segments_coverage(phasesets_segments, coverage_histograms)
 
         logging.info('Writing coverage for phaseblocks')
-        write_segments_coverage(phasesets_coverage, 'coverage_ps.csv')
+        write_segments_coverage(phasesets_coverage, '/coverage_ps.csv', arguments)
 
         logging.info('Loading coverage (bins) and coverage (phaseblocks) files...')
-        csv_df_phasesets = csv_df_chromosomes_sorter('data_phasing/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
-        csv_df_coverage = csv_df_chromosomes_sorter('data_phasing/coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
+        csv_df_phasesets = csv_df_chromosomes_sorter(arguments['out_dir_plots'] + '/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
+        csv_df_coverage = csv_df_chromosomes_sorter(arguments['out_dir_plots'] + '/coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
 
         #Missing phaseblocks and coverage added
         #phasesets_coverage_missing = update_phasesets_coverage_with_missing_phasesets(chroms, csv_df_phasesets, args.target_bam[0], coverage_histograms)
@@ -408,17 +408,17 @@ def main_process():
     html_graphs.write("</body></html>")
 
     write_segments_coverage(loh_regions_events_all, arguments['genome_name'] + '_loh_segments.csv')
-    write_df_csv(pd.concat(start_values_phasesets_contiguous_all), 'hapcorrect_output/'+arguments['genome_name'] + '_phasesets.csv')
-    write_df_csv(pd.concat(df_updated_coverage), 'hapcorrect_output/' + arguments['genome_name'] + '_coverage_hapcorrect.csv')
+    write_df_csv(pd.concat(start_values_phasesets_contiguous_all), arguments['out_dir_plots'] + '/hapcorrect_output/'+arguments['genome_name'] + '_phasesets.csv')
+    write_df_csv(pd.concat(df_updated_coverage), arguments['out_dir_plots'] + '/hapcorrect_output/' + arguments['genome_name'] + '_coverage_hapcorrect.csv')
 
-    csv_df_phase_change_segments = csv_df_chromosomes_sorter('hapcorrect_output/' + arguments['genome_name'] + '_phase_change_segments.csv', ['chr', 'start', 'end'])
-    csv_df_phasesets_segments = csv_df_chromosomes_sorter('hapcorrect_output/' + arguments['genome_name'] + '_phasesets.csv', ['chr', 'start'])
-    csv_df_loh_regions = csv_df_chromosomes_sorter('hapcorrect_output/' + arguments['genome_name'] + '_loh_segments.csv', ['chr', 'start', 'end'])
+    csv_df_phase_change_segments = csv_df_chromosomes_sorter(arguments['out_dir_plots'] + '/hapcorrect_output/' + arguments['genome_name'] + '_phase_change_segments.csv', ['chr', 'start', 'end'])
+    csv_df_phasesets_segments = csv_df_chromosomes_sorter(arguments['out_dir_plots'] + '/hapcorrect_output/' + arguments['genome_name'] + '_phasesets.csv', ['chr', 'start'])
+    csv_df_loh_regions = csv_df_chromosomes_sorter(arguments['out_dir_plots'] + '/hapcorrect_output/' + arguments['genome_name'] + '_loh_segments.csv', ['chr', 'start', 'end'])
 
     if arguments["normal_phased_vcf"]:
         get_phasingblocks(arguments["normal_phased_vcf"])
         logging.info('VCF edit for phase change segments')
-        out_vcf = os.path.join('hapcorrect_output/' +  arguments['genome_name']+'.rephased.vcf.gz')
+        out_vcf = os.path.join(arguments['out_dir_plots'] + 'hapcorrect_output/' +  arguments['genome_name']+'.rephased.vcf.gz')
         rephase_vcf(csv_df_phase_change_segments, csv_df_phasesets_segments, arguments["normal_phased_vcf"], out_vcf)
         index_vcf(out_vcf)
         get_phasingblocks(out_vcf)
