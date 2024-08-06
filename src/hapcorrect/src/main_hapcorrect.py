@@ -295,6 +295,8 @@ def main_process():
 
     if not os.path.isdir(arguments['out_dir_plots'] + '/phasing_output'):
         os.mkdir(arguments['out_dir_plots'] + '/phasing_output')
+    if not os.path.isdir(arguments['out_dir_plots'] + '/hapcorrect_output'):
+        os.mkdir(arguments['out_dir_plots'] + '/hapcorrect_output')
 
     filename = f"{os.path.join(arguments['out_dir_plots'], 'phasing_output', 'PHASE_CORRECTION_INDEX.html')}"
     html_graphs = open(filename, 'w')
@@ -406,17 +408,17 @@ def main_process():
     html_graphs.write("</body></html>")
 
     write_segments_coverage(loh_regions_events_all, arguments['genome_name'] + '_loh_segments.csv')
-    write_df_csv(pd.concat(start_values_phasesets_contiguous_all), 'data_phasing/'+arguments['genome_name']+'_phasesets.csv')
-    write_df_csv(pd.concat(df_updated_coverage), 'data_phasing/'+arguments['genome_name']+'_coverage.csv')
+    write_df_csv(pd.concat(start_values_phasesets_contiguous_all), 'hapcorrect_output/'+arguments['genome_name'] + '_phasesets.csv')
+    write_df_csv(pd.concat(df_updated_coverage), 'hapcorrect_output/' + arguments['genome_name'] + '_coverage_hapcorrect.csv')
 
-    csv_df_phase_change_segments = csv_df_chromosomes_sorter('data_phasing/' + arguments['genome_name'] + '_phase_change_segments.csv', ['chr', 'start', 'end'])
-    csv_df_phasesets_segments = csv_df_chromosomes_sorter('data_phasing/' + arguments['genome_name'] + '_phasesets.csv', ['chr', 'start'])
-    csv_df_loh_regions = csv_df_chromosomes_sorter('data_phasing/' + arguments['genome_name'] + '_loh_segments.csv', ['chr', 'start', 'end'])
+    csv_df_phase_change_segments = csv_df_chromosomes_sorter('hapcorrect_output/' + arguments['genome_name'] + '_phase_change_segments.csv', ['chr', 'start', 'end'])
+    csv_df_phasesets_segments = csv_df_chromosomes_sorter('hapcorrect_output/' + arguments['genome_name'] + '_phasesets.csv', ['chr', 'start'])
+    csv_df_loh_regions = csv_df_chromosomes_sorter('hapcorrect_output/' + arguments['genome_name'] + '_loh_segments.csv', ['chr', 'start', 'end'])
 
     if arguments["normal_phased_vcf"]:
         get_phasingblocks(arguments["normal_phased_vcf"])
         logging.info('VCF edit for phase change segments')
-        out_vcf = os.path.join(arguments['out_dir_plots'], 'phasing_output', arguments['genome_name']+'.rephased.vcf.gz')
+        out_vcf = os.path.join('hapcorrect_output/' +  arguments['genome_name']+'.rephased.vcf.gz')
         rephase_vcf(csv_df_phase_change_segments, csv_df_phasesets_segments, arguments["normal_phased_vcf"], out_vcf)
         index_vcf(out_vcf)
         get_phasingblocks(out_vcf)

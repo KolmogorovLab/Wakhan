@@ -4,7 +4,18 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d55f6c14-a9d2-4fc8-a2b4-3002ce70ef44" name="Changes" comment="" />
+    <list default="true" id="d55f6c14-a9d2-4fc8-a2b4-3002ce70ef44" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/CancerGenes.tsv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/bam_processing.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/bam_processing.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/grch38.cen_coord.curated.bed" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/hapcorrect/src/main_hapcorrect.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/hapcorrect/src/main_hapcorrect.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/hapcorrect/src/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/hapcorrect/src/utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/plots.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/plots.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/vcf_processing.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/vcf_processing.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -33,7 +44,7 @@
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "WebServerToolWindowFactoryState": "false",
-    "last_opened_file_path": "//wsl$/Ubuntu/home/rezkuh/gits/backup/342024/Wakhan/Wakhan",
+    "last_opened_file_path": "//wsl$/Ubuntu/home/rezkuh/gits/backup/852024/Wakhan",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -100,6 +111,7 @@
       <workItem from="1710533805809" duration="11130000" />
       <workItem from="1710735067428" duration="199309000" />
       <workItem from="1713097553017" duration="157814000" />
+      <workItem from="1722922798940" duration="2238000" />
     </task>
     <servers />
   </component>

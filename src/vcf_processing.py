@@ -513,7 +513,10 @@ def vcf_parse_to_csv_for_het_phased_snps_phasesets(input_vcf):
 
 def get_snp_segments(arguments, target_bam, thread_pool):
 
-    normal_vcf = os.path.join(arguments['out_dir_plots'], 'phasing_output', arguments['genome_name']+'.rephased.vcf.gz')
+    if arguments['phaseblock_flipping_enable']:
+        normal_vcf = os.path.join(arguments['out_dir_plots'], 'hapcorrect_output', arguments['genome_name']+'.rephased.vcf.gz')
+    else:
+        normal_vcf = arguments['normal_phased_vcf']
     basefile = pathlib.Path(normal_vcf).stem
     output_csv = basefile + '_het_snps.csv'
     output_csv = f"{os.path.join('data', output_csv)}"
@@ -559,7 +562,7 @@ def get_snp_segments(arguments, target_bam, thread_pool):
     dataframe_acgt_frequency = csv_df_chromosomes_sorter(output_acgts, ['chr', 'start', 'a', 'c', 'g', 't'], ',')
     dataframe_acgt_frequency = pd.merge(dataframe_snps, dataframe_acgt_frequency, on=['chr', 'start'])
     snp_segments_frequencies = get_snp_segments_frequencies_final(dataframe_acgt_frequency)
-    write_segments_coverage_dict(snp_segments_frequencies, 'snps_frequencies.csv')
+    write_segments_coverage_dict(snp_segments_frequencies, 'snps_frequencies.csv', arguments)
 
 def get_snp_segments_frequencies_final(dataframe_acgt_frequency):
     snp_segments = dataframe_acgt_frequency.values.tolist()

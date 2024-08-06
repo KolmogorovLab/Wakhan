@@ -163,7 +163,7 @@ def coverage_plots_chromosomes(df, df_phasesets, arguments, thread_pool):
 
     if arguments['normal_phased_vcf']:
         get_snp_segments(arguments, arguments['target_bam'][0], thread_pool)
-        df_snps = csv_df_chromosomes_sorter('data/snps_frequencies.csv', ['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])
+        df_snps = csv_df_chromosomes_sorter(arguments['out_dir_plots'] + '/snps_frequencies.csv', ['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])
         df_snps = df_snps.drop(df_snps[(df_snps.chr == "chrX") | (df_snps.chr == "chrY")].index)
     if arguments['tumor_vcf']: #only for LOH
         output_phasesets_file_path = vcf_parse_to_csv_for_snps(arguments['tumor_vcf'])
@@ -173,7 +173,7 @@ def coverage_plots_chromosomes(df, df_phasesets, arguments, thread_pool):
         df_var_bins, df_var_bins_1 = get_chromosomes_bins(arguments['target_bam'][0], arguments['bin_size'], arguments)
 
     chroms = get_contigs_list(arguments['contigs'])
-    df_centm = csv_df_chromosomes_sorter('grch38.cen_coord.curated.bed', ['chr', 'start', 'end'])
+    df_centm = csv_df_chromosomes_sorter('annotations/grch38.cen_coord.curated.bed', ['chr', 'start', 'end'])
 
     haplotype_1_segs_dfs = [] #pd.DataFrame()
     haplotype_2_segs_dfs = [] #pd.DataFrame()
@@ -710,7 +710,7 @@ def copy_number_plots_genome_breakpoints_unphased_test(centers, integer_fraction
     df_cnr_hp2_ = []
     df_segs_hp2_ = []
     df_genes_ = []
-    df_genes = csv_df_chromosomes_sorter("CancerGenes.tsv", ['chr','start','end','gene','size'])
+    df_genes = csv_df_chromosomes_sorter("annotations/CancerGenes.tsv", ['chr','start','end','gene','size'])
     genestart = []
     last_len = 0
     for i, chrom in enumerate(chroms):

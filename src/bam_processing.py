@@ -306,7 +306,7 @@ def compute_snp_frequency(bam, region):
 
 def process_bam_for_snps_freqs(arguments, thread_pool):
     basefile = pathlib.Path(arguments['target_bam'][0]).stem
-    output_bam = f"{os.path.join('data', basefile + '_reduced.bam')}"
+    output_bam = f"{os.path.join(arguments['out_dir_plots'], basefile + '_reduced.bam')}"
 
     samtools_cmd = ['samtools', 'view', '-@', str(arguments['threads']), '-F', '3844', '-q', '5', '-h', arguments['target_bam'][0]]
     awk_cmd = ['awk', '-v', 'OFS=\t', '{if($0 ~ /^@/){print $0} else {print $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, "*"}}']

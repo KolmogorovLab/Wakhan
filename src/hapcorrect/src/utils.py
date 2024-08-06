@@ -72,7 +72,7 @@ def write_df_csv(df, file_name):
     df.to_csv(file_name, sep='\t', index=False, header=False)
 
 def write_segments_coverage(coverage_segments, output):
-    with open('data_phasing/' + output, 'a') as fp:
+    with open('hapcorrect_output/' + output, 'a') as fp:
         for items in coverage_segments:
             if not items == None:
                 fp.write("%s\n" % items)

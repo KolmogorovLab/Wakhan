@@ -516,8 +516,8 @@ def get_breakpoints(chrom, bp_file_path): #TODO add call in plots
                 break_points.extend([bp_pos1, mid, bp_pos2])
     return break_points
 
-def write_segments_coverage_dict(coverage_segments, output):
-    with open('data/' + output, 'a') as fp:
+def write_segments_coverage_dict(coverage_segments, output, arguments):
+    with open(arguments['out_dir_plots']+ '/' + output, 'a') as fp:
         for items in coverage_segments:
             if not items == None:
                 fp.write("%s\n" % items)
