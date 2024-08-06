@@ -63,12 +63,12 @@ For segmentation to use in CN estimation, structural variations/breakpoints VCF 
 
 ### Tumor-Normal Mode (requires normal phased VCF)
 ```
-python main.py --threads <4> --reference <ref.fa>  --target-bam <data.tumor.bam>  --tumor-vcf <data.tumor.vcf.gz>  --normal-phased-vcf <data.normal_phased.vcf.gz>  --smoothing-enable True --copynumbers-enable True  --unphased-reads-coverage-enable True --phaseblock-flipping-enable True  --genome-name <cellline/dataset name> --cut-threshold <150> --out-dir-plots <genome_abc_output>
+python main.py --threads <4> --reference <ref.fa>  --target-bam <data.tumor.bam>  --tumor-vcf <data.tumor.vcf.gz>  --normal-phased-vcf <data.normal_phased.vcf.gz>  --copynumbers-enable True  --unphased-reads-coverage-enable True --phaseblock-flipping-enable True  --genome-name <cellline/dataset name> --cut-threshold <150> --out-dir-plots <genome_abc_output> --breakpoints <severus-sv-VCF>
 ```
 
 ### Tumor-only (requires tumor phased/haplotagged BAM and phased VCF)
 ```
-python main.py --threads <4> --reference <ref.fa>  --target-bam <data.tumor_haplotagged.bam>  --tumor-vcf <data.tumor_phased.vcf.gz>  --smoothing-enable True --copynumbers-enable True  --unphased-reads-coverage-enable True --phaseblock-flipping-enable True  --genome-name <cellline/dataset name> --cut-threshold <150> --out-dir-plots <genome_abc_output>
+python main.py --threads <4> --reference <ref.fa>  --target-bam <data.tumor_haplotagged.bam>  --tumor-vcf <data.tumor_phased.vcf.gz>  --copynumbers-enable True  --unphased-reads-coverage-enable True --phaseblock-flipping-enable True  --genome-name <cellline/dataset name> --cut-threshold <150> --out-dir-plots <genome_abc_output> --breakpoints <severus-sv-VCF>
 ```
 
 ## Note
