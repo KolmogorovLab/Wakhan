@@ -6,14 +6,8 @@ A tool to analyze haplotype-specific chromosome-scale somatic copy number aberra
 Wakhan takes long-read alignment and phased heterozygous variants as input, and first uses extends the phased blocks, taking
 advantage of the CNA differences between the haplotypes. Wakhan then generates inetractive haplotype-specific coverage plots.    
 
-#### Phasing errors:
-<img width="1373" alt="plots_example" src="examples/images/1.png">
-
-#### Phasing errors correction:
-<img width="1373" alt="plots_example" src="examples/images/2.png">
-
-#### Copy number segmentation:
-<img width="1373" alt="plots_example" src="examples/images/1437.png">
+#### Breakpoints/SVs based segmentation and Copy numbers estimation:
+<img width="1373" alt="plots_example" src="examples/images/1954.png">
 
 [//]: # (#### LOH detection, phasing correction and CopyNumbers profiling &#40;COLO357&#41;:)
 
@@ -27,11 +21,14 @@ advantage of the CNA differences between the haplotypes. Wakhan then generates i
 
 [//]: # (</p>)
 
-#### Copy number segmentation:
-<img width="1373" alt="plots_example" src="examples/images/HG008_CN.png">
+[//]: # (#### Copy number segmentation:)
 
-#### LOH detection
-<img width="1373" alt="plots_example" src="examples/images/HG008_LOH.png">
+[//]: # (<img width="1373" alt="plots_example" src="examples/images/HG008_CN.png">)
+
+[//]: # ()
+[//]: # (#### LOH detection)
+
+[//]: # (<img width="1373" alt="plots_example" src="examples/images/HG008_LOH.png">)
 
 ## Installation (individual packages through conda and pip)
 ```
@@ -53,29 +50,63 @@ conda activate Wakhan
 cd src/
 ```
 
-## Usage 
-
-## For phase-switch errors correction
-To correct phase-switch errors in target BAM, use `--phaseblock-flipping-enable True` enabled (default: disabled).
-
-## For segmentation
-For segmentation to use in CN estimation, structural variations/breakpoints VCF is required with `--breakpoints` (default: disabled).
+## Usage
 
 ### Tumor-Normal Mode (requires normal phased VCF)
 ```
-python main.py --threads <4> --reference <ref.fa>  --target-bam <data.tumor.bam>  --tumor-vcf <data.tumor.vcf.gz>  --normal-phased-vcf <data.normal_phased.vcf.gz>  --copynumbers-enable True  --unphased-reads-coverage-enable True --phaseblock-flipping-enable True  --genome-name <cellline/dataset name> --cut-threshold <150> --out-dir-plots <genome_abc_output> --breakpoints <severus-sv-VCF>
+python main.py --threads <4> --reference <ref.fa>  --target-bam <data.tumor.bam>  --tumor-vcf <data.tumor.vcf.gz>  --normal-phased-vcf <data.normal_phased.vcf.gz>  --genome-name <cellline/dataset name> --cut-threshold <150> --out-dir-plots <genome_abc_output> --breakpoints <severus-sv-VCF>
 ```
 
 ### Tumor-only (requires tumor phased/haplotagged BAM and phased VCF)
 ```
-python main.py --threads <4> --reference <ref.fa>  --target-bam <data.tumor_haplotagged.bam>  --tumor-vcf <data.tumor_phased.vcf.gz>  --copynumbers-enable True  --unphased-reads-coverage-enable True --phaseblock-flipping-enable True  --genome-name <cellline/dataset name> --cut-threshold <150> --out-dir-plots <genome_abc_output> --breakpoints <severus-sv-VCF>
+python main.py --threads <4> --reference <ref.fa>  --target-bam <data.tumor_haplotagged.bam>  --tumor-vcf <data.tumor_phased.vcf.gz> --genome-name <cellline/dataset name> --cut-threshold <150> --out-dir-plots <genome_abc_output> --breakpoints <severus-sv-VCF>
 ```
 
-## Note
-If for some reason you have already generated coverage and pileup data from Wakhan (as pileup takes some time) and want to rerun the tool, you can avoid generating coverage/pileup data again by copying this data and using it again:
-1. Copy `coverage.csv`, `coverage_ps.csv` and `<Your genome name>_SNPs.csv` files from `data/` output dir (it should be in src) of your current run to some separate directory i.e.,  `/home/abc/dry_run_data`.
-2. Then run again the tool with adding this command additional to what you use already: `--dryrun True` `--dryrun-path` <This is the path where you copied CSVs files in step-1, ie. like, `/home/abc/dry_run_data/`>
+[//]: # (## Note)
 
+[//]: # (If for some reason you have already generated coverage and pileup data from Wakhan &#40;as pileup takes some time&#41; and want to rerun the tool, you can avoid generating coverage/pileup data again by copying this data and using it again:)
+
+[//]: # (1. Copy `coverage.csv`, `coverage_ps.csv` and `<Your genome name>_SNPs.csv` files from `data/` output dir &#40;it should be in src&#41; of your current run to some separate directory i.e.,  `/home/abc/dry_run_data`.)
+
+[//]: # (2. Then run again the tool with adding this command additional to what you use already: `--dryrun True` `--dryrun-path` <This is the path where you copied CSVs files in step-1, ie. like, `/home/abc/dry_run_data/`>)
+
+## Examples
+Few cell lines arbitrary phase-switch correction and copy number estimation output with coverage profile is included in the [examples](https://github.com/KolmogorovLab/Wakhan/tree/devel/examples) directory. 
+
+## Required parameters
+* `--reference` Reference file path
+
+* `--target-bam` path to target bam files (must be indexed)
+  
+* `--out-dir-plots` path to output coverage plots
+
+* `--genome-name` genome cellline/sample name to be displayed on plots
+
+* `--normal-phased-vcf` normal phased VCF file to generate het SNPs frequncies pileup for tumor BAM (if tumor-only mode, use phased `--tumor-vcf` instead)
+
+* `--tumor-vcf` VCF file to plot snps frequencies, ratios and LOH regions (Note: phased VCF is required in tumor-only mode)
+
+* `--breakpoints` For segmentation to use in CN estimation, structural variations/breakpoints VCF is required
+
+## Optional parameters
+* `--phaseblock-flipping-enable` enabling phaseblock flipping in coverage plots
+
+* `--phaseblocks-enable` enabling phaseblocks display in coverage plots
+
+* `--contigs` List of contigs (chromosomes, default:chr1-22) to be included in the plots (Note: chrX, chrY support in CNA plots is not included yet) [e.g., chr1-22,X,Y]
+
+* `--without-phasing` enable it if CNA analysis is being performed without phasing 
+
+## Output produced
+* `<genome-name>_genome_copynumber.html`, `<genome-name>_copynumber_breakpoints.html` and `<genome-name>_genome_loh.html`
+
+* `bed_output` It contains copy numbers and LOH (in case tumor VCF is provided) segments in bed format
+
+* `coverage_plots` Haplotype specific coverage plots for chromosomes with option for unphased coverage
+
+* `variation_plots` Copy number plots for chromosomes with segmentation, coverage and LOH/SNPs ratios (in case tumor VCF is provided)
+
+* `phasing_output` Phase-switch error correction plots and phase corrected VCF file (*rephased.vcf.gz)
 
 ## Prerequisite
 This tool requires haplotagged tumor BAM and phased VCF in case tumor-only mode and normal phased VCF in case tumor-normal mode. This can be done through any phasing tools like Margin, Whatshap and Longphase. 
@@ -104,28 +135,3 @@ or
 # Phase and haplotag tumor sample
 pepper_margin_deepvariant call_variant -b tumor.bam -f ref.fasta -o pepper/output -t 56 --ont_r9_guppy5_sup -p pepper --phased_output
 ```
-
-## Examples
-Few cell lines arbitrary phasing output with coverage profile is included in the [examples](https://github.com/KolmogorovLab/Wakhan/tree/devel/examples) directory. 
-
-## Required parameters
-
-* `--target-bam` path to target bam files (must be indexed)
-  
-* `--out-dir-plots` path to output coverage plots
-
-* `--genome-name` genome cellline/sample name to be displayed on plots
-
-* `--normal-phased-vcf` normal phased VCF file to generate het SNPs frequncies pileup for tumor BAM (if tumor-only mode, use phased `--tumor-vcf` instead)
-
-* `--tumor-vcf` VCF file to plot snps frequencies, ratios and LOH regions (Note: phased VCF is required in tumor-only mode)
-
-## Optional parameters
-
-* `--phaseblock-flipping-enable` enabling phaseblock flipping in coverage plots
-
-* `--phaseblocks-enable` enabling phaseblocks display in coverage plots
-
-* `--contigs` List of contigs (chromosomes, default:chr1-22) to be included in the plots (Note: chrX, chrY support in CNA plots is not included yet) [e.g., chr1-22,X,Y]
-
-* `--without-phasing` enable it if CNA analysis is being performed without phasing 

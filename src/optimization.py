@@ -4,13 +4,13 @@ import sys
 import scipy.stats
 import scipy.optimize
 import scipy.signal
-#from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt
 import random
 import numpy as np
 
 # parameters for modeling
 # N_GAUSS = 4
-HIST_RANGE = 0, 100
+HIST_RANGE = 0, 500
 
 def merge_similar_elements(data, threshold):
   """
@@ -159,7 +159,7 @@ def peak_detection_optimization(input_segments, input_weights):
     observed_hist = observed_hist / hist_scale
 
     xx = range(*HIST_RANGE)
-    #plt.bar(xx, observed_hist, color="blue")
+    plt.bar(xx, observed_hist, color="blue")
 
     # peak peaking (independent from optimization approach)
     peaks = scipy.signal.find_peaks_cwt(observed_hist, range(1, 5)).tolist()

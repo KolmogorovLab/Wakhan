@@ -102,12 +102,12 @@ def main_process():
                         default=True, help="Enabling HTML output coverage plots")
 
     parser.add_argument('--unphased-reads-coverage-enable',  dest="unphased_reads_coverage_enable", required=False,
-                        default=False, help="Enabling unphased reads coverage output in plots")
+                        default=True, help="Enabling unphased reads coverage output in plots")
     parser.add_argument('--without-phasing', dest="without_phasing", required=False,
                         default=False, help="Enabling coverage and copynumbers without phasing in plots")
 
     parser.add_argument('--phaseblock-flipping-enable',  dest="phaseblock_flipping_enable", required=False,
-                        default=False, help="Enabling phaseblock flipping in coverage plots")
+                        default=True, help="Enabling phaseblock flipping in coverage plots")
     parser.add_argument('--smoothing-enable',  dest="smoothing_enable", required=False,
                         default=False, help="Enabling smoothing in coverage plots")
     parser.add_argument('--phaseblocks-enable',  dest="phaseblocks_enable", required=False,
@@ -120,7 +120,7 @@ def main_process():
     parser.add_argument('--breakpoints-enable',  dest="breakpoints_enable", required=False,
                         default=False, help="Enabling breakpoints in coverage plots")
     parser.add_argument('--copynumbers-enable', dest="copynumbers_enable", required=False,
-                        default=False, help="Enabling copy number in coverage plots")
+                        default=True, help="Enabling copy number in coverage plots")
     parser.add_argument('--copynumbers-subclonal-enable', dest="copynumbers_subclonal_enable", required=False,
                         default=False, help="Enabling subclonal copy number in coverage plots")
 
@@ -220,11 +220,11 @@ def main_process():
     if not os.path.isdir(args.out_dir_plots):
         os.mkdir(args.out_dir_plots)
     #if not os.path.isdir('data'):
-    if os.path.exists('data_phasing'):
-        shutil.rmtree('data_phasing')
-        os.mkdir('data_phasing')
+    if os.path.exists(arguments['out_dir_plots']+'/data_phasing'):
+        shutil.rmtree(arguments['out_dir_plots']+'/data_phasing')
+        os.mkdir(arguments['out_dir_plots']+'/data_phasing')
     else:
-        os.mkdir('data_phasing')
+        os.mkdir(arguments['out_dir_plots']+'/data_phasing')
 
     thread_pool = Pool(args.threads)
 
@@ -256,23 +256,23 @@ def main_process():
         segments = get_chromosomes_bins(args.target_bam[0], arguments['bin_size'], arguments)
         segments_coverage = get_segments_coverage(segments, coverage_histograms)
         logging.info('Writing coverage for bins')
-        write_segments_coverage(segments_coverage, '/coverage.csv', arguments)
+        write_segments_coverage(segments_coverage, 'coverage.csv', arguments)
 
         logging.info('Parsing phaseblocks information')
         if arguments['normal_phased_vcf']:
-            output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(arguments['normal_phased_vcf'])
+            output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(arguments['normal_phased_vcf'], arguments)
         else:
-            output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(arguments['tumor_vcf'])
+            output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(arguments['tumor_vcf'], arguments)
         phasesets_segments = generate_phasesets_bins(args.target_bam[0], output_phasesets_file_path, arguments['bin_size'], arguments) #TODO update for multiple bam files
         logging.info('Computing coverage for phaseblocks')
         phasesets_coverage = get_segments_coverage(phasesets_segments, coverage_histograms)
 
         logging.info('Writing coverage for phaseblocks')
-        write_segments_coverage(phasesets_coverage, '/coverage_ps.csv', arguments)
+        write_segments_coverage(phasesets_coverage, 'coverage_ps.csv', arguments)
 
         logging.info('Loading coverage (bins) and coverage (phaseblocks) files...')
-        csv_df_phasesets = csv_df_chromosomes_sorter(arguments['out_dir_plots'] + '/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
-        csv_df_coverage = csv_df_chromosomes_sorter(arguments['out_dir_plots'] + '/coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
+        csv_df_phasesets = csv_df_chromosomes_sorter(arguments['out_dir_plots']+'/data_phasing/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
+        csv_df_coverage = csv_df_chromosomes_sorter(arguments['out_dir_plots']+'/data_phasing/coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
 
         #Missing phaseblocks and coverage added
         #phasesets_coverage_missing = update_phasesets_coverage_with_missing_phasesets(chroms, csv_df_phasesets, args.target_bam[0], coverage_histograms)
@@ -283,11 +283,11 @@ def main_process():
 
     if arguments['normal_phased_vcf']:
         get_snp_frequencies_segments(arguments, arguments['target_bam'][0], thread_pool)
-        df_snps_frequencies = csv_df_chromosomes_sorter(arguments['out_dir_plots'] + '/snps_frequencies.csv', ['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])
+        df_snps_frequencies = csv_df_chromosomes_sorter(arguments['out_dir_plots']+'/data_phasing/snps_frequencies.csv', ['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])
         df_snps_frequencies = df_snps_frequencies.drop(df_snps_frequencies[(df_snps_frequencies.chr == "chrX") | (df_snps_frequencies.chr == "chrY")].index)
 
     if arguments['tumor_vcf']:
-        output_phasesets_file_path = vcf_parse_to_csv_for_snps(arguments['tumor_vcf'])
+        output_phasesets_file_path = vcf_parse_to_csv_for_snps(arguments['tumor_vcf'], arguments)
         df_snps_in_csv = csv_df_chromosomes_sorter(output_phasesets_file_path, ['chr', 'pos', 'qual', 'gt', 'dp', 'vaf'])
         # plot all SNPs frequencies, ratios and counts
         #if arguments['enable_debug']:
@@ -295,8 +295,6 @@ def main_process():
 
     if not os.path.isdir(arguments['out_dir_plots'] + '/phasing_output'):
         os.mkdir(arguments['out_dir_plots'] + '/phasing_output')
-    if not os.path.isdir(arguments['out_dir_plots'] + '/hapcorrect_output'):
-        os.mkdir(arguments['out_dir_plots'] + '/hapcorrect_output')
 
     filename = f"{os.path.join(arguments['out_dir_plots'], 'phasing_output', 'PHASE_CORRECTION_INDEX.html')}"
     html_graphs = open(filename, 'w')
@@ -305,7 +303,6 @@ def main_process():
     loh_regions_events_all = []
     df_updated_coverage = []
     for index, chrom in enumerate(chroms):
-
         if chrom in chroms:# and (chrom == '1' or chrom == '18'):# and (chrom == 'chr5' or chrom == 'chr16'):
             logging.info('Loading coverage (bins) and coverage (phaseblocks) datasets for ' + chrom)
             csv_df_phaseset = csv_df_phasesets[csv_df_phasesets['chr'] == chrom]
@@ -407,25 +404,26 @@ def main_process():
 
     html_graphs.write("</body></html>")
 
-    write_segments_coverage(loh_regions_events_all, '/hapcorrect_output/' + arguments['genome_name'] + '_loh_segments.csv', arguments)
-    write_df_csv(pd.concat(start_values_phasesets_contiguous_all), arguments['out_dir_plots'] + '/hapcorrect_output/'+arguments['genome_name'] + '_phasesets.csv')
-    write_df_csv(pd.concat(df_updated_coverage), arguments['out_dir_plots'] + '/hapcorrect_output/' + arguments['genome_name'] + '_coverage_hapcorrect.csv')
+    write_segments_coverage(loh_regions_events_all, arguments['genome_name'] + '_loh_segments.csv', arguments)
+    write_df_csv(pd.concat(start_values_phasesets_contiguous_all), arguments['out_dir_plots']+'/data_phasing/'+arguments['genome_name']+'_phasesets.csv')
+    write_df_csv(pd.concat(df_updated_coverage), arguments['out_dir_plots']+'/data_phasing/'+arguments['genome_name']+'_coverage.csv')
 
-    csv_df_phase_change_segments = csv_df_chromosomes_sorter(arguments['out_dir_plots'] + '/hapcorrect_output/' + arguments['genome_name'] + '_phase_change_segments.csv', ['chr', 'start', 'end'])
-    csv_df_phasesets_segments = csv_df_chromosomes_sorter(arguments['out_dir_plots'] + '/hapcorrect_output/' + arguments['genome_name'] + '_phasesets.csv', ['chr', 'start'])
-    csv_df_loh_regions = csv_df_chromosomes_sorter(arguments['out_dir_plots'] + '/hapcorrect_output/' + arguments['genome_name'] + '_loh_segments.csv', ['chr', 'start', 'end'])
+    csv_df_phase_change_segments = csv_df_chromosomes_sorter(arguments['out_dir_plots']+'/data_phasing/' + arguments['genome_name'] + '_phase_change_segments.csv', ['chr', 'start', 'end'])
+    csv_df_phasesets_segments = csv_df_chromosomes_sorter(arguments['out_dir_plots']+'/data_phasing/' + arguments['genome_name'] + '_phasesets.csv', ['chr', 'start'])
+    csv_df_loh_regions = csv_df_chromosomes_sorter(arguments['out_dir_plots']+'/data_phasing/' + arguments['genome_name'] + '_loh_segments.csv', ['chr', 'start', 'end'])
 
     if arguments["normal_phased_vcf"]:
         get_phasingblocks(arguments["normal_phased_vcf"])
         logging.info('VCF edit for phase change segments')
-        out_vcf = os.path.join(arguments['out_dir_plots'], arguments['genome_name'] + '.rephased.vcf.gz')
+        out_vcf = os.path.join(arguments['out_dir_plots'], 'phasing_output', arguments['genome_name']+'.rephased.vcf.gz')
         rephase_vcf(csv_df_phase_change_segments, csv_df_phasesets_segments, arguments["normal_phased_vcf"], out_vcf)
         index_vcf(out_vcf)
         get_phasingblocks(out_vcf)
 
     elif not arguments["normal_phased_vcf"] and arguments["tumor_vcf"]:
+        get_phasingblocks(arguments["tumor_vcf"])
         logging.info('VCF edit for phase change segments')
-        out_vcf = os.path.join(arguments['out_dir_plots'], arguments['genome_name']+'.rephased.vcf.gz')
+        out_vcf = os.path.join(arguments['out_dir_plots'], 'phasing_output', arguments['genome_name']+'.rephased.vcf.gz')
         rephase_vcf(csv_df_phase_change_segments, csv_df_phasesets_segments, arguments["tumor_vcf"], out_vcf)
         index_vcf(out_vcf)
         get_phasingblocks(out_vcf)

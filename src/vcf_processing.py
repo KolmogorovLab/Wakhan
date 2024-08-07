@@ -463,15 +463,15 @@ def slice_when(predicate, iterable):
   yield iterable[x:size]
 
 
-def vcf_parse_to_csv_for_snps(input_vcf):
+def vcf_parse_to_csv_for_snps(input_vcf, arguments):
     # pathlib.Path(input_vcf).suffix #extension
     # TODO add output check conditions with all these processes
     basefile = pathlib.Path(input_vcf).stem  # filename without extension
     output_vcf = basefile + '_snps.vcf.gz'
-    output_vcf = f"{os.path.join('data', output_vcf)}"
+    output_vcf = f"{os.path.join(arguments['out_dir_plots'], 'data', output_vcf)}"
 
     output_csv = basefile + '_snps.csv'
-    output_csv = f"{os.path.join('data', output_csv)}"
+    output_csv = f"{os.path.join(arguments['out_dir_plots'], 'data', output_csv)}"
 
     # logging.info('bcftools -> Filtering out hetrozygous and phased SNPs and generating a new VCF')
     # # Filter out het, phased SNPs
@@ -487,15 +487,15 @@ def vcf_parse_to_csv_for_snps(input_vcf):
     process.wait()
 
     return output_csv
-def vcf_parse_to_csv_for_het_phased_snps_phasesets(input_vcf):
+def vcf_parse_to_csv_for_het_phased_snps_phasesets(input_vcf, arguments):
     #pathlib.Path(input_vcf).suffix #extension
     # TODO add output check conditions with all these processes
     basefile = pathlib.Path(input_vcf).stem #filename without extension
     output_vcf = basefile + '_het_phased_snps.vcf.gz'
-    output_vcf = f"{os.path.join('data', output_vcf)}"
+    output_vcf = f"{os.path.join(arguments['out_dir_plots'], 'data', output_vcf)}"
 
     output_csv = basefile + '_phasesets.csv'
-    output_csv = f"{os.path.join('data', output_csv)}"
+    output_csv = f"{os.path.join(arguments['out_dir_plots'], 'data', output_csv)}"
 
     logging.info('bcftools -> Filtering out hetrozygous and phased SNPs and generating a new VCF')
     # Filter out het, phased SNPs
@@ -512,20 +512,19 @@ def vcf_parse_to_csv_for_het_phased_snps_phasesets(input_vcf):
     return output_csv
 
 def get_snp_segments(arguments, target_bam, thread_pool):
-
     if arguments['phaseblock_flipping_enable']:
-        normal_vcf = os.path.join(arguments['out_dir_plots'], arguments['genome_name']+'.rephased.vcf.gz')
+        normal_vcf = os.path.join(arguments['out_dir_plots'], 'phasing_output', arguments['genome_name']+'.rephased.vcf.gz')
     else:
         normal_vcf = arguments['normal_phased_vcf']
     basefile = pathlib.Path(normal_vcf).stem
     output_csv = basefile + '_het_snps.csv'
-    output_csv = f"{os.path.join('data', output_csv)}"
+    output_csv = f"{os.path.join(arguments['out_dir_plots'], 'data', output_csv)}"
 
     output_bed = basefile + '_het_snps.bed'
-    output_bed = f"{os.path.join('data', output_bed)}"
+    output_bed = f"{os.path.join(arguments['out_dir_plots'], 'data', output_bed)}"
 
     output_acgts = basefile + '_het_snps_freqs.csv'
-    output_acgts = f"{os.path.join('data', output_acgts)}"
+    output_acgts = f"{os.path.join(arguments['out_dir_plots'], 'data', output_acgts)}"
 
     # logging.info('bcftools -> Filtering out hetrozygous and phased SNPs and generating a new VCF')
     # # Filter out het, phased SNPs
@@ -543,18 +542,14 @@ def get_snp_segments(arguments, target_bam, thread_pool):
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     process.wait()
 
-    #output_csv = '/home/rezkuh/GenData/COLO829/COLO829_chr7_details.csv'
-    #output_bed = '/home/rezkuh/GenData/COLO829/colo829_chr7.csv'
-
     logging.info('SNPs frequency -> CSV to dataframe conversion')
     dataframe_snps = csv_df_chromosomes_sorter(output_csv, ['chr', 'start', 'ref', 'alt', 'gt'])
-    #dataframe_snps = pd.read_csv(output_csv, sep='\t', names=['chr', 'start', 'ref', 'alt', 'gt'])
-
     logging.info('SNPs frequency -> Comuting het SNPs frequency from tumor BAM')
 
-    #output_pileups = bam_pileups_snps(output_bed, target_bam, arguments)
-    if arguments['dryrun']:
-        output_pileups = arguments['dryrun_path'] + arguments['genome_name']+'/'+arguments['genome_name']+'_SNPs.csv'
+    if arguments['phaseblock_flipping_enable']:
+        output_pileups = arguments['out_dir_plots'] + '/data/' + arguments['genome_name'] + '_SNPs.csv'
+        if arguments['dryrun']:
+            output_pileups = arguments['dryrun_path'] + arguments['genome_name'] + '/' + arguments['genome_name'] + '_SNPs.csv'
     else:
         output_pileups = process_bam_for_snps_freqs(arguments, thread_pool)  # TODO Updated
 
@@ -619,7 +614,7 @@ def get_snp_segments_frequencies_final(dataframe_acgt_frequency):
 def bam_pileups_snps(snps_list, target_bam, arguments):
     basefile = pathlib.Path(target_bam).stem
     output_csv = basefile + '_snps_pileup.csv'
-    output_csv = f"{os.path.join('data', output_csv)}"
+    output_csv = f"{os.path.join(arguments['out_dir_plots'], 'data', output_csv)}"
 
     #target_bam = '/home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7_haplotagged.bam'
 

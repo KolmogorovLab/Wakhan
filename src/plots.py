@@ -163,10 +163,10 @@ def coverage_plots_chromosomes(df, df_phasesets, arguments, thread_pool):
 
     if arguments['normal_phased_vcf']:
         get_snp_segments(arguments, arguments['target_bam'][0], thread_pool)
-        df_snps = csv_df_chromosomes_sorter(arguments['out_dir_plots'] + '/snps_frequencies.csv', ['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])
+        df_snps = csv_df_chromosomes_sorter(arguments['out_dir_plots']+'/data/snps_frequencies.csv', ['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])
         df_snps = df_snps.drop(df_snps[(df_snps.chr == "chrX") | (df_snps.chr == "chrY")].index)
     if arguments['tumor_vcf']: #only for LOH
-        output_phasesets_file_path = vcf_parse_to_csv_for_snps(arguments['tumor_vcf'])
+        output_phasesets_file_path = vcf_parse_to_csv_for_snps(arguments['tumor_vcf'], arguments)
         df_snps_in_csv = csv_df_chromosomes_sorter(output_phasesets_file_path, ['chr', 'pos', 'qual', 'gt', 'dp', 'vaf'])
 
     if arguments['breakpoints']:
@@ -229,26 +229,28 @@ def coverage_plots_chromosomes(df, df_phasesets, arguments, thread_pool):
             haplotype_1_values = adjust_extreme_outliers(haplotype_1_values)
             haplotype_2_values = adjust_extreme_outliers(haplotype_2_values)
             ################################################################################
-            if arguments['tumor_vcf']:
-                logging.info('hetrozygous phased snps frequencies coverage module')
-                ref_start_values_updated, snps_het_counts, snps_homo_counts, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends = get_snps_frquncies_coverage(df_snps_in_csv, chrom, ref_start_values, arguments['bin_size_snps'])
-                if snps_het_counts or snps_homo_counts:
-                    if arguments['without_phasing']:
-                        if centromere_region_starts:
-                            _,_,_, centromere_region_starts, centromere_region_ends  = detect_alter_loh_regions(arguments, 'centromere/no-coverage', chrom, ref_end_values, values, values, values, centromere_region_starts, centromere_region_ends, True)
-                        if loh_region_starts:
-                            _,_,_, loh_region_starts, loh_region_ends = detect_alter_loh_regions(arguments, 'loss-of-heterozygosity', chrom, ref_end_values, values, values, values, loh_region_starts, loh_region_ends, True)
-                    else:
-                        if centromere_region_starts:
-                            haplotype_1_values, haplotype_2_values, unphased_reads_values, centromere_region_starts, centromere_region_ends  = detect_alter_loh_regions(arguments, 'centromere/no-coverage', chrom, ref_end_values, haplotype_1_values, haplotype_2_values, unphased_reads_values, centromere_region_starts, centromere_region_ends, True)
-                            haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets = loh_regions_phasesets(centromere_region_starts, centromere_region_ends, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
-
-                        if loh_region_starts:
-                            haplotype_1_values, haplotype_2_values, unphased_reads_values, loh_region_starts, loh_region_ends = detect_alter_loh_regions(arguments, 'loss-of-heterozygosity', chrom, ref_end_values, haplotype_1_values, haplotype_2_values, unphased_reads_values, loh_region_starts, loh_region_ends, True)
-                            haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets = loh_regions_phasesets(loh_region_starts, loh_region_ends, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
-            else:
-                loh_region_starts = []
-                loh_region_ends = []
+            # if arguments['tumor_vcf']:
+            #     logging.info('hetrozygous phased snps frequencies coverage module')
+            #     ref_start_values_updated, snps_het_counts, snps_homo_counts, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends = get_snps_frquncies_coverage(df_snps_in_csv, chrom, ref_start_values, arguments['bin_size_snps'])
+            #     if snps_het_counts or snps_homo_counts:
+            #         if arguments['without_phasing']:
+            #             if centromere_region_starts:
+            #                 _,_,_, centromere_region_starts, centromere_region_ends  = detect_alter_loh_regions(arguments, 'centromere/no-coverage', chrom, ref_end_values, values, values, values, centromere_region_starts, centromere_region_ends, True)
+            #             if loh_region_starts:
+            #                 _,_,_, loh_region_starts, loh_region_ends = detect_alter_loh_regions(arguments, 'loss-of-heterozygosity', chrom, ref_end_values, values, values, values, loh_region_starts, loh_region_ends, True)
+            #         else:
+            #             if centromere_region_starts:
+            #                 haplotype_1_values, haplotype_2_values, unphased_reads_values, centromere_region_starts, centromere_region_ends  = detect_alter_loh_regions(arguments, 'centromere/no-coverage', chrom, ref_end_values, haplotype_1_values, haplotype_2_values, unphased_reads_values, centromere_region_starts, centromere_region_ends, True)
+            #                 haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets = loh_regions_phasesets(centromere_region_starts, centromere_region_ends, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
+            #
+            #             if loh_region_starts:
+            #                 haplotype_1_values, haplotype_2_values, unphased_reads_values, loh_region_starts, loh_region_ends = detect_alter_loh_regions(arguments, 'loss-of-heterozygosity', chrom, ref_end_values, haplotype_1_values, haplotype_2_values, unphased_reads_values, loh_region_starts, loh_region_ends, True)
+            #                 haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets = loh_regions_phasesets(loh_region_starts, loh_region_ends, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
+            # else:
+            #     loh_region_starts = []
+            #     loh_region_ends = []
+            loh_region_starts = []
+            loh_region_ends = []
             ################################################################################
             #Raw coverage data plot before phase correction
             # if arguments['phaseblock_flipping_enable']:

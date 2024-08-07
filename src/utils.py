@@ -6,11 +6,9 @@ import os
 import statistics
 from random import randint
 import ruptures as rpt
-
 from smoothing import smoothing
 #from hmm import call_copynumbers
 from extras import get_contigs_list, sv_vcf_bps_cn_check
-
 
 def get_chromosomes_bins_replica(bam_file, bin_size, arguments):
     bed=[]
@@ -437,65 +435,6 @@ def csv_df_chromosomes_sorter(path, names, sept='\t'):
     dataframe.sort_values(by=['chr', names[1]], ascending=[True, True], inplace=True)
     return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
 
-
-
-# def csv_df_chromosomes_sorter_coverage(path):
-#     dataframe = pd.read_csv(path, sep='\t', names=['chr', 'start', 'end', 'coverage'])
-#     dataframe['chr'] = dataframe['chr'].astype(str)
-#     #if not dataframe['chr'].iloc[0].startswith('chr'):
-#     #    dataframe['chr'] = 'chr' + dataframe['chr'].astype(str)
-#     dataframe.sort_values(by=['chr', 'start'], ascending=[True, True], inplace=True)
-#     return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
-
-# def csv_df_chromosomes_sorter_copyratios(path):
-#     dataframe = pd.read_csv(path, sep='\t', names=['chr', 'start', 'end', 'gene', 'log2', 'depth', 'probes', 'weight'])
-#     dataframe['chr'] = dataframe['chr'].astype(str)
-#     #if not dataframe['chr'].iloc[0].startswith('chr'):
-#     #    dataframe['chr'] = 'chr' + dataframe['chr'].astype(str)
-#     dataframe.sort_values(by=['chr', 'start'], ascending=[True, True], inplace=True)
-#     return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
-
-# def csv_df_chromosomes_sorter_snps(path, name):
-#     dataframe = pd.read_csv(path, sep='\t', names=['chr', 'pos', 'ps'])
-#     dataframe['chr'] = dataframe['chr'].astype(str)
-#     #if not dataframe['chr'].iloc[0].startswith('chr'):
-#     #    dataframe['chr'] = 'chr' + dataframe['chr'].astype(str)
-#     dataframe.sort_values(by=['chr', 'pos'], ascending=[True, True], inplace=True)
-#     return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
-#
-# def csv_df_chromosomes_sorter_snps_vcf(path):
-#     dataframe = pd.read_csv(path, sep='\t', names=['chr', 'pos', 'qual', 'gt', 'dp', 'vaf'])
-#     dataframe['chr'] = dataframe['chr'].astype(str)
-#     #if not dataframe['chr'].iloc[0].startswith('chr'):
-#     #    dataframe['chr'] = 'chr' + dataframe['chr'].astype(str)
-#     dataframe.sort_values(by=['chr', 'pos'], ascending=[True, True], inplace=True)
-#     return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
-#
-# def csv_df_chromosomes_sorter_snps_from_bam(path):
-#     dataframe = pd.read_csv(path, sep='\t', names=['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])
-#     dataframe['chr'] = dataframe['chr'].astype(str)
-#     #if not dataframe['chr'].iloc[0].startswith('chr'):
-#     #    dataframe['chr'] = 'chr' + dataframe['chr'].astype(str)
-#     dataframe.sort_values(by=['chr', 'pos'], ascending=[True, True], inplace=True)
-#     return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
-#
-# def csv_df_chromosomes_sorter_snps_frequency(path):
-#     dataframe = pd.read_csv(path, sep=',', names=['chr', 'start', 'a', 'c', 'g', 't'])
-#     dataframe['chr'] = dataframe['chr'].astype(str)
-#     #if not dataframe['chr'].iloc[0].startswith('chr'):
-#     #    dataframe['chr'] = 'chr' + dataframe['chr'].astype(str)
-#     dataframe.sort_values(by=['chr', 'start'], ascending=[True, True], inplace=True)
-#     return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
-#
-# def csv_df_chromosomes_sorter_snps_alts_gts(path):
-#     dataframe = pd.read_csv(path, sep='\t', names=['chr', 'start', 'ref', 'alt', 'gt'])
-#     dataframe['chr'] = dataframe['chr'].astype(str)
-#     #if not dataframe['chr'].iloc[0].startswith('chr'):
-#     #    dataframe['chr'] = 'chr' + dataframe['chr'].astype(str)
-#     dataframe.sort_values(by=['chr', 'start'], ascending=[True, True], inplace=True)
-#     return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
-
-
 def get_breakpoints(chrom, bp_file_path): #TODO add call in plots
     break_points = []
     with open(bp_file_path) as bp_file:
@@ -517,7 +456,7 @@ def get_breakpoints(chrom, bp_file_path): #TODO add call in plots
     return break_points
 
 def write_segments_coverage_dict(coverage_segments, output, arguments):
-    with open(arguments['out_dir_plots']+ '/' + output, 'a') as fp:
+    with open(arguments['out_dir_plots']+'/data/' + output, 'a') as fp:
         for items in coverage_segments:
             if not items == None:
                 fp.write("%s\n" % items)

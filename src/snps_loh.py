@@ -15,7 +15,7 @@ from utils import detect_alter_loh_regions, loh_regions_events, write_segments_c
 
 def plot_snps_ratios_genome(arguments):
     if arguments['tumor_vcf']:
-        output_phasesets_file_path = vcf_parse_to_csv_for_snps(arguments['tumor_vcf'])
+        output_phasesets_file_path = vcf_parse_to_csv_for_snps(arguments['tumor_vcf'], arguments)
         df_snps_in_csv = csv_df_chromosomes_sorter(output_phasesets_file_path, ['chr', 'pos', 'qual', 'gt', 'dp', 'vaf'])
 
     chroms = get_contigs_list(arguments['contigs'])
@@ -53,7 +53,7 @@ def plot_snps_frequencies(arguments, df, df_segs_hp1_w, df_segs_hp2_w, centers, 
     html_graphs.write("<html><head></head><body>" + "\n")
 
     if arguments['tumor_vcf']:
-        output_phasesets_file_path = vcf_parse_to_csv_for_snps(arguments['tumor_vcf'])
+        output_phasesets_file_path = vcf_parse_to_csv_for_snps(arguments['tumor_vcf'], arguments)
         df_snps_in_csv = csv_df_chromosomes_sorter(output_phasesets_file_path, ['chr', 'pos', 'qual', 'gt', 'dp', 'vaf'])
 
     chroms = get_contigs_list(arguments['contigs'])

@@ -306,7 +306,7 @@ def compute_snp_frequency(bam, region):
 
 def process_bam_for_snps_freqs(arguments, thread_pool):
     basefile = pathlib.Path(arguments['target_bam'][0]).stem
-    output_bam = f"{os.path.join(arguments['out_dir_plots'], basefile + '_reduced.bam')}"
+    output_bam = f"{os.path.join(arguments['out_dir_plots'], 'data', basefile + '_reduced.bam')}"
 
     samtools_cmd = ['samtools', 'view', '-@', str(arguments['threads']), '-F', '3844', '-q', '5', '-h', arguments['target_bam'][0]]
     awk_cmd = ['awk', '-v', 'OFS=\t', '{if($0 ~ /^@/){print $0} else {print $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, "*"}}']
@@ -329,10 +329,10 @@ def process_bam_for_snps_freqs(arguments, thread_pool):
 
     basefile = pathlib.Path(arguments['normal_phased_vcf']).stem
     output_csv = basefile + '_het_snps.csv'
-    output_csv = f"{os.path.join('data', output_csv)}"
+    output_csv = f"{os.path.join(arguments['out_dir_plots'], 'data', output_csv)}"
 
     output_vcf = basefile + '_het_phased_snps.vcf.gz'
-    output_vcf = f"{os.path.join('data', output_vcf)}"
+    output_vcf = f"{os.path.join(arguments['out_dir_plots'], 'data', output_vcf)}"
 
     cmd = ['bcftools', 'view', '--threads', str(arguments['threads']),  '--phased', '-g', 'het', '--types', 'snps', arguments['normal_phased_vcf'], '-o', output_vcf]
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
@@ -342,10 +342,10 @@ def process_bam_for_snps_freqs(arguments, thread_pool):
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     process.wait()
 
-    beds = split_file(output_csv, arguments['threads'])
-    pileups_outputs = process_pileups(output_bam, arguments['reference'], beds, thread_pool)
+    beds = split_file(output_csv, arguments['threads'], arguments)
+    pileups_outputs = process_pileups(output_bam, arguments['reference'], beds, thread_pool, arguments)
 
-    output_pileup = f"{os.path.join(arguments['out_dir_plots'], arguments['genome_name'] + '_SNPs.csv')}"
+    output_pileup = f"{os.path.join(arguments['out_dir_plots'], 'data', arguments['genome_name'] + '_SNPs.csv')}"
 
     for i in pileups_outputs:
         with open(i, 'r') as content_file:
@@ -354,24 +354,24 @@ def process_bam_for_snps_freqs(arguments, thread_pool):
             target_device.write(content)
 
     return output_pileup
-def split_file(fname, parts):
+def split_file(fname, parts, arguments):
     out_beds = []
     lines  = pandas.read_csv(fname)
     df_iterator = pandas.read_csv(fname, chunksize=int(len(lines)/parts) + 1, sep='\t', index_col=False, header=None)
     for i, chunk in enumerate(df_iterator):
-        fname = f"{os.path.join('data', '%d.bed' % i)}"
+        fname = f"{os.path.join(arguments['out_dir_plots'], 'data', '%d.bed' % i)}"
         out_beds.append(fname)
         chunk.to_csv(fname, index=False, sep='\t', header=None)
     return out_beds
 
-def process_pileups(bam, ref, input_beds, thread_pool):
+def process_pileups(bam, ref, input_beds, thread_pool, arguments):
     tasks = [(bam, ref, bed) for bed in input_beds]
-    pileups_outputs = thread_pool.starmap(process_pileups_parallel, tasks)
+    pileups_outputs = thread_pool.starmap(process_pileups_parallel, tasks, arguments)
     return pileups_outputs
 
-def process_pileups_parallel(bam, ref, bed):
+def process_pileups_parallel(bam, ref, bed, arguments):
     basefile = pathlib.Path(bed).stem
-    output_csv = f"{os.path.join('data', basefile + '_SNPs.csv')}"
+    output_csv = f"{os.path.join(arguments['out_dir_plots'], 'data', basefile + '_SNPs.csv')}"
     cmd = ['samtools', 'mpileup', '-l', bed, '-f', ref, bam,  '-o', output_csv]
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     process.wait()
