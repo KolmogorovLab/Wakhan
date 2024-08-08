@@ -63,13 +63,9 @@ def main_process():
                         metavar="path", required=False, default=None,
                         help="Path to tumor VCF for LOH detection")
 
-    parser.add_argument("--breakpoints", dest="breakpoints",
-                        metavar="path", required=False, default=None,
-                        help="Path to breakpoints/SVs VCF file")
-    parser.add_argument("--cpd-internal-segments", dest="cpd_internal_segments",
-                        metavar="path", required=False, default=None,
+    parser.add_argument("--breakpoints", dest="breakpoints", metavar="path", required=True, default=None, help="Path to breakpoints/SVs VCF file")
+    parser.add_argument("--cpd-internal-segments", dest="cpd_internal_segments", metavar="path", required=False, default=None,
                         help="change point detection algo for more precise segments after breakpoint segments")
-
 
     parser.add_argument("--genome-name", dest="genome_name",
                         required=True, default=None,

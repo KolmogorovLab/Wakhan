@@ -354,6 +354,7 @@ def process_bam_for_snps_freqs(arguments, thread_pool):
             target_device.write(content)
 
     return output_pileup
+
 def split_file(fname, parts, arguments):
     out_beds = []
     lines  = pandas.read_csv(fname)
@@ -365,8 +366,8 @@ def split_file(fname, parts, arguments):
     return out_beds
 
 def process_pileups(bam, ref, input_beds, thread_pool, arguments):
-    tasks = [(bam, ref, bed) for bed in input_beds]
-    pileups_outputs = thread_pool.starmap(process_pileups_parallel, tasks, arguments)
+    tasks = [(bam, ref, bed, arguments) for bed in input_beds]
+    pileups_outputs = thread_pool.starmap(process_pileups_parallel, tasks)
     return pileups_outputs
 
 def process_pileups_parallel(bam, ref, bed, arguments):
