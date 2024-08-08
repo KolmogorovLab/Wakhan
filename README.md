@@ -71,7 +71,7 @@ python main.py --threads <4> --reference <ref.fa>  --target-bam <data.tumor_hapl
 [//]: # (2. Then run again the tool with adding this command additional to what you use already: `--dryrun True` `--dryrun-path` <This is the path where you copied CSVs files in step-1, ie. like, `/home/abc/dry_run_data/`>)
 
 ## Examples
-Few cell lines arbitrary phase-switch correction and copy number estimation output with coverage profile is included in the [examples](https://github.com/KolmogorovLab/Wakhan/tree/devel/examples) directory. 
+Few cell lines arbitrary phase-switch correction and copy number estimation output with coverage profile is included in the [examples](https://github.com/KolmogorovLab/Wakhan/tree/main/examples) directory. 
 
 ## Required parameters
 * `--reference` Reference file path
