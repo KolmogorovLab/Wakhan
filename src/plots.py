@@ -659,7 +659,7 @@ def copy_number_plots_genome(centers, integer_fractional_centers, df_cnr_hp1, df
     #fig.add_trace(go.Scatter(x=fit_curve, y=x_axis, marker_color='royalblue', orientation='h', name='opt fit', line=dict(color='royalblue', width=4, dash='dot'),), row=1, col=2)
 
     #############################################################
-    plots_layout_settings(fig, 'Genome', arguments, offset_start+regions[-1], arguments['cut_threshold'])
+    plots_layout_settings(fig, 'Genome', arguments, len(df_cnr_hp1.hp1.values.tolist())*arguments['bin_size'], arguments['cut_threshold'])
 
     centers_rev = [-x for x in centers[1:]]
     centers_rev.reverse()
@@ -1784,11 +1784,10 @@ def copy_number_plots_genome_breakpoints_test(centers, integer_fractional_center
                       yaxis3=dict(range=[-(arguments['cut_threshold'] + 5), arguments['cut_threshold'] + 5], showgrid=False,),
                       yaxis4=dict(title="<b>Genes     </b>", range=[0, 6], showticklabels = False, showgrid=False, zeroline=True, zerolinewidth=2, zerolinecolor='black'),
 
-
-                      xaxis=dict(showspikes=True, tick0=0.0, rangemode="nonnegative", range=[0, offset_start+regions[-1]], showticklabels = False, showgrid=False, zeroline=False),
-                      xaxis2=dict(tick0=0.0, rangemode="nonnegative", range=[0, offset_start+regions[-1]], zeroline=True, zerolinewidth=1, zerolinecolor='black', showgrid=False,),
-                      xaxis3=dict(tick0=0.0, rangemode="nonnegative", range=[0, offset_start+regions[-1]],showgrid=False,),
-                      xaxis4=dict(tick0=0.0, rangemode="nonnegative", range=[0, offset_start+regions[-1]], showgrid=False, zeroline=True, zerolinewidth=1, zerolinecolor='black'))
+                      xaxis=dict(showspikes=True, tick0=0.0, rangemode="nonnegative", range=[0, len(df_cnr_hp1.hp1.values.tolist())*arguments['bin_size']], showticklabels = False, showgrid=False, zeroline=False),
+                      xaxis2=dict(tick0=0.0, rangemode="nonnegative", range=[0, len(df_cnr_hp1.hp1.values.tolist())*arguments['bin_size']], zeroline=True, zerolinewidth=1, zerolinecolor='black', showgrid=False,),
+                      xaxis3=dict(tick0=0.0, rangemode="nonnegative", range=[0, len(df_cnr_hp1.hp1.values.tolist())*arguments['bin_size']],showgrid=False,),
+                      xaxis4=dict(tick0=0.0, rangemode="nonnegative", range=[0, len(df_cnr_hp1.hp1.values.tolist())*arguments['bin_size']], showgrid=False, zeroline=True, zerolinewidth=1, zerolinecolor='black'))
 
     centers_rev = [-x for x in centers[1:]]
     centers_rev.reverse()
