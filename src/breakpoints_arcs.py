@@ -6,7 +6,7 @@ def get_all_breakpoints_data(edges, edges_chr, height, path):
     bp_junctions_inv = [[]]
     for variant in my_parser:
         if "INV" in variant['ID']:
-            if variant['CHROM'] == 'chrX' or variant['CHROM'] == 'chrY':
+            if variant['CHROM'] == 'chrY':
                 continue
             else:
                 bp_junctions_inv.append([variant['CHROM'], int(variant['POS'])])

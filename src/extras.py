@@ -63,7 +63,7 @@ def sv_vcf_bps_cn_check(path, arguments):
             if 'HP' in variant['info_dict']:
                 hp = int(variant['info_dict']['HP'][0])
 
-            if variant['CHROM'] == 'chrX' or variant['CHROM'] == 'chrY':
+            if variant['CHROM'] == 'chrY':
                 continue
             else:
                 # sample_list[variant['ID']] = bps_sample(variant['CHROM'], int(variant['POS']), hp, variant['CHROM'], int(variant['POS'])+1, hp, False)
@@ -84,7 +84,7 @@ def sv_vcf_bps_cn_check(path, arguments):
             if 'HP' in variant['info_dict']:
                 hp = int(variant['info_dict']['HP'][0])
 
-            if chr2_id == '' or chr2_id == 'chrX' or chr2_id == 'chrY' or variant['CHROM'] == 'chrX' or variant['CHROM'] == 'chrY':
+            if chr2_id == 'chrY' or variant['CHROM'] == 'chrY':
                 continue
             else:
                 #sample_list[variant['ID']] = bps_sample(variant['CHROM'], int(variant['POS']), hp, variant['CHROM'], int(variant['POS'])+1, hp, False)
@@ -99,7 +99,7 @@ def sv_vcf_bps_cn_check(path, arguments):
                     hp = int(variant['info_dict']['HP'][0])
 
                 #if abs((int(variant['info_dict']['SVLEN'][0]) + int(variant['POS'])) - int(variant['POS'])) < 50000 or \
-                if variant['CHROM'] == 'chrX' or variant['CHROM'] == 'chrY':
+                if variant['CHROM'] == 'chrY':
                     continue
                 if ("INS" in variant['ID'] or "DEL" in variant['ID']) and int(variant['info_dict']['SVLEN'][0]) < 10000:
                     continue

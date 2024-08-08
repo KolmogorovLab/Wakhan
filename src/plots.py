@@ -31,7 +31,7 @@ def copy_number_plots_chromosomes(df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_h
 
 def copy_number_plots_per_chromosome(centers, integer_fractional_means, ref_start_values, df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, arguments, chrom, html_graphs, loh_region_starts, loh_region_ends):
 
-    if not chrom == 'chrX' and not chrom == 'chrY':
+    if not chrom == 'chrY':
         logging.info('Plots generation for ' + chrom)
         fig = go.Figure()
 
@@ -164,7 +164,8 @@ def coverage_plots_chromosomes(df, df_phasesets, arguments, thread_pool):
     if arguments['normal_phased_vcf']:
         get_snp_segments(arguments, arguments['target_bam'][0], thread_pool)
         df_snps = csv_df_chromosomes_sorter(arguments['out_dir_plots']+'/data/snps_frequencies.csv', ['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])
-        df_snps = df_snps.drop(df_snps[(df_snps.chr == "chrX") | (df_snps.chr == "chrY")].index)
+        #df_snps = df_snps.drop(df_snps[(df_snps.chr == "chrX") | (df_snps.chr == "chrY")].index)
+        df_snps = df_snps.drop(df_snps[(df_snps.chr == "chrY")].index)
     if arguments['tumor_vcf']: #only for LOH
         output_phasesets_file_path = vcf_parse_to_csv_for_snps(arguments['tumor_vcf'], arguments)
         df_snps_in_csv = csv_df_chromosomes_sorter(output_phasesets_file_path, ['chr', 'pos', 'qual', 'gt', 'dp', 'vaf'])
@@ -178,7 +179,7 @@ def coverage_plots_chromosomes(df, df_phasesets, arguments, thread_pool):
     haplotype_1_segs_dfs = [] #pd.DataFrame()
     haplotype_2_segs_dfs = [] #pd.DataFrame()
     for index, chrom in enumerate(chroms):
-        if chrom in chroms and not chrom == 'chrX' and not chrom == 'chrY':# and (chrom == '1' or chrom == '18'):# and (chrom == 'chr5' or chrom == 'chr16'):
+        if chrom in chroms and not chrom == 'chrY':# and (chrom == '1' or chrom == '18'):# and (chrom == 'chr5' or chrom == 'chr16'):
             logging.info('Plots generation for ' + chrom)
             fig = go.Figure()
 
@@ -577,7 +578,7 @@ def copy_number_plots_genome(centers, integer_fractional_centers, df_cnr_hp1, df
         haplotype_2_end_values = []
         chroms = get_contigs_list(arguments['contigs'])
         for index, chrom in enumerate(chroms):
-            if not chrom == 'chrX' and not chrom == 'chrY':
+            if not chrom == 'chrY':
                 df_segs_hp1_chrom = df_segs_hp1[df_segs_hp1['chromosome'] == chrom]
                 df_segs_hp2_chrom = df_segs_hp2[df_segs_hp2['chromosome'] == chrom]
                 haplotype_1_start_values_copyratios = df_segs_hp1_chrom.start.values.tolist()
@@ -882,7 +883,7 @@ def copy_number_plots_genome_breakpoints_unphased_test(centers, integer_fraction
         haplotype_2_start_values = []
         haplotype_2_end_values = []
         for index, chrom in enumerate(chroms):
-            if not chrom == 'chrX' and not chrom == 'chrY':
+            if not chrom == 'chrY':
                 df_segs_hp1_chrom = df_segs_hp1[df_segs_hp1['chromosome'] == chrom]
                 df_segs_hp2_chrom = df_segs_hp2[df_segs_hp2['chromosome'] == chrom]
                 haplotype_1_start_values_copyratios = df_segs_hp1_chrom.start.values.tolist()
@@ -1291,7 +1292,7 @@ def copy_number_plots_genome_breakpoints_hps_test(centers, integer_fractional_ce
         haplotype_2_start_values = []
         haplotype_2_end_values = []
         for index, chrom in enumerate(chroms):
-            if not chrom == 'chrX' and not chrom == 'chrY':
+            if not chrom == 'chrY':
                 df_segs_hp1_chrom = df_segs_hp1[df_segs_hp1['chromosome'] == chrom]
                 df_segs_hp2_chrom = df_segs_hp2[df_segs_hp2['chromosome'] == chrom]
                 haplotype_1_start_values_copyratios = df_segs_hp1_chrom.start.values.tolist()
@@ -1714,7 +1715,7 @@ def copy_number_plots_genome_breakpoints_test(centers, integer_fractional_center
         haplotype_2_start_values = []
         haplotype_2_end_values = []
         for index, chrom in enumerate(chroms):
-            if not chrom == 'chrX' and not chrom == 'chrY':
+            if not chrom == 'chrY':
                 df_segs_hp1_chrom = df_segs_hp1[df_segs_hp1['chromosome'] == chrom]
                 df_segs_hp2_chrom = df_segs_hp2[df_segs_hp2['chromosome'] == chrom]
                 haplotype_1_start_values_copyratios = df_segs_hp1_chrom.start.values.tolist()
@@ -1985,7 +1986,7 @@ def copy_number_plots_genome_breakpoints_unphased(centers, integer_fractional_ce
         haplotype_2_start_values = []
         haplotype_2_end_values = []
         for index, chrom in enumerate(chroms):
-            if not chrom == 'chrX' and not chrom == 'chrY':
+            if not chrom == 'chrY':
                 df_segs_hp1_chrom = df_segs_hp1[df_segs_hp1['chromosome'] == chrom]
                 df_segs_hp2_chrom = df_segs_hp2[df_segs_hp2['chromosome'] == chrom]
                 haplotype_1_start_values_copyratios = df_segs_hp1_chrom.start.values.tolist()
@@ -2181,7 +2182,7 @@ def copy_number_plots_genome_details(centers, integer_fractional_centers, df_cnr
         haplotype_2_end_values = []
         chroms = get_contigs_list(arguments['contigs'])
         for index, chrom in enumerate(chroms):
-            if not chrom == 'chrX' and not chrom == 'chrY':
+            if not chrom == 'chrY':
                 df_segs_hp1_chrom = df_segs_hp1[df_segs_hp1['chromosome'] == chrom]
                 df_segs_hp2_chrom = df_segs_hp2[df_segs_hp2['chromosome'] == chrom]
                 haplotype_1_start_values_copyratios = df_segs_hp1_chrom.start.values.tolist()
