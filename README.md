@@ -110,13 +110,15 @@ Few cell lines arbitrary phase-switch correction and copy number estimation outp
 * `--without-phasing` enable it if CNA analysis is being performed without phasing 
 
 ## Output produced
-* `<genome-name>_genome_copynumber.html`, `<genome-name>_copynumber_breakpoints.html` and `<genome-name>_genome_loh.html`
+* `<genome-name>_genome_copynumber.html` Genome-wide copy number plots with coverage information on same axis
+
+* `<genome-name>_copynumber_breakpoints.html` Genome-wide copy number plots with coverage information on opposite axis, additionally breakpoints and genes annotations 
 
 * `bed_output` It contains copy numbers and LOH (in case tumor VCF is provided) segments in bed format
 
 * `coverage_plots` Haplotype specific coverage plots for chromosomes with option for unphased coverage
 
-* `variation_plots` Copy number plots for chromosomes with segmentation, coverage and LOH/SNPs ratios (in case tumor VCF is provided)
+* `variation_plots` Copy number chromosomes-scale plots with segmentation, coverage and LOH/SNPs ratios (in case tumor VCF is provided)
 
 * `phasing_output` Phase-switch error correction plots and phase corrected VCF file (*rephased.vcf.gz)
 
