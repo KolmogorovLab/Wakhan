@@ -8,7 +8,7 @@ import os
 from hapcorrect.src.extras import get_contigs_list
 from hapcorrect.src.process_bam import get_segments_coverage
 
-def get_chromosomes_bins(bam_file, bin_size, arguments):
+def get_chromosomes_bins(bam_file, bin_size, args):
     bed=[]
     bam_alignment = pysam.AlignmentFile(bam_file)
     headers = bam_alignment.header
@@ -16,7 +16,7 @@ def get_chromosomes_bins(bam_file, bin_size, arguments):
     region = [''] * len(seq_dict)
     chrs = [''] * len(seq_dict)
     head, tail = os.path.split(bam_file)
-    chroms = get_contigs_list(arguments['contigs'])
+    chroms = get_contigs_list(args.contigs)
     chroms_without_prefix = [str(i).replace( 'chr', '') for i in chroms]
     for i, seq_elem in enumerate(seq_dict):
         region[i] = seq_elem['LN']
@@ -71,8 +71,8 @@ def df_chromosomes_sorter(dataframe, names, sept='\t'):
 def write_df_csv(df, file_name):
     df.to_csv(file_name, sep='\t', index=False, header=False)
 
-def write_segments_coverage(coverage_segments, output, arguments):
-    with open(arguments['out_dir_plots']+'/data_phasing/' + output, 'a') as fp:
+def write_segments_coverage(coverage_segments, output, args):
+    with open(args.out_dir_plots+'/data_phasing/' + output, 'a') as fp:
         for items in coverage_segments:
             if not items == None:
                 fp.write("%s\n" % items)
@@ -81,11 +81,11 @@ def loh_regions_events(chrom, region_starts, region_ends):
     dict = []
     for i in range(len(region_starts)):
         dict.append((chrom + '\t' + str(region_starts[i]) + '\t' + str(region_ends[i])))
-    #write_segments_coverage(dict, arguments['genome_name'] + '_loh_segments.bed')
+    #write_segments_coverage(dict, args.genome_name'] + '_loh_segments.bed')
     return dict
 
-def seperate_dfs_coverage(arguments, df, haplotype_1_values_updated, haplotype_2_values_updated, unphased):
-    if arguments['without_phasing']:
+def seperate_dfs_coverage(args, df, haplotype_1_values_updated, haplotype_2_values_updated, unphased):
+    if args.without_phasing:
         return df[['chr', 'start', 'end', 'coverage']].copy()
     else:
         df_hp1 = df[['chr', 'start','end', 'hp1']].copy()
@@ -107,7 +107,7 @@ def get_snps_frquncies_coverage_from_bam(df, chrom):
 
     return haplotype_1_position, haplotype_1_coverage, haplotype_2_position, haplotype_2_coverage
 
-def detect_alter_loh_regions(arguments, event, chrom, ref_ends, haplotype_1_values, haplotype_2_values, unphased_reads_values, starts, ends, switch_hps):
+def detect_alter_loh_regions(args, event, chrom, ref_ends, haplotype_1_values, haplotype_2_values, unphased_reads_values, starts, ends, switch_hps):
     if ends and ends[-1] > ref_ends[-1]:
         ends[-1] = ref_ends[-1]
 
@@ -123,16 +123,16 @@ def detect_alter_loh_regions(arguments, event, chrom, ref_ends, haplotype_1_valu
     #print(region_starts)
     #print(region_ends)
 
-    if not arguments['without_phasing'] and switch_hps:
+    if not args.without_phasing and switch_hps:
         for j, (starts,ends) in enumerate(zip(region_starts, region_ends)):
             #TODO Discuss with Ayse, alternate approach on what HP should be selected for each region
-            if mean_values(haplotype_1_values, starts//arguments['bin_size'] - 4, starts//arguments['bin_size'] - 1) > mean_values(haplotype_2_values, starts//arguments['bin_size'] - 4, starts//arguments['bin_size'] - 1):
-                for i in range(starts//arguments['bin_size'],ends//arguments['bin_size']):
+            if mean_values(haplotype_1_values, starts//args.bin_size - 4, starts//args.bin_size - 1) > mean_values(haplotype_2_values, starts//args.bin_size - 4, starts//args.bin_size - 1):
+                for i in range(starts//args.bin_size,ends//args.bin_size):
                         haplotype_1_values[i] = haplotype_1_values[i] + haplotype_2_values[i] + unphased_reads_values[i]
                         haplotype_2_values[i] = 0
                         unphased_reads_values[i] = 0
             else:
-                for i in range(starts // arguments['bin_size'], ends // arguments['bin_size']):
+                for i in range(starts // args.bin_size, ends // args.bin_size):
                     haplotype_2_values[i] = haplotype_1_values[i] + haplotype_2_values[i] + unphased_reads_values[i]
                     haplotype_1_values[i] = 0
                     unphased_reads_values[i] = 0
@@ -203,7 +203,7 @@ def is_phasesets_check_simple_heuristics(ref_start_values_phasesets, ref_end_val
     else:
         return False
 
-def loh_regions_phasesets(haplotype_1_values, haplotype_2_values, loh_region_starts, loh_region_ends, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, arguments):
+def loh_regions_phasesets(haplotype_1_values, haplotype_2_values, loh_region_starts, loh_region_ends, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, args):
     indices = []
     for l, (loh_start, loh_end) in enumerate(zip(loh_region_starts, loh_region_ends)):
         for k, (ps_start, ps_end) in enumerate(zip(ref_start_values_phasesets, ref_end_values_phasesets)):
@@ -216,8 +216,8 @@ def loh_regions_phasesets(haplotype_1_values, haplotype_2_values, loh_region_sta
     ref_end_values_phasesets = [j for i, j in enumerate(ref_end_values_phasesets) if i not in indices]
 
     for m, (loh_start, loh_end) in enumerate(zip(loh_region_starts, loh_region_ends)):
-        haplotype_1_values_phasesets.append(mean_values(haplotype_1_values, loh_start//arguments['bin_size'], loh_end//arguments['bin_size']))
-        haplotype_2_values_phasesets.append(mean_values(haplotype_2_values, loh_start//arguments['bin_size'], loh_end//arguments['bin_size']))
+        haplotype_1_values_phasesets.append(mean_values(haplotype_1_values, loh_start//args.bin_size, loh_end//args.bin_size))
+        haplotype_2_values_phasesets.append(mean_values(haplotype_2_values, loh_start//args.bin_size, loh_end//args.bin_size))
         ref_start_values_phasesets.append(loh_start)
         ref_end_values_phasesets.append(loh_end)
 

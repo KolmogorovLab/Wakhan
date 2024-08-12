@@ -102,6 +102,9 @@ def main_process():
     parser.add_argument('--without-phasing', dest="without_phasing", required=False,
                         default=False, help="Enabling coverage and copynumbers without phasing in plots")
 
+    parser.add_argument("--tumor-purity", dest="tumor_purity", default=0.0, metavar="float", type=float, help="user input tumor purity")
+    parser.add_argument("--tumor-ploidy", dest="tumor_ploidy", default=0.0, metavar="float", type=float, help="user input tumor ploidy")
+
     parser.add_argument('--phaseblock-flipping-enable',  dest="phaseblock_flipping_enable", required=False,
                         default=True, help="Enabling phaseblock flipping in coverage plots")
     parser.add_argument('--smoothing-enable',  dest="smoothing_enable", required=False,
@@ -156,45 +159,6 @@ def main_process():
 
     args = parser.parse_args()
 
-    arguments = {
-        "target_bam": args.target_bam,
-        "reference": args.reference,
-        "phaseblock_flipping_enable": args.phaseblock_flipping_enable,
-        "unphased_reads_coverage_enable": args.unphased_reads_coverage_enable,
-        "without_phasing": args.without_phasing,
-        "smoothing_enable": args.smoothing_enable,
-        "phaseblocks_enable": args.phaseblocks_enable,
-        "copynumbers_enable": args.copynumbers_enable,
-        "copynumbers_subclonal_enable": args.copynumbers_subclonal_enable,
-        "het_phased_snps_freq_enable": args.het_phased_snps_freq_enable,
-        "snps_freq_vcf_enable": args.snps_freq_vcf_enable,
-        "out_dir_plots": args.out_dir_plots,
-        "normal_phased_vcf": args.normal_phased_vcf,
-        "tumor_vcf": args.tumor_vcf,
-        "breakpoints": args.breakpoints,
-        "cpd_internal_segments": args.cpd_internal_segments,
-        "breakpoints_enable": args.breakpoints_enable,
-        "genome_name": args.genome_name,
-        "bin_size": args.bin_size,
-        "bins_cluster_means": args.bins_cluster_means,
-        "bin_size_snps": args.bin_size_snps,
-        "pdf_enable": args.pdf_enable,
-        "cut_threshold": args.cut_threshold,
-        "cut_threshold_snps_counts": args.cut_threshold_snps_counts,
-        "min_aligned_length": args.min_aligned_length,
-        "no_of_clusters": args.no_of_clusters,
-        "contigs": args.contigs,
-        "threads": args.threads,
-        "dryrun": args.dryrun,
-        "dryrun_path": args.dryrun_path,
-        "enable_debug": args.enable_debug,
-        "variable_size_bins": args.variable_size_bins,
-        "enable_simple_heuristics": args.enable_simple_heuristics,
-        "rephase_normal_vcf": args.rephase_normal_vcf,
-        "rephase_tumor_vcf": args.rephase_tumor_vcf,
-        "rehaplotag_tumor_bam": args.rehaplotag_tumor_bam,
-
-    }
     logging.basicConfig(level=logging.DEBUG)
 
     if args.control_bam is None:
@@ -216,11 +180,11 @@ def main_process():
     if not os.path.isdir(args.out_dir_plots):
         os.mkdir(args.out_dir_plots)
     #if not os.path.isdir('data'):
-    if os.path.exists(arguments['out_dir_plots']+'/data_phasing'):
-        shutil.rmtree(arguments['out_dir_plots']+'/data_phasing')
-        os.mkdir(arguments['out_dir_plots']+'/data_phasing')
+    if os.path.exists(args.out_dir_plots+'/data_phasing'):
+        shutil.rmtree(args.out_dir_plots+'/data_phasing')
+        os.mkdir(args.out_dir_plots+'/data_phasing')
     else:
-        os.mkdir(arguments['out_dir_plots']+'/data_phasing')
+        os.mkdir(args.out_dir_plots+'/data_phasing')
 
     thread_pool = Pool(args.threads)
 
@@ -237,38 +201,38 @@ def main_process():
 
     logging.info('Computing coverage histogram')
     coverage_histograms = update_coverage_hist(genome_ids, ref_lengths, segments_by_read, args.min_mapping_quality,
-                                               args.max_read_error, arguments)
+                                               args.max_read_error, args)
     del segments_by_read
-    chroms = get_contigs_list(arguments['contigs'])
+    chroms = get_contigs_list(args.contigs)
 
-    if arguments['dryrun']:
-        csv_df_phasesets = csv_df_chromosomes_sorter(arguments['dryrun_path'] + arguments['genome_name'] + '/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
-        #csv_df_phasesets_missing = csv_df_chromosomes_sorter(arguments['dryrun_path'] + arguments['genome_name'] + '/coverage_ps_missing.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
+    if args.dryrun:
+        csv_df_phasesets = csv_df_chromosomes_sorter(args.dryrun_path + args.genome_name + '/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
+        #csv_df_phasesets_missing = csv_df_chromosomes_sorter(args.dryrun_path'] + args.genome_name'] + '/coverage_ps_missing.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
         #csv_df_phasesets = df_chromosomes_sorter(pd.concat([csv_df_phasesets, csv_df_phasesets_missing], ignore_index=True), ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
 
-        csv_df_coverage = csv_df_chromosomes_sorter(arguments['dryrun_path'] + arguments['genome_name'] + '/coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
+        csv_df_coverage = csv_df_chromosomes_sorter(args.dryrun_path + args.genome_name + '/coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
     else:
         logging.info('Computing coverage for bins')
-        segments = get_chromosomes_bins(args.target_bam[0], arguments['bin_size'], arguments)
+        segments = get_chromosomes_bins(args.target_bam[0], args.bin_size, args)
         segments_coverage = get_segments_coverage(segments, coverage_histograms)
         logging.info('Writing coverage for bins')
-        write_segments_coverage(segments_coverage, 'coverage.csv', arguments)
+        write_segments_coverage(segments_coverage, 'coverage.csv', args)
 
         logging.info('Parsing phaseblocks information')
-        if arguments['normal_phased_vcf']:
-            output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(arguments['normal_phased_vcf'], arguments)
+        if args.normal_phased_vcf:
+            output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(args.normal_phased_vcf, args)
         else:
-            output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(arguments['tumor_vcf'], arguments)
-        phasesets_segments = generate_phasesets_bins(args.target_bam[0], output_phasesets_file_path, arguments['bin_size'], arguments) #TODO update for multiple bam files
+            output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(args.tumor_vcf, args)
+        phasesets_segments = generate_phasesets_bins(args.target_bam[0], output_phasesets_file_path, args.bin_size, args) #TODO update for multiple bam files
         logging.info('Computing coverage for phaseblocks')
         phasesets_coverage = get_segments_coverage(phasesets_segments, coverage_histograms)
 
         logging.info('Writing coverage for phaseblocks')
-        write_segments_coverage(phasesets_coverage, 'coverage_ps.csv', arguments)
+        write_segments_coverage(phasesets_coverage, 'coverage_ps.csv', args)
 
         logging.info('Loading coverage (bins) and coverage (phaseblocks) files...')
-        csv_df_phasesets = csv_df_chromosomes_sorter(arguments['out_dir_plots']+'/data_phasing/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
-        csv_df_coverage = csv_df_chromosomes_sorter(arguments['out_dir_plots']+'/data_phasing/coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
+        csv_df_phasesets = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
+        csv_df_coverage = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
 
         #Missing phaseblocks and coverage added
         #phasesets_coverage_missing = update_phasesets_coverage_with_missing_phasesets(chroms, csv_df_phasesets, args.target_bam[0], coverage_histograms)
@@ -277,22 +241,22 @@ def main_process():
 
         del coverage_histograms
 
-    if arguments['normal_phased_vcf']:
-        get_snp_frequencies_segments(arguments, arguments['target_bam'][0], thread_pool)
-        df_snps_frequencies = csv_df_chromosomes_sorter(arguments['out_dir_plots']+'/data_phasing/snps_frequencies.csv', ['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])
+    if args.normal_phased_vcf:
+        get_snp_frequencies_segments(args, args.target_bam[0], thread_pool)
+        df_snps_frequencies = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/snps_frequencies.csv', ['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])
         df_snps_frequencies = df_snps_frequencies.drop(df_snps_frequencies[(df_snps_frequencies.chr == "chrY")].index)
 
-    if arguments['tumor_vcf']:
-        output_phasesets_file_path = vcf_parse_to_csv_for_snps(arguments['tumor_vcf'], arguments)
+    if args.tumor_vcf:
+        output_phasesets_file_path = vcf_parse_to_csv_for_snps(args.tumor_vcf, args)
         df_snps_in_csv = csv_df_chromosomes_sorter(output_phasesets_file_path, ['chr', 'pos', 'qual', 'gt', 'dp', 'vaf'])
         # plot all SNPs frequencies, ratios and counts
-        #if arguments['enable_debug']:
-        #    plot_snps(arguments, df_snps_in_csv)
+        #if args.enable_debug']:
+        #    plot_snps(args, df_snps_in_csv)
 
-    if not os.path.isdir(arguments['out_dir_plots'] + '/phasing_output'):
-        os.mkdir(arguments['out_dir_plots'] + '/phasing_output')
+    if not os.path.isdir(args.out_dir_plots + '/phasing_output'):
+        os.mkdir(args.out_dir_plots + '/phasing_output')
 
-    filename = f"{os.path.join(arguments['out_dir_plots'], 'phasing_output', 'PHASE_CORRECTION_INDEX.html')}"
+    filename = f"{os.path.join(args.out_dir_plots, 'phasing_output', 'PHASE_CORRECTION_INDEX.html')}"
     html_graphs = open(filename, 'w')
     html_graphs.write("<html><head></head><body>" + "\n")
     start_values_phasesets_contiguous_all = []
@@ -314,37 +278,37 @@ def main_process():
             ref_start_values = csv_df_coverage_chrom.start.values.tolist()
             ref_end_values = csv_df_coverage_chrom.end.values.tolist()
 
-            if arguments['normal_phased_vcf']:
-                snps_haplotype1_mean, snps_haplotype2_mean  = snps_frequencies_chrom_mean(df_snps_frequencies, ref_start_values, chrom, arguments)
+            if args.normal_phased_vcf:
+                snps_haplotype1_mean, snps_haplotype2_mean  = snps_frequencies_chrom_mean(df_snps_frequencies, ref_start_values, chrom, args)
             else:
                 snps_haplotype1_mean = haplotype_1_values
                 snps_haplotype2_mean = haplotype_2_values
-            plot_coverage_data(html_graphs, arguments, chrom, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, "without_phase_correction")
+            plot_coverage_data(html_graphs, args, chrom, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, "without_phase_correction")
             ##################################
-            if arguments['tumor_vcf']:
-                ref_start_values_updated, snps_het_counts, snps_homo_counts, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends = get_snps_frquncies_coverage(df_snps_in_csv, chrom, ref_start_values, arguments['bin_size'])
-                if arguments['without_phasing']:
-                    detect_loh_centromere_regions(chrom, arguments, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
+            if args.tumor_vcf:
+                ref_start_values_updated, snps_het_counts, snps_homo_counts, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends = get_snps_frquncies_coverage(df_snps_in_csv, chrom, ref_start_values, args.bin_size)
+                if args.without_phasing:
+                    detect_loh_centromere_regions(chrom, args, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
                 else:
-                    snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, loh_region_starts, loh_region_ends = detect_loh_centromere_regions(chrom, arguments, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
+                    snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, loh_region_starts, loh_region_ends = detect_loh_centromere_regions(chrom, args, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
                     loh_regions_events_all.extend(loh_regions_events(chrom, loh_region_starts, loh_region_ends))
             else:
                 loh_region_starts =[]
                 loh_region_ends = []
             ##################################
-            # change_point_detection(snps_haplotype1_mean, ref_start_values, ref_end_values, arguments, chrom,
+            # change_point_detection(snps_haplotype1_mean, ref_start_values, ref_end_values, args, chrom,
             #                        html_graphs, 1, color='#6A5ACD')
-            # change_point_detection(snps_haplotype2_mean, ref_start_values, ref_end_values, arguments, chrom,
+            # change_point_detection(snps_haplotype2_mean, ref_start_values, ref_end_values, args, chrom,
             #                        html_graphs, 2, color='#2E8B57')
 
-            # cpd_haplotype1_mean, cpd_haplotype1_start, cpd_haplotype1_end,  cpd_haplotype2_mean, cpd_haplotype2_start, cpd_haplotype2_end = cpd_positions_means(snps_haplotype1_mean, snps_haplotype2_mean, arguments)
+            # cpd_haplotype1_mean, cpd_haplotype1_start, cpd_haplotype1_end,  cpd_haplotype2_mean, cpd_haplotype2_start, cpd_haplotype2_end = cpd_positions_means(snps_haplotype1_mean, snps_haplotype2_mean, args)
 
-            # change_point_detection(snps_haplotype1_mean, ref_start_values, ref_end_values, arguments, chrom,
+            # change_point_detection(snps_haplotype1_mean, ref_start_values, ref_end_values, args, chrom,
             #                        html_graphs, 1, color='#6A5ACD')
-            # change_point_detection(snps_haplotype2_mean, ref_start_values, ref_end_values, arguments, chrom,
+            # change_point_detection(snps_haplotype2_mean, ref_start_values, ref_end_values, args, chrom,
             #                        html_graphs, 2, color='#2E8B57')
 
-            # phase_correction_centers(arguments, cpd_haplotype1_mean, cpd_haplotype1_start, cpd_haplotype1_end,  cpd_haplotype2_mean, cpd_haplotype2_start, cpd_haplotype2_end, snps_haplotype1_mean, snps_haplotype2_mean)
+            # phase_correction_centers(args, cpd_haplotype1_mean, cpd_haplotype1_start, cpd_haplotype1_end,  cpd_haplotype2_mean, cpd_haplotype2_start, cpd_haplotype2_end, snps_haplotype1_mean, snps_haplotype2_mean)
             # print(cpd_haplotype1_mean)
             # print([(cpd_haplotype1_end - cpd_haplotype1_start) //50000 for cpd_haplotype1_start, cpd_haplotype1_end in zip(cpd_haplotype1_start, cpd_haplotype1_end)])
             # print(cpd_haplotype2_mean)
@@ -359,34 +323,34 @@ def main_process():
             #is_phasesets_check_simple_heuristics(ref_start_values_phasesets, ref_end_values_phasesets)
             if len(ref_start_values_phasesets) >= 1:
                 is_simple_heuristics = False
-            if arguments['enable_simple_heuristics']:
+            if args.enable_simple_heuristics:
                 is_simple_heuristics = True
 
             if is_simple_heuristics:
                 # #plot resultant
                 snps_haplotype1_mean, snps_haplotype2_mean, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets = \
-                    phaseblock_flipping(chrom, arguments, is_simple_heuristics, snps_haplotype1_mean, snps_haplotype2_mean, ref_start_values, ref_start_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
-                plot_coverage_data(html_graphs, arguments, chrom, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, "phase_correction_1")
+                    phaseblock_flipping(chrom, args, is_simple_heuristics, snps_haplotype1_mean, snps_haplotype2_mean, ref_start_values, ref_start_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
+                plot_coverage_data(html_graphs, args, chrom, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, "phase_correction_1")
             else:
                 # #detect centromeres
-                #ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets = detect_centromeres(ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets, snps_haplotype1_mean, snps_haplotype2_mean, ref_start_values, arguments['bin_size'])
+                #ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets = detect_centromeres(ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets, snps_haplotype1_mean, snps_haplotype2_mean, ref_start_values, args.bin_size'])
                 #infer missing phaseblocks
-                #ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets = infer_missing_phaseblocks(ref_start_values, ref_end_values, ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets, snps_haplotype1_mean, snps_haplotype2_mean, arguments['bin_size'])
+                #ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets = infer_missing_phaseblocks(ref_start_values, ref_end_values, ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets, snps_haplotype1_mean, snps_haplotype2_mean, args.bin_size'])
 
                 snps_haplotype1_mean, snps_haplotype2_mean, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets = \
-                    phaseblock_flipping(chrom, arguments, is_simple_heuristics, snps_haplotype1_mean, snps_haplotype2_mean, ref_start_values, ref_start_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
+                    phaseblock_flipping(chrom, args, is_simple_heuristics, snps_haplotype1_mean, snps_haplotype2_mean, ref_start_values, ref_start_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
 
                 #switch inter phaseblocks bins
-                snps_haplotype1_mean, snps_haplotype2_mean = switch_inter_phaseblocks_bins(chrom, arguments, ref_start_values, snps_haplotype1_mean, snps_haplotype2_mean, ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets)
+                snps_haplotype1_mean, snps_haplotype2_mean = switch_inter_phaseblocks_bins(chrom, args, ref_start_values, snps_haplotype1_mean, snps_haplotype2_mean, ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets)
 
-                plot_coverage_data(html_graphs, arguments, chrom, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values,
+                plot_coverage_data(html_graphs, args, chrom, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values,
                                    haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, "phase_correction_0")
 
                 ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets = contiguous_phaseblocks(haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, loh_region_starts, loh_region_ends)
 
             #flip phaseblocks based on more contiguous phaseblocks
-            #haplotype_1_values_phasesets, haplotype_2_values_phasesets, snps_haplotype1_mean, snps_haplotype2_mean = flip_phaseblocks_contigous(chrom, arguments, ref_start_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, snps_haplotype1_mean, snps_haplotype2_mean)
-            plot_coverage_data(html_graphs, arguments, chrom, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, "phase_correction_1")
+            #haplotype_1_values_phasesets, haplotype_2_values_phasesets, snps_haplotype1_mean, snps_haplotype2_mean = flip_phaseblocks_contigous(chrom, args, ref_start_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, snps_haplotype1_mean, snps_haplotype2_mean)
+            plot_coverage_data(html_graphs, args, chrom, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, "phase_correction_1")
 
             ##################################
             chr_list = [chrom for ch in range(len(snps_haplotype1_mean))]
@@ -400,33 +364,33 @@ def main_process():
 
     html_graphs.write("</body></html>")
 
-    write_segments_coverage(loh_regions_events_all, arguments['genome_name'] + '_loh_segments.csv', arguments)
-    write_df_csv(pd.concat(start_values_phasesets_contiguous_all), arguments['out_dir_plots']+'/data_phasing/'+arguments['genome_name']+'_phasesets.csv')
-    write_df_csv(pd.concat(df_updated_coverage), arguments['out_dir_plots']+'/data_phasing/'+arguments['genome_name']+'_coverage.csv')
+    write_segments_coverage(loh_regions_events_all, args.genome_name + '_loh_segments.csv', args)
+    write_df_csv(pd.concat(start_values_phasesets_contiguous_all), args.out_dir_plots+'/data_phasing/'+args.genome_name+'_phasesets.csv')
+    write_df_csv(pd.concat(df_updated_coverage), args.out_dir_plots+'/data_phasing/'+args.genome_name+'_coverage.csv')
 
-    csv_df_phase_change_segments = csv_df_chromosomes_sorter(arguments['out_dir_plots']+'/data_phasing/' + arguments['genome_name'] + '_phase_change_segments.csv', ['chr', 'start', 'end'])
-    csv_df_phasesets_segments = csv_df_chromosomes_sorter(arguments['out_dir_plots']+'/data_phasing/' + arguments['genome_name'] + '_phasesets.csv', ['chr', 'start'])
-    csv_df_loh_regions = csv_df_chromosomes_sorter(arguments['out_dir_plots']+'/data_phasing/' + arguments['genome_name'] + '_loh_segments.csv', ['chr', 'start', 'end'])
+    csv_df_phase_change_segments = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/' + args.genome_name + '_phase_change_segments.csv', ['chr', 'start', 'end'])
+    csv_df_phasesets_segments = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/' + args.genome_name + '_phasesets.csv', ['chr', 'start'])
+    csv_df_loh_regions = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/' + args.genome_name + '_loh_segments.csv', ['chr', 'start', 'end'])
 
-    if arguments["normal_phased_vcf"]:
-        get_phasingblocks(arguments["normal_phased_vcf"])
+    if args.normal_phased_vcf:
+        get_phasingblocks(args.normal_phased_vcf)
         logging.info('VCF edit for phase change segments')
-        out_vcf = os.path.join(arguments['out_dir_plots'], 'phasing_output', arguments['genome_name']+'.rephased.vcf.gz')
-        rephase_vcf(csv_df_phase_change_segments, csv_df_phasesets_segments, arguments["normal_phased_vcf"], out_vcf)
+        out_vcf = os.path.join(args.out_dir_plots, 'phasing_output', args.genome_name+'.rephased.vcf.gz')
+        rephase_vcf(csv_df_phase_change_segments, csv_df_phasesets_segments, args.normal_phased_vcf, out_vcf)
         index_vcf(out_vcf)
         get_phasingblocks(out_vcf)
 
-    elif not arguments["normal_phased_vcf"] and arguments["tumor_vcf"]:
-        get_phasingblocks(arguments["tumor_vcf"])
+    elif not args.normal_phased_vcf and args.tumor_vcf:
+        get_phasingblocks(args.tumor_vcf)
         logging.info('VCF edit for phase change segments')
-        out_vcf = os.path.join(arguments['out_dir_plots'], 'phasing_output', arguments['genome_name']+'.rephased.vcf.gz')
-        rephase_vcf(csv_df_phase_change_segments, csv_df_phasesets_segments, arguments["tumor_vcf"], out_vcf)
+        out_vcf = os.path.join(args.out_dir_plots, 'phasing_output', args.genome_name+'.rephased.vcf.gz')
+        rephase_vcf(csv_df_phase_change_segments, csv_df_phasesets_segments, args.tumor_vcf, out_vcf)
         index_vcf(out_vcf)
         get_phasingblocks(out_vcf)
 
-    if arguments["rehaplotag_tumor_bam"]:
+    if args.rehaplotag_tumor_bam:
         logging.info('Rehaplotagging tumor BAM')
-        tumor_bam_haplotag(arguments, out_vcf)
+        tumor_bam_haplotag(args, out_vcf)
 
     return 0
 

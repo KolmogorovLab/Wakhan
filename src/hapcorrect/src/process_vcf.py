@@ -234,7 +234,7 @@ def squash_regions(region, bin_size):
 
     return region_starts, region_ends
 
-def snps_frequencies_chrom_mean(df_snps, ref_start_values, chrom, arguments):
+def snps_frequencies_chrom_mean(df_snps, ref_start_values, chrom, args):
     df = df_snps[df_snps['chr'] == chrom]
 
     #df = dict(tuple(df_snps.groupby('hp')))
@@ -246,7 +246,7 @@ def snps_frequencies_chrom_mean(df_snps, ref_start_values, chrom, arguments):
     snps_haplotype1_mean=[]
     total=0
     for index, i in enumerate(ref_start_values):
-        len_cov= len(df[(df.pos >= i) & (df.pos < i + arguments['bin_size'])])
+        len_cov= len(df[(df.pos >= i) & (df.pos < i + args.bin_size)])
         if len_cov ==0:
             snps_haplotype1_mean.append(0)
         else:
@@ -260,7 +260,7 @@ def snps_frequencies_chrom_mean(df_snps, ref_start_values, chrom, arguments):
     snps_haplotype2_mean = []
     total = 0
     for index, i in enumerate(ref_start_values):
-        len_cov= len(df[(df.pos >= i) & (df.pos < i + arguments['bin_size'])])
+        len_cov= len(df[(df.pos >= i) & (df.pos < i + args.bin_size)])
         if len_cov ==0:
             snps_haplotype2_mean.append(0)
         else:
@@ -272,7 +272,7 @@ def snps_frequencies_chrom_mean(df_snps, ref_start_values, chrom, arguments):
         total += len_cov
     return snps_haplotype1_mean, snps_haplotype2_mean
 
-def cpd_mean(haplotype1_means, haplotype2_means, ref_values, chrom, arguments):
+def cpd_mean(haplotype1_means, haplotype2_means, ref_values, chrom, args):
     import ruptures as rpt
     import numpy as np
 
@@ -292,8 +292,8 @@ def cpd_mean(haplotype1_means, haplotype2_means, ref_values, chrom, arguments):
         else:
             snps_haplotype1_mean.append(0)
         start = point + 1
-        snps_haplotype1_pos.append(point * arguments['bin_size'])
-    snps_haplotype1_pos.append(ref_values[-1] * arguments['bin_size'])
+        snps_haplotype1_pos.append(point * args.bin_size)
+    snps_haplotype1_pos.append(ref_values[-1] * args.bin_size)
     ############################################################
     data = np.array(haplotype2_means, dtype='int') #numpy.clip(haplotype2_means, a_min=1, a_max=300)
     algo = rpt.Pelt(model="rbf").fit(data)
@@ -311,8 +311,8 @@ def cpd_mean(haplotype1_means, haplotype2_means, ref_values, chrom, arguments):
         else:
             snps_haplotype2_mean.append(0)
         start = point + 1
-        snps_haplotype2_pos.append(point * arguments['bin_size'])
-    snps_haplotype2_pos.append(ref_values[-1] * arguments['bin_size'])
+        snps_haplotype2_pos.append(point * args.bin_size)
+    snps_haplotype2_pos.append(ref_values[-1] * args.bin_size)
 
     chr = range(len(snps_haplotype1_pos))
     df_cpd_hp1 = pd.DataFrame(list(zip([chrom for ch in chr], snps_haplotype1_pos, snps_haplotype1_mean)), columns=['chr', 'start', 'hp1'])
@@ -331,15 +331,15 @@ def slice_when(predicate, iterable):
   yield iterable[x:size]
 
 
-def vcf_parse_to_csv_for_snps(input_vcf, arguments):
+def vcf_parse_to_csv_for_snps(input_vcf, args):
     # pathlib.Path(input_vcf).suffix #extension
     # TODO add output check conditions with all these processes
     basefile = pathlib.Path(input_vcf).stem  # filename without extension
     output_vcf = basefile + '_snps.vcf.gz'
-    output_vcf = f"{os.path.join(arguments['out_dir_plots'], 'data_phasing', output_vcf)}"
+    output_vcf = f"{os.path.join(args.out_dir_plots, 'data_phasing', output_vcf)}"
 
     output_csv = basefile + '_snps.csv'
-    output_csv = f"{os.path.join(arguments['out_dir_plots'], 'data_phasing', output_csv)}"
+    output_csv = f"{os.path.join(args.out_dir_plots, 'data_phasing', output_csv)}"
 
     # logging.info('bcftools -> Filtering out hetrozygous and phased SNPs and generating a new VCF')
     # # Filter out het, phased SNPs
@@ -355,15 +355,15 @@ def vcf_parse_to_csv_for_snps(input_vcf, arguments):
     process.wait()
 
     return output_csv
-def vcf_parse_to_csv_for_het_phased_snps_phasesets(input_vcf, arguments):
+def vcf_parse_to_csv_for_het_phased_snps_phasesets(input_vcf, args):
     #pathlib.Path(input_vcf).suffix #extension
     # TODO add output check conditions with all these processes
     basefile = pathlib.Path(input_vcf).stem #filename without extension
     output_vcf = basefile + '_het_phased_snps.vcf.gz'
-    output_vcf = f"{os.path.join(arguments['out_dir_plots'], 'data_phasing', output_vcf)}"
+    output_vcf = f"{os.path.join(args.out_dir_plots, 'data_phasing', output_vcf)}"
 
     output_csv = basefile + '_phasesets.csv'
-    output_csv = f"{os.path.join(arguments['out_dir_plots'], 'data_phasing', output_csv)}"
+    output_csv = f"{os.path.join(args.out_dir_plots, 'data_phasing', output_csv)}"
 
     logging.info('bcftools -> Filtering out hetrozygous and phased SNPs and generating a new VCF')
     # Filter out het, phased SNPs
@@ -379,30 +379,30 @@ def vcf_parse_to_csv_for_het_phased_snps_phasesets(input_vcf, arguments):
 
     return output_csv
 
-def get_snp_frequencies_segments(arguments, target_bam, thread_pool):
-    basefile = pathlib.Path(arguments['normal_phased_vcf']).stem
+def get_snp_frequencies_segments(args, target_bam, thread_pool):
+    basefile = pathlib.Path(args.normal_phased_vcf).stem
     output_csv = basefile + '_het_snps.csv'
-    output_csv = f"{os.path.join(arguments['out_dir_plots'], 'data_phasing', output_csv)}"
+    output_csv = f"{os.path.join(args.out_dir_plots, 'data_phasing', output_csv)}"
 
     output_bed = basefile + '_het_snps.bed'
-    output_bed = f"{os.path.join(arguments['out_dir_plots'], 'data_phasing', output_bed)}"
+    output_bed = f"{os.path.join(args.out_dir_plots, 'data_phasing', output_bed)}"
 
     output_acgts = basefile + '_het_snps_freqs.csv'
-    output_acgts = f"{os.path.join(arguments['out_dir_plots'], 'data_phasing', output_acgts)}"
+    output_acgts = f"{os.path.join(args.out_dir_plots, 'data_phasing', output_acgts)}"
 
     # logging.info('bcftools -> Filtering out hetrozygous and phased SNPs and generating a new VCF')
     # # Filter out het, phased SNPs
-    # cmd = ['bcftools', 'view', '--threads', '$(nproc)',  '--phased', '-g', 'het', '--types', 'snps', arguments['normal_phased_vcf'], '-Oz', '-o', arguments['normal_phased_vcf']]
+    # cmd = ['bcftools', 'view', '--threads', '$(nproc)',  '--phased', '-g', 'het', '--types', 'snps', args.normal_phased_vcf'], '-Oz', '-o', args.normal_phased_vcf']]
     # process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     # process.wait()
 
     logging.info('bcftools -> Query for het SNPs and creating a %s CSV file', output_csv)
     # bcftools query for phasesets and GT,DP,VAF
-    cmd = ['bcftools', 'query', '-i', 'GT="het"', '-f',  '%CHROM\t%POS\t%REF\t%ALT\t[%GT]\n', arguments['normal_phased_vcf'], '-o', output_csv] #
+    cmd = ['bcftools', 'query', '-i', 'GT="het"', '-f',  '%CHROM\t%POS\t%REF\t%ALT\t[%GT]\n', args.normal_phased_vcf, '-o', output_csv] #
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     process.wait()
 
-    cmd = ['bcftools', 'query', '-i', 'GT="het"', '-f',  '%CHROM\t%POS\n', arguments['normal_phased_vcf'], '-o', output_bed] #
+    cmd = ['bcftools', 'query', '-i', 'GT="het"', '-f',  '%CHROM\t%POS\n', args.normal_phased_vcf, '-o', output_bed] #
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     process.wait()
 
@@ -415,17 +415,17 @@ def get_snp_frequencies_segments(arguments, target_bam, thread_pool):
 
     logging.info('SNPs frequency -> Comuting het SNPs frequency from tumor BAM')
 
-    #output_pileups = bam_pileups_snps(output_bed, target_bam, arguments)
-    if arguments['dryrun']:
-        output_pileups = arguments['dryrun_path'] + arguments['genome_name']+'/'+arguments['genome_name']+'_SNPs.csv'
+    #output_pileups = bam_pileups_snps(output_bed, target_bam, args)
+    if args.dryrun:
+        output_pileups = args.dryrun_path + args.genome_name+'/'+args.genome_name+'_SNPs.csv'
     else:
-        output_pileups = process_bam_for_snps_freqs(arguments, thread_pool)  # TODO Updated
+        output_pileups = process_bam_for_snps_freqs(args, thread_pool)  # TODO Updated
 
     compute_acgt_frequency(output_pileups, output_acgts)
     dataframe_acgt_frequency = csv_df_chromosomes_sorter(output_acgts, ['chr', 'start', 'a', 'c', 'g', 't'], ',')
     dataframe_acgt_frequency = pd.merge(dataframe_snps, dataframe_acgt_frequency, on=['chr', 'start'])
     snp_segments_frequencies = get_snp_segments_frequencies_final(dataframe_acgt_frequency)
-    write_segments_coverage(snp_segments_frequencies, 'snps_frequencies.csv', arguments)
+    write_segments_coverage(snp_segments_frequencies, 'snps_frequencies.csv', args)
 
 def get_snp_segments_frequencies_final(dataframe_acgt_frequency):
     snp_segments = dataframe_acgt_frequency.values.tolist()
@@ -464,14 +464,14 @@ def get_snp_segments_frequencies_final(dataframe_acgt_frequency):
         snp_segments_final.append((contig + '\t' + str(pos) + '\t' + str(freq_value_a) + '\t'+ str(hp_a) + '\t' + str(freq_value_b) + '\t' + str(hp_b)))
 
     return snp_segments_final
-def bam_pileups_snps(snps_list, target_bam, arguments):
+def bam_pileups_snps(snps_list, target_bam, args):
     basefile = pathlib.Path(target_bam).stem
     output_csv = basefile + '_snps_pileup.csv'
-    output_csv = f"{os.path.join(arguments['out_dir_plots'], 'data_phasing', output_csv)}"
+    output_csv = f"{os.path.join(args.out_dir_plots, 'data_phasing', output_csv)}"
 
     #target_bam = '/home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7_haplotagged.bam'
 
-    cmd = ['samtools', 'mpileup', '-l',  snps_list, '-f', arguments['reference'], target_bam, '-o', output_csv] #
+    cmd = ['samtools', 'mpileup', '-l',  snps_list, '-f', args.reference, target_bam, '-o', output_csv] #
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     process.wait()
 

@@ -55,7 +55,7 @@ def get_allsegments(segments_by_read_filtered):
             if not seg.is_insertion:
                 allsegments.append(seg)
     return allsegments
-def filter_all_reads(segments_by_read, min_mapq, max_read_error, arguments):
+def filter_all_reads(segments_by_read, min_mapq, max_read_error, args):
     #MIN_ALIGNED_LENGTH = 5000
     MIN_ALIGNED_RATE = 0.5
     MAX_SEGMENTS = 10
@@ -75,7 +75,7 @@ def filter_all_reads(segments_by_read, min_mapq, max_read_error, arguments):
 
         aligned_len = sum([seg.segment_length for seg in dedup_segments if not seg.is_insertion])
         aligned_ratio = aligned_len / segments[0].read_length
-        if aligned_len < arguments['min_aligned_length'] or aligned_ratio < MIN_ALIGNED_RATE or len(segments) > MAX_SEGMENTS:
+        if aligned_len < args.min_aligned_length or aligned_ratio < MIN_ALIGNED_RATE or len(segments) > MAX_SEGMENTS:
             continue
         segments_by_read_filtered.append(dedup_segments)
 
@@ -239,9 +239,9 @@ def get_segments_coverage(segments, coverage_histograms):
 
 COV_WINDOW = 500
 
-def update_coverage_hist(genome_ids, ref_lengths, segments_by_read, min_mapq, max_read_error, arguments):
+def update_coverage_hist(genome_ids, ref_lengths, segments_by_read, min_mapq, max_read_error, args):
     NUM_HAPLOTYPES = 3
-    segments_by_read_filtered = filter_all_reads(segments_by_read, min_mapq, max_read_error, arguments)
+    segments_by_read_filtered = filter_all_reads(segments_by_read, min_mapq, max_read_error, args)
     allsegments = get_allsegments(segments_by_read_filtered)
     coverage_histograms = {}
     for genome_id in genome_ids:
@@ -296,23 +296,23 @@ def compute_snp_frequency(bam, region):
 
     return (contig+'\t'+str(start)+'\t'+ref+'\t'+alt+'\t'+str(ref_value_new)+'\t'+str(alt_value_new)+'\t'+str(hp))
 
-def tumor_bam_haplotag(arguments, out_vcf):
-    basefile = pathlib.Path(arguments['target_bam'][0]).stem
-    output_bam = f"{os.path.join(arguments['out_dir_plots']+'/data', basefile + arguments['genome_name'] + '.rehaplotagged.bam')}"
-    whatshap_cmd = ['whatshap', 'haplotag', '--reference', arguments['reference'], out_vcf, arguments['target_bam'][0], '- o', output_bam, '--ignore-read-groups', '--tag-supplementary', '--skip-missing-contigs', '--output-threads', str(arguments['threads'])]
+def tumor_bam_haplotag(args, out_vcf):
+    basefile = pathlib.Path(args.target_bam[0]).stem
+    output_bam = f"{os.path.join(args.out_dir_plots+'/data', basefile + args.genome_name + '.rehaplotagged.bam')}"
+    whatshap_cmd = ['whatshap', 'haplotag', '--reference', args.reference, out_vcf, args.target_bam[0], '- o', output_bam, '--ignore-read-groups', '--tag-supplementary', '--skip-missing-contigs', '--output-threads', str(args.threads)]
 
     wh_1 = subprocess.Popen(whatshap_cmd, stdout=subprocess.PIPE)
     wh_1.wait()
     if wh_1.returncode != 0:
         raise ValueError('whatshap haplotag subprocess returned nonzero value: {}'.format(wh_1.returncode))
 
-def process_bam_for_snps_freqs(arguments, thread_pool):
-    basefile = pathlib.Path(arguments['target_bam'][0]).stem
-    output_bam = f"{os.path.join(arguments['out_dir_plots']+'/data', basefile + '_reduced.bam')}"
+def process_bam_for_snps_freqs(args, thread_pool):
+    basefile = pathlib.Path(args.target_bam[0]).stem
+    output_bam = f"{os.path.join(args.out_dir_plots+'/data', basefile + '_reduced.bam')}"
 
-    samtools_cmd = ['samtools', 'view', '-@', str(arguments['threads']), '-F', '3844', '-q', '5', '-h', arguments['target_bam'][0]]
+    samtools_cmd = ['samtools', 'view', '-@', str(args.threads), '-F', '3844', '-q', '5', '-h', args.target_bam[0]]
     awk_cmd = ['awk', '-v', 'OFS=\t', '{if($0 ~ /^@/){print $0} else {print $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, "*"}}']
-    samtools_bam_cmd = ['samtools', 'view', '-@', str(arguments['threads']), '-Sb', '-o', output_bam]
+    samtools_bam_cmd = ['samtools', 'view', '-@', str(args.threads), '-Sb', '-o', output_bam]
 
     st_1 = subprocess.Popen(samtools_cmd, stdout=subprocess.PIPE)
     awk = subprocess.Popen(awk_cmd, stdin=st_1.stdout, stdout=subprocess.PIPE)
@@ -329,14 +329,14 @@ def process_bam_for_snps_freqs(arguments, thread_pool):
     if st_2.returncode != 0:
         raise ValueError('samtools view for bam output subprocess returned nonzero value: {}'.format(st_2.returncode))
 
-    basefile = pathlib.Path(arguments['normal_phased_vcf']).stem
+    basefile = pathlib.Path(args.normal_phased_vcf).stem
     output_csv = basefile + '_het_snps.csv'
-    output_csv = f"{os.path.join(arguments['out_dir_plots']+'/data', output_csv)}"
+    output_csv = f"{os.path.join(args.out_dir_plots+'/data', output_csv)}"
 
     output_vcf = basefile + '_het_phased_snps.vcf.gz'
-    output_vcf = f"{os.path.join(arguments['out_dir_plots']+'/data', output_vcf)}"
+    output_vcf = f"{os.path.join(args.out_dir_plots+'/data', output_vcf)}"
 
-    cmd = ['bcftools', 'view', '--threads', str(arguments['threads']),  '--phased', '-g', 'het', '--types', 'snps', arguments['normal_phased_vcf'], '-o', output_vcf]
+    cmd = ['bcftools', 'view', '--threads', str(args.threads),  '--phased', '-g', 'het', '--types', 'snps', args.normal_phased_vcf, '-o', output_vcf]
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     process.wait()
 
@@ -344,10 +344,10 @@ def process_bam_for_snps_freqs(arguments, thread_pool):
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     process.wait()
 
-    beds = split_file(output_csv, arguments['threads'], arguments)
-    pileups_outputs = process_pileups(output_bam, arguments['reference'], beds, thread_pool, arguments)
+    beds = split_file(output_csv, args.threads, args)
+    pileups_outputs = process_pileups(output_bam, args.reference, beds, thread_pool, args)
 
-    output_pileup = f"{os.path.join(arguments['out_dir_plots']+'/data', arguments['genome_name'] + '_SNPs.csv')}"
+    output_pileup = f"{os.path.join(args.out_dir_plots+'/data', args.genome_name + '_SNPs.csv')}"
 
     for i in pileups_outputs:
         with open(i, 'r') as content_file:
@@ -357,24 +357,24 @@ def process_bam_for_snps_freqs(arguments, thread_pool):
 
     return output_pileup
 
-def split_file(fname, parts, arguments):
+def split_file(fname, parts, args):
     out_beds = []
     lines  = pandas.read_csv(fname)
     df_iterator = pandas.read_csv(fname, chunksize=int(len(lines)/parts) + 1, sep='\t', index_col=False, header=None)
     for i, chunk in enumerate(df_iterator):
-        fname = f"{os.path.join(arguments['out_dir_plots']+'/data', '%d.bed' % i)}"
+        fname = f"{os.path.join(args.out_dir_plots+'/data', '%d.bed' % i)}"
         out_beds.append(fname)
         chunk.to_csv(fname, index=False, sep='\t', header=None)
     return out_beds
 
-def process_pileups(bam, ref, input_beds, thread_pool, arguments):
-    tasks = [(bam, ref, bed, arguments) for bed in input_beds]
+def process_pileups(bam, ref, input_beds, thread_pool, args):
+    tasks = [(bam, ref, bed, args) for bed in input_beds]
     pileups_outputs = thread_pool.starmap(process_pileups_parallel, tasks)
     return pileups_outputs
 
-def process_pileups_parallel(bam, ref, bed, arguments):
+def process_pileups_parallel(bam, ref, bed, args):
     basefile = pathlib.Path(bed).stem
-    output_csv = f"{os.path.join(arguments['out_dir_plots']+'/data', basefile + '_SNPs.csv')}"
+    output_csv = f"{os.path.join(args.out_dir_plots+'/data', basefile + '_SNPs.csv')}"
     cmd = ['samtools', 'mpileup', '-l', bed, '-f', ref, bam,  '-o', output_csv]
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     process.wait()

@@ -10,7 +10,7 @@ from smoothing import smoothing
 #from hmm import call_copynumbers
 from extras import get_contigs_list, sv_vcf_bps_cn_check
 
-def get_chromosomes_bins_replica(bam_file, bin_size, arguments):
+def get_chromosomes_bins_replica(bam_file, bin_size, args):
     bed=[]
     bam_alignment = pysam.AlignmentFile(bam_file)
     headers = bam_alignment.header
@@ -18,7 +18,7 @@ def get_chromosomes_bins_replica(bam_file, bin_size, arguments):
     region = [''] * len(seq_dict)
     chrs = [''] * len(seq_dict)
     head, tail = os.path.split(bam_file)
-    chroms = get_contigs_list(arguments['contigs'])
+    chroms = get_contigs_list(args.contigs)
     for i, seq_elem in enumerate(seq_dict):
         region[i] = seq_elem['LN']
         chrs[i] = seq_elem['SN']
@@ -34,8 +34,8 @@ def get_chromosomes_bins_replica(bam_file, bin_size, arguments):
                 end+=bin_size
     return bed
 
-def get_chromosomes_regions(arguments):
-    bam_alignment = pysam.AlignmentFile(arguments['target_bam'][0])
+def get_chromosomes_regions(args):
+    bam_alignment = pysam.AlignmentFile(args.target_bam[0])
     headers = bam_alignment.header
     seq_dict = headers['SQ']
     region = [''] * len(seq_dict)
@@ -44,7 +44,7 @@ def get_chromosomes_regions(arguments):
 
     return region
 
-def get_chromosomes_bins_bam(bam_file, bin_size, arguments):
+def get_chromosomes_bins_bam(bam_file, bin_size, args):
     bed=[]
     bam_alignment = pysam.AlignmentFile(bam_file)
     headers = bam_alignment.header
@@ -52,7 +52,7 @@ def get_chromosomes_bins_bam(bam_file, bin_size, arguments):
     region = [''] * len(seq_dict)
     chrs = [''] * len(seq_dict)
     head, tail = os.path.split(bam_file)
-    chroms = get_contigs_list(arguments['contigs'])
+    chroms = get_contigs_list(args.contigs)
     chroms_without_prefix = [str(i).replace( 'chr', '') for i in chroms]
     for i, seq_elem in enumerate(seq_dict):
         region[i] = seq_elem['LN']
@@ -69,7 +69,7 @@ def get_chromosomes_bins_bam(bam_file, bin_size, arguments):
                 end+=bin_size
     return bed
 
-def get_chromosomes_bins(bam_file, bin_size, arguments):
+def get_chromosomes_bins(bam_file, bin_size, args):
     bed=[]
     bam_alignment = pysam.AlignmentFile(bam_file)
     headers = bam_alignment.header
@@ -77,7 +77,7 @@ def get_chromosomes_bins(bam_file, bin_size, arguments):
     region = [''] * len(seq_dict)
     chrs = [''] * len(seq_dict)
     head, tail = os.path.split(bam_file)
-    chroms = get_contigs_list(arguments['contigs'])
+    chroms = get_contigs_list(args.contigs)
     chroms_without_prefix = [str(i).replace( 'chr', '') for i in chroms]
     for i, seq_elem in enumerate(seq_dict):
         region[i] = seq_elem['LN']
@@ -93,9 +93,9 @@ def get_chromosomes_bins(bam_file, bin_size, arguments):
                 start=end+1
                 end+=bin_size
 
-    _,_,_,_, bps, bps_bnd = sv_vcf_bps_cn_check(arguments['breakpoints'], arguments)
-    bed = update_bins_with_bps(bed, bps, bps_bnd, arguments, region)
-    _, bed_1 = update_bins_with_bps_new(bed, bps, bps_bnd, arguments, region)
+    _,_,_,_, bps, bps_bnd = sv_vcf_bps_cn_check(args.breakpoints, args)
+    bed = update_bins_with_bps(bed, bps, bps_bnd, args, region)
+    _, bed_1 = update_bins_with_bps_new(bed, bps, bps_bnd, args, region)
 
 
     return bed, bed_1
@@ -129,10 +129,10 @@ def chunk_range(start, end, num_chunks):
   return chunks
 
 
-def update_bins_with_bps(bed, bps, bps_bnd, arguments, region):
+def update_bins_with_bps(bed, bps, bps_bnd, args, region):
 
     df_bps_segs = []
-    chroms = get_contigs_list(arguments['contigs'])
+    chroms = get_contigs_list(args.contigs)
     for i, val in enumerate(chroms):
         bp_junctions = []
 
@@ -217,11 +217,11 @@ def update_bins_with_bps(bed, bps, bps_bnd, arguments, region):
         bin_size_segs = []
         indices_ol = []
         for l, inner in enumerate(bp_junctions):
-            if inner[1] - inner[0] > arguments['bin_size']:
+            if inner[1] - inner[0] > args.bin_size:
                 indices_ol.append(l)
-                for i in range(inner[0], inner[1], arguments['bin_size']):
+                for i in range(inner[0], inner[1], args.bin_size):
                     # Handle the last bin potentially being smaller
-                    next_end = min(i + arguments['bin_size'], inner[1])
+                    next_end = min(i + args.bin_size, inner[1])
                     if not next_end == inner[1]:
                         next_end = next_end-1
                     bin_size_segs.append([i, next_end])
@@ -255,11 +255,11 @@ def update_bins_with_bps(bed, bps, bps_bnd, arguments, region):
     df.drop_duplicates(subset=['chr', 'start', 'end'], keep=False, inplace=True)
     return df
 
-def update_bins_with_bps_new(bed, bps, bps_bnd, arguments, region):
+def update_bins_with_bps_new(bed, bps, bps_bnd, args, region):
 
     df_bps_segs = []
     df_bps_segs_1 = []
-    chroms = get_contigs_list(arguments['contigs'])
+    chroms = get_contigs_list(args.contigs)
     for i, val in enumerate(chroms):
         if val == 'chr20':
             print('here')
@@ -367,11 +367,11 @@ def update_bins_with_bps_new(bed, bps, bps_bnd, arguments, region):
         bin_size_segs = []
         indices_ol = []
         for l, inner in enumerate(missing_segs):
-            if inner[1] - inner[0] > arguments['bin_size']:
+            if inner[1] - inner[0] > args.bin_size:
                 indices_ol.append(l)
-                for i in range(inner[0], inner[1], arguments['bin_size']):
+                for i in range(inner[0], inner[1], args.bin_size):
                     # Handle the last bin potentially being smaller
-                    next_end = min(i + arguments['bin_size'], inner[1])
+                    next_end = min(i + args.bin_size, inner[1])
                     if not next_end == inner[1]:
                         next_end = next_end-1
                     bin_size_segs.append([i, next_end])
@@ -455,25 +455,25 @@ def get_breakpoints(chrom, bp_file_path): #TODO add call in plots
                 break_points.extend([bp_pos1, mid, bp_pos2])
     return break_points
 
-def write_segments_coverage_dict(coverage_segments, output, arguments):
-    with open(arguments['out_dir_plots']+'/data/' + output, 'a') as fp:
+def write_segments_coverage_dict(coverage_segments, output, args):
+    with open(args.out_dir_plots+'/data/' + output, 'a') as fp:
         for items in coverage_segments:
             if not items == None:
                 fp.write("%s\n" % items)
 
-def write_segments_coverage(coverage_segments, output, arguments):
-    with open(arguments['out_dir_plots']+'/bed_output/' + output, 'a') as fp:
+def write_segments_coverage(coverage_segments, output, args):
+    with open(args.out_dir_plots+'/bed_output/' + output, 'a') as fp:
         for items in coverage_segments:
             if not items == None:
                 fp.write("%s\n" % items)
 
-def write_header_comments(header, header_comments, output, arguments):
-    with open(arguments['out_dir_plots']+'/bed_output/' + output, 'a') as fp:
+def write_header_comments(header, header_comments, output, args):
+    with open(args.out_dir_plots+'/bed_output/' + output, 'a') as fp:
         fp.write(header_comments)
         fp.write(header)
 
-def seperate_dfs_coverage(arguments, df, haplotype_1_values_updated, haplotype_2_values_updated, unphased):
-    if arguments['without_phasing']:
+def seperate_dfs_coverage(args, df, haplotype_1_values_updated, haplotype_2_values_updated, unphased):
+    if args.without_phasing:
         return df[['chr', 'start', 'end', 'coverage']].copy()
     else:
         df_hp1 = df[['chr', 'start','end', 'hp1']].copy()
@@ -487,7 +487,7 @@ def seperate_dfs_coverage(arguments, df, haplotype_1_values_updated, haplotype_2
 def flatten(values):
     return [item for sublist in values for item in sublist]
 
-# def apply_copynumbers(csv_df_coverage, depth_values, depth_values1, arguments, snps_cpd_means, snps_cpd_means_collective):
+# def apply_copynumbers(csv_df_coverage, depth_values, depth_values1, args, snps_cpd_means, snps_cpd_means_collective):
 #
 #     #depth_values = flatten(haplotype_1_values_updated)
 #     #depth_values1 = flatten(haplotype_2_values_updated)
@@ -530,7 +530,7 @@ def flatten(values):
 #     else:
 #         csv_df_coverage["gene"] = "-"
 #     csv_df_coverage.rename(columns={"chr": "chromosome"}, inplace=True)
-#     if arguments['without_phasing']:
+#     if args.without_phasing:
 #         csv_df_coverage.drop(columns=['coverage'], inplace=True)
 #     else:
 #         csv_df_coverage.drop(columns=['hp1', 'hp2', 'hp3'], inplace=True)
@@ -556,11 +556,11 @@ def flatten(values):
 #     #cnarr = read_cna('data/coverage_cnvkit.cnr')
 #     #PT8 cnarr.center_all(skip_low=True), skip_low=True, skip_outliers=20
 #
-#     #segs, states, centers, stdev, cnarr, snps_cpd_means = segmentation.do_segmentation(depth_values, depth_values1, snps_cpd_means, arguments, cnarr, 'hmm', threshold=None, variants=None, skip_low=False, skip_outliers=0,
+#     #segs, states, centers, stdev, cnarr, snps_cpd_means = segmentation.do_segmentation(depth_values, depth_values1, snps_cpd_means, args, cnarr, 'hmm', threshold=None, variants=None, skip_low=False, skip_outliers=0,
 #     #                                    min_weight=0, save_dataframe=False, rscript_path="Rscript", processes=1,
 #     #                                    smooth_cbs=False)
 #
-#     segs, states, centers, stdev = call_copynumbers(arguments, cnarr, df_coverage, snps_cpd_means, snps_cpd_means_collective)
+#     segs, states, centers, stdev = call_copynumbers(args, cnarr, df_coverage, snps_cpd_means, snps_cpd_means_collective)
 #
 #     #seg_metrics = segmetrics.do_segmetrics(cnarr, segs, interval_stats=["ci"], alpha=0.5, smoothed=True, skip_low=True,)
 #     #seg_call = call.do_call(seg_metrics, method="none", filters=["ci"])
@@ -595,7 +595,7 @@ def get_snps_frquncies_coverage_from_bam(df, chrom):
 
     return haplotype_1_position, haplotype_1_coverage, haplotype_2_position, haplotype_2_coverage
 
-def detect_alter_loh_regions(arguments, event, chrom, ref_ends, haplotype_1_values, haplotype_2_values, unphased_reads_values, starts, ends, switch_hps):
+def detect_alter_loh_regions(args, event, chrom, ref_ends, haplotype_1_values, haplotype_2_values, unphased_reads_values, starts, ends, switch_hps):
     if ends and ends[-1] > ref_ends[-1]:
         ends[-1] = ref_ends[-1]
 
@@ -611,11 +611,11 @@ def detect_alter_loh_regions(arguments, event, chrom, ref_ends, haplotype_1_valu
     #print(region_starts)
     #print(region_ends)
 
-    if not arguments['without_phasing'] and switch_hps:
+    if not args.without_phasing and switch_hps:
         for j, (starts,ends) in enumerate(zip(region_starts, region_ends)):
             #TODO Discuss with Ayse, alternate approach on what HP should be selected for each region
             #if mean_values(haplotype_1_values, starts - 1, starts - 4) > mean_values(haplotype_2_values, starts - 1, starts - 4):
-            for i in range(starts//arguments['bin_size'],ends//arguments['bin_size']):
+            for i in range(starts//args.bin_size,ends//args.bin_size):
                     haplotype_1_values[i] = haplotype_1_values[i] + haplotype_2_values[i] + unphased_reads_values[i]
                     haplotype_2_values[i] = 0
                     unphased_reads_values[i] = 0
@@ -640,11 +640,11 @@ def loh_regions_phasesets(loh_region_starts, loh_region_ends, haplotype_1_values
     ref_end_values_phasesets = [j for i, j in enumerate(ref_end_values_phasesets) if i not in indices]
 
     return haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets
-def loh_regions_events(chrom, region_starts, region_ends, arguments):
+def loh_regions_events(chrom, region_starts, region_ends, args):
     dict = []
     for i in range(len(region_starts)):
         dict.append((chrom + '\t' + str(region_starts[i]) + '\t' + str(region_ends[i])))
-    #write_segments_coverage(dict, arguments['genome_name'] + '_loh_segments.bed')
+    #write_segments_coverage(dict, args.genome_name + '_loh_segments.bed')
     return dict
 
 
@@ -672,7 +672,7 @@ def mean_values(selected_list, start_index, end_index):
     else:
         return 0.0
 
-def detect_first_copy_integers_fractional_cluster_means(arguments, df_segs_hp1, df_segs_hp2, centers):
+def detect_first_copy_integers_fractional_cluster_means(args, df_segs_hp1, df_segs_hp2, centers):
     haplotype_1_values_copy = df_segs_hp1.state.values.tolist()
     haplotype_1_start_values_copy = df_segs_hp1.start.values.tolist()
     haplotype_1_end_values_copy = df_segs_hp1.end.values.tolist()
@@ -714,7 +714,7 @@ def detect_first_copy_integers_fractional_cluster_means(arguments, df_segs_hp1, 
         first_copy = centers[sumsup.index(sorted(sumsup, reverse=True)[1])]
         first_copy = centers[2] #TODO hardcoded for test
     integer_centers = []
-    if arguments['without_phasing']:
+    if args.without_phasing:
         temp_centers = [0] + [first_copy/2] + [first_copy] + [(c+3)*first_copy/2 for c in range(len(centers))]
         for i in range(len(temp_centers)):
             integer_centers.append(min(centers, key=lambda x:abs(x-temp_centers[i])))
@@ -729,14 +729,14 @@ def detect_first_copy_integers_fractional_cluster_means(arguments, df_segs_hp1, 
 
     return integer_centers, fractional_centers
 
-def write_copynumber_segments_csv(haplotype_df, arguments, centers, integer_fractional_means, hp):
-    fp = open(arguments['out_dir_plots']+'/bed_output/' + arguments['genome_name'] + '_copynumbers_segments.bed', 'a')
+def write_copynumber_segments_csv(haplotype_df, args, centers, integer_fractional_means, hp):
+    fp = open(args.out_dir_plots+'/bed_output/' + args.genome_name + '_copynumbers_segments.bed', 'a')
 
     for i in range(len(integer_fractional_means)):
         haplotype_df['depth'].mask(haplotype_df['depth'] == i, integer_fractional_means[i], inplace=True)
 
     haplotype_df = haplotype_df.rename(columns={'chromosome': 'chr', 'start': 'start', 'end': 'end', 'depth':'copynumber_state', 'state':'coverage'})
-    if arguments['without_phasing']:
+    if args.without_phasing:
         fp.write('#chr: chromosome number\n')
         fp.write('#start: start address for CN segment\n')
         fp.write('#end: end address for CN segment\n')
@@ -760,8 +760,8 @@ def write_copynumber_segments_csv(haplotype_df, arguments, centers, integer_frac
             header_enable = True
         haplotype_df.to_csv(fp, sep='\t', columns=header, index=False, mode='a', header=header_enable)
 
-def integer_fractional_cluster_means(arguments, df_segs_hp1, df_segs_hp2, centers):
-    integer_centers, fractional_centers = detect_first_copy_integers_fractional_cluster_means(arguments, df_segs_hp1, df_segs_hp2, centers)
+def integer_fractional_cluster_means(args, df_segs_hp1, df_segs_hp2, centers):
+    integer_centers, fractional_centers = detect_first_copy_integers_fractional_cluster_means(args, df_segs_hp1, df_segs_hp2, centers)
     integer_fractional_lables = []
     fractional_centers_ = [[]]
 
@@ -783,11 +783,11 @@ def integer_fractional_cluster_means(arguments, df_segs_hp1, df_segs_hp2, center
     return integer_fractional_lables
 
 
-def change_point_detection_means(arguments, df_chrom, ref_start_values, ref_start_values_1, df_centm_chrom):
+def change_point_detection_means(args, df_chrom, ref_start_values, ref_start_values_1, df_centm_chrom):
     df_means_chr = []
-    if arguments['without_phasing']:
+    if args.without_phasing:
         means = df_chrom.coverage.values.tolist()
-        snps_mean, snps_len, snps_pos = change_point_detection_algo(arguments['bin_size'], means, ref_start_values, arguments)
+        snps_mean, snps_len, snps_pos = change_point_detection_algo(args.bin_size, means, ref_start_values, args)
         snps_pos_start = []
         snps_pos_end = []
         for i in range(len(snps_pos)-1):
@@ -800,9 +800,9 @@ def change_point_detection_means(arguments, df_chrom, ref_start_values, ref_star
     else:
         df_means_chr = []
         haplotype1_means = df_chrom.hp1.values.tolist()
-        snps_haplotype1_mean, snps_haplotype1_len, snps_haplotype1_pos = change_point_detection_algo(arguments['bin_size'], haplotype1_means, ref_start_values, arguments, ref_start_values_1, df_centm_chrom)
+        snps_haplotype1_mean, snps_haplotype1_len, snps_haplotype1_pos = change_point_detection_algo(args.bin_size, haplotype1_means, ref_start_values, args, ref_start_values_1, df_centm_chrom)
         haplotype2_means = df_chrom.hp2.values.tolist()
-        snps_haplotype2_mean, snps_haplotype2_len, snps_haplotype2_pos = change_point_detection_algo(arguments['bin_size'], haplotype2_means, ref_start_values, arguments, ref_start_values_1, df_centm_chrom)
+        snps_haplotype2_mean, snps_haplotype2_len, snps_haplotype2_pos = change_point_detection_algo(args.bin_size, haplotype2_means, ref_start_values, args, ref_start_values_1, df_centm_chrom)
         snps_pos_start = []
         snps_pos_end = []
         for i in range(len(snps_haplotype1_pos) - 1):
@@ -825,7 +825,7 @@ def change_point_detection_means(arguments, df_chrom, ref_start_values, ref_star
 
         return snps_haplotype1_mean + snps_haplotype2_mean, snps_haplotype1_len + snps_haplotype2_len, df_means_chr
 
-def change_point_detection_algo(bin_size, hp_data, ref_start_values, arguments, ref_start_values_1, df_centm_chrom):
+def change_point_detection_algo(bin_size, hp_data, ref_start_values, args, ref_start_values_1, df_centm_chrom):
     ############################################
     zeros_values = []
     for i in range(len(hp_data)):
@@ -904,7 +904,7 @@ def change_point_detection_algo(bin_size, hp_data, ref_start_values, arguments, 
     start = 0
     snps_haplotype_pos.append(0)
 
-    if arguments['cpd_internal_segments']:
+    if args.cpd_internal_segments:
         start_pos = 0
         end = change_points[0]
         snps_haplotype_mean = []
@@ -998,8 +998,8 @@ def change_point_detection_algo(bin_size, hp_data, ref_start_values, arguments, 
     print(snps_haplotype_pos)
     return snps_haplotype_mean, snps_haplotype_len, snps_haplotype_pos
 
-def adjust_diversified_segments(centers, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, arguments):
-    chroms = get_contigs_list(arguments['contigs'])
+def adjust_diversified_segments(centers, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, args):
+    chroms = get_contigs_list(args.contigs)
     updated_df_segs_hp1 = []
     updated_df_segs_hp2 = []
     for index, chrom in enumerate(chroms):
@@ -1013,7 +1013,7 @@ def adjust_diversified_segments(centers, snps_cpd_means_df, df_segs_hp1, df_segs
         haplotype_2_start_values_copyrnumbers = df_chrom_segs_hp2.start.values.tolist()
         haplotype_2_end_values_copyrnumbers = df_chrom_segs_hp2.end.values.tolist()
 
-        if arguments['without_phasing']:
+        if args.without_phasing:
             snps_cpd_means_df_chrom = snps_cpd_means_df[snps_cpd_means_df['chromosome'] == chrom]
         else:
             snps_cpd_means_df_chrom = snps_cpd_means_df[0][snps_cpd_means_df[0]['chromosome'] == chrom]
@@ -1033,7 +1033,7 @@ def adjust_diversified_segments(centers, snps_cpd_means_df, df_segs_hp1, df_segs
         updated_df_segs_hp1.append(pd.DataFrame(list(zip(df_chrom_segs_hp1.chromosome.values.tolist(), df_chrom_segs_hp1.start.values.tolist(), df_chrom_segs_hp1.end.values.tolist(),  df_chrom_segs_hp1.state.values.tolist(), haplotype_1_values_copyrnumbers)),
                                     columns=['chromosome', 'start', 'end', 'depth', 'state']))
 
-        if not arguments['without_phasing']:
+        if not args.without_phasing:
             snps_cpd_means_df_chrom = snps_cpd_means_df[1][snps_cpd_means_df[1]['chromosome'] == chrom]
             # start_values_cpd = snps_cpd_means_df_chrom.start.values.tolist()
             # end_values_cpd = snps_cpd_means_df_chrom.end.values.tolist()
@@ -1050,13 +1050,13 @@ def adjust_diversified_segments(centers, snps_cpd_means_df, df_segs_hp1, df_segs
             updated_df_segs_hp2.append(pd.DataFrame(list(zip(df_chrom_segs_hp2.chromosome.values.tolist(), df_chrom_segs_hp2.start.values.tolist(),
                     df_chrom_segs_hp2.end.values.tolist(), df_chrom_segs_hp2.state.values.tolist(), haplotype_2_values_copyrnumbers)), columns=['chromosome', 'start', 'end', 'depth', 'state']))
 
-    if arguments['without_phasing']:
-        return merge_adjacent_regions_cn(pd.concat(updated_df_segs_hp1), arguments), merge_adjacent_regions_cn(pd.concat(updated_df_segs_hp1), arguments)
+    if args.without_phasing:
+        return merge_adjacent_regions_cn(pd.concat(updated_df_segs_hp1), args), merge_adjacent_regions_cn(pd.concat(updated_df_segs_hp1), args)
     else:
-        return merge_adjacent_regions_cn(pd.concat(updated_df_segs_hp1), arguments), merge_adjacent_regions_cn(pd.concat(updated_df_segs_hp2), arguments)
+        return merge_adjacent_regions_cn(pd.concat(updated_df_segs_hp1), args), merge_adjacent_regions_cn(pd.concat(updated_df_segs_hp2), args)
         #return pd.concat(updated_df_segs_hp1), pd.concat(updated_df_segs_hp2)
-def merge_adjacent_regions_cn(segarr, arguments):
-    chroms = get_contigs_list(arguments['contigs'])
+def merge_adjacent_regions_cn(segarr, args):
+    chroms = get_contigs_list(args.contigs)
     dfs = []
     for index, chrom in enumerate(chroms):
         seg = segarr[segarr['chromosome'] == chrom]
@@ -1074,3 +1074,15 @@ def adjust_extreme_outliers(hp_data):
             hp_data[j] = hp_data[j+1]
     return hp_data
 
+def normal_genome_proportion(p, l, C):
+    #C — average coverage in tumor genome
+    #p - tumor purity [1-p — normal admixture]
+    #l  - tumor ploidy (average number of chromosomes)
+    #2 - normal ploidy
+
+    average_contribution_by_normal_genome = 2 * (1 - p) / ((2 * (1 - p) + l * p))
+    average_contribution_by_tumor_genome = l * p / ((2 * (1 - p) + l * p))
+    combined_normal_coverage_fraction = C * 2 * (1 - p) / ((2 * (1 - p) + l * p))
+    per_haplotype = C * 2 * (1 - p) / ((2 * (1 - p) + l * p) * 2)
+
+    return average_contribution_by_normal_genome, average_contribution_by_tumor_genome, combined_normal_coverage_fraction, per_haplotype

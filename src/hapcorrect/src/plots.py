@@ -4,19 +4,19 @@ import numpy as np
 import os
 import itertools
 
-def plot_coverage_data(html_graphs, arguments, chrom, ref_start_values, ref_end_values, haplotype_1_values, haplotype_2_values, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, sufix):
+def plot_coverage_data(html_graphs, args, chrom, ref_start_values, ref_end_values, haplotype_1_values, haplotype_2_values, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, sufix):
     fig = go.Figure()
     add_scatter_trace_coverage(fig, ref_start_values, haplotype_1_values, name='HP-1', text=None, yaxis=None,
                                opacity=0.7, color='firebrick')
     add_scatter_trace_coverage(fig, ref_start_values, haplotype_2_values, name='HP-2', text=None, yaxis=None,
                                opacity=0.7, color='steelblue')
 
-    if arguments['unphased_reads_coverage_enable']:
+    if args.unphased_reads_coverage_enable:
         add_scatter_trace_coverage(fig, ref_start_values, unphased_reads_values, name='Unphased', text=None,
                                    yaxis=None, opacity=0.7, color='olive')
     plots_add_markers_lines(fig)
 
-    if arguments['phaseblocks_enable']:
+    if args.phaseblocks_enable:
         gaps_values = np.full(len(haplotype_1_values_phasesets), 'None')
         haplotype_1_phaseblocks_values = list(
             itertools.chain.from_iterable(zip(haplotype_1_values_phasesets, haplotype_1_values_phasesets, gaps_values)))
@@ -28,29 +28,29 @@ def plot_coverage_data(html_graphs, arguments, chrom, ref_start_values, ref_end_
         add_scatter_trace_phaseblocks(fig, phaseblocks_positions, haplotype_1_phaseblocks_values,
                                       haplotype_2_phaseblocks_values)
 
-    plots_layout_settings(fig, chrom, arguments, ref_end_values[-1:][0], arguments['cut_threshold'])
+    plots_layout_settings(fig, chrom, args, ref_end_values[-1:][0], args.cut_threshold)
 
-    if arguments['pdf_enable']:
-        print_chromosome_pdf(fig, chrom, arguments['out_dir_plots']+'/phasing_output')
+    if args.pdf_enable:
+        print_chromosome_pdf(fig, chrom, args.out_dir_plots+'/phasing_output')
 
-    print_chromosome_html(fig, chrom + '_' + sufix, html_graphs, arguments['out_dir_plots']+'/phasing_output')
+    print_chromosome_html(fig, chrom + '_' + sufix, html_graphs, args.out_dir_plots+'/phasing_output')
     html_graphs.write(
         "  <object data=\"" + chrom + '_' + sufix + '.html' + "\" width=\"700\" height=\"420\"></object>" + "\n")
 
 
-def plot_coverage_data_after_correction(html_graphs, arguments, chrom, ref_start_values, ref_end_values, haplotype_1_values, haplotype_2_values, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets_hp1, ref_end_values_phasesets_hp1, ref_start_values_phasesets_hp2, ref_end_values_phasesets_hp2, sufix, loh_region_starts, loh_region_ends):
+def plot_coverage_data_after_correction(html_graphs, args, chrom, ref_start_values, ref_end_values, haplotype_1_values, haplotype_2_values, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets_hp1, ref_end_values_phasesets_hp1, ref_start_values_phasesets_hp2, ref_end_values_phasesets_hp2, sufix, loh_region_starts, loh_region_ends):
     fig = go.Figure()
     add_scatter_trace_coverage(fig, ref_start_values, haplotype_1_values, name='HP-1', text=None, yaxis=None,
                                opacity=0.7, color='firebrick')
     add_scatter_trace_coverage(fig, ref_start_values, haplotype_2_values, name='HP-2', text=None, yaxis=None,
                                opacity=0.7, color='steelblue')
 
-    if arguments['unphased_reads_coverage_enable']:
+    if args.unphased_reads_coverage_enable:
         add_scatter_trace_coverage(fig, ref_start_values, unphased_reads_values, name='Unphased', text=None,
                                    yaxis=None, opacity=0.7, color='olive')
     plots_add_markers_lines(fig)
 
-    if arguments['phaseblocks_enable']:
+    if args.phaseblocks_enable:
         gaps_values_hp1 = np.full(len(haplotype_1_values_phasesets), 'None')
         gaps_values_hp2 = np.full(len(haplotype_2_values_phasesets), 'None')
         haplotype_1_phaseblocks_values = list(
@@ -69,16 +69,16 @@ def plot_coverage_data_after_correction(html_graphs, arguments, chrom, ref_start
         for k, (start_loh, end_loh) in enumerate(zip(loh_region_starts, loh_region_ends)):
             fig.add_vrect(x0=start_loh, x1=end_loh, fillcolor="lightgrey", opacity=0.5, layer="below", line_width=0, )
 
-    plots_layout_settings(fig, chrom, arguments, ref_end_values[-1:][0], arguments['cut_threshold'])
+    plots_layout_settings(fig, chrom, args, ref_end_values[-1:][0], args.cut_threshold)
 
-    if arguments['pdf_enable']:
-        print_chromosome_pdf(fig, chrom, arguments['out_dir_plots']+'/phasing_output')
+    if args.pdf_enable:
+        print_chromosome_pdf(fig, chrom, args.out_dir_plots+'/phasing_output')
 
-    print_chromosome_html(fig, chrom + '_' + sufix, html_graphs, arguments['out_dir_plots']+'/phasing_output')
+    print_chromosome_html(fig, chrom + '_' + sufix, html_graphs, args.out_dir_plots+'/phasing_output')
     html_graphs.write(
         "  <object data=\"" + chrom + '_' + sufix + '.html' + "\" width=\"700\" height=\"420\"></object>" + "\n")
 
-def change_point_detection(data, start, ends, arguments, chrom, html_graphs, hp, color):
+def change_point_detection(data, start, ends, args, chrom, html_graphs, hp, color):
     import ruptures as rpt
     fig = go.Figure()
     #starts = [i for i in range(0, len(data), 50000)]
@@ -90,13 +90,13 @@ def change_point_detection(data, start, ends, arguments, chrom, html_graphs, hp,
     result = algo.predict(pen=10)
     change_points = [i for i in result if i < len(data)]
     for i, point in enumerate(change_points):
-        fig.add_vline(x=point*arguments['bin_size'], y0=-10, y1=500, line_width=1, line_dash="dash",
+        fig.add_vline(x=point*args.bin_size, y0=-10, y1=500, line_width=1, line_dash="dash",
                   line_color=color)
 
     plots_add_markers_lines(fig)
-    plots_layout_settings(fig, chrom, arguments, ends[-1:][0], arguments['cut_threshold'])
+    plots_layout_settings(fig, chrom, args, ends[-1:][0], args.cut_threshold)
 
-    print_chromosome_html(fig, chrom + '_hp_'  + str(hp), html_graphs, arguments['out_dir_plots']+'/phasing_output')
+    print_chromosome_html(fig, chrom + '_hp_'  + str(hp), html_graphs, args.out_dir_plots+'/phasing_output')
     html_graphs.write("  <object data=\"" + chrom + '_hp_'  + str(hp)  + '.html' + "\" width=\"700\" height=\"420\"></object>" + "\n")
 
 
@@ -133,7 +133,7 @@ def add_scatter_trace_coverage(fig, x, y, name, text, yaxis, opacity, color, vis
         visible=visibility,
     ))
 
-def plots_layout_settings(fig, chrom, arguments, limit_x, limit_y):
+def plots_layout_settings(fig, chrom, args, limit_x, limit_y):
     # Update axes
     fig.update_layout(
         xaxis=dict(
@@ -159,7 +159,7 @@ def plots_layout_settings(fig, chrom, arguments, limit_x, limit_y):
         ),
         yaxis2=dict(
             linecolor="dimgray",
-            range=[1, arguments['cut_threshold'] + 5],
+            range=[1, args.cut_threshold + 5],
             side="right",
             tickfont={"color": "dimgray"},
             tickmode="auto",
@@ -195,7 +195,7 @@ def plots_layout_settings(fig, chrom, arguments, limit_x, limit_y):
 
     fig.update_layout(
         title={
-            'text': chrom + ' - ' +arguments['genome_name'],
+            'text': chrom + ' - ' +args.genome_name,
             'y':0.96,
             'x':0.5,
             'xanchor': 'center',

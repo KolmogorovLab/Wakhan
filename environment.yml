@@ -14,5 +14,7 @@ dependencies:
   - plotly
   - scikit-learn==1.2.0
   - scipy==1.9.2
-  - ruptures 
-  - vcf_parser
+  - ruptures
+  - pip
+  - pip:
+    - vcf_parser

@@ -54,8 +54,11 @@ cd src/
 
 ### Tumor-Normal Mode (requires normal phased VCF)
 ```
-python main.py --threads <4> --reference <ref.fa>  --target-bam <data.tumor.bam>  --tumor-vcf <data.tumor.vcf.gz>  --normal-phased-vcf <data.normal_phased.vcf.gz>  --genome-name <cellline/dataset name> --cut-threshold <150> --out-dir-plots <genome_abc_output> --breakpoints <severus-sv-VCF>
+python main.py --threads <4> --reference <ref.fa>  --target-bam <data.tumor.bam>  --normal-phased-vcf <data.normal_phased.vcf.gz>  --genome-name <cellline/dataset name> --cut-threshold <150> --out-dir-plots <genome_abc_output> --breakpoints <severus-sv-VCF>
 ```
+### Tumor-Normal mixture and purity/ploidy estimation
+User can input both `--tumor-ploidy` and `--tumor-purity` to inform copy number model about normal contamination in tumor to estimate copy number states correctly.
+
 
 ### Tumor-only (requires tumor phased/haplotagged BAM and phased VCF)
 ```

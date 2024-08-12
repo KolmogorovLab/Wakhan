@@ -4,12 +4,17 @@ def get_all_breakpoints_data(edges, edges_chr, height, path):
     from vcf_parser import VCFParser
     my_parser = VCFParser(infile=path, split_variants=True, check_info=True)
     bp_junctions_inv = [[]]
+    bp_junctions_dup_ins = [[]]
+    bp_junctions_del = [[]]
     for variant in my_parser:
+        if variant['CHROM'] == 'chrY':
+            continue
         if "INV" in variant['ID']:
-            if variant['CHROM'] == 'chrY':
-                continue
-            else:
-                bp_junctions_inv.append([variant['CHROM'], int(variant['POS'])])
+            bp_junctions_inv.append([variant['CHROM'], int(variant['POS'])])
+        elif ("DUP" in variant['ID'] or "INS" in variant['ID']) and int(variant['info_dict']['SVLEN'][0]) > 10000:
+            bp_junctions_dup_ins.append([variant['CHROM'], int(variant['POS'])])
+        elif "DEL" in variant['ID'] and int(variant['info_dict']['SVLEN'][0]) > 10000:
+            bp_junctions_del.append([variant['CHROM'], int(variant['POS'])])
 
     #keys = sorted(set(interact_strength))
     #widths = [0.5 + k * 0.25 for k in range(5)] + [2 + k * 0.25 for k in range(4)] + [3, 3.25, 3.75, 4.25, 5, 5.25, 7]
@@ -21,7 +26,7 @@ def get_all_breakpoints_data(edges, edges_chr, height, path):
     xx = []
     yy = []
     #X = list(range(L))  # node x-coordinates
-    nr = 75
+
 
 
     #9:64526327 - 1:9769900
@@ -35,6 +40,11 @@ def get_all_breakpoints_data(edges, edges_chr, height, path):
     #BNDs and INVs
     for i, (a,b,c,d,e,f) in enumerate(edges_chr):
         hover_info.append(a+':'+str(b)+'-'+d+':'+str(e))
+
+        if a == d:
+            nr = 35
+        else:
+            nr = 75
         # if c == 1 and f == 1:
         #     colors.append('#DC3A3A')
         # elif c == 2 and f == 2:
@@ -43,6 +53,10 @@ def get_all_breakpoints_data(edges, edges_chr, height, path):
         #     colors.append('#737373')
         if [a,b] in bp_junctions_inv:
             colors.append('#2830DE')
+        elif [a,b] in bp_junctions_dup_ins:
+            colors.append('#178117')
+        elif [a,b] in bp_junctions_del:
+            colors.append('#CF0759')
         else:
             colors.append('#737373')
 
@@ -76,7 +90,7 @@ def get_all_breakpoints_data(edges, edges_chr, height, path):
         #                  )
         #             )
 
-        data.append([x, y, '',  'lines', dict(width=1, color=colors[i], shape='spline'), hover_info[i], '<br><b>Breakpoint info</b>: %{text}<br>', False])
+        data.append([x, y, '',  'lines', dict(width=1.2, color=colors[i], shape='spline'), hover_info[i], '<br><b>Breakpoint info</b>: %{text}<br>', False])
     return data
 #Foolowing Bezier curve code is adopted from https://notebook.community/empet/Plotly-plots/Arc-diagram-Force-Awakens
 def get_b1(b0, b2):

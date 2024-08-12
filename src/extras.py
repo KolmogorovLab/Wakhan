@@ -40,7 +40,7 @@ class bps_sample(object):
             return f"{self.bp_1_id}:{self.bp_1_pos}:{self.bp_1_hp}-{self.bp_2_id}:{self.bp_2_pos}:{self.bp_2_hp}"
 
 #def sv_vcf_bps_cn_check(path, df_segs_hp1, df_segs_hp2):
-def sv_vcf_bps_cn_check(path, arguments):
+def sv_vcf_bps_cn_check(path, args):
     #########################################
     from vcf_parser import VCFParser
     my_parser = VCFParser(infile=path, split_variants=True, check_info=True)
@@ -58,7 +58,7 @@ def sv_vcf_bps_cn_check(path, arguments):
 
     for variant in my_parser:
         #if ("INV" in variant['ID'] and variant['info_dict']['DETAILED_TYPE'] == ['reciprocal_inv']) or  "INS" in variant['ID']:
-        if "INV" in variant['ID']:
+        if "INV" in variant['ID'] or (("INS" in variant['ID'] or "DEL" in variant['ID']) and int(variant['info_dict']['SVLEN'][0]) > 10000):
             hp = 0
             if 'HP' in variant['info_dict']:
                 hp = int(variant['info_dict']['HP'][0])
@@ -93,7 +93,7 @@ def sv_vcf_bps_cn_check(path, arguments):
                 bp_junctions_bnd.append([chr2_id, chr2_end])
                 sample_list[variant['ID']] = bps_sample(variant['CHROM'], int(variant['POS']), hp, chr2_id, chr2_end, hp, False)
         else:
-            if not "sBND" in variant['ID']:
+            if not "sBND" in variant['ID'] or not "INS" in variant['ID'] or not "DEL" in variant['ID']:
                 hp = 0
                 if 'HP' in variant['info_dict']:
                     hp = int(variant['info_dict']['HP'][0])
@@ -101,8 +101,8 @@ def sv_vcf_bps_cn_check(path, arguments):
                 #if abs((int(variant['info_dict']['SVLEN'][0]) + int(variant['POS'])) - int(variant['POS'])) < 50000 or \
                 if variant['CHROM'] == 'chrY':
                     continue
-                if ("INS" in variant['ID'] or "DEL" in variant['ID']) and int(variant['info_dict']['SVLEN'][0]) < 10000:
-                    continue
+                #if ("INS" in variant['ID'] or "DEL" in variant['ID']) and int(variant['info_dict']['SVLEN'][0]) < 10000:
+                #    continue
                 bp_junctions.append([variant['CHROM'], int(variant['POS']), int(variant['info_dict']['SVLEN'][0]) + int(variant['POS']) + 1])
                 sample_single_list[variant['ID']] = bps_sample(variant['CHROM'], int(variant['POS']), variant['info_dict']['SVTYPE'][0], variant['CHROM'],  int(variant['info_dict']['SVLEN'][0]) + int(variant['POS']) + 1, hp, False )
 
