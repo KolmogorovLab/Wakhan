@@ -174,7 +174,9 @@ def coverage_plots_chromosomes(df, df_phasesets, args, thread_pool):
         df_var_bins, df_var_bins_1 = get_chromosomes_bins(args.target_bam[0], args.bin_size, args)
 
     chroms = get_contigs_list(args.contigs)
-    df_centm = csv_df_chromosomes_sorter('annotations/grch38.cen_coord.curated.bed', ['chr', 'start', 'end'])
+    fileDir = os.path.dirname(os.path.realpath('__file__'))
+    cen_coord = os.path.join(fileDir, 'annotations/grch38.cen_coord.curated.bed')
+    df_centm = csv_df_chromosomes_sorter(cen_coord, ['chr', 'start', 'end'])
 
     haplotype_1_segs_dfs = [] #pd.DataFrame()
     haplotype_2_segs_dfs = [] #pd.DataFrame()
@@ -713,7 +715,9 @@ def copy_number_plots_genome_breakpoints_unphased_test(centers, integer_fraction
     df_cnr_hp2_ = []
     df_segs_hp2_ = []
     df_genes_ = []
-    df_genes = csv_df_chromosomes_sorter("annotations/CancerGenes.tsv", ['chr','start','end','gene','size'])
+    fileDir = os.path.dirname(os.path.realpath('__file__'))
+    cancer_genes = os.path.join(fileDir, 'annotations/CancerGenes.tsv')
+    df_genes = csv_df_chromosomes_sorter(cancer_genes, ['chr','start','end','gene','size'])
     genestart = []
     last_len = 0
     for i, chrom in enumerate(chroms):
@@ -1056,7 +1060,9 @@ def copy_number_plots_genome_breakpoints_hps_test(centers, integer_fractional_ce
     df_segs_hp2_ = []
     df_genes_1_ = []
     df_genes_2_ = []
-    df_genes = csv_df_chromosomes_sorter("annotations/CancerGenes.tsv", ['chr','start','end','gene','size'])
+    fileDir = os.path.dirname(os.path.realpath('__file__'))
+    cancer_genes = os.path.join(fileDir, 'annotations/CancerGenes.tsv')
+    df_genes = csv_df_chromosomes_sorter(cancer_genes, ['chr','start','end','gene','size'])
     genestart_1 = []
     genestart_2 = []
     last_len = 0
@@ -1489,7 +1495,9 @@ def copy_number_plots_genome_breakpoints_test(centers, integer_fractional_center
     df_segs_hp2_ = []
     df_genes_1_ = []
     df_genes_2_ = []
-    df_genes = csv_df_chromosomes_sorter("annotations/CancerGenes.tsv", ['chr','start','end','gene','size'])
+    fileDir = os.path.dirname(os.path.realpath('__file__'))
+    cancer_genes = os.path.join(fileDir, 'annotations/CancerGenes.tsv')
+    df_genes = csv_df_chromosomes_sorter(cancer_genes, ['chr','start','end','gene','size'])
     genestart_1 = []
     genestart_2 = []
     last_len = 0
