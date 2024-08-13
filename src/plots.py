@@ -53,7 +53,7 @@ def copy_number_plots_per_chromosome(centers, integer_fractional_means, ref_star
         haplotype_2_start_values_copyratios = df_segs_hp2_chrom.start.values.tolist()
         haplotype_2_end_values_copyratios = df_segs_hp2_chrom.end.values.tolist()
 
-        if args['copynumbers_enable']:
+        if args.copynumbers_enable:
             logging.info('copynumbers plots module')
             OFFSET=0
             #haplotype_1_values_cnr = list(np.asarray(haplotype_1_values_cnr) + OFFSET)
