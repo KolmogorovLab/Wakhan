@@ -164,10 +164,7 @@ def main():
 
     args = parser.parse_args()
 
-    print(normal_genome_proportion(0.35, 8, 100))
-
     logging.basicConfig(level=logging.DEBUG)
-    print("average_contribution_by_normal_genome", "average_contribution_by_tumor_genome", "combined_normal_coverage_fraction", "per_haplotype")
 
     if args.control_bam is None:
         args.control_bam = []
@@ -273,7 +270,7 @@ def main():
         #normal_cov = 30
         #purity = (tumor_cov / args.tumor_ploidy) / ((normal_cov / 2) + (tumor_cov / args.tumor_ploidy))
         tumor_cov = statistics.mean([sum(x) for x in zip(haplotype_1_values_updated, haplotype_2_values_updated, unphased)])
-        print("tumor_coverage:", tumor_cov)
+        #print("tumor_coverage:", tumor_cov)
         _, _, _, normal_fraction = normal_genome_proportion(args.tumor_purity, args.tumor_ploidy, tumor_cov)
         #print("purity, normal fraction:", purity,normal_fraction)
         centers = [normal_fraction] + [normal_fraction + (i * centers[1]) for i in range(1, len(centers))]
