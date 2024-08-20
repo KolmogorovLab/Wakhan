@@ -18,3 +18,4 @@ dependencies:
   - pip
   - pip:
     - vcf_parser
+    - kaleido
