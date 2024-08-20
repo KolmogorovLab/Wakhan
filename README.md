@@ -63,7 +63,7 @@ cd src/
 
 ### Tumor-Normal Mode (requires normal phased VCF)
 ```
-python main.py --threads <4> --reference <ref.fa>  --target-bam <data.tumor.bam>  --normal-phased-vcf <data.normal_phased.vcf.gz>  --genome-name <cellline/dataset name> --cut-threshold <150> --out-dir-plots <genome_abc_output> --breakpoints <severus-sv-VCF>
+python main.py --threads <4> --reference <ref.fa>  --target-bam <data.tumor.bam>  --normal-phased-vcf <data.normal_phased.vcf.gz>  --genome-name <cellline/dataset name> --out-dir-plots <genome_abc_output> --breakpoints <severus-sv-VCF>
 ```
 ##### Tumor-Normal mixture and purity/ploidy estimation
 User can input both `--tumor-ploidy` and `--tumor-purity` to inform copy number model about normal contamination in tumor to estimate copy number states correctly.
@@ -71,7 +71,7 @@ User can input both `--tumor-ploidy` and `--tumor-purity` to inform copy number 
 
 ### Tumor-only (requires tumor phased/haplotagged BAM and phased VCF)
 ```
-python main.py --threads <4> --reference <ref.fa>  --target-bam <data.tumor_haplotagged.bam>  --tumor-vcf <data.tumor_phased.vcf.gz> --genome-name <cellline/dataset name> --cut-threshold <150> --out-dir-plots <genome_abc_output> --breakpoints <severus-sv-VCF>
+python main.py --threads <4> --reference <ref.fa>  --target-bam <data.tumor_haplotagged.bam>  --tumor-vcf <data.tumor_phased.vcf.gz> --genome-name <cellline/dataset name> --out-dir-plots <genome_abc_output> --breakpoints <severus-sv-VCF>
 ```
 
 [//]: # (## Note)
@@ -98,14 +98,16 @@ Few cell lines arbitrary phase-switch correction and copy number estimation outp
 
 * `--tumor-vcf` VCF file to plot snps frequencies, ratios and LOH regions (Note: phased VCF is required in tumor-only mode)
 
-* `--breakpoints` For segmentation to use in CN estimation, structural variations/breakpoints VCF is required
+* `--breakpoints` For segmentation to use in CN estimation, structural variations/breakpoints VCF file is required
 
 ## Optional parameters
-* `--phaseblock-flipping-enable` enabling phaseblock flipping in coverage plots (enabled: by default)
+* `--phaseblock-flipping-enable` enabling phaseblock flipping in coverage plots (default: enabled)
 
 * `--phaseblocks-enable` enabling phaseblocks display in coverage plots
 
 * `--contigs` List of contigs (chromosomes, default: chr1-22) to be included in the plots (Note: chrX, chrY support in CNA plots is not included yet) [e.g., chr1-22,X,Y]
+
+* `--cut-threshold` Maximum cut threshold for coverage (readdepth) plots [default: 100]
 
 * `--without-phasing` enable it if CNA analysis is being performed without phasing 
 

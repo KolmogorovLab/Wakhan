@@ -282,6 +282,7 @@ def main():
 
         copy_number_plots_genome(centers, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_unphased, args, x_axis, observed_hist)
         copy_number_plots_genome_breakpoints(centers, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args)
+        plot_snps_frequencies(args, csv_df_snps_mean, df_segs_hp1_updated, df_segs_hp2_updated, centers, integer_fractional_means)
 
         if args.copynumbers_subclonal_enable:
             integer_fractional_means = sorted([i for i in range(0, len(centers))] + [i / centers[1] for i in subclonals])  # integer_fractional_cluster_means(args, df_segs_hp1, df_segs_hp2, centers)
@@ -295,7 +296,6 @@ def main():
     #SNPs LOH and plots
     if args.tumor_vcf:
         plot_snps_ratios_genome(args)
-        plot_snps_frequencies(args, csv_df_snps_mean, df_segs_hp1, df_segs_hp2, centers, integer_fractional_means)
 
     if os.path.exists(args.out_dir_plots+'/data'): #
         shutil.rmtree(args.out_dir_plots+'/data')

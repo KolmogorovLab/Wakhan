@@ -105,7 +105,7 @@ def copy_number_plots_per_chromosome(centers, integer_fractional_means, ref_star
             )
 
         if args.pdf_enable:
-            print_chromosome_pdf(fig, chrom, args.out_dir_plots)
+            print_chromosome_pdf(fig, chrom, args.out_dir_plots+'/variation_plots/')
 
         print_chromosome_html(fig, chrom + '_cn', html_graphs, args.out_dir_plots+'/variation_plots/')
         html_graphs.write("  <object data=\"" + chrom + '_cn' + '.html' + "\" width=\"700\" height=\"420\"></object>" + "\n")
@@ -1593,7 +1593,7 @@ def copy_number_plots_genome_breakpoints(centers, integer_fractional_centers, df
     #fig = go.Figure().set_subplots(rows=2, cols=1)
 
     #fig = make_subplots(rows=2, cols=1, shared_yaxes=False, shared_xaxes=True, vertical_spacing=0.02, horizontal_spacing=0.02)
-    fig = make_subplots(rows=3, cols=1, shared_yaxes=False, shared_xaxes='columns',  vertical_spacing=0.01, row_heights=[220, 320, 160],
+    fig = make_subplots(rows=3, cols=1, shared_yaxes=False, shared_xaxes='columns',  vertical_spacing=0.01, row_heights=[220, 320, 40],
                         horizontal_spacing=0.02, specs=[[{"type":"xy"}], [{"secondary_y":True}], [{"type":"xy"}]]) #https://community.plotly.com/t/can-subplot-support-multiple-y-axes/38891/20
     # #############################################################
     for i in range(len(arcs_data)):
@@ -1628,7 +1628,7 @@ def copy_number_plots_genome_breakpoints(centers, integer_fractional_centers, df
         #     add_scatter_trace_coverage(fig, indices, df_unphased.hp3.values.tolist(), name='Unphased', text=None,
         #                                yaxis=None, opacity=0.7, color='olive', visibility='legendonly', mul_cols=True)
 
-    fig.add_trace(go.Scatter(x=df_genes_1['start'], y=[1, 2, 3, 4, 5] * (len(df_genes_1)//5),
+    fig.add_trace(go.Scatter(x=df_genes_1['start'], y=[0.5]*len(df_genes_1),#[1, 2, 3, 4, 5] * (len(df_genes_1)//5),
                              mode='markers',
                              text = genename_1,
                              customdata = genestart_1,
@@ -1678,7 +1678,7 @@ def copy_number_plots_genome_breakpoints(centers, integer_fractional_centers, df
 
         #fig.add_vline(x=co,  line_width=1, line_dash="solid", opacity=0.3, line_color="#2B40A0", row=1, col=1,)
 
-    fig.add_hline(y=6,  line_width=1, line_dash="solid", line_color="black", row=3, col=1,)
+    fig.add_hline(y=2,  line_width=1, line_dash="solid", line_color="black", row=3, col=1,)
     fig.add_hline(y=-(args.cut_threshold + 5),  line_width=1, line_dash="solid", line_color="black", row=2, col=1,)
 
     # for index, chrom in enumerate(chroms):
@@ -1772,7 +1772,7 @@ def copy_number_plots_genome_breakpoints(centers, integer_fractional_centers, df
     fig.update_layout(yaxis=dict(title="<b>Breakpoints</b>", range=[0, 75], showticklabels = False, showgrid=False, zeroline=False),
                       yaxis2=dict(range=[-(args.cut_threshold + 5), args.cut_threshold + 5], showgrid=False,),
                       yaxis3=dict(range=[-(args.cut_threshold + 5), args.cut_threshold + 5], showgrid=False,),
-                      yaxis4=dict(title="<b>Genes     </b>", range=[0, 6], showticklabels = False, showgrid=False, zeroline=True, zerolinewidth=2, zerolinecolor='black'),
+                      yaxis4=dict(title="<b>Genes</b>", range=[0, 1], showticklabels = False, showgrid=False, zeroline=True, zerolinewidth=2, zerolinecolor='black'),
 
                       xaxis=dict(showspikes=True, tick0=0.0, rangemode="nonnegative", range=[0, len(df_cnr_hp1.hp1.values.tolist())*args.bin_size], showticklabels = False, showgrid=False, zeroline=False),
                       xaxis2=dict(tick0=0.0, rangemode="nonnegative", range=[0, len(df_cnr_hp1.hp1.values.tolist())*args.bin_size], zeroline=True, zerolinewidth=1, zerolinecolor='black', showgrid=False,),
@@ -1871,7 +1871,7 @@ def copy_number_plots_genome_breakpoints(centers, integer_fractional_centers, df
     )
     fig.update_layout(
         width=1380,
-        height=850+250,
+        height=850+130,
        )
 
     if args.pdf_enable:
@@ -2015,7 +2015,7 @@ def copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_c
     #fig = go.Figure().set_subplots(rows=2, cols=1)
 
     #fig = make_subplots(rows=2, cols=1, shared_yaxes=False, shared_xaxes=True, vertical_spacing=0.02, horizontal_spacing=0.02)
-    fig = make_subplots(rows=3, cols=1, shared_yaxes=False, shared_xaxes='columns',  vertical_spacing=0.01, row_heights=[220, 320, 160],
+    fig = make_subplots(rows=3, cols=1, shared_yaxes=False, shared_xaxes='columns',  vertical_spacing=0.01, row_heights=[220, 320, 40],
                         horizontal_spacing=0.02, specs=[[{"type":"xy"}], [{"secondary_y":True}], [{"type":"xy"}]]) #https://community.plotly.com/t/can-subplot-support-multiple-y-axes/38891/20
     # #############################################################
     for i in range(len(arcs_data)):
@@ -2050,7 +2050,7 @@ def copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_c
         #     add_scatter_trace_coverage(fig, indices, df_unphased.hp3.values.tolist(), name='Unphased', text=None,
         #                                yaxis=None, opacity=0.7, color='olive', visibility='legendonly', mul_cols=True)
 
-    fig.add_trace(go.Scatter(x=df_genes_1['start'], y=[1, 2, 3, 4, 5] * (len(df_genes_1)//5),
+    fig.add_trace(go.Scatter(x=df_genes_1['start'], y=[0.5] * len(df_genes_1), #[1, 2, 3, 4, 5] * (len(df_genes_1)//5),
                              mode='markers',
                              text = genename_1,
                              customdata = genestart_1,
@@ -2100,7 +2100,7 @@ def copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_c
 
         #fig.add_vline(x=co,  line_width=1, line_dash="solid", opacity=0.3, line_color="#2B40A0", row=1, col=1,)
 
-    fig.add_hline(y=6,  line_width=1, line_dash="solid", line_color="black", row=3, col=1,)
+    fig.add_hline(y=2,  line_width=1, line_dash="solid", line_color="black", row=3, col=1,)
     fig.add_hline(y=-(args.cut_threshold + 5),  line_width=1, line_dash="solid", line_color="black", row=2, col=1,)
 
     # for index, chrom in enumerate(chroms):
@@ -2215,7 +2215,7 @@ def copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_c
     fig.update_layout(yaxis=dict(title="<b>Breakpoints</b>", range=[0, 75], showticklabels = False, showgrid=False, zeroline=False),
                       yaxis2=dict(range=[-(args.cut_threshold + 5), args.cut_threshold + 5], showgrid=False,),
                       yaxis3=dict(range=[-(args.cut_threshold + 5), args.cut_threshold + 5], showgrid=False,),
-                      yaxis4=dict(title="<b>Genes     </b>", range=[0, 6], showticklabels = False, showgrid=False, zeroline=True, zerolinewidth=2, zerolinecolor='black'),
+                      yaxis4=dict(title="<b>Genes</b>", range=[0, 1], showticklabels = False, showgrid=False, zeroline=True, zerolinewidth=2, zerolinecolor='black'),
 
                       xaxis=dict(showspikes=True, tick0=0.0, rangemode="nonnegative", range=[0, len(df_cnr_hp1.hp1.values.tolist())*args.bin_size], showticklabels = False, showgrid=False, zeroline=False),
                       xaxis2=dict(tick0=0.0, rangemode="nonnegative", range=[0, len(df_cnr_hp1.hp1.values.tolist())*args.bin_size], zeroline=True, zerolinewidth=1, zerolinecolor='black', showgrid=False,),
@@ -2314,7 +2314,7 @@ def copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_c
     )
     fig.update_layout(
         width=1380,
-        height=850+250,
+        height=850+130,
        )
 
     if args.pdf_enable:
