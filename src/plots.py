@@ -17,7 +17,7 @@ from smoothing import smoothing
 from vcf_processing import get_snps_frquncies_coverage, get_snps_frquncies, het_homo_snps_gts, vcf_parse_to_csv_for_het_phased_snps_phasesets, snps_mean, cpd_mean, get_snp_segments, vcf_parse_to_csv_for_snps
 from utils import get_chromosomes_bins, csv_df_chromosomes_sorter, get_breakpoints, flatten, get_snps_frquncies_coverage_from_bam, detect_alter_loh_regions, is_phasesets_check_simple_heuristics, change_point_detection_means, loh_regions_phasesets, get_chromosomes_regions, adjust_extreme_outliers
 from extras import get_contigs_list, sv_vcf_bps_cn_check
-
+import src.annotations
 
 def copy_number_plots_chromosomes(df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, args, loh_region_starts, loh_region_ends):
     filename = f"{os.path.join(args.out_dir_plots, 'COPY_NUMBERS.html')}"
@@ -174,7 +174,7 @@ def coverage_plots_chromosomes(df, df_phasesets, args, thread_pool):
         df_var_bins, df_var_bins_1 = get_chromosomes_bins(args.target_bam[0], args.bin_size, args)
 
     chroms = get_contigs_list(args.contigs)
-    fileDir = os.path.dirname(os.path.realpath('__file__'))
+    fileDir = os.path.dirname(__file__) #os.path.dirname(os.path.realpath('__file__'))
     cen_coord = os.path.join(fileDir, 'annotations/grch38.cen_coord.curated.bed')
     df_centm = csv_df_chromosomes_sorter(cen_coord, ['chr', 'start', 'end'])
 
@@ -694,7 +694,7 @@ def copy_number_plots_genome_breakpoints_unphased_test(centers, integer_fraction
     df_cnr_hp2_ = []
     df_segs_hp2_ = []
     df_genes_ = []
-    fileDir = os.path.dirname(os.path.realpath('__file__'))
+    fileDir = os.path.dirname(__file__) #os.path.dirname(os.path.realpath('__file__'))
     cancer_genes = os.path.join(fileDir, 'annotations/CancerGenes.tsv')
     df_genes = csv_df_chromosomes_sorter(cancer_genes, ['chr','start','end','gene','size'])
     genestart = []
@@ -1039,7 +1039,7 @@ def copy_number_plots_genome_breakpoints_hps_test(centers, integer_fractional_ce
     df_segs_hp2_ = []
     df_genes_1_ = []
     df_genes_2_ = []
-    fileDir = os.path.dirname(os.path.realpath('__file__'))
+    fileDir = os.path.dirname(__file__) #os.path.dirname(os.path.realpath('__file__'))
     cancer_genes = os.path.join(fileDir, 'annotations/CancerGenes.tsv')
     df_genes = csv_df_chromosomes_sorter(cancer_genes, ['chr','start','end','gene','size'])
     genestart_1 = []
@@ -1474,7 +1474,7 @@ def copy_number_plots_genome_breakpoints(centers, integer_fractional_centers, df
     df_segs_hp2_ = []
     df_genes_1_ = []
     df_genes_2_ = []
-    fileDir = os.path.dirname(os.path.realpath('__file__'))
+    fileDir = os.path.dirname(__file__) #os.path.dirname(os.path.realpath('__file__'))
     cancer_genes = os.path.join(fileDir, 'annotations/CancerGenes.tsv')
     df_genes = csv_df_chromosomes_sorter(cancer_genes, ['chr','start','end','gene','size'])
     genestart_1 = []
@@ -1896,7 +1896,7 @@ def copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_c
     df_segs_hp2_ = []
     df_genes_1_ = []
     df_genes_2_ = []
-    fileDir = os.path.dirname(os.path.realpath('__file__'))
+    fileDir = os.path.dirname(__file__) #os.path.dirname(os.path.realpath('__file__'))
     cancer_genes = os.path.join(fileDir, 'annotations/CancerGenes.tsv')
     df_genes = csv_df_chromosomes_sorter(cancer_genes, ['chr','start','end','gene','size'])
     genestart_1 = []
