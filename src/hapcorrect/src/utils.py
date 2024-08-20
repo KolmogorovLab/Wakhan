@@ -243,7 +243,7 @@ def merge_regions_alt(starts, ends, values, values_next, loh_starts, loh_ends, t
     for i in range(len(starts)-1):
         while abs(values[i+1] - values[i]) <= threshold and abs(values[i] - values_next[i]) >= threshold:
             if not overlap_check(starts[i], ends[i], loh_starts, loh_ends):
-                print('here')
+                continue #print('here')
 def merge_regions(starts, ends, values, values_next, loh_starts, loh_ends, threshold=3):
     merged_starts, merged_ends, merged_values, merged_values_2 = [], [], [], []
     i = 0

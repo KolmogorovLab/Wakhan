@@ -101,11 +101,11 @@ Few cell lines arbitrary phase-switch correction and copy number estimation outp
 * `--breakpoints` For segmentation to use in CN estimation, structural variations/breakpoints VCF is required
 
 ## Optional parameters
-* `--phaseblock-flipping-enable` enabling phaseblock flipping in coverage plots
+* `--phaseblock-flipping-enable` enabling phaseblock flipping in coverage plots (enabled: by default)
 
 * `--phaseblocks-enable` enabling phaseblocks display in coverage plots
 
-* `--contigs` List of contigs (chromosomes, default:chr1-22) to be included in the plots (Note: chrX, chrY support in CNA plots is not included yet) [e.g., chr1-22,X,Y]
+* `--contigs` List of contigs (chromosomes, default: chr1-22) to be included in the plots (Note: chrX, chrY support in CNA plots is not included yet) [e.g., chr1-22,X,Y]
 
 * `--without-phasing` enable it if CNA analysis is being performed without phasing 
 

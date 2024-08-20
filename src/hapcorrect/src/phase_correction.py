@@ -112,8 +112,8 @@ def phaseblock_flipping(chrom, args, is_simple_correction, haplotype_1_values, h
         #                haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
 
         #bins without phaseblocks
-        bins_without_phaseblocks(chrom, args, max_value_index, values_ps, haplotype_1_values, haplotype_2_values, ref_start_values, ref_end_values, \
-                        haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
+        #bins_without_phaseblocks(chrom, args, max_value_index, values_ps, haplotype_1_values, haplotype_2_values, ref_start_values, ref_end_values, \
+        #                haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
 
         #amplified signals
         #

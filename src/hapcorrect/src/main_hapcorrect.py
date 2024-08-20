@@ -85,17 +85,11 @@ def main_process():
                         default=MAX_CUT_THRESHOLD_SNPS_COUNTS, metavar="int", type=int,
                         help="Maximum cut threshold for SNPs counts [50]")
 
-    parser.add_argument("--no-of-clusters", dest="no_of_clusters",
-                        required=False, default=None, metavar="int", type=int,
-                        help="Number of clusters for bins clustering")
-
     parser.add_argument("--min-aligned-length", "--min_aligned_length", dest="min_aligned_length",
                         default=MIN_ALIGNED_LENGTH, metavar="int", type=int, help="Minimum aligned reads length [5000]")
 
     parser.add_argument('--pdf-enable',  dest="pdf_enable", required=False,
                         default=False, help="Enabling PDF output coverage plots")
-    parser.add_argument('--html-enable',  dest="html_enable", required=False,
-                        default=True, help="Enabling HTML output coverage plots")
 
     parser.add_argument('--unphased-reads-coverage-enable',  dest="unphased_reads_coverage_enable", required=False,
                         default=True, help="Enabling unphased reads coverage output in plots")
@@ -112,12 +106,6 @@ def main_process():
     parser.add_argument('--phaseblocks-enable',  dest="phaseblocks_enable", required=False,
                         default=False, help="Enabling phaseblocks display in coverage plots")
 
-    parser.add_argument('--het-phased-snps-freq-enable',  dest="het_phased_snps_freq_enable", required=False,
-                        default=False, help="Enabling hetrozygous phased snps frequencies in coverage plots")
-    parser.add_argument('--snps-freq-vcf-enable',  dest="snps_freq_vcf_enable", required=False,
-                        default=False, help="Enabling snps frequencies in coverage plots")
-    parser.add_argument('--breakpoints-enable',  dest="breakpoints_enable", required=False,
-                        default=False, help="Enabling breakpoints in coverage plots")
     parser.add_argument('--copynumbers-enable', dest="copynumbers_enable", required=False,
                         default=True, help="Enabling copy number in coverage plots")
     parser.add_argument('--copynumbers-subclonal-enable', dest="copynumbers_subclonal_enable", required=False,

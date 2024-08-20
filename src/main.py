@@ -19,7 +19,7 @@ from utils import get_chromosomes_bins, write_segments_coverage, write_segments_
     seperate_dfs_coverage, flatten_smooth, get_contigs_list, write_copynumber_segments_csv, integer_fractional_cluster_means, \
     adjust_diversified_segments, get_chromosomes_bins_bam, normal_genome_proportion
 from plots import coverage_plots_chromosomes, copy_number_plots_genome, plots_genome_coverage, copy_number_plots_chromosomes, copy_number_plots_genome_breakpoints_unphased, \
-    copy_number_plots_genome_breakpoints_unphased_test, copy_number_plots_genome_breakpoints_test, copy_number_plots_genome_details
+    copy_number_plots_genome_breakpoints_unphased_test, copy_number_plots_genome_breakpoints, copy_number_plots_genome_breakpoints_subclonal, copy_number_plots_genome_details
 from vcf_processing import vcf_parse_to_csv_for_het_phased_snps_phasesets
 from snps_loh import plot_snps_frequencies, plot_snps_ratios_genome
 from phasing_correction import generate_phasesets_bins
@@ -90,17 +90,11 @@ def main():
                         default=MAX_CUT_THRESHOLD_SNPS_COUNTS, metavar="int", type=int,
                         help="Maximum cut threshold for SNPs counts [50]")
 
-    parser.add_argument("--no-of-clusters", dest="no_of_clusters",
-                        required=False, default=None, metavar="int", type=int,
-                        help="Number of clusters for bins clustering")
-
     parser.add_argument("--min-aligned-length", "--min_aligned_length", dest="min_aligned_length",
                         default=MIN_ALIGNED_LENGTH, metavar="int", type=int, help="Minimum aligned reads length [5000]")
 
     parser.add_argument('--pdf-enable',  dest="pdf_enable", required=False,
                         default=False, help="Enabling PDF output coverage plots")
-    parser.add_argument('--html-enable',  dest="html_enable", required=False,
-                        default=True, help="Enabling HTML output coverage plots")
 
     parser.add_argument('--unphased-reads-coverage-enable',  dest="unphased_reads_coverage_enable", required=False,
                         default=True, help="Enabling unphased reads coverage output in plots")
@@ -114,12 +108,6 @@ def main():
     parser.add_argument('--phaseblocks-enable',  dest="phaseblocks_enable", required=False,
                         default=False, help="Enabling phaseblocks display in coverage plots")
 
-    parser.add_argument('--het-phased-snps-freq-enable',  dest="het_phased_snps_freq_enable", required=False,
-                        default=False, help="Enabling hetrozygous phased snps frequencies in coverage plots")
-    parser.add_argument('--snps-freq-vcf-enable',  dest="snps_freq_vcf_enable", required=False,
-                        default=False, help="Enabling snps frequencies in coverage plots")
-    parser.add_argument('--breakpoints-enable',  dest="breakpoints_enable", required=False,
-                        default=False, help="Enabling breakpoints in coverage plots")
     parser.add_argument('--copynumbers-enable', dest="copynumbers_enable", required=False,
                         default=True, help="Enabling copy number in coverage plots")
     parser.add_argument('--copynumbers-subclonal-enable', dest="copynumbers_subclonal_enable", required=False,
@@ -137,6 +125,7 @@ def main():
 
     parser.add_argument('--variable-size-bins', dest="variable_size_bins", required=False,
                         default=False, help="enable variable size bins to use breakpoints")
+
     parser.add_argument('--enable-simple-heuristics', dest="enable_simple_heuristics", required=False,
                         default=False, help="enable simple heuristics")
 
@@ -275,26 +264,33 @@ def main():
         #print("purity, normal fraction:", purity,normal_fraction)
         centers = [normal_fraction] + [normal_fraction + (i * centers[1]) for i in range(1, len(centers))]
 
-    if args.copynumbers_subclonal_enable:
-        integer_fractional_means = sorted([i for i in range(0, len(centers))] + [i / centers[1] for i in subclonals])  # integer_fractional_cluster_means(args, df_segs_hp1, df_segs_hp2, centers)
-        centers = sorted(centers + subclonals)
-    else:
-        integer_fractional_means = sorted([i for i in range(0, len(centers))])
-    df_segs_hp1, df_segs_hp2 = adjust_diversified_segments(centers, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, args)
-
     if args.without_phasing:
         logging.info('Generating coverage/copy numbers plots genome wide')
+        integer_fractional_means = sorted([i for i in range(0, len(centers))])
+        df_segs_hp1, df_segs_hp2 = adjust_diversified_segments(centers, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, args)
+
         write_copynumber_segments_csv(df_segs_hp1, args, centers, integer_fractional_means, None)
         copy_number_plots_genome(centers, integer_fractional_means, df_hp1, df_segs_hp1, df_hp2, df_segs_hp2, df_hp1, args, x_axis, observed_hist)
         copy_number_plots_genome_breakpoints_unphased_test(centers, integer_fractional_means, df_hp1, df_segs_hp1, df_hp2, df_segs_hp2, df_hp1, args)
     else:
         logging.info('Generating coverage/copy numbers plots genome wide')
+        integer_fractional_means = sorted([i for i in range(0, len(centers))])
+        df_segs_hp1_updated, df_segs_hp2_updated = adjust_diversified_segments(centers, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, args)
 
-        write_copynumber_segments_csv(df_segs_hp1, args, centers, integer_fractional_means, 1)
-        write_copynumber_segments_csv(df_segs_hp2, args, centers, integer_fractional_means, 2)
+        write_copynumber_segments_csv(df_segs_hp1_updated, args, centers, integer_fractional_means, 1, '_copynumbers_segments.bed')
+        write_copynumber_segments_csv(df_segs_hp2_updated, args, centers, integer_fractional_means, 2, '_copynumbers_segments.bed')
 
-        copy_number_plots_genome(centers, integer_fractional_means, df_hp1, df_segs_hp1, df_hp2, df_segs_hp2, df_unphased, args, x_axis, observed_hist)
-        copy_number_plots_genome_breakpoints_test(centers, integer_fractional_means, df_hp1, df_segs_hp1, df_hp2, df_segs_hp2, df_hp1, args)
+        copy_number_plots_genome(centers, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_unphased, args, x_axis, observed_hist)
+        copy_number_plots_genome_breakpoints(centers, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args)
+
+        if args.copynumbers_subclonal_enable:
+            integer_fractional_means = sorted([i for i in range(0, len(centers))] + [i / centers[1] for i in subclonals])  # integer_fractional_cluster_means(args, df_segs_hp1, df_segs_hp2, centers)
+            centers = sorted(centers + subclonals)
+            df_segs_hp1_updated, df_segs_hp2_updated = adjust_diversified_segments(centers, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, args)
+            #out_states = sorted(list(set(df_segs_hp1_updated.state.values.tolist() + df_segs_hp2_updated.state.values.tolist())))
+            write_copynumber_segments_csv(df_segs_hp1_updated, args, centers, integer_fractional_means, 1, '_copynumbers_subclonal_segments.bed')
+            write_copynumber_segments_csv(df_segs_hp2_updated, args, centers, integer_fractional_means, 2, '_copynumbers_subclonal_segments.bed')
+            copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args)
 
     #SNPs LOH and plots
     if args.tumor_vcf:
