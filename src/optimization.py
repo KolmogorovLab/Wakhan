@@ -4,7 +4,7 @@ import sys
 import scipy.stats
 import scipy.optimize
 import scipy.signal
-from matplotlib import pyplot as plt
+#from matplotlib import pyplot as plt
 import random
 import numpy as np
 
@@ -231,8 +231,8 @@ def peak_detection_optimization(input_segments, input_weights):
     print("First minimum", first_min)
     print("Max correlation peak", corr_max)
 
-    plt.plot(xx, corr, "r")
-    plt.savefig("test.pdf", format="pdf", bbox_inches="tight")
+    #plt.plot(xx, corr, "r")
+    #plt.savefig("test.pdf", format="pdf", bbox_inches="tight")
 
     # testing if 1/2 of the highest peak is also a peak. compare it with 1/4 and 3/4 (which should be valleys)
     half_peak = corr_max // 2

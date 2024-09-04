@@ -244,32 +244,21 @@ def snps_frequencies_chrom_mean_phasesets(df_snps, ref_start_values, ref_end_val
     haplotype_2_coverage = df.freq_value_a.values.tolist()
 
     snps_haplotype1_mean = []
-    total = 0
     for index, (i,j) in enumerate(zip(ref_start_values, ref_end_values)):
-        len_cov = len(df[(df.pos >= i) & (df.pos <= j)])
-        if len_cov == 0:
-            snps_haplotype1_mean.append(0)
+        sub_list = haplotype_1_coverage[haplotype_1_position.index(min(haplotype_1_position, key=lambda x:abs(x-i))):haplotype_1_position.index(min(haplotype_1_position, key=lambda x:abs(x-j)))]
+        if sub_list:
+            snps_haplotype1_mean.append(statistics.mean(sub_list))
         else:
-            sub_list = haplotype_1_coverage[total:(total + len_cov)]
-            if sub_list:
-                snps_haplotype1_mean.append(statistics.mean(sub_list))
-            else:
-                snps_haplotype1_mean.append(0)
-        total += len_cov
+            snps_haplotype1_mean.append(0)
 
     snps_haplotype2_mean = []
-    total = 0
-    for index, (i,j) in enumerate(zip(ref_start_values, ref_end_values)):
-        len_cov= len(df[(df.pos >= i) & (df.pos <= j)])
-        if len_cov ==0:
-            snps_haplotype2_mean.append(0)
+    for index, (i, j) in enumerate(zip(ref_start_values, ref_end_values)):
+        sub_list = haplotype_2_coverage[haplotype_2_position.index(min(haplotype_2_position, key=lambda x:abs(x-i))):haplotype_2_position.index(min(haplotype_2_position, key=lambda x:abs(x-j)))]
+        if sub_list:
+            snps_haplotype2_mean.append(statistics.mean(sub_list))
         else:
-            sub_list=haplotype_2_coverage[total:(total + len_cov)]
-            if sub_list:
-                snps_haplotype2_mean.append(statistics.mean(sub_list))
-            else:
-                snps_haplotype2_mean.append(0)
-        total += len_cov
+            snps_haplotype2_mean.append(0)
+
     return snps_haplotype1_mean, snps_haplotype2_mean
 
 def snps_frequencies_chrom_mean(df_snps, ref_start_values, chrom, args):

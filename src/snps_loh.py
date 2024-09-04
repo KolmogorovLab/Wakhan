@@ -129,7 +129,7 @@ def plot_snps(chrom, index, df_snps_in_csv, html_graphs, args, df_chrom):
 
         ref_start_values = [i for i in range(0, last_snp_pos, args.bin_size_snps)]
         ref_start_values_updated, snps_het_counts, snps_homo_counts, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends = get_snps_frquncies_coverage(
-            df_snps_in_csv, chrom, ref_start_values, args.bin_size_snps)
+            df_snps_in_csv, chrom, ref_start_values, args)
 
         chr_list = [df_chrom['chr'].iloc[0] for ch in range(len(ref_start_values_updated))]
         df_snps_ratios_chrom = pd.DataFrame(list(zip(chr_list, ref_start_values_updated, snps_het_counts, snps_homo_counts)),
