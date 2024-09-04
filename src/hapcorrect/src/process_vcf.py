@@ -132,7 +132,7 @@ def het_homo_snps_gts(snps_df_sorted, chrom, ref_start_values,
 
     return snps_df_haplotype1_vaf, snps_df_haplotype2_vaf, snps_df_haplotype1_pos, snps_df_haplotype2_pos
 
-def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, bin_size): #TODO This module needs better implementation, currently slow
+def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, bin_size, hets_ratio, smooth_loh_conv_window): #TODO This module needs better implementation, currently slow
     snps_df = snps_df_sorted[snps_df_sorted['chr'] == chrom]
     snps_df['gt'].astype(str)
 
@@ -211,11 +211,11 @@ def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, bin_siz
             ref_start_values_updated.append(start_values)
 
     if snps_het_counts:
-        snps_het_counts_updated, snps_homo_counts_updated, _ = smoothing(snps_het_counts_updated, snps_homo_counts_updated, snps_homo_counts_updated, conv_window_size=45)
+        snps_het_counts_updated, snps_homo_counts_updated, _ = smoothing(snps_het_counts_updated, snps_homo_counts_updated, snps_homo_counts_updated, conv_window_size=smooth_loh_conv_window)
 
     for index, pos in enumerate(ref_start_values_updated):
         #if snps_het_counts[index] < 0.7 and snps_homo_counts[index] > 0.14:
-        if snps_het_counts_updated[index] < 0.3 and snps_homo_counts_updated[index] > 0.7:
+        if snps_het_counts_updated[index] < hets_ratio and snps_homo_counts_updated[index] > 1 - hets_ratio:
             loh_regions.append(pos)
             loh_regions.append(pos + bin_size)
 
@@ -233,6 +233,44 @@ def squash_regions(region, bin_size):
     region_ends = sorted(region_ends)
 
     return region_starts, region_ends
+
+def snps_frequencies_chrom_mean_phasesets(df_snps, ref_start_values, ref_end_values, chrom, args):
+    df = df_snps[df_snps['chr'] == chrom]
+
+    #df = dict(tuple(df_snps.groupby('hp')))
+    haplotype_1_position = df.pos.values.tolist()
+    haplotype_1_coverage = df.freq_value_b.values.tolist()
+    haplotype_2_position = df.pos.values.tolist()
+    haplotype_2_coverage = df.freq_value_a.values.tolist()
+
+    snps_haplotype1_mean = []
+    total = 0
+    for index, (i,j) in enumerate(zip(ref_start_values, ref_end_values)):
+        len_cov = len(df[(df.pos >= i) & (df.pos <= j)])
+        if len_cov == 0:
+            snps_haplotype1_mean.append(0)
+        else:
+            sub_list = haplotype_1_coverage[total:(total + len_cov)]
+            if sub_list:
+                snps_haplotype1_mean.append(statistics.mean(sub_list))
+            else:
+                snps_haplotype1_mean.append(0)
+        total += len_cov
+
+    snps_haplotype2_mean = []
+    total = 0
+    for index, (i,j) in enumerate(zip(ref_start_values, ref_end_values)):
+        len_cov= len(df[(df.pos >= i) & (df.pos <= j)])
+        if len_cov ==0:
+            snps_haplotype2_mean.append(0)
+        else:
+            sub_list=haplotype_2_coverage[total:(total + len_cov)]
+            if sub_list:
+                snps_haplotype2_mean.append(statistics.mean(sub_list))
+            else:
+                snps_haplotype2_mean.append(0)
+        total += len_cov
+    return snps_haplotype1_mean, snps_haplotype2_mean
 
 def snps_frequencies_chrom_mean(df_snps, ref_start_values, chrom, args):
     df = df_snps[df_snps['chr'] == chrom]

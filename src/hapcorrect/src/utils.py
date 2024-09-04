@@ -116,7 +116,7 @@ def detect_alter_loh_regions(args, event, chrom, ref_ends, haplotype_1_values, h
     #print(starts)
     #print(ends)
     for i, (start,end) in enumerate(zip(starts,ends)):
-        if end - start > 1000000:
+        if end - start > args.hets_loh_seg_size:
             region_starts.append(start)
             region_ends.append(end)
 
@@ -190,7 +190,7 @@ def infer_missing_phaseblocks(ref_start_values, ref_end_values, ref_start_values
 
     return ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets
 
-def is_phasesets_check_simple_heuristics(ref_start_values_phasesets, ref_end_values_phasesets):
+def is_phasesets_check_simple_heuristics(ref_start_values_phasesets, ref_end_values_phasesets, args):
     ps_region_starts = []
     ps_region_ends = []
     for i, (start, end) in enumerate(zip(ref_start_values_phasesets, ref_end_values_phasesets)):

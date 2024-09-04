@@ -185,7 +185,7 @@ def het_homo_snps_gts(snps_df_sorted, chrom, ref_start_values,
     snps_df_haplotype2_pos = snps_df_haplotype2.pos.values.tolist()
 
     return snps_df_haplotype1_vaf, snps_df_haplotype2_vaf, snps_df_haplotype1_pos, snps_df_haplotype2_pos
-def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, bin_size): #TODO This module needs better implementation, currently slow
+def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, args): #TODO This module needs better implementation, currently slow
     snps_df = snps_df_sorted[snps_df_sorted['chr'] == chrom]
     snps_df['gt'].astype(str)
 
@@ -282,8 +282,8 @@ def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, bin_siz
 
     snps_het_counts = []
     for index, pos in enumerate(ref_start_values):
-        l2 = [i for i in snps_het_pos if i > pos and i < pos+bin_size]
-        #snps_het_counts.append(len(l2)/len(snps_het_pos)*bin_size)#((len(l2)/bin_size)*100)
+        l2 = [i for i in snps_het_pos if i > pos and i < pos + args.bin_size_snps]
+        #snps_het_counts.append(len(l2)/len(snps_het_pos)*bin_size_snps)#((len(l2)/bin_size_snps)*100)
         #snps_het_counts.append(len(l2))
         if l2:
             snps_het_counts.append(snps_het[snps_het_pos.index(max(l2))])
@@ -292,8 +292,8 @@ def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, bin_siz
 
     snps_homo_counts = []
     for index, pos in enumerate(ref_start_values):
-        l2 = [i for i in snps_homo_pos if i > pos and i < pos+bin_size]
-        #snps_homo_counts.append(len(l2)/len(snps_homo_pos)*bin_size)
+        l2 = [i for i in snps_homo_pos if i > pos and i < pos + args.bin_size_snps]
+        #snps_homo_counts.append(len(l2)/len(snps_homo_pos)*bin_size_snps)
         if l2:
             snps_homo_counts.append(snps_homo[snps_homo_pos.index(max(l2))])
         else:
@@ -304,9 +304,9 @@ def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, bin_siz
     loh_regions = []
     centromere_region = []
     for index, pos in enumerate(ref_start_values):
-        l1 = [i for i in snps_het_pos if i > pos and i < pos + bin_size]
-        l2 = [i for i in snps_homo_pos if i > pos and i < pos + bin_size]
-        # snps_homo_counts.append(len(l2)/len(snps_homo_pos)*bin_size)
+        l1 = [i for i in snps_het_pos if i > pos and i < pos + args.bin_size_snps]
+        l2 = [i for i in snps_homo_pos if i > pos and i < pos + args.bin_size_snps]
+        # snps_homo_counts.append(len(l2)/len(snps_homo_pos)*bin_size_snps)
         if l1:
             het_ratio = len(l1) / (len(l1) + len(l2))
             snps_het_counts.append(het_ratio)
@@ -322,7 +322,7 @@ def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, bin_siz
 
         if len(l1) == 0 and len(l2) == 0:
             centromere_region.append(pos)
-            centromere_region.append(pos + bin_size)
+            centromere_region.append(pos + args.bin_size_snps)
 
     snps_het_counts_updated = []
     snps_homo_counts_updated = []
@@ -334,16 +334,16 @@ def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, bin_siz
             ref_start_values_updated.append(start_values)
 
     if snps_het_counts:
-        snps_het_counts_updated, snps_homo_counts_updated, _ = smoothing(snps_het_counts_updated, snps_homo_counts_updated, snps_homo_counts_updated, conv_window_size=15) #40, 15
+        snps_het_counts_updated, snps_homo_counts_updated, _ = smoothing(snps_het_counts_updated, snps_homo_counts_updated, snps_homo_counts_updated, conv_window_size=args.hets_smooth_window) #40, 15
 
     for index, pos in enumerate(ref_start_values_updated):
         #if snps_het_counts[index] < 0.7 and snps_homo_counts[index] > 0.14:
-        if snps_het_counts_updated[index] < 0.3 and snps_homo_counts_updated[index] > 0.7:
+        if snps_het_counts_updated[index] < args.hets_ratio and snps_homo_counts_updated[index] > 1 - args.hets_ratio:
             loh_regions.append(pos)
-            loh_regions.append(pos + bin_size)
+            loh_regions.append(pos + args.bin_size_snps)
 
-    centromere_region_starts, centromere_region_ends = squash_regions(centromere_region, bin_size)
-    loh_region_starts, loh_region_ends = squash_regions(loh_regions, bin_size)
+    centromere_region_starts, centromere_region_ends = squash_regions(centromere_region, args.bin_size_snps)
+    loh_region_starts, loh_region_ends = squash_regions(loh_regions, args.bin_size_snps)
 
     return ref_start_values_updated, snps_het_counts_updated, snps_homo_counts_updated, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends
 

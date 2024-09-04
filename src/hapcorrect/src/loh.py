@@ -51,7 +51,7 @@ def plot_snps_freqs_ratios_counts(chrom, index, df_snps_in_csv, html_graphs, arg
 
     ref_start_values = [i for i in range(0, snps_homo_pos[-1:][0], args.bin_size_snps)]
     ref_start_values_updated, snps_het_counts, snps_homo_counts, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends = get_snps_frquncies_coverage(
-        df_snps_in_csv, chrom, ref_start_values, args.bin_size_snps)
+        df_snps_in_csv, chrom, ref_start_values, args)
 
     add_scatter_trace_coverage(fig, ref_start_values_updated, snps_het_counts, name='Het SNPs Ratios', text=None,
                                yaxis=None,

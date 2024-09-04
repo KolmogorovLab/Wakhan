@@ -14,7 +14,7 @@ from multiprocessing import Pool
 from collections import defaultdict
 
 from hapcorrect.src.process_bam import get_all_reads_parallel, update_coverage_hist, get_segments_coverage, haplotype_update_all_bins_parallel, get_snps_frequencies, tumor_bam_haplotag
-from hapcorrect.src.process_vcf import vcf_parse_to_csv_for_het_phased_snps_phasesets, get_snp_frequencies_segments, snps_frequencies_chrom_mean, get_snps_frquncies_coverage, vcf_parse_to_csv_for_snps, index_vcf, rephase_vcf, get_phasingblocks
+from hapcorrect.src.process_vcf import vcf_parse_to_csv_for_het_phased_snps_phasesets, get_snp_frequencies_segments, snps_frequencies_chrom_mean, get_snps_frquncies_coverage, vcf_parse_to_csv_for_snps, index_vcf, rephase_vcf, get_phasingblocks, snps_frequencies_chrom_mean_phasesets
 from hapcorrect.src.phase_correction import generate_phasesets_bins, phaseblock_flipping, phase_correction_centers, contiguous_phaseblocks, detect_centromeres, flip_phaseblocks_contigous, remove_overlaping_contiguous, switch_inter_phaseblocks_bins
 from hapcorrect.src.utils import get_chromosomes_bins, write_segments_coverage, csv_df_chromosomes_sorter, get_snps_frquncies_coverage_from_bam, \
                     infer_missing_phaseblocks, df_chromosomes_sorter, is_phasesets_check_simple_heuristics, write_df_csv, loh_regions_events
@@ -33,6 +33,9 @@ def main_process():
     MAX_CUT_THRESHOLD = 100
     MIN_ALIGNED_LENGTH = 5000
     MAX_CUT_THRESHOLD_SNPS_COUNTS = 50
+    HETS_RATIO_LOH = 0.3
+    HETS_SMOOTH_WINDOW = 45
+    HETS_LOH_SEG_SIZE = 2000000
 
     SAMTOOLS_BIN = "samtools"
     BCFTOOLS_BIN = "bcftools"
@@ -78,6 +81,12 @@ def main_process():
                         default=BIN_SIZE, metavar="int", type=int, help="coverage (readdepth) bin size [50k]")
     parser.add_argument("--bin-size-snps", "--bin_size_snps", dest="bin_size_snps",
                         default=BIN_SIZE_SNPS, metavar="int", type=int, help="SNPs bin size [50k]")
+    parser.add_argument("--hets-ratio", "--hets_ratio", dest="hets_ratio",
+                        default=HETS_RATIO_LOH, metavar="float", type=float, help="Hetrozygous SNPs ratio threshold for LOH detection [0.3]")
+    parser.add_argument("--hets-smooth-window", "--hets_smooth_window", dest="hets_smooth_window",
+                        default=HETS_SMOOTH_WINDOW, metavar="int", type=int, help="Hetrozygous SNPs ratio smoothing window size for LOH detection [45]")
+    parser.add_argument("--hets-loh-seg-size", "--hets_loh_seg_size", dest="hets_loh_seg_size",
+                        default=HETS_LOH_SEG_SIZE, metavar="int", type=int, help="LOH detection minimum segment size where Het SNPs ratio is dropped [2M]")
 
     parser.add_argument("--cut-threshold", "--cut_threshold", dest="cut_threshold",
                         default=MAX_CUT_THRESHOLD, metavar="int", type=int, help="Maximum cut threshold for coverage (readdepth) [100]")
@@ -268,13 +277,15 @@ def main_process():
 
             if args.normal_phased_vcf:
                 snps_haplotype1_mean, snps_haplotype2_mean  = snps_frequencies_chrom_mean(df_snps_frequencies, ref_start_values, chrom, args)
+                haplotype_1_values_phasesets, haplotype_2_values_phasesets = snps_frequencies_chrom_mean_phasesets(df_snps_frequencies, ref_start_values_phasesets, ref_end_values_phasesets, chrom, args)
             else:
                 snps_haplotype1_mean = haplotype_1_values
                 snps_haplotype2_mean = haplotype_2_values
+
             plot_coverage_data(html_graphs, args, chrom, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, "without_phase_correction")
             ##################################
             if args.tumor_vcf:
-                ref_start_values_updated, snps_het_counts, snps_homo_counts, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends = get_snps_frquncies_coverage(df_snps_in_csv, chrom, ref_start_values, args.bin_size)
+                ref_start_values_updated, snps_het_counts, snps_homo_counts, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends = get_snps_frquncies_coverage(df_snps_in_csv, chrom, ref_start_values, args.bin_size, args.hets_ratio, args.hets_smooth_window)
                 if args.without_phasing:
                     detect_loh_centromere_regions(chrom, args, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
                 else:

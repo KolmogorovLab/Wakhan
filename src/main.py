@@ -17,7 +17,8 @@ from hapcorrect.src.main_hapcorrect import main_process
 from bam_processing import get_all_reads_parallel, update_coverage_hist, get_segments_coverage, haplotype_update_all_bins_parallel, get_snps_frequencies
 from utils import get_chromosomes_bins, write_segments_coverage, write_segments_coverage_dict, csv_df_chromosomes_sorter,\
     seperate_dfs_coverage, flatten_smooth, get_contigs_list, write_copynumber_segments_csv, integer_fractional_cluster_means, \
-    adjust_diversified_segments, get_chromosomes_bins_bam, normal_genome_proportion
+    adjust_diversified_segments, get_chromosomes_bins_bam, normal_genome_proportion, update_subclonal_means_states, adjust_first_copy_mean, \
+    merge_adjacent_regions_cn
 from plots import coverage_plots_chromosomes, copy_number_plots_genome, plots_genome_coverage, copy_number_plots_chromosomes, copy_number_plots_genome_breakpoints_unphased, \
     copy_number_plots_genome_breakpoints_unphased_test, copy_number_plots_genome_breakpoints, copy_number_plots_genome_breakpoints_subclonal, copy_number_plots_genome_details
 from vcf_processing import vcf_parse_to_csv_for_het_phased_snps_phasesets
@@ -35,6 +36,10 @@ def main():
     MAX_CUT_THRESHOLD = 100
     MIN_ALIGNED_LENGTH = 5000
     MAX_CUT_THRESHOLD_SNPS_COUNTS = 50
+    HETS_RATIO_LOH = 0.3
+    HETS_SMOOTH_WINDOW = 45
+    HETS_LOH_SEG_SIZE = 2000000
+
 
     SAMTOOLS_BIN = "samtools"
     BCFTOOLS_BIN = "bcftools"
@@ -83,6 +88,12 @@ def main():
                         default=BIN_SIZE, metavar="int", type=int, help="coverage (readdepth) bin size [50k]")
     parser.add_argument("--bin-size-snps", "--bin_size_snps", dest="bin_size_snps",
                         default=BIN_SIZE_SNPS, metavar="int", type=int, help="SNPs bin size [50k]")
+    parser.add_argument("--hets-ratio", "--hets_ratio", dest="hets_ratio",
+                        default=HETS_RATIO_LOH, metavar="float", type=float, help="Hetrozygous SNPs ratio threshold for LOH detection [0.3]")
+    parser.add_argument("--hets-smooth-window", "--hets_smooth_window", dest="hets_smooth_window",
+                        default=HETS_SMOOTH_WINDOW, metavar="int", type=int, help="Hetrozygous SNPs ratio smoothing window size for LOH detection [45]")
+    parser.add_argument("--hets-loh-seg-size", "--hets_loh_seg_size", dest="hets_loh_seg_size",
+                        default=HETS_LOH_SEG_SIZE, metavar="int", type=int, help="LOH detection minimum segment size where Het SNPs ratio is dropped [2M]")
 
     parser.add_argument("--cut-threshold", "--cut_threshold", dest="cut_threshold",
                         default=MAX_CUT_THRESHOLD, metavar="int", type=int, help="Maximum cut threshold for coverage (readdepth) [100]")
@@ -252,6 +263,7 @@ def main():
     df_segs_hp2 = snps_cpd_means_df[1]
 
     centers, subclonals, x_axis, observed_hist = peak_detection_optimization(snps_cpd_means, snps_cpd_points_weights)
+    #centers, subclonals, x_axis, observed_hist = peak_detection_optimization(csv_df_snps_mean.hp1.tolist()+csv_df_snps_mean.hp2.tolist(), [1 for i in range(2*len(csv_df_snps_mean.hp2.tolist()))])
 
     if args.tumor_purity and args.tumor_ploidy:
         #print(normal_genome_proportion(0.45, 8, 100))
@@ -274,6 +286,8 @@ def main():
         copy_number_plots_genome_breakpoints_unphased_test(centers, integer_fractional_means, df_hp1, df_segs_hp1, df_hp2, df_segs_hp2, df_hp1, args)
     else:
         logging.info('Generating coverage/copy numbers plots genome wide')
+        df_segs_hp1_updated, df_segs_hp2_updated = adjust_diversified_segments(centers, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, args)
+        centers = adjust_first_copy_mean(args, centers, df_segs_hp1_updated, df_segs_hp2_updated, df_hp1, df_hp2)
         integer_fractional_means = sorted([i for i in range(0, len(centers))])
         df_segs_hp1_updated, df_segs_hp2_updated = adjust_diversified_segments(centers, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, args)
 
@@ -285,13 +299,17 @@ def main():
         plot_snps_frequencies(args, csv_df_snps_mean, df_segs_hp1_updated, df_segs_hp2_updated, centers, integer_fractional_means)
 
         if args.copynumbers_subclonal_enable:
-            integer_fractional_means = sorted([i for i in range(0, len(centers))] + [i / centers[1] for i in subclonals])  # integer_fractional_cluster_means(args, df_segs_hp1, df_segs_hp2, centers)
-            centers = sorted(centers + subclonals)
+            #integer_fractional_means = sorted([i for i in range(0, len(centers))] + [i / centers[1] for i in subclonals])  # integer_fractional_cluster_means(args, df_segs_hp1, df_segs_hp2, centers)
+            centers_ = sorted(centers + subclonals)
             df_segs_hp1_updated, df_segs_hp2_updated = adjust_diversified_segments(centers, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, args)
+            df_segs_hp1_updated, df_segs_hp2_updated = update_subclonal_means_states(centers, subclonals, df_segs_hp1_updated, df_segs_hp2_updated, df_hp1, df_hp2, args)
+            df_segs_hp1_updated = merge_adjacent_regions_cn(df_segs_hp1_updated, args)
+            df_segs_hp2_updated = merge_adjacent_regions_cn(df_segs_hp2_updated, args)
             #out_states = sorted(list(set(df_segs_hp1_updated.state.values.tolist() + df_segs_hp2_updated.state.values.tolist())))
+
+            copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args)
             write_copynumber_segments_csv(df_segs_hp1_updated, args, centers, integer_fractional_means, 1, '_copynumbers_subclonal_segments.bed')
             write_copynumber_segments_csv(df_segs_hp2_updated, args, centers, integer_fractional_means, 2, '_copynumbers_subclonal_segments.bed')
-            copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args)
 
     #SNPs LOH and plots
     if args.tumor_vcf:
