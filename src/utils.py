@@ -890,7 +890,7 @@ def update_subclonal_means_states(centers, subclonals, df_segs_hp1_updated, df_s
             z_score =  (seg_mean - sample_mean_init) / sample_stdev[index]
             p_value = stats.norm.sf(abs(z_score)) * 2
             df_segs_hp_1_updated_p_score.append(round(p_value, 7))
-            if p_value < 0.6:
+            if p_value < args.p_value_subclonal:
                 df_segs_hp_1_updated_state[i] = statistics.median(remove_outliers_iqr(np.array(df_hp_1_val[start//args.bin_size:end//args.bin_size])))
             else:
                 df_segs_hp_1_updated_state[i] = math.trunc(df_segs_hp_1_updated_state[i])#min(centers, key=lambda x: abs(x - seg_mean)) #statistics.median(remove_outliers_iqr(np.array(df_hp_1_val[start//args.bin_size:end//args.bin_size])))
@@ -917,7 +917,7 @@ def update_subclonal_means_states(centers, subclonals, df_segs_hp1_updated, df_s
             z_score =  (seg_mean - sample_mean_init) / sample_stdev[index]
             p_value = stats.norm.sf(abs(z_score)) * 2
             df_segs_hp_2_updated_p_score.append(round(p_value, 7))
-            if p_value < 0.6:
+            if p_value < args.p_value_subclonal:
                 df_segs_hp_2_updated_state[i] = statistics.median(remove_outliers_iqr(np.array(df_hp_2_val[start//args.bin_size:end//args.bin_size])))
             else:
                 df_segs_hp_2_updated_state[i] = math.trunc(df_segs_hp_2_updated_state[i]) #min(centers, key=lambda x: abs(x - seg_mean)) #statistics.median(remove_outliers_iqr(np.array(df_hp_2_val[start//args.bin_size:end//args.bin_size])))

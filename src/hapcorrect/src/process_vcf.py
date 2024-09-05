@@ -44,8 +44,8 @@ def af_field_selection(vcf_path):
 
 def get_snps_counts(snps_df_sorted, chrom, ref_start_values, bin_size):  # TODO This module needs better implementation, currently slow
     snps_df = snps_df_sorted[snps_df_sorted['chr'] == chrom]
-    snps_df['gt'].astype(str)
-    #snps_df = snps_df[(snps_df['qual'] > 15)]
+    if 'gt' in snps_df.columns:
+        snps_df['gt'].astype(str)    #snps_df = snps_df[(snps_df['qual'] > 15)]
 
     if snps_df.vaf.dtype == object:
         snps_df_vaf = [eval(i) for i in snps_df.vaf.str.split(',').str[0].values.tolist()]
@@ -84,7 +84,8 @@ def get_snps_counts(snps_df_sorted, chrom, ref_start_values, bin_size):  # TODO 
     return snps_het_counts, snps_homo_counts, snps_het_pos_bins, snps_homo_pos_bins
 def get_snps_frquncies(snps_df_sorted, chrom):  # TODO This module needs better implementation, currently slow
     snps_df = snps_df_sorted[snps_df_sorted['chr'] == chrom]
-    snps_df['gt'].astype(str)
+    if 'gt' in snps_df.columns:
+        snps_df['gt'].astype(str)
     #snps_df = snps_df[(snps_df['qual'] > 15)]
 
     if snps_df.vaf.dtype == object:
@@ -110,8 +111,8 @@ def get_snps_frquncies(snps_df_sorted, chrom):  # TODO This module needs better 
 def het_homo_snps_gts(snps_df_sorted, chrom, ref_start_values,
                                 bin_size):
     snps_df = snps_df_sorted[snps_df_sorted['chr'] == chrom]
-    snps_df['gt'].astype(str)
-
+    if 'gt' in snps_df.columns:
+        snps_df['gt'].astype(str)
     snps_df = snps_df[(snps_df['qual'] > 15)]
 
     snps_df_haplotype1 = snps_df[(snps_df['gt'] == '0|1') | (snps_df['gt'] == '1|0')]
@@ -132,9 +133,10 @@ def het_homo_snps_gts(snps_df_sorted, chrom, ref_start_values,
 
     return snps_df_haplotype1_vaf, snps_df_haplotype2_vaf, snps_df_haplotype1_pos, snps_df_haplotype2_pos
 
-def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, bin_size, hets_ratio, smooth_loh_conv_window): #TODO This module needs better implementation, currently slow
+def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, bin_size, hets_ratio, smooth_loh_conv_window, args): #TODO This module needs better implementation, currently slow
     snps_df = snps_df_sorted[snps_df_sorted['chr'] == chrom]
-    snps_df['gt'].astype(str)
+    if 'gt' in snps_df.columns:
+        snps_df['gt'].astype(str)
 
     #snps_df = snps_df[(snps_df['qual'] > 15)]
 
@@ -225,7 +227,8 @@ def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, bin_siz
     return ref_start_values_updated, snps_het_counts_updated, snps_homo_counts_updated, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends
 
 def squash_regions(region, bin_size):
-    region = pd.Series(region).drop_duplicates().tolist()
+    series = pd.Series(region, dtype="int")
+    region = series.drop_duplicates().tolist()
     region_starts = [v for i, v in enumerate(region) if i == 0 or region[i] > region[i - 1] + bin_size]
     region_ends = []
     for i, val in enumerate(region_starts):
@@ -233,6 +236,22 @@ def squash_regions(region, bin_size):
     region_ends = sorted(region_ends)
 
     return region_starts, region_ends
+
+def get_vafs_from_normal_phased_vcf(df_snps, chroms):
+    df_final = []
+    for index, chrom in enumerate(chroms):
+        df = df_snps[df_snps['chr'] == chrom]
+        vaf = []
+        # df = dict(tuple(df_snps.groupby('hp')))
+        haplotype_1_position = df.pos.values.tolist()
+        haplotype_1_coverage = df.freq_value_b.values.tolist()
+        haplotype_2_position = df.pos.values.tolist()
+        haplotype_2_coverage = df.freq_value_a.values.tolist()
+        # vaf = a/a+b
+        vaf = [round(i / (i + j + 0.0000000001), 3) for i, j in zip(haplotype_1_coverage, haplotype_2_coverage)]
+        df_final.append(pd.DataFrame(list(zip([df['chr'].iloc[0] for ch in range(len(haplotype_1_position))], haplotype_1_position, vaf)), columns=['chr', 'pos', 'vaf']))
+
+    return pd.concat(df_final)
 
 def snps_frequencies_chrom_mean_phasesets(df_snps, ref_start_values, ref_end_values, chrom, args):
     df = df_snps[df_snps['chr'] == chrom]

@@ -222,11 +222,11 @@ def coverage_plots_chromosomes(df, df_phasesets, args, thread_pool):
             else:
                 ref_start_values_1 = []
             ################################################################################
-            if args.normal_phased_vcf and not args.tumor_vcf:
-                haplotype_1_values, haplotype_2_values = snps_mean(df_snps, ref_start_values, ref_end_values, chrom, args)
-                # debug var_bins
-                if args.variable_size_bins:
-                    unphased_reads_values = haplotype_1_values
+            # if args.normal_phased_vcf and not args.tumor_vcf:
+            #     haplotype_1_values, haplotype_2_values = snps_mean(df_snps, ref_start_values, ref_end_values, chrom, args)
+            #     # debug var_bins
+            #     if args.variable_size_bins:
+            #         unphased_reads_values = haplotype_1_values
             ################################################################################
             haplotype_1_values = adjust_extreme_outliers(haplotype_1_values)
             haplotype_2_values = adjust_extreme_outliers(haplotype_2_values)
