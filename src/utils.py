@@ -263,8 +263,8 @@ def update_bins_with_bps_new(bed, bps, bps_bnd, args, region):
     df_bps_segs_1 = []
     chroms = get_contigs_list(args.contigs)
     for i, val in enumerate(chroms):
-        if val == 'chr20':
-            print('here')
+        #if val == 'chr20':
+        #    print('here')
         bp_junctions = []
 
         #########################################################################
@@ -884,14 +884,12 @@ def update_subclonal_means_states(centers, subclonals, df_segs_hp1_updated, df_s
         df_segs_hp_2_updated_p_score = []
 
         for i, (start,end) in enumerate(zip(df_segs_hp_1_updated_start, df_segs_hp_1_updated_end)):
-            #t_statistic, p_value = stats.ttest_1samp(remove_outliers_iqr(np.array(df_hp_1_val[start//args.bin_size:end//args.bin_size])), popmean=df_segs_hp_1_updated_state[i])
             seg_mean = statistics.median(remove_outliers_iqr(np.array(df_hp_1_val[start//args.bin_size:end//args.bin_size])))
             sample_mean_init = min(sample_mean, key=lambda x: abs(x - seg_mean))
             index =  sample_mean.index(sample_mean_init)
             z_score =  (seg_mean - sample_mean_init) / sample_stdev[index]
             p_value = stats.norm.sf(abs(z_score)) * 2
             df_segs_hp_1_updated_p_score.append(round(p_value, 7))
-            #if df_segs_hp_1_updated_state[i] in subclonals:
             if p_value < 0.6:
                 df_segs_hp_1_updated_state[i] = statistics.median(remove_outliers_iqr(np.array(df_hp_1_val[start//args.bin_size:end//args.bin_size])))
             else:
@@ -904,21 +902,21 @@ def update_subclonal_means_states(centers, subclonals, df_segs_hp1_updated, df_s
                 indices.append(i)
         slices = list(slice_lists(lambda x, y: y - x > 1, sorted(indices)))
         for k, sl in enumerate(slices):
-            if len(sl) > 1:
-                up_val = statistics.median(df_segs_hp_1_updated_state[sl[0]:sl[-1]])
+            slices_depth = list(slice_lists(lambda x, y: y - x > 2, sorted([df_segs_hp_1_updated_depth[m] for m in sl])))
+            if len(sl) > 1 and not len(slices_depth) > 1:
+                up_val = statistics.median(remove_outliers_iqr(np.array(df_segs_hp_1_updated_state[sl[0]:sl[-1]])))
+                #up_val = statistics.mean(remove_outliers_iqr(np.array(df_hp_1_val[df_segs_hp_1_updated_start[sl[0]]//args.bin_size:df_segs_hp_1_updated_start[sl[-1]]//args.bin_size])))
                 for l in sl:
                     df_segs_hp_1_updated_state[l] = up_val
                     df_segs_hp_1_updated_depth[l] = up_val
 
         for i, (start,end) in enumerate(zip(df_segs_hp_2_updated_start, df_segs_hp_2_updated_end)):
-            #t_statistic, p_value = stats.ttest_1samp(remove_outliers_iqr(np.array(df_hp_2_val[start//args.bin_size:end//args.bin_size])), popmean=df_segs_hp_2_updated_state[i])
             seg_mean = statistics.median(remove_outliers_iqr(np.array(df_hp_2_val[start//args.bin_size:end//args.bin_size])))
             sample_mean_init = min(sample_mean, key=lambda x: abs(x - seg_mean))
             index =  sample_mean.index(sample_mean_init)
             z_score =  (seg_mean - sample_mean_init) / sample_stdev[index]
             p_value = stats.norm.sf(abs(z_score)) * 2
             df_segs_hp_2_updated_p_score.append(round(p_value, 7))
-            #if df_segs_hp_2_updated_state[i] in subclonals:
             if p_value < 0.6:
                 df_segs_hp_2_updated_state[i] = statistics.median(remove_outliers_iqr(np.array(df_hp_2_val[start//args.bin_size:end//args.bin_size])))
             else:
@@ -931,8 +929,10 @@ def update_subclonal_means_states(centers, subclonals, df_segs_hp1_updated, df_s
                 indices.append(i)
         slices = list(slice_lists(lambda x, y: y - x > 1, sorted(indices)))
         for k, sl in enumerate(slices):
-            if len(sl) > 1:
-                up_val = statistics.median(df_segs_hp_2_updated_state[sl[0]:sl[-1]])
+            slices_depth = list(slice_lists(lambda x, y: y - x > 2, sorted([df_segs_hp_2_updated_depth[m] for m in sl])))
+            if len(sl) > 1 and not len(slices_depth) > 1:
+                up_val = statistics.median(remove_outliers_iqr(np.array(df_segs_hp_2_updated_state[sl[0]:sl[-1]])))
+                #up_val = statistics.mean(remove_outliers_iqr(np.array(df_hp_2_val[df_segs_hp_2_updated_start[sl[0]] // args.bin_size:df_segs_hp_2_updated_start[sl[-1]] // args.bin_size])))
                 for l in sl:
                     df_segs_hp_2_updated_state[l] = up_val
                     df_segs_hp_2_updated_depth[l] = up_val
@@ -1194,8 +1194,8 @@ def change_point_detection_algo(bin_size, hp_data, ref_start_values, args, ref_s
             #             snps_haplotype_pos.append(point_sub * bin_size)
             ###################################
     #return [0, 18, 34, 50, 68, 94, 117, 160, 194], [1, 5, 5, 5, 5, 5, 5, 5, 5], []
-    print(snps_haplotype_mean)
-    print(snps_haplotype_pos)
+    #print(snps_haplotype_mean)
+    #print(snps_haplotype_pos)
     return snps_haplotype_mean, snps_haplotype_len, snps_haplotype_pos
 
 def remove_outliers_iqr(data, threshold=5):

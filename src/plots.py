@@ -2605,7 +2605,7 @@ def copy_number_plots_genome_details(centers, integer_fractional_centers, df_cnr
         else:
             start_chrom += lengths[index-1]
         if index % 2 == 0:
-            print(index, start_chrom*args.bin_size, current*args.bin_size)
+            #print(index, start_chrom*args.bin_size, current*args.bin_size)
             fig.add_vrect(x0=start_chrom*args.bin_size, x1=current*args.bin_size, fillcolor="#E5E7E9", opacity=0.9, layer="below", line_width=0, )
 
     fig.update_layout(

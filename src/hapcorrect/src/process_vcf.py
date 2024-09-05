@@ -242,7 +242,8 @@ def snps_frequencies_chrom_mean_phasesets(df_snps, ref_start_values, ref_end_val
     haplotype_1_coverage = df.freq_value_b.values.tolist()
     haplotype_2_position = df.pos.values.tolist()
     haplotype_2_coverage = df.freq_value_a.values.tolist()
-
+    #vaf = a/a+b
+    #from normal as well
     snps_haplotype1_mean = []
     for index, (i,j) in enumerate(zip(ref_start_values, ref_end_values)):
         sub_list = haplotype_1_coverage[haplotype_1_position.index(min(haplotype_1_position, key=lambda x:abs(x-i))):haplotype_1_position.index(min(haplotype_1_position, key=lambda x:abs(x-j)))]

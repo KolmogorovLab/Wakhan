@@ -64,7 +64,7 @@ def get_all_breakpoints_data(edges, edges_chr, height, path):
     #edges = [[358000001, 234000000]]
 
     for i, (j, k) in enumerate(edges):
-        print(edges_chr[i])
+        #print(edges_chr[i])
         # if j < k:
         #     tooltips.append(f'interactions({labels[j]}, {labels[k]})={interact_strength[i]}')
         # else:
