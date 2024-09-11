@@ -39,7 +39,8 @@ def af_field_selection(vcf_path):
 
 def get_snps_counts(snps_df_sorted, chrom, ref_start_values, bin_size):  # TODO This module needs better implementation, currently slow
     snps_df = snps_df_sorted[snps_df_sorted['chr'] == chrom]
-    snps_df['gt'].astype(str)
+    if 'gt' in snps_df.columns:
+        snps_df['gt'].astype(str)
     #snps_df = snps_df[(snps_df['qual'] > 15)]
 
     if snps_df.vaf.dtype == object:
@@ -78,8 +79,8 @@ def get_snps_counts(snps_df_sorted, chrom, ref_start_values, bin_size):  # TODO 
 
 def get_snps_counts_cn_regions(snps_df_sorted, chrom, ref_start_values, ref_end_values):  # TODO This module needs better implementation, currently slow
     snps_df = snps_df_sorted[snps_df_sorted['chr'] == chrom]
-    snps_df['gt'].astype(str)
-    #snps_df = snps_df[(snps_df['qual'] > 15)]
+    if 'gt' in snps_df.columns:
+        snps_df['gt'].astype(str)    #snps_df = snps_df[(snps_df['qual'] > 15)]
 
     if snps_df.vaf.dtype == object:
         snps_df_vaf = [eval(i) for i in snps_df.vaf.str.split(',').str[0].values.tolist()]
@@ -114,8 +115,8 @@ def get_snps_counts_cn_regions(snps_df_sorted, chrom, ref_start_values, ref_end_
     return snps_het_counts, snps_homo_counts, ref_start_values, ref_end_values
 def get_snps_frquncies(snps_df_sorted, chrom):  # TODO This module needs better implementation, currently slow
     snps_df = snps_df_sorted[snps_df_sorted['chr'] == chrom]
-    snps_df['gt'].astype(str)
-    #snps_df = snps_df[(snps_df['qual'] > 15)]
+    if 'gt' in snps_df.columns:
+        snps_df['gt'].astype(str)    #snps_df = snps_df[(snps_df['qual'] > 15)]
 
     if snps_df.vaf.dtype == object:
         snps_df_vaf = [eval(i) for i in snps_df.vaf.str.split(',').str[0].values.tolist()]
@@ -138,7 +139,8 @@ def get_snps_frquncies(snps_df_sorted, chrom):  # TODO This module needs better 
     return snps_het, snps_homo, snps_het_pos, snps_homo_pos
 
 def get_snps_frquncies_genome(snps_df):  # TODO This module needs better implementation, currently slow
-    snps_df['gt'].astype(str)
+    if 'gt' in snps_df.columns:
+        snps_df['gt'].astype(str)
     #snps_df = snps_df[(snps_df['qual'] > 15)]
 
     if snps_df.vaf.dtype == object:
@@ -164,8 +166,8 @@ def get_snps_frquncies_genome(snps_df):  # TODO This module needs better impleme
 def het_homo_snps_gts(snps_df_sorted, chrom, ref_start_values,
                                 bin_size):
     snps_df = snps_df_sorted[snps_df_sorted['chr'] == chrom]
-    snps_df['gt'].astype(str)
-
+    if 'gt' in snps_df.columns:
+        snps_df['gt'].astype(str)
     snps_df = snps_df[(snps_df['qual'] > 15)]
 
     snps_df_haplotype1 = snps_df[(snps_df['gt'] == '0|1') | (snps_df['gt'] == '1|0')]
@@ -187,8 +189,8 @@ def het_homo_snps_gts(snps_df_sorted, chrom, ref_start_values,
     return snps_df_haplotype1_vaf, snps_df_haplotype2_vaf, snps_df_haplotype1_pos, snps_df_haplotype2_pos
 def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, args): #TODO This module needs better implementation, currently slow
     snps_df = snps_df_sorted[snps_df_sorted['chr'] == chrom]
-    snps_df['gt'].astype(str)
-
+    if 'gt' in snps_df.columns:
+        snps_df['gt'].astype(str)
     #snps_df = snps_df[(snps_df['qual'] > 15)]
 
     # snps_df_haplotype1 = snps_df[(snps_df['gt'] == '0|1') | (snps_df['gt'] == '1|0')]
@@ -338,7 +340,7 @@ def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, args): 
 
     for index, pos in enumerate(ref_start_values_updated):
         #if snps_het_counts[index] < 0.7 and snps_homo_counts[index] > 0.14:
-        if snps_het_counts_updated[index] < args.hets_ratio and snps_homo_counts_updated[index] > 1 - args.hets_ratio:
+        if snps_het_counts_updated[index] < args.hets_ratio: #and snps_homo_counts_updated[index] > 1 - args.hets_ratio:
             loh_regions.append(pos)
             loh_regions.append(pos + args.bin_size_snps)
 

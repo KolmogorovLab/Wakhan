@@ -890,7 +890,7 @@ def update_subclonal_means_states(centers, subclonals, df_segs_hp1_updated, df_s
             z_score =  (seg_mean - sample_mean_init) / sample_stdev[index]
             p_value = stats.norm.sf(abs(z_score)) * 2
             df_segs_hp_1_updated_p_score.append(round(p_value, 7))
-            if p_value < args.p_value_subclonal:
+            if p_value < args.confidence_subclonal_score:
                 df_segs_hp_1_updated_state[i] = statistics.median(remove_outliers_iqr(np.array(df_hp_1_val[start//args.bin_size:end//args.bin_size])))
             else:
                 df_segs_hp_1_updated_state[i] = math.trunc(df_segs_hp_1_updated_state[i])#min(centers, key=lambda x: abs(x - seg_mean)) #statistics.median(remove_outliers_iqr(np.array(df_hp_1_val[start//args.bin_size:end//args.bin_size])))
@@ -917,7 +917,7 @@ def update_subclonal_means_states(centers, subclonals, df_segs_hp1_updated, df_s
             z_score =  (seg_mean - sample_mean_init) / sample_stdev[index]
             p_value = stats.norm.sf(abs(z_score)) * 2
             df_segs_hp_2_updated_p_score.append(round(p_value, 7))
-            if p_value < args.p_value_subclonal:
+            if p_value < args.confidence_subclonal_score:
                 df_segs_hp_2_updated_state[i] = statistics.median(remove_outliers_iqr(np.array(df_hp_2_val[start//args.bin_size:end//args.bin_size])))
             else:
                 df_segs_hp_2_updated_state[i] = math.trunc(df_segs_hp_2_updated_state[i]) #min(centers, key=lambda x: abs(x - seg_mean)) #statistics.median(remove_outliers_iqr(np.array(df_hp_2_val[start//args.bin_size:end//args.bin_size])))
@@ -1309,3 +1309,19 @@ def normal_genome_proportion(p, l, C):
     per_haplotype = C * 2 * (1 - p) / ((2 * (1 - p) + l * p) * 2)
 
     return average_contribution_by_normal_genome, average_contribution_by_tumor_genome, combined_normal_coverage_fraction, per_haplotype
+
+def get_vafs_from_normal_phased_vcf(df_snps, chroms):
+    df_final = []
+    for index, chrom in enumerate(chroms):
+        df = df_snps[df_snps['chr'] == chrom]
+        vaf = []
+        # df = dict(tuple(df_snps.groupby('hp')))
+        haplotype_1_position = df.pos.values.tolist()
+        haplotype_1_coverage = df.freq_value_b.values.tolist()
+        haplotype_2_position = df.pos.values.tolist()
+        haplotype_2_coverage = df.freq_value_a.values.tolist()
+        # vaf = a/a+b
+        vaf = [round(i / (i + j + 0.0000000001), 3) for i, j in zip(haplotype_1_coverage, haplotype_2_coverage)]
+        df_final.append(pd.DataFrame(list(zip([df['chr'].iloc[0] for ch in range(len(haplotype_1_position))], haplotype_1_position, vaf)), columns=['chr', 'pos', 'vaf']))
+
+    return pd.concat(df_final)

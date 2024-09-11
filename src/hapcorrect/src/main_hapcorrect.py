@@ -33,7 +33,7 @@ def main_process():
     MAX_CUT_THRESHOLD = 100
     MIN_ALIGNED_LENGTH = 5000
     MAX_CUT_THRESHOLD_SNPS_COUNTS = 50
-    HETS_RATIO_LOH = 0.3
+    HETS_RATIO_LOH = 0.7
     HETS_SMOOTH_WINDOW = 45
     HETS_LOH_SEG_SIZE = 2000000
 
@@ -107,8 +107,7 @@ def main_process():
 
     parser.add_argument("--tumor-purity", dest="tumor_purity", default=0.0, metavar="float", type=float, help="user input tumor purity")
     parser.add_argument("--tumor-ploidy", dest="tumor_ploidy", default=0.0, metavar="float", type=float, help="user input tumor ploidy")
-    parser.add_argument("--p-value-subclonal", dest="p_value_subclonal", default=0.6, metavar="float", type=float, help="user input p-value to detect if a segment is subclonal/off to integer copynumber")
-
+    parser.add_argument("--confidence-subclonal-score", dest="confidence_subclonal_score", default=0.6, metavar="float", type=float, help="user input p-value to detect if a segment is subclonal/off to integer copynumber")
 
     parser.add_argument('--phaseblock-flipping-enable',  dest="phaseblock_flipping_enable", required=False,
                         default=True, help="Enabling phaseblock flipping in coverage plots")
@@ -158,7 +157,7 @@ def main_process():
 
     args = parser.parse_args()
 
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
 
     if args.control_bam is None:
         args.control_bam = []
@@ -266,7 +265,8 @@ def main_process():
     loh_regions_events_all = []
     df_updated_coverage = []
     for index, chrom in enumerate(chroms):
-        if chrom in chroms:# and (chrom == '1' or chrom == '18'):# and (chrom == 'chr5' or chrom == 'chr16'):
+        if chrom in chroms: #and (chrom == '1' or chrom == '18'):# and (chrom == 'chr5' or chrom == 'chr16'):
+
             logging.info('Loading coverage (bins) and coverage (phaseblocks) datasets for ' + chrom)
             csv_df_phaseset = csv_df_phasesets[csv_df_phasesets['chr'] == chrom]
             haplotype_1_values_phasesets = csv_df_phaseset.hp1.values.tolist()
@@ -292,19 +292,19 @@ def main_process():
             ##################################
             #Normal LOH
             #if args.normal_phased_vcf:
-            #    ref_start_values_updated, snps_het_counts, snps_homo_counts, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends = get_snps_frquncies_coverage(df_snps_in_csv_normal_loh, chrom, ref_start_values, args.bin_size, args.hets_ratio, args.hets_smooth_window, args)
-            #    snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, _, _, _, _, loh_region_starts, loh_region_ends = detect_loh_centromere_regions(chrom, args, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
+            #   ref_start_values_updated, snps_het_counts, snps_homo_counts, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends = get_snps_frquncies_coverage(df_snps_in_csv_normal_loh, chrom, ref_start_values, args.bin_size, args.hets_ratio, args.hets_smooth_window, args)
+            #   snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, _, _, _, _, loh_region_starts, loh_region_ends = detect_loh_centromere_regions(chrom, args, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
 
-            #if args.tumor_vcf:
-            ref_start_values_updated, snps_het_counts, snps_homo_counts, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends = get_snps_frquncies_coverage(df_snps_in_csv, chrom, ref_start_values, args.bin_size, args.hets_ratio, args.hets_smooth_window, args)
-            if args.without_phasing:
-                detect_loh_centromere_regions(chrom, args, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
+            if args.tumor_vcf:
+                ref_start_values_updated, snps_het_counts, snps_homo_counts, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends = get_snps_frquncies_coverage(df_snps_in_csv, chrom, ref_start_values, args.bin_size, args.hets_ratio, args.hets_smooth_window, args)
+                if args.without_phasing:
+                    detect_loh_centromere_regions(chrom, args, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
+                else:
+                    snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, loh_region_starts, loh_region_ends = detect_loh_centromere_regions(chrom, args, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
+                    loh_regions_events_all.extend(loh_regions_events(chrom, loh_region_starts, loh_region_ends))
             else:
-                snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, loh_region_starts, loh_region_ends = detect_loh_centromere_regions(chrom, args, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
-                loh_regions_events_all.extend(loh_regions_events(chrom, loh_region_starts, loh_region_ends))
-            #else:
-            #    loh_region_starts =[]
-            #    loh_region_ends = []
+               loh_region_starts =[]
+               loh_region_ends = []
             ##################################
             # change_point_detection(snps_haplotype1_mean, ref_start_values, ref_end_values, args, chrom,
             #                        html_graphs, 1, color='#6A5ACD')

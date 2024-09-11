@@ -2836,7 +2836,7 @@ def add_scatter_trace_copyratios(args, fig, colors, name, haplotype_1_copyratios
     if 'p_value' in df_segs_hp1.columns:
         haplotype_1_copyratios_positions_p_values = [j for i in  [[x,y, None] for (x,y) in zip(df_segs_hp1.p_value.values.tolist(), df_segs_hp1.p_value.values.tolist())] for j in i]
         haplotype_2_copyratios_positions_p_values = [j for i in  [[x,y, None] for (x,y) in zip(df_segs_hp2.p_value.values.tolist(), df_segs_hp2.p_value.values.tolist())] for j in i]
-        ht = '<br><b>Position</b>: %{text}' + '<br><b>CN</b>: %{y}' + '<br><b>p_value</b>: %{customdata}<br>'
+        ht = '<br><b>Position</b>: %{text}' + '<br><b>CN</b>: %{y}' + '<br><b>confidence</b>: %{customdata}<br>'
     else:
         haplotype_1_copyratios_positions_p_values = []
         haplotype_2_copyratios_positions_p_values = []

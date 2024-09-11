@@ -217,7 +217,7 @@ def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, bin_siz
 
     for index, pos in enumerate(ref_start_values_updated):
         #if snps_het_counts[index] < 0.7 and snps_homo_counts[index] > 0.14:
-        if snps_het_counts_updated[index] < hets_ratio and snps_homo_counts_updated[index] > 1 - hets_ratio:
+        if snps_het_counts_updated[index] < hets_ratio : #and snps_homo_counts_updated[index] > 1 - hets_ratio:
             loh_regions.append(pos)
             loh_regions.append(pos + bin_size)
 

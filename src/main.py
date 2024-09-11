@@ -36,7 +36,7 @@ def main():
     MAX_CUT_THRESHOLD = 100
     MIN_ALIGNED_LENGTH = 5000
     MAX_CUT_THRESHOLD_SNPS_COUNTS = 50
-    HETS_RATIO_LOH = 0.3
+    HETS_RATIO_LOH = 0.7
     HETS_SMOOTH_WINDOW = 45
     HETS_LOH_SEG_SIZE = 2000000
 
@@ -146,7 +146,7 @@ def main():
 
     parser.add_argument("--tumor-purity", dest="tumor_purity", default=0.0, metavar="float", type=float, help="user input tumor purity")
     parser.add_argument("--tumor-ploidy", dest="tumor_ploidy", default=0.0, metavar="float", type=float, help="user input tumor ploidy")
-    parser.add_argument("--p-value-subclonal", dest="p_value_subclonal", default=0.6, metavar="float", type=float, help="user input p-value to detect if a segment is subclonal/off to integer copynumber")
+    parser.add_argument("--confidence-subclonal-score", dest="confidence_subclonal_score", default=0.6, metavar="float", type=float, help="user input p-value to detect if a segment is subclonal/off to integer copynumber")
 
     parser.add_argument("-t", "--threads", dest="threads",
                         default=1, metavar="int", type=int, help="number of parallel threads [8]")
@@ -165,7 +165,7 @@ def main():
 
     args = parser.parse_args()
 
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
 
     if args.control_bam is None:
         args.control_bam = []
@@ -297,7 +297,7 @@ def main():
 
         copy_number_plots_genome(centers, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_unphased, args, x_axis, observed_hist)
         copy_number_plots_genome_breakpoints(centers, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args)
-        plot_snps_frequencies(args, csv_df_snps_mean, df_segs_hp1_updated, df_segs_hp2_updated, centers, integer_fractional_means)
+        plot_snps_frequencies(args, csv_df_snps_mean, df_segs_hp1_updated, df_segs_hp2_updated, centers, integer_fractional_means, thread_pool)
 
         if args.copynumbers_subclonal_enable:
             #integer_fractional_means = sorted([i for i in range(0, len(centers))] + [i / centers[1] for i in subclonals])  # integer_fractional_cluster_means(args, df_segs_hp1, df_segs_hp2, centers)
