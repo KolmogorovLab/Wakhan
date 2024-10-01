@@ -77,10 +77,10 @@ def write_segments_coverage(coverage_segments, output, args):
             if not items == None:
                 fp.write("%s\n" % items)
 
-def loh_regions_events(chrom, region_starts, region_ends):
+def loh_regions_events(chrom, region_starts, region_ends, hp):
     dict = []
     for i in range(len(region_starts)):
-        dict.append((chrom + '\t' + str(region_starts[i]) + '\t' + str(region_ends[i])))
+        dict.append((chrom + '\t' + str(region_starts[i]) + '\t' + str(region_ends[i]) + '\t' + str(hp[i])))
     #write_segments_coverage(dict, args.genome_name'] + '_loh_segments.bed')
     return dict
 
@@ -113,6 +113,7 @@ def detect_alter_loh_regions(args, event, chrom, ref_ends, haplotype_1_values, h
 
     region_starts = []
     region_ends = []
+    hp = []
     #print(starts)
     #print(ends)
     for i, (start,end) in enumerate(zip(starts,ends)):
@@ -131,13 +132,15 @@ def detect_alter_loh_regions(args, event, chrom, ref_ends, haplotype_1_values, h
                         haplotype_1_values[i] = haplotype_1_values[i] + haplotype_2_values[i] + unphased_reads_values[i]
                         haplotype_2_values[i] = 0
                         unphased_reads_values[i] = 0
+                hp.append(1)
             else:
                 for i in range(starts // args.bin_size, ends // args.bin_size):
                     haplotype_2_values[i] = haplotype_1_values[i] + haplotype_2_values[i] + unphased_reads_values[i]
                     haplotype_1_values[i] = 0
                     unphased_reads_values[i] = 0
+                hp.append(2)
 
-    return haplotype_1_values, haplotype_2_values, unphased_reads_values, region_starts, region_ends
+    return haplotype_1_values, haplotype_2_values, unphased_reads_values, region_starts, region_ends, hp
 
 
 def mean_values(selected_list, start_index, end_index):

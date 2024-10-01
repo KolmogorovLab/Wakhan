@@ -7,7 +7,7 @@ Wakhan takes long-read alignment and phased heterozygous variants as input, and 
 advantage of the CNA differences between the haplotypes. Wakhan then generates inetractive haplotype-specific coverage plots.    
 
 #### Breakpoints/SVs based segmentation and Copy numbers estimation:
-<img width="1373" alt="plots_example" src="examples/images/1954.png">
+<img width="1373" alt="plots_example" src="examples/images/1437.png">
 
 [//]: # (#### LOH detection, phasing correction and CopyNumbers profiling &#40;COLO357&#41;:)
 
@@ -65,8 +65,10 @@ cd src/
 ```
 python main.py --threads <4> --reference <ref.fa>  --target-bam <data.tumor.bam>  --normal-phased-vcf <data.normal_phased.vcf.gz>  --genome-name <cellline/dataset name> --out-dir-plots <genome_abc_output> --breakpoints <severus-sv-VCF>
 ```
-##### Tumor-Normal mixture and purity/ploidy estimation
-User can input both `--tumor-ploidy` and `--tumor-purity` to inform copy number model about normal contamination in tumor to estimate copy number states correctly.
+
+[//]: # (##### Tumor-Normal mixture and purity/ploidy estimation)
+
+[//]: # (User can input both `--tumor-ploidy` and `--tumor-purity` to inform copy number model about normal contamination in tumor to estimate copy number states correctly.)
 
 
 ### Tumor-only (requires tumor phased/haplotagged BAM and phased VCF)
@@ -101,7 +103,7 @@ Few cell lines arbitrary phase-switch correction and copy number estimation outp
 * `--breakpoints` For segmentation to use in CN estimation, structural variations/breakpoints VCF file is required
 
 ## Optional parameters
-* `--phaseblock-flipping-enable` enabling phaseblock flipping in coverage plots (default: enabled)
+* `--phaseblock-flipping-disable` disabling phaseblock flipping if traget tumor BAM doesn't need phase-correction (default: enabled)
 
 * `--phaseblocks-enable` enabling phaseblocks display in coverage plots
 

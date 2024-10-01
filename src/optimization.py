@@ -252,4 +252,4 @@ def peak_detection_optimization(input_segments, input_weights):
 
     final_peaks_subclonal = [single_copy_cov//2] + [i * single_copy_cov+(single_copy_cov//2) for i in range(1, last_copy_state)]
 
-    return final_peaks, final_peaks_subclonal, np.arange(0, 500), observed_hist
+    return final_peaks, final_peaks_subclonal, np.arange(0, 500), observed_hist, single_copy_cov

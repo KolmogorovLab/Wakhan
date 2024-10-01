@@ -514,7 +514,7 @@ def vcf_parse_to_csv_for_het_phased_snps_phasesets(input_vcf, args):
     return output_csv
 
 def get_snp_segments(args, target_bam, thread_pool):
-    if args.phaseblock_flipping_enable:
+    if not args.phaseblock_flipping_disable:
         normal_vcf = os.path.join(args.out_dir_plots, 'phasing_output', args.genome_name+'.rephased.vcf.gz')
     else:
         normal_vcf = args.normal_phased_vcf
@@ -548,9 +548,9 @@ def get_snp_segments(args, target_bam, thread_pool):
     dataframe_snps = csv_df_chromosomes_sorter(output_csv, ['chr', 'start', 'ref', 'alt', 'gt'])
     logging.info('SNPs frequency -> Comuting het SNPs frequency from tumor BAM')
 
-    if args.phaseblock_flipping_enable and not args.dryrun:
+    if not args.phaseblock_flipping_disable and not args.dryrun:
         output_pileups = args.out_dir_plots + '/data/' + args.genome_name + '_SNPs.csv'
-    elif args.phaseblock_flipping_enable and args.dryrun:
+    elif args.dryrun:
             output_pileups = args.dryrun_path + args.genome_name + '/' + args.genome_name + '_SNPs.csv'
     else:
         output_pileups = process_bam_for_snps_freqs(args, thread_pool)  # TODO Updated

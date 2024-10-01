@@ -11,7 +11,7 @@ def plot_coverage_data(html_graphs, args, chrom, ref_start_values, ref_end_value
     add_scatter_trace_coverage(fig, ref_start_values, haplotype_2_values, name='HP-2', text=None, yaxis=None,
                                opacity=0.7, color='steelblue')
 
-    if args.unphased_reads_coverage_enable:
+    if not args.unphased_reads_coverage_disable:
         add_scatter_trace_coverage(fig, ref_start_values, unphased_reads_values, name='Unphased', text=None,
                                    yaxis=None, opacity=0.7, color='olive')
     plots_add_markers_lines(fig)
@@ -45,7 +45,7 @@ def plot_coverage_data_after_correction(html_graphs, args, chrom, ref_start_valu
     add_scatter_trace_coverage(fig, ref_start_values, haplotype_2_values, name='HP-2', text=None, yaxis=None,
                                opacity=0.7, color='steelblue')
 
-    if args.unphased_reads_coverage_enable:
+    if not args.unphased_reads_coverage_disable:
         add_scatter_trace_coverage(fig, ref_start_values, unphased_reads_values, name='Unphased', text=None,
                                    yaxis=None, opacity=0.7, color='olive')
     plots_add_markers_lines(fig)

@@ -33,7 +33,7 @@ def main_process():
     MAX_CUT_THRESHOLD = 100
     MIN_ALIGNED_LENGTH = 5000
     MAX_CUT_THRESHOLD_SNPS_COUNTS = 50
-    HETS_RATIO_LOH = 0.7
+    HETS_RATIO_LOH = 0.3
     HETS_SMOOTH_WINDOW = 45
     HETS_LOH_SEG_SIZE = 2000000
 
@@ -66,8 +66,11 @@ def main_process():
                         metavar="path", required=False, default=None,
                         help="Path to tumor VCF for LOH detection")
 
-    parser.add_argument("--breakpoints", dest="breakpoints", metavar="path", required=True, default=None, help="Path to breakpoints/SVs VCF file")
-    parser.add_argument("--cpd-internal-segments", dest="cpd_internal_segments", metavar="path", required=False, default=None,
+    parser.add_argument("--breakpoints", dest="breakpoints",
+                        metavar="path", required=True, default=None,
+                        help="Path to breakpoints/SVs VCF file")
+    parser.add_argument("--cpd-internal-segments", dest="cpd_internal_segments",
+                        metavar="path", required=False, default=None,
                         help="change point detection algo for more precise segments after breakpoint segments")
 
     parser.add_argument("--genome-name", dest="genome_name",
@@ -97,52 +100,55 @@ def main_process():
     parser.add_argument("--min-aligned-length", "--min_aligned_length", dest="min_aligned_length",
                         default=MIN_ALIGNED_LENGTH, metavar="int", type=int, help="Minimum aligned reads length [5000]")
 
-    parser.add_argument('--pdf-enable',  dest="pdf_enable", required=False,
+    parser.add_argument('--pdf-enable', action="store_true",  dest="pdf_enable", required=False,
                         default=False, help="Enabling PDF output coverage plots")
 
-    parser.add_argument('--unphased-reads-coverage-enable',  dest="unphased_reads_coverage_enable", required=False,
-                        default=True, help="Enabling unphased reads coverage output in plots")
-    parser.add_argument('--without-phasing', dest="without_phasing", required=False,
+    parser.add_argument('--unphased-reads-coverage-disable', action="store_true",
+                        dest="unphased_reads_coverage_disable", required=False,
+                        default=False, help="Disabling unphased reads coverage output in plots")
+    parser.add_argument('--without-phasing', action="store_true", dest="without_phasing", required=False,
                         default=False, help="Enabling coverage and copynumbers without phasing in plots")
 
-    parser.add_argument("--tumor-purity", dest="tumor_purity", default=0.0, metavar="float", type=float, help="user input tumor purity")
-    parser.add_argument("--tumor-ploidy", dest="tumor_ploidy", default=0.0, metavar="float", type=float, help="user input tumor ploidy")
-    parser.add_argument("--confidence-subclonal-score", dest="confidence_subclonal_score", default=0.6, metavar="float", type=float, help="user input p-value to detect if a segment is subclonal/off to integer copynumber")
-
-    parser.add_argument('--phaseblock-flipping-enable',  dest="phaseblock_flipping_enable", required=False,
-                        default=True, help="Enabling phaseblock flipping in coverage plots")
-    parser.add_argument('--smoothing-enable',  dest="smoothing_enable", required=False,
+    parser.add_argument('--phaseblock-flipping-disable', action="store_true", dest="phaseblock_flipping_disable",
+                        required=False, default=False, help="Disabling phaseblock flipping in coverage plots")
+    parser.add_argument('--smoothing-enable', action="store_true", dest="smoothing_enable", required=False,
                         default=False, help="Enabling smoothing in coverage plots")
-    parser.add_argument('--phaseblocks-enable',  dest="phaseblocks_enable", required=False,
+    parser.add_argument('--phaseblocks-enable', action="store_true", dest="phaseblocks_enable", required=False,
                         default=False, help="Enabling phaseblocks display in coverage plots")
 
-    parser.add_argument('--copynumbers-enable', dest="copynumbers_enable", required=False,
-                        default=True, help="Enabling copy number in coverage plots")
-    parser.add_argument('--copynumbers-subclonal-enable', dest="copynumbers_subclonal_enable", required=False,
+    parser.add_argument('--copynumbers-disable', action="store_true", dest="copynumbers_disable", required=False,
+                        default=False, help="Disabling copy number in coverage plots")
+
+    parser.add_argument('--copynumbers-subclonal-enable', action="store_true", dest="copynumbers_subclonal_enable", required=False,
                         default=False, help="Enabling subclonal copy number in coverage plots")
 
-    parser.add_argument('--enable-debug', dest="enable_debug", required=False,
+    parser.add_argument('--enable-debug', action="store_true", dest="enable_debug", required=False,
                         default=False, help="Enabling debug")
 
-    parser.add_argument('--variable-size-bins', dest="variable_size_bins", required=False,
-                        default=False, help="enable variable size bins to use breakpoints")
-    parser.add_argument('--enable-simple-heuristics', dest="enable_simple_heuristics", required=False,
-                        default=False, help="enable simple heuristics")
-
-    parser.add_argument('--rephase-normal-vcf', dest="rephase_normal_vcf", required=False,
+    parser.add_argument('--rephase-normal-vcf', action="store_true", dest="rephase_normal_vcf", required=False,
                         default=False, help="enable rephase normal vcf")
-    parser.add_argument('--rephase-tumor-vcf', dest="rephase_tumor_vcf", required=False,
+    parser.add_argument('--rephase-tumor-vcf', action="store_true", dest="rephase_tumor_vcf", required=False,
                         default=False, help="enable rephase tumor vcf")
-    parser.add_argument('--rehaplotag-tumor-bam', dest="rehaplotag_tumor_bam", required=False,
+    parser.add_argument('--rehaplotag-tumor-bam', action="store_true", dest="rehaplotag_tumor_bam", required=False,
                         default=False, help="enable rehaplotag tumor bam")
+
+    parser.add_argument('--variable-size-bins', action="store_true", dest="variable_size_bins", required=False,
+                        default=False, help="enable variable size bins to use breakpoints")
+
+    parser.add_argument('--enable-simple-heuristics', action="store_true", dest="enable_simple_heuristics", required=False,
+                        default=False, help="enable simple heuristics")
 
     parser.add_argument("--bins-cluster-means", dest="bins_cluster_means",
                         default=None, required=False, type=lambda s: [int(item) for item in s.split(',')],
                         help="bins cluster means")
 
+    parser.add_argument("--tumor-purity", dest="tumor_purity", default=0.0, metavar="float", type=float, help="user input tumor purity")
+    parser.add_argument("--tumor-ploidy", dest="tumor_ploidy", default=0.0, metavar="float", type=float, help="user input tumor ploidy")
+    parser.add_argument("--confidence-subclonal-score", dest="confidence_subclonal_score", default=0.6, metavar="float", type=float, help="user input p-value to detect if a segment is subclonal/off to integer copynumber")
+
     parser.add_argument("-t", "--threads", dest="threads",
                         default=1, metavar="int", type=int, help="number of parallel threads [8]")
-    parser.add_argument('--dryrun', dest="dryrun", required=False,
+    parser.add_argument('--dryrun', action="store_true", dest="dryrun", required=False,
                         default=False, help="Enabling dryrun")
     parser.add_argument("--dryrun-path", dest="dryrun_path",
                         default=None, required=False,
@@ -293,18 +299,19 @@ def main_process():
             #Normal LOH
             #if args.normal_phased_vcf:
             #   ref_start_values_updated, snps_het_counts, snps_homo_counts, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends = get_snps_frquncies_coverage(df_snps_in_csv_normal_loh, chrom, ref_start_values, args.bin_size, args.hets_ratio, args.hets_smooth_window, args)
-            #   snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, _, _, _, _, loh_region_starts, loh_region_ends = detect_loh_centromere_regions(chrom, args, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
+            #   snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, _, _, _, _, loh_region_starts, loh_region_ends, hp = detect_loh_centromere_regions(chrom, args, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
 
             if args.tumor_vcf:
                 ref_start_values_updated, snps_het_counts, snps_homo_counts, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends = get_snps_frquncies_coverage(df_snps_in_csv, chrom, ref_start_values, args.bin_size, args.hets_ratio, args.hets_smooth_window, args)
                 if args.without_phasing:
                     detect_loh_centromere_regions(chrom, args, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
                 else:
-                    snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, loh_region_starts, loh_region_ends = detect_loh_centromere_regions(chrom, args, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
-                    loh_regions_events_all.extend(loh_regions_events(chrom, loh_region_starts, loh_region_ends))
+                    snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, loh_region_starts, loh_region_ends, hp = detect_loh_centromere_regions(chrom, args, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
+                    loh_regions_events_all.extend(loh_regions_events(chrom, loh_region_starts, loh_region_ends, hp))
             else:
-               loh_region_starts =[]
+               loh_region_starts = []
                loh_region_ends = []
+               hp = []
             ##################################
             # change_point_detection(snps_haplotype1_mean, ref_start_values, ref_end_values, args, chrom,
             #                        html_graphs, 1, color='#6A5ACD')
@@ -380,7 +387,7 @@ def main_process():
 
     csv_df_phase_change_segments = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/' + args.genome_name + '_phase_change_segments.csv', ['chr', 'start', 'end'])
     csv_df_phasesets_segments = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/' + args.genome_name + '_phasesets.csv', ['chr', 'start'])
-    csv_df_loh_regions = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/' + args.genome_name + '_loh_segments.csv', ['chr', 'start', 'end'])
+    csv_df_loh_regions = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/' + args.genome_name + '_loh_segments.csv', ['chr', 'start', 'end', 'hp'])
 
     if args.normal_phased_vcf:
         get_phasingblocks(args.normal_phased_vcf)

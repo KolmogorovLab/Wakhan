@@ -813,7 +813,11 @@ def adjust_first_copy_mean(args, centers, df_segs_hp1, df_segs_hp2, df_hp1, df_h
         sample_mean.append(statistics.mean(remove_outliers_iqr(np.array(hp_1_values[i] + hp_2_values[i]))))
         sample_stdev.append(statistics.stdev(remove_outliers_iqr(np.array(hp_1_values[i] + hp_2_values[i]))))
 
-    centers = [centers[0]] + [int(sample_mean[1]*i) for i in range(1, len(centers))]
+    if args.tumor_purity and args.tumor_ploidy:
+        centers = [int(sample_mean[0]*i) for i in range(1, len(centers))]
+    else:
+        centers = [centers[0]] + [int(sample_mean[1]*i) for i in range(1, len(centers))]
+
     return centers
 def update_subclonal_means_states(centers, subclonals, df_segs_hp1_updated, df_segs_hp2_updated, df_hp1, df_hp2, args):
     chroms = get_contigs_list(args.contigs)
@@ -861,6 +865,7 @@ def update_subclonal_means_states(centers, subclonals, df_segs_hp1_updated, df_s
             sample_mean.append(centers[i])
             sample_stdev.append(5)
 
+    #sample_mean = centers
 
     for index, chrom in enumerate(chroms):
         df_segs_hp_1_updated = df_segs_hp1_updated[df_segs_hp1_updated['chromosome'] == chrom]
@@ -944,7 +949,12 @@ def update_subclonal_means_states(centers, subclonals, df_segs_hp1_updated, df_s
                                   df_segs_hp_2_updated.end.values.tolist(), [round(i, 2) for i in df_segs_hp_2_updated_depth], [int(i) for i in df_segs_hp_2_updated_state], df_segs_hp_2_updated_p_score)),
                          columns=['chromosome', 'start', 'end', 'depth', 'state', 'p_value']))
 
-    return pd.concat(updated_df_segs_hp_1), pd.concat(updated_df_segs_hp_2)
+    df_segs_hp1 = pd.concat(updated_df_segs_hp_1)
+    df_segs_hp2 = pd.concat(updated_df_segs_hp_2)
+    df_segs_hp1.loc[df_segs_hp1['state'] < centers[0], 'state'] = centers[0]
+    df_segs_hp2.loc[df_segs_hp2['state'] < centers[0], 'state'] = centers[0]
+
+    return df_segs_hp1, df_segs_hp2
 
 def slice_lists(predicate, iterable):
   i, x, size = 0, 0, len(iterable)
@@ -1325,3 +1335,166 @@ def get_vafs_from_normal_phased_vcf(df_snps, chroms):
         df_final.append(pd.DataFrame(list(zip([df['chr'].iloc[0] for ch in range(len(haplotype_1_position))], haplotype_1_position, vaf)), columns=['chr', 'pos', 'vaf']))
 
     return pd.concat(df_final)
+
+def parse_sv_vcf(path):
+    from vcf_parser import VCFParser
+    my_parser = VCFParser(infile=path, split_variants=True, check_info = True)
+    bp_junctions = [[]]
+    for variant in my_parser:
+        if variant['CHROM'] == 'chrY':
+            continue
+        if ("INV" in variant['ID'] or "DUP" in variant['ID'] or "INS" in variant['ID'] or "DEL" in variant['ID']) and int(variant['info_dict']['SVLEN'][0]) > 50000:
+            if int(variant['POS']) < int(variant['POS']) + int(variant['info_dict']['SVLEN'][0]):
+                bp_junctions.append([variant['CHROM'], int(variant['POS']), variant['CHROM'], int(variant['POS']) + int(variant['info_dict']['SVLEN'][0])])
+            else:
+                bp_junctions.append([variant['CHROM'], int(variant['POS']) + int(variant['info_dict']['SVLEN'][0]), variant['CHROM'], int(variant['POS'])])
+        elif "BND" in variant['ID'] and not "sBND" in variant['ID']:
+            s = variant['ALT']
+            for ch in ['[', ']', 'N']:
+                if ch in s:
+                    s = s.replace(ch, '')
+            chr2_id = s.split(':')[0]
+            chr2_end = int(s.split(':')[1])
+            if variant['CHROM'] == chr2_id:
+                if int(variant['POS']) < chr2_end:
+                    bp_junctions.append([variant['CHROM'], int(variant['POS']), chr2_id, chr2_end])
+                else:
+                    bp_junctions.append([variant['CHROM'], chr2_end, chr2_id, int(variant['POS'])])
+            else:
+                bp_junctions.append([variant['CHROM'], int(variant['POS']), chr2_id, chr2_end])
+
+    df = pd.DataFrame(bp_junctions[1:], columns = ['chr', 'pos', 'chr1', 'pos1'])
+    return df.drop_duplicates()
+
+def weigted_means_ploidy(df_hp_1, df_hp_2, centers, integer_fractional_means):
+    df_1 = df_hp_1.copy()
+    df_2 = df_hp_2.copy()
+
+    for i in range(len(integer_fractional_means)):
+        df_1['state'].mask(df_1['state'] == centers[i], integer_fractional_means[i], inplace=True)
+    vals = df_1.state.values.tolist()
+    weights = [i-j for i,j in zip(df_1.end.values.tolist(), df_1.start.values.tolist())]
+
+    ploidy_hp1 = weighted_means(vals, weights)
+
+    for i in range(len(integer_fractional_means)):
+        df_2['state'].mask(df_2['state'] == centers[i], integer_fractional_means[i], inplace=True)
+    vals = df_2.state.values.tolist()
+    weights = [i-j for i,j in zip(df_2.end.values.tolist(), df_2.start.values.tolist())]
+
+    ploidy_hp2 = weighted_means(vals, weights)
+
+    return ploidy_hp1 + ploidy_hp2
+
+def weighted_means(vals, weights):
+    weighted_vals = []
+    vals_n_weights = [(vals[i], weights[i]) for i in range(0, len(weights))]
+    for tup in vals_n_weights:
+        weighted_vals.append(round(tup[0] * tup[1] / sum(weights), 3))
+    return sum(weighted_vals)
+def average_p_value_genome(args, centers, df_segs_hp1, df_segs_hp2, df_hp1, df_hp2):
+    chroms = get_contigs_list(args.contigs)
+    hp_1_values = []
+    hp_2_values = []
+    for i in range(len(centers)):
+        hp_1_values.append([])
+        hp_2_values.append([])
+
+    for index, chrom in enumerate(chroms):
+        df_segs_hp_1_updated = df_segs_hp1[df_segs_hp1['chromosome'] == chrom]
+        df_segs_hp_2_updated = df_segs_hp2[df_segs_hp2['chromosome'] == chrom]
+        df_hp_1 = df_hp1[df_hp1['chr'] == chrom]
+        df_hp_2 = df_hp2[df_hp2['chr'] == chrom]
+
+        df_segs_hp_1_updated_start = df_segs_hp_1_updated.start.values.tolist()
+        df_segs_hp_2_updated_start = df_segs_hp_2_updated.start.values.tolist()
+        df_segs_hp_1_updated_end = df_segs_hp_1_updated.end.values.tolist()
+        df_segs_hp_2_updated_end = df_segs_hp_2_updated.end.values.tolist()
+        df_segs_hp_1_updated_state = df_segs_hp_1_updated.state.values.tolist()
+        df_segs_hp_2_updated_state = df_segs_hp_2_updated.state.values.tolist()
+
+        df_hp_1_val = df_hp_1.hp1.values.tolist()
+        df_hp_2_val = df_hp_2.hp2.values.tolist()
+
+        for j, (start, end) in enumerate(zip(df_segs_hp_1_updated_start, df_segs_hp_1_updated_end)):
+            for i in range(len(centers)):
+                if df_segs_hp_1_updated_state[j] == centers[i]:
+                    hp_1_values[i].extend(df_hp_1_val[start // args.bin_size:end // args.bin_size])
+
+        for j, (start, end) in enumerate(zip(df_segs_hp_2_updated_start, df_segs_hp_2_updated_end)):
+            for i in range(len(centers)):
+                if df_segs_hp_2_updated_state[j] == centers[i]:
+                    hp_2_values[i].extend(df_hp_2_val[start // args.bin_size:end // args.bin_size])
+
+    sample_mean = []
+    sample_stdev = []
+    for i in range(len(centers)):
+        if hp_1_values[i] + hp_2_values[i]:
+            sample_mean.append(statistics.mean(remove_outliers_iqr(np.array(hp_1_values[i] + hp_2_values[i]))))
+            sample_stdev.append(statistics.stdev(remove_outliers_iqr(np.array(hp_1_values[i] + hp_2_values[i]))))
+        else:
+            sample_mean.append(centers[i])
+            sample_stdev.append(5)
+
+    df_segs_hp_1_updated_p_score = []
+    df_segs_hp_2_updated_p_score = []
+    total_length = []
+    total_counts = 0
+
+    for index, chrom in enumerate(chroms):
+        df_segs_hp_1_updated = df_segs_hp1[df_segs_hp1['chromosome'] == chrom]
+        df_segs_hp_2_updated = df_segs_hp2[df_segs_hp2['chromosome'] == chrom]
+        df_hp_1 = df_hp1[df_hp1['chr'] == chrom]
+        df_hp_2 = df_hp2[df_hp2['chr'] == chrom]
+
+        df_segs_hp_1_updated_start = df_segs_hp_1_updated.start.values.tolist()
+        df_segs_hp_2_updated_start = df_segs_hp_2_updated.start.values.tolist()
+        df_segs_hp_1_updated_end = df_segs_hp_1_updated.end.values.tolist()
+        df_segs_hp_2_updated_end = df_segs_hp_2_updated.end.values.tolist()
+
+        df_hp_1_val = df_hp_1.hp1.values.tolist()
+        df_hp_2_val = df_hp_2.hp2.values.tolist()
+
+        for i, (start,end) in enumerate(zip(df_segs_hp_1_updated_start, df_segs_hp_1_updated_end)):
+            seg_mean = statistics.median(remove_outliers_iqr(np.array(df_hp_1_val[start//args.bin_size:end//args.bin_size])))
+            sample_mean_init = min(sample_mean, key=lambda x: abs(x - seg_mean))
+            index =  sample_mean.index(sample_mean_init)
+            z_score =  (seg_mean - sample_mean_init) / sample_stdev[index]
+            p_value = stats.norm.sf(abs(z_score)) * 2
+            df_segs_hp_1_updated_p_score.append(round(p_value, 7))
+            # if p_value > 0.7:
+            #     df_segs_hp_1_updated_p_score.append(round(p_value, 7))
+            #     total_length.append(end-start)
+            #     total_counts += 1
+
+        for i, (start,end) in enumerate(zip(df_segs_hp_2_updated_start, df_segs_hp_2_updated_end)):
+            seg_mean = statistics.median(remove_outliers_iqr(np.array(df_hp_2_val[start//args.bin_size:end//args.bin_size])))
+            sample_mean_init = min(sample_mean, key=lambda x: abs(x - seg_mean))
+            index =  sample_mean.index(sample_mean_init)
+            z_score =  (seg_mean - sample_mean_init) / sample_stdev[index]
+            p_value = stats.norm.sf(abs(z_score)) * 2
+            df_segs_hp_2_updated_p_score.append(round(p_value, 7))
+            # if p_value > 0.7:
+            #     df_segs_hp_2_updated_p_score.append(round(p_value, 7))
+            #     total_length.append(end-start)
+            #     total_counts += 1
+
+    p_value_median = weighted_means(df_segs_hp_1_updated_p_score + df_segs_hp_2_updated_p_score, weights=[i - j for i, j in zip(df_segs_hp1.end.values.tolist() + df_segs_hp2.end.values.tolist(), df_segs_hp1.start.values.tolist() + df_segs_hp2.start.values.tolist())])
+
+    #p_value_median = statistics.mean([weighted_means(df_segs_hp_1_updated_p_score, weights=[i - j for i, j in zip(df_segs_hp1.end.values.tolist(), df_segs_hp1.start.values.tolist())]),
+    #                                 weighted_means(df_segs_hp_2_updated_p_score, weights=[i - j for i, j in zip(df_segs_hp2.end.values.tolist(), df_segs_hp2.start.values.tolist())])])
+
+    # if len(df_segs_hp_1_updated_p_score + df_segs_hp_2_updated_p_score):
+    #     p_value_median = statistics.median(df_segs_hp_1_updated_p_score + df_segs_hp_2_updated_p_score)
+    # else:
+    #     p_value_median = 0
+
+    return p_value_median
+
+def check_adjust_last_cn_states(cens, df_segs_hp1, df_segs_hp2):
+    df_hp1 = df_segs_hp1.copy()
+    df_hp2 = df_segs_hp2.copy()
+    df_hp1.loc[df_hp1['state'] < cens[0], 'state'] = cens[0]
+    df_hp2.loc[df_hp2['state'] < cens[0], 'state'] = cens[0]
+
+    return df_hp1, df_hp2

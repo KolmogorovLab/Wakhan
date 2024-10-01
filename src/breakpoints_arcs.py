@@ -4,15 +4,18 @@ def get_all_breakpoints_data(edges, edges_chr, height, path):
     from vcf_parser import VCFParser
     my_parser = VCFParser(infile=path, split_variants=True, check_info=True)
     bp_junctions_inv = [[]]
-    bp_junctions_dup_ins = [[]]
+    bp_junctions_ins = [[]]
+    bp_junctions_dup = [[]]
     bp_junctions_del = [[]]
     for variant in my_parser:
         if variant['CHROM'] == 'chrY':
             continue
         if "INV" in variant['ID']:
             bp_junctions_inv.append([variant['CHROM'], int(variant['POS'])])
-        elif ("DUP" in variant['ID'] or "INS" in variant['ID']) and int(variant['info_dict']['SVLEN'][0]) > 10000:
-            bp_junctions_dup_ins.append([variant['CHROM'], int(variant['POS'])])
+        elif ("DUP" in variant['ID']) and int(variant['info_dict']['SVLEN'][0]) > 10000:
+            bp_junctions_dup.append([variant['CHROM'], int(variant['POS'])])
+        elif ("INS" in variant['ID']) and int(variant['info_dict']['SVLEN'][0]) > 10000:
+            bp_junctions_ins.append([variant['CHROM'], int(variant['POS'])])
         elif "DEL" in variant['ID'] and int(variant['info_dict']['SVLEN'][0]) > 10000:
             bp_junctions_del.append([variant['CHROM'], int(variant['POS'])])
 
@@ -26,8 +29,6 @@ def get_all_breakpoints_data(edges, edges_chr, height, path):
     xx = []
     yy = []
     #X = list(range(L))  # node x-coordinates
-
-
 
     #9:64526327 - 1:9769900
     #6:91468745 - 1:9769559
@@ -53,8 +54,10 @@ def get_all_breakpoints_data(edges, edges_chr, height, path):
         #     colors.append('#737373')
         if [a,b] in bp_junctions_inv:
             colors.append('#2830DE')
-        elif [a,b] in bp_junctions_dup_ins:
+        elif [a,b] in bp_junctions_dup:
             colors.append('#178117')
+        elif [a,b] in bp_junctions_ins:
+            colors.append('#e0cf03')
         elif [a,b] in bp_junctions_del:
             colors.append('#CF0759')
         else:

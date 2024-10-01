@@ -8,6 +8,7 @@ import shutil
 import logging
 import argparse
 import pandas as pd
+import numpy as np
 
 from multiprocessing import Pool
 from collections import defaultdict
@@ -18,13 +19,14 @@ from bam_processing import get_all_reads_parallel, update_coverage_hist, get_seg
 from utils import get_chromosomes_bins, write_segments_coverage, write_segments_coverage_dict, csv_df_chromosomes_sorter,\
     seperate_dfs_coverage, flatten_smooth, get_contigs_list, write_copynumber_segments_csv, integer_fractional_cluster_means, \
     adjust_diversified_segments, get_chromosomes_bins_bam, normal_genome_proportion, update_subclonal_means_states, adjust_first_copy_mean, \
-    merge_adjacent_regions_cn
+    merge_adjacent_regions_cn, parse_sv_vcf, weigted_means_ploidy, average_p_value_genome, check_adjust_last_cn_states
 from plots import coverage_plots_chromosomes, copy_number_plots_genome, plots_genome_coverage, copy_number_plots_chromosomes, copy_number_plots_genome_breakpoints_unphased, \
     copy_number_plots_genome_breakpoints_unphased_test, copy_number_plots_genome_breakpoints, copy_number_plots_genome_breakpoints_subclonal, copy_number_plots_genome_details
 from vcf_processing import vcf_parse_to_csv_for_het_phased_snps_phasesets
 from snps_loh import plot_snps_frequencies, plot_snps_ratios_genome
 from phasing_correction import generate_phasesets_bins
 from optimization import peak_detection_optimization
+from extras import sv_vcf_bps_cn_check
 
 def main():
     # default tunable parameters
@@ -36,7 +38,7 @@ def main():
     MAX_CUT_THRESHOLD = 100
     MIN_ALIGNED_LENGTH = 5000
     MAX_CUT_THRESHOLD_SNPS_COUNTS = 50
-    HETS_RATIO_LOH = 0.7
+    HETS_RATIO_LOH = 0.3
     HETS_SMOOTH_WINDOW = 45
     HETS_LOH_SEG_SIZE = 2000000
 
@@ -104,40 +106,40 @@ def main():
     parser.add_argument("--min-aligned-length", "--min_aligned_length", dest="min_aligned_length",
                         default=MIN_ALIGNED_LENGTH, metavar="int", type=int, help="Minimum aligned reads length [5000]")
 
-    parser.add_argument('--pdf-enable',  dest="pdf_enable", required=False,
+    parser.add_argument('--pdf-enable', action="store_true",  dest="pdf_enable", required=False,
                         default=False, help="Enabling PDF output coverage plots")
 
-    parser.add_argument('--unphased-reads-coverage-enable',  dest="unphased_reads_coverage_enable", required=False,
-                        default=True, help="Enabling unphased reads coverage output in plots")
-    parser.add_argument('--without-phasing', dest="without_phasing", required=False,
+    parser.add_argument('--unphased-reads-coverage-disable', action="store_true",  dest="unphased_reads_coverage_disable", required=False,
+                        default=False, help="Disabling unphased reads coverage output in plots")
+    parser.add_argument('--without-phasing', action="store_true", dest="without_phasing", required=False,
                         default=False, help="Enabling coverage and copynumbers without phasing in plots")
 
-    parser.add_argument('--phaseblock-flipping-enable',  dest="phaseblock_flipping_enable", required=False,
-                        default=True, help="Enabling phaseblock flipping in coverage plots")
-    parser.add_argument('--smoothing-enable',  dest="smoothing_enable", required=False,
+    parser.add_argument('--phaseblock-flipping-disable', action="store_true",  dest="phaseblock_flipping_disable", required=False,
+                        default=False, help="Disabling phaseblock flipping in coverage plots")
+    parser.add_argument('--smoothing-enable', action="store_true",  dest="smoothing_enable", required=False,
                         default=False, help="Enabling smoothing in coverage plots")
-    parser.add_argument('--phaseblocks-enable',  dest="phaseblocks_enable", required=False,
+    parser.add_argument('--phaseblocks-enable', action="store_true",  dest="phaseblocks_enable", required=False,
                         default=False, help="Enabling phaseblocks display in coverage plots")
 
-    parser.add_argument('--copynumbers-enable', dest="copynumbers_enable", required=False,
-                        default=True, help="Enabling copy number in coverage plots")
-    parser.add_argument('--copynumbers-subclonal-enable', dest="copynumbers_subclonal_enable", required=False,
+    parser.add_argument('--copynumbers-disable', action="store_true", dest="copynumbers_disable", required=False,
+                        default=False, help="Disabling copy number in coverage plots")
+    parser.add_argument('--copynumbers-subclonal-enable', action="store_true", dest="copynumbers_subclonal_enable", required=False,
                         default=False, help="Enabling subclonal copy number in coverage plots")
 
-    parser.add_argument('--enable-debug', dest="enable_debug", required=False,
+    parser.add_argument('--enable-debug', action="store_true", dest="enable_debug", required=False,
                         default=False, help="Enabling debug")
 
-    parser.add_argument('--rephase-normal-vcf', dest="rephase_normal_vcf", required=False,
+    parser.add_argument('--rephase-normal-vcf', action="store_true", dest="rephase_normal_vcf", required=False,
                         default=False, help="enable rephase normal vcf")
-    parser.add_argument('--rephase-tumor-vcf', dest="rephase_tumor_vcf", required=False,
+    parser.add_argument('--rephase-tumor-vcf', action="store_true", dest="rephase_tumor_vcf", required=False,
                         default=False, help="enable rephase tumor vcf")
-    parser.add_argument('--rehaplotag-tumor-bam', dest="rehaplotag_tumor_bam", required=False,
+    parser.add_argument('--rehaplotag-tumor-bam', action="store_true", dest="rehaplotag_tumor_bam", required=False,
                         default=False, help="enable rehaplotag tumor bam")
 
-    parser.add_argument('--variable-size-bins', dest="variable_size_bins", required=False,
+    parser.add_argument('--variable-size-bins', action="store_true", dest="variable_size_bins", required=False,
                         default=False, help="enable variable size bins to use breakpoints")
 
-    parser.add_argument('--enable-simple-heuristics', dest="enable_simple_heuristics", required=False,
+    parser.add_argument('--enable-simple-heuristics', action="store_true", dest="enable_simple_heuristics", required=False,
                         default=False, help="enable simple heuristics")
 
     parser.add_argument("--bins-cluster-means", dest="bins_cluster_means",
@@ -150,7 +152,7 @@ def main():
 
     parser.add_argument("-t", "--threads", dest="threads",
                         default=1, metavar="int", type=int, help="number of parallel threads [8]")
-    parser.add_argument('--dryrun', dest="dryrun", required=False,
+    parser.add_argument('--dryrun', action="store_true", dest="dryrun", required=False,
                         default=False, help="Enabling dryrun")
     parser.add_argument("--dryrun-path", dest="dryrun_path",
                         default=None, required=False,
@@ -166,6 +168,8 @@ def main():
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
+
+    pbs = parse_sv_vcf(args.breakpoints)
 
     if args.control_bam is None:
         args.control_bam = []
@@ -193,7 +197,7 @@ def main():
 
     thread_pool = Pool(args.threads)
 
-    if not args.phaseblock_flipping_enable:
+    if args.phaseblock_flipping_disable:
         segments_by_read = defaultdict(list)
         genome_ids = []
         for bam_file in all_bams:
@@ -209,7 +213,7 @@ def main():
         coverage_histograms = update_coverage_hist(genome_ids, ref_lengths, segments_by_read, args.min_mapping_quality, args.max_read_error, args)
         del segments_by_read
 
-    if args.phaseblock_flipping_enable:
+    if not args.phaseblock_flipping_disable:
        main_process() #hapcorrect
        if args.dryrun:
            if args.without_phasing:
@@ -226,27 +230,31 @@ def main():
            csv_df_phasesets = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
            csv_df_coverage = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/'+args.genome_name+'_coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
     else:
-        logging.info('Computing coverage for bins')
-        segments = get_chromosomes_bins_bam(args.target_bam[0], args.bin_size, args)
-        segments_coverage = get_segments_coverage(segments, coverage_histograms)
-        logging.info('Writing coverage for bins')
-        write_segments_coverage_dict(segments_coverage, 'coverage.csv', args)
-
-        logging.info('Parsing phaseblocks information')
-        if args.normal_phased_vcf:
-            output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(args.normal_phased_vcf, args)
+        if args.dryrun and not args.without_phasing:
+            csv_df_coverage = csv_df_chromosomes_sorter(args.dryrun_path + args.genome_name + '/coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
+            csv_df_phasesets = csv_df_chromosomes_sorter(args.dryrun_path + args.genome_name + '/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
         else:
-            output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(args.tumor_vcf, args)
-        phasesets_segments = generate_phasesets_bins(args.target_bam[0], output_phasesets_file_path, args.bin_size, args) #TODO update for multiple bam files
-        logging.info('Computing coverage for phaseblocks')
-        phasesets_coverage = get_segments_coverage(phasesets_segments, coverage_histograms)
-        logging.info('Writing coverage for phaseblocks')
-        write_segments_coverage_dict(phasesets_coverage, 'coverage_ps.csv', args)
-        del coverage_histograms
+            logging.info('Computing coverage for bins')
+            segments = get_chromosomes_bins_bam(args.target_bam[0], args.bin_size, args)
+            segments_coverage = get_segments_coverage(segments, coverage_histograms)
+            logging.info('Writing coverage for bins')
+            write_segments_coverage_dict(segments_coverage, 'coverage.csv', args)
 
-        logging.info('Loading coverage (bins) and coverage (phaseblocks) files...')
-        csv_df_phasesets = csv_df_chromosomes_sorter(args.out_dir_plots+'/data/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
-        csv_df_coverage = csv_df_chromosomes_sorter(args.out_dir_plots+'/data/coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
+            logging.info('Parsing phaseblocks information')
+            if args.normal_phased_vcf:
+                output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(args.normal_phased_vcf, args)
+            else:
+                output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(args.tumor_vcf, args)
+            phasesets_segments = generate_phasesets_bins(args.target_bam[0], output_phasesets_file_path, args.bin_size, args) #TODO update for multiple bam files
+            logging.info('Computing coverage for phaseblocks')
+            phasesets_coverage = get_segments_coverage(phasesets_segments, coverage_histograms)
+            logging.info('Writing coverage for phaseblocks')
+            write_segments_coverage_dict(phasesets_coverage, 'coverage_ps.csv', args)
+            del coverage_histograms
+
+            logging.info('Loading coverage (bins) and coverage (phaseblocks) files...')
+            csv_df_phasesets = csv_df_chromosomes_sorter(args.out_dir_plots+'/data/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
+            csv_df_coverage = csv_df_chromosomes_sorter(args.out_dir_plots+'/data/coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
 
     #TODO add chrX,chrY support later on
     #csv_df_coverage = csv_df_coverage.drop(csv_df_coverage[(csv_df_coverage.chr == "chrX") | (csv_df_coverage.chr == "chrY")].index)
@@ -263,19 +271,22 @@ def main():
     df_segs_hp1 = snps_cpd_means_df[0]
     df_segs_hp2 = snps_cpd_means_df[1]
 
-    centers, subclonals, x_axis, observed_hist = peak_detection_optimization(snps_cpd_means, snps_cpd_points_weights)
-    #centers, subclonals, x_axis, observed_hist = peak_detection_optimization(csv_df_snps_mean.hp1.tolist()+csv_df_snps_mean.hp2.tolist(), [1 for i in range(2*len(csv_df_snps_mean.hp2.tolist()))])
+    print(snps_cpd_means)
+    print(snps_cpd_points_weights)
 
-    if args.tumor_purity and args.tumor_ploidy:
-        #print(normal_genome_proportion(0.45, 8, 100))
-        #tumor_cov = 100
-        #normal_cov = 30
-        #purity = (tumor_cov / args.tumor_ploidy) / ((normal_cov / 2) + (tumor_cov / args.tumor_ploidy))
-        tumor_cov = statistics.mean([sum(x) for x in zip(haplotype_1_values_updated, haplotype_2_values_updated, unphased)])
-        #print("tumor_coverage:", tumor_cov)
-        _, _, _, normal_fraction = normal_genome_proportion(args.tumor_purity, args.tumor_ploidy, tumor_cov)
-        #print("purity, normal fraction:", purity,normal_fraction)
-        centers = [normal_fraction] + [normal_fraction + (i * centers[1]) for i in range(1, len(centers))]
+    centers, subclonals, x_axis, observed_hist, single_copy_cov = peak_detection_optimization(snps_cpd_means, snps_cpd_points_weights)
+    #centers, subclonals, x_axis, observed_hist = peak_detection_optimization(csv_df_snps_mean.hp1.tolist()+csv_df_snps_mean.hp2.tolist(), [1 for i in range(2*len(csv_df_snps_mean.hp2.tolist()))])
+    tumor_cov = statistics.mean([sum(x) for x in zip(haplotype_1_values_updated, haplotype_2_values_updated, unphased)])
+    # if args.tumor_purity and args.tumor_ploidy:
+    #     #print(normal_genome_proportion(0.45, 8, 100))
+    #     #tumor_cov = 100
+    #     normal_cov = 60
+    #     tumor_cov = statistics.mean([sum(x) for x in zip(haplotype_1_values_updated, haplotype_2_values_updated, unphased)])
+    #     purity = (tumor_cov / args.tumor_ploidy) / ((normal_cov / 2) + (tumor_cov / args.tumor_ploidy))
+    #     print("tumor_coverage:", tumor_cov)
+    #     _, _, _, normal_fraction = normal_genome_proportion(args.tumor_purity, args.tumor_ploidy, tumor_cov)
+    #     print("purity, normal fraction:", purity, normal_fraction)
+    #     centers = [normal_fraction] + [normal_fraction + (i * centers[1]) for i in range(1, len(centers))]
 
     if args.without_phasing:
         logging.info('Generating coverage/copy numbers plots genome wide')
@@ -287,30 +298,93 @@ def main():
         copy_number_plots_genome_breakpoints_unphased_test(centers, integer_fractional_means, df_hp1, df_segs_hp1, df_hp2, df_segs_hp2, df_hp1, args)
     else:
         logging.info('Generating coverage/copy numbers plots genome wide')
-        df_segs_hp1_updated, df_segs_hp2_updated = adjust_diversified_segments(centers, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, args)
-        centers = adjust_first_copy_mean(args, centers, df_segs_hp1_updated, df_segs_hp2_updated, df_hp1, df_hp2)
-        integer_fractional_means = sorted([i for i in range(0, len(centers))])
-        df_segs_hp1_updated, df_segs_hp2_updated = adjust_diversified_segments(centers, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, args)
+        ################################
+        data = []
+        average_p_value = []
+        for j in 0, single_copy_cov -1, single_copy_cov, single_copy_cov + 1, single_copy_cov + 2, single_copy_cov + 3:
+            cen_out = [j] + [j + (i * single_copy_cov) for i in range(1, len(centers))]
+            df_segs_hp1_updated, df_segs_hp2_updated = adjust_diversified_segments(cen_out, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, args)
+            average_p_value.append(average_p_value_genome(args, cen_out, df_segs_hp1_updated, df_segs_hp2_updated, df_hp1, df_hp2))
 
-        write_copynumber_segments_csv(df_segs_hp1_updated, args, centers, integer_fractional_means, 1, '_copynumbers_segments.bed')
-        write_copynumber_segments_csv(df_segs_hp2_updated, args, centers, integer_fractional_means, 2, '_copynumbers_segments.bed')
+            overall_ploidy = weigted_means_ploidy(df_segs_hp1_updated, df_segs_hp2_updated, cen_out, sorted([i for i in range(0, len(cen_out))]))
+            tumor_purity = (tumor_cov / overall_ploidy) / (((j*2) / 2) + (tumor_cov / overall_ploidy))
+            data.append([overall_ploidy, tumor_purity, cen_out])
+            print("overall_ploidy: ", overall_ploidy, "tumor_purity:", tumor_purity, "average_p_value:", average_p_value, "for i:", j, "centers: ", cen_out[0:4])
 
-        copy_number_plots_genome(centers, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_unphased, args, x_axis, observed_hist)
-        copy_number_plots_genome_breakpoints(centers, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args)
-        plot_snps_frequencies(args, csv_df_snps_mean, df_segs_hp1_updated, df_segs_hp2_updated, centers, integer_fractional_means, thread_pool)
+        for j in 0, np.argmax(average_p_value[1:]) + 1:
+            if j == 0:
+                cen_out = data[0][2]
+                integer_fractional_means = sorted([i for i in range(0, len(cen_out))])
+                args.tumor_ploidy = round(data[0][0], 2)
+                args.tumor_purity = round(data[0][1], 2)
+            else:
+                cen_out = data[np.argmax(average_p_value[1:])+1][2]
+                integer_fractional_means = sorted([i for i in range(0, len(cen_out))])
+                args.tumor_ploidy = round(data[np.argmax(average_p_value[1:])+1][0], 2)
+                args.tumor_purity = round(data[np.argmax(average_p_value[1:])+1][1], 2)
 
-        if args.copynumbers_subclonal_enable:
-            #integer_fractional_means = sorted([i for i in range(0, len(centers))] + [i / centers[1] for i in subclonals])  # integer_fractional_cluster_means(args, df_segs_hp1, df_segs_hp2, centers)
-            centers_ = sorted(centers + subclonals)
-            df_segs_hp1_updated, df_segs_hp2_updated = adjust_diversified_segments(centers, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, args)
-            df_segs_hp1_updated, df_segs_hp2_updated = update_subclonal_means_states(centers, subclonals, df_segs_hp1_updated, df_segs_hp2_updated, df_hp1, df_hp2, args)
-            df_segs_hp1_updated = merge_adjacent_regions_cn(df_segs_hp1_updated, args)
-            df_segs_hp2_updated = merge_adjacent_regions_cn(df_segs_hp2_updated, args)
-            #out_states = sorted(list(set(df_segs_hp1_updated.state.values.tolist() + df_segs_hp2_updated.state.values.tolist())))
+            df_segs_hp1_updated, df_segs_hp2_updated = adjust_diversified_segments(cen_out, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, args)
+            write_copynumber_segments_csv(df_segs_hp1_updated, args, cen_out, integer_fractional_means, 1, '_'+ str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_copynumbers_segments.bed')
+            write_copynumber_segments_csv(df_segs_hp2_updated, args, cen_out, integer_fractional_means, 2, '_'+ str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_copynumbers_segments.bed')
 
-            copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args)
-            write_copynumber_segments_csv(df_segs_hp1_updated, args, centers, integer_fractional_means, 1, '_copynumbers_subclonal_segments.bed')
-            write_copynumber_segments_csv(df_segs_hp2_updated, args, centers, integer_fractional_means, 2, '_copynumbers_subclonal_segments.bed')
+            copy_number_plots_genome(cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_unphased, args, x_axis, observed_hist)
+            copy_number_plots_genome_breakpoints(cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args)
+
+            if args.copynumbers_subclonal_enable:
+                df_segs_hp1_updated, df_segs_hp2_updated = adjust_diversified_segments(cen_out, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, args)
+                df_segs_hp1_updated, df_segs_hp2_updated = update_subclonal_means_states(cen_out, subclonals, df_segs_hp1_updated, df_segs_hp2_updated, df_hp1, df_hp2, args)
+                df_segs_hp1_updated = merge_adjacent_regions_cn(df_segs_hp1_updated, args)
+                df_segs_hp2_updated = merge_adjacent_regions_cn(df_segs_hp2_updated, args)
+                cen_out = [int(i) for i in cen_out]
+                copy_number_plots_genome_breakpoints_subclonal(cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args)
+                write_copynumber_segments_csv(df_segs_hp1_updated, args, cen_out, integer_fractional_means, 1, '_' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_copynumbers_subclonal_segments.bed')
+                write_copynumber_segments_csv(df_segs_hp2_updated, args, cen_out, integer_fractional_means, 2, '_' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_copynumbers_subclonal_segments.bed')
+
+        # plot_snps_frequencies(args, csv_df_snps_mean, df_segs_hp1_updated, df_segs_hp2_updated, centers, integer_fractional_means, thread_pool)
+        ################################
+
+        ################################
+        # for j in 0, single_copy_cov -1, single_copy_cov, single_copy_cov + 1, single_copy_cov + 2:
+        #     cen_out = [j] + [j + (i * single_copy_cov) for i in range(1, len(centers))]
+        #     df_segs_hp1_updated, df_segs_hp2_updated = adjust_diversified_segments(cen_out, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, args)
+        #     average_p_value = average_p_value_genome(args, cen_out, df_segs_hp1_updated, df_segs_hp2_updated, df_hp1, df_hp2)
+        #
+        #     overall_ploidy = weigted_means_ploidy(df_segs_hp1_updated, df_segs_hp2_updated, cen_out, sorted([i for i in range(0, len(cen_out))]))
+        #     tumor_purity = (tumor_cov / overall_ploidy) / (((j*2) / 2) + (tumor_cov / overall_ploidy))
+        #     print("overall_ploidy: ", overall_ploidy, "tumor_purity:", tumor_purity, "average_p_value:", average_p_value, "for i:", j, "centers: ", cen_out[0:4])
+        ################################
+
+        # df_segs_hp1_updated, df_segs_hp2_updated = adjust_diversified_segments(centers, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, args)
+        # centers_ = adjust_first_copy_mean(args, centers, df_segs_hp1_updated, df_segs_hp2_updated, df_hp1, df_hp2)
+        # integer_fractional_means = sorted([i for i in range(0, len(centers))])
+        # df_segs_hp1_updated, df_segs_hp2_updated = adjust_diversified_segments(centers, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, args)
+        #
+        # tumor_cov = statistics.mean([sum(x) for x in zip(haplotype_1_values_updated, haplotype_2_values_updated, unphased)])
+        # average_p_value = average_p_value_genome(args, centers, df_segs_hp1_updated, df_segs_hp2_updated, df_hp1, df_hp2)
+        # print("average_p_value:", average_p_value)
+        # overall_ploidy = weigted_means_ploidy(df_segs_hp1_updated, df_segs_hp2_updated, centers, integer_fractional_means)
+        # print("overall_ploidy: ", overall_ploidy)
+        # #tumor_purity = (tumor_cov / overall_ploidy) / ((optimized_normal_coverage / 2) + (tumor_cov / overall_ploidy))
+        # #print("overall_ploidy: ", overall_ploidy, "tumor_purity:", tumor_purity)
+        #
+        # print(centers)
+        # print(integer_fractional_means)
+        # write_copynumber_segments_csv(df_segs_hp1_updated, args, centers, integer_fractional_means, 1, '_copynumbers_segments.bed')
+        # write_copynumber_segments_csv(df_segs_hp2_updated, args, centers, integer_fractional_means, 2, '_copynumbers_segments.bed')
+        #
+        # copy_number_plots_genome(centers, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_unphased, args, x_axis, observed_hist)
+        # copy_number_plots_genome_breakpoints(centers, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args)
+        # plot_snps_frequencies(args, csv_df_snps_mean, df_segs_hp1_updated, df_segs_hp2_updated, centers, integer_fractional_means, thread_pool)
+
+        # if args.copynumbers_subclonal_enable:
+        #     df_segs_hp1_updated, df_segs_hp2_updated = adjust_diversified_segments(centers, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, args)
+        #     df_segs_hp1_updated, df_segs_hp2_updated = update_subclonal_means_states(centers, subclonals, df_segs_hp1_updated, df_segs_hp2_updated, df_hp1, df_hp2, args)
+        #     df_segs_hp1_updated = merge_adjacent_regions_cn(df_segs_hp1_updated, args)
+        #     df_segs_hp2_updated = merge_adjacent_regions_cn(df_segs_hp2_updated, args)
+        #     centers  =  [int(i) for i in centers]
+        #     copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args)
+        #     write_copynumber_segments_csv(df_segs_hp1_updated, args, centers, integer_fractional_means, 1, '_'+ str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) + '_copynumbers_subclonal_segments.bed')
+        #     write_copynumber_segments_csv(df_segs_hp2_updated, args, centers, integer_fractional_means, 2, '_'+ str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_copynumbers_subclonal_segments.bed')
 
     #SNPs LOH and plots
     if args.tumor_vcf:
@@ -353,7 +427,6 @@ if __name__ == "__main__":
 #--dryrun True --dryrun-path /home/rezkuh/gits/data/ --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam   --normal-phased-vcf /home/rezkuh/gits/data/OT4/ON2.vcf.gz --tumor-vcf /home/rezkuh/gits/data/OT2/OT2.vcf.gz     --copynumbers-enable True    --genome-name OT2 --out-dir-plots OT2  --cut-threshold 60 --phaseblock-flipping-enable True --phaseblocks-enable True --contigs chr1-38
 
 #--dryrun True --dryrun-path /home/rezkuh/gits/data/ --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --out-dir-plots 1437  --normal-phased-vcf /home/rezkuh/gits/data/1437_re/1437BL.vcf.gz --copynumbers-enable True  --unphased-reads-coverage-enable True  --phaseblocks-enable True   --genome-name 1437  --cut-threshold 150
-
 
 #--dryrun True --dryrun-path /home/rezkuh/gits/data/ --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --out-dir-plots 1937  --normal-phased-vcf /home/rezkuh/gits/data/1937_re/1937BL.vcf.gz --copynumbers-enable True  --unphased-reads-coverage-enable True  --phaseblocks-enable True   --genome-name 1937 --contigs chr1-22,X --cut-threshold 150 --breakpoints /home/rezkuh/gits/data/1937_re/ --cpd-internal-segments True
 #--dryrun True --dryrun-path /home/rezkuh/gits/data/ --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --out-dir-plots colo357_R10  --tumor-vcf /home/rezkuh/gits/data/colo357_R10/colo357.vcf.gz --copynumbers-enable True  --unphased-reads-coverage-enable True  --phaseblocks-enable True   --genome-name colo357_R10 --contigs chr1-22,X --cut-threshold 150 --breakpoints /home/rezkuh/gits/data/colo357_R10/ --cpd-internal-segments True
