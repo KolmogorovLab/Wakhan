@@ -66,6 +66,9 @@ def main_process():
                         metavar="path", required=False, default=None,
                         help="Path to tumor VCF for LOH detection")
 
+    parser.add_argument("--centromere", dest="centromere", metavar="path", required=False, default='annotations/grch38.cen_coord.curated.bed', help="Path to centromere annotations BED file")
+    parser.add_argument("--cancer-genes", dest="cancer_genes", metavar="path", required=False, default='annotations/CancerGenes.tsv', help="Path to Cancer Genes TSV file")
+
     parser.add_argument("--breakpoints", dest="breakpoints",
                         metavar="path", required=True, default=None,
                         help="Path to breakpoints/SVs VCF file")

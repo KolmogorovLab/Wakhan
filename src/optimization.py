@@ -141,7 +141,7 @@ def parse_segments_cov_bins(filename):
     return cov
 
 
-def peak_detection_optimization(input_segments, input_weights):
+def peak_detection_optimization(args, input_segments, input_weights):
 
     NUM_SAMPLES = 1000
     # observed = simulate(NUM_SAMPLES)
@@ -226,13 +226,15 @@ def peak_detection_optimization(input_segments, input_weights):
     # Autocorrelation method
     corr = scipy.signal.correlate(observed_hist, observed_hist, mode="full")
     corr = corr[corr.size // 2:]  # autocorrelation, only positive shift, so getting right half of the array
+
     first_min = scipy.signal.argrelmin(corr)[0][0]
     corr_max = np.argmax(corr[first_min:]) + first_min
+
     print("First minimum", first_min)
     print("Max correlation peak", corr_max)
 
     #plt.plot(xx, corr, "r")
-    #plt.savefig("test.pdf", format="pdf", bbox_inches="tight")
+    #plt.savefig(args.out_dir_plots +'/'+ args.genome_name + '_'+ "correlation_peak.pdf", format="pdf", bbox_inches="tight")
 
     # testing if 1/2 of the highest peak is also a peak. compare it with 1/4 and 3/4 (which should be valleys)
     half_peak = corr_max // 2
