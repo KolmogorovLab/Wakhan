@@ -103,6 +103,10 @@ Few cell lines arbitrary phase-switch correction and copy number estimation outp
 * `--breakpoints` For segmentation to use in CN estimation, structural variations/breakpoints VCF file is required
 
 ## Optional parameters
+* `--loh-enable` Enabling LOH regions display in CN plots
+
+* `--copynumbers-subclonal-enable` Enabling subclonal/fractional copy number states in plots
+
 * `--phaseblock-flipping-disable` disabling phaseblock flipping if traget tumor BAM doesn't need phase-correction (default: enabled)
 
 * `--phaseblocks-enable` enabling phaseblocks display in coverage plots
@@ -111,20 +115,37 @@ Few cell lines arbitrary phase-switch correction and copy number estimation outp
 
 * `--cut-threshold` Maximum cut threshold for coverage (readdepth) plots [default: 100]
 
-* `--without-phasing` enable it if CNA analysis is being performed without phasing 
+* `centromere` Path to centromere annotations BED file [default: annotations/grch38.cen_coord.curated.bed]
+
+* `--cancer-genes` Path to Cancer Genes in TSV format to display in CNA plots [default: annotations/CancerGenes.tsv]
+
+* `--pdf-enable` Enabling PDF output for plots
+
+Wakhan can also be used in case phasing is not good in input tumor or analysis is being performed without considering phasing:
+
+* `--without-phasing` enable it if CNA analysis is being performed without phasing in conjunction with `--phaseblock-flipping-disable` with all other required parameters as mentioned in example command
+
+* Here is a sample copy number/breakpoints output plot without phasing.
+<img width="1373" alt="plots_example" src="examples/images/C15.png">
 
 ## Output produced
+Based on best confidence scores, tumor purity and ploidy values are calculated and copy number analysis is performed. 
+Each subfolder in output directory represents best <`ploidy`>_<`purity`>_<`confidence`> values.
+
 * `<genome-name>_genome_copynumber.html` Genome-wide copy number plots with coverage information on same axis
-
 * `<genome-name>_copynumber_breakpoints.html` Genome-wide copy number plots with coverage information on opposite axis, additionally breakpoints and genes annotations 
+* `<genome-name>_copynumber_breakpoints_subclonal.html` Genome-wide subclonal/fractional copy number plots with coverage information on opposite axis, additionally breakpoints and genes annotations (`--copynumbers-subclonal-enable`)
+* `bed_output` It contains copy numbers segments in bed format
+* `variation_plots` Copy number chromosomes-scale plots with segmentation, coverage and LOH
 
-* `bed_output` It contains copy numbers and LOH (in case tumor VCF is provided) segments in bed format
+Following are coverage and SNPs/LOH plots and bed directories in output folder, independent of CNA analysis
 
+* `snps_loh_plots` SNPs and SNPs ratios plots with LOH representation in chromosomes-scale and genome-wide
+* `<genome-name>_genome_loh.html` Genome-wide LOH plot
+* `bed_output` It contains LOH segments in bed format
 * `coverage_plots` Haplotype specific coverage plots for chromosomes with option for unphased coverage
-
-* `variation_plots` Copy number chromosomes-scale plots with segmentation, coverage and LOH/SNPs ratios (in case tumor VCF is provided)
-
 * `phasing_output` Phase-switch error correction plots and phase corrected VCF file (*rephased.vcf.gz)
+
 
 ## Prerequisite
 This tool requires haplotagged tumor BAM and phased VCF in case tumor-only mode and normal phased VCF in case tumor-normal mode. This can be done through any phasing tools like Margin, Whatshap and Longphase. 

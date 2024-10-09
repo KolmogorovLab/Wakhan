@@ -12,11 +12,11 @@ def get_all_breakpoints_data(edges, edges_chr, height, path):
             continue
         if "INV" in variant['ID']:
             bp_junctions_inv.append([variant['CHROM'], int(variant['POS'])])
-        elif ("DUP" in variant['ID']) and int(variant['info_dict']['SVLEN'][0]) > 10000:
+        elif ("DUP" in variant['ID']) and int(variant['info_dict']['SVLEN'][0]) > 100000:
             bp_junctions_dup.append([variant['CHROM'], int(variant['POS'])])
-        elif ("INS" in variant['ID']) and int(variant['info_dict']['SVLEN'][0]) > 10000:
+        elif ("INS" in variant['ID']) and int(variant['info_dict']['SVLEN'][0]) > 100000:
             bp_junctions_ins.append([variant['CHROM'], int(variant['POS'])])
-        elif "DEL" in variant['ID'] and int(variant['info_dict']['SVLEN'][0]) > 10000:
+        elif "DEL" in variant['ID'] and int(variant['info_dict']['SVLEN'][0]) > 100000:
             bp_junctions_del.append([variant['CHROM'], int(variant['POS'])])
 
     #keys = sorted(set(interact_strength))

@@ -58,7 +58,7 @@ def sv_vcf_bps_cn_check(path, args):
 
     for variant in my_parser:
         #if ("INV" in variant['ID'] and variant['info_dict']['DETAILED_TYPE'] == ['reciprocal_inv']) or  "INS" in variant['ID']:
-        if "INV" in variant['ID'] or "DUP" in variant['ID'] or (("INS" in variant['ID'] or "DEL" in variant['ID']) and int(variant['info_dict']['SVLEN'][0]) > 10000):
+        if "INV" in variant['ID'] or "DUP" in variant['ID'] or (("INS" in variant['ID'] or "DEL" in variant['ID']) and int(variant['info_dict']['SVLEN'][0]) > 100000):
             hp = 0
             if 'HP' in variant['info_dict']:
                 hp = int(variant['info_dict']['HP'][0])

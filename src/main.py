@@ -21,9 +21,9 @@ from utils import get_chromosomes_bins, write_segments_coverage, write_segments_
     adjust_diversified_segments, get_chromosomes_bins_bam, normal_genome_proportion, update_subclonal_means_states, adjust_first_copy_mean, \
     merge_adjacent_regions_cn, parse_sv_vcf, weigted_means_ploidy, average_p_value_genome, check_adjust_last_cn_states, find_optimized_normal_peaks
 from plots import coverage_plots_chromosomes, copy_number_plots_genome, plots_genome_coverage, copy_number_plots_chromosomes, copy_number_plots_genome_breakpoints_unphased, \
-    copy_number_plots_genome_breakpoints_unphased_test, copy_number_plots_genome_breakpoints, copy_number_plots_genome_breakpoints_subclonal, copy_number_plots_genome_details
+    copy_number_plots_genome_breakpoints, copy_number_plots_genome_breakpoints_subclonal, copy_number_plots_genome_details
 from vcf_processing import vcf_parse_to_csv_for_het_phased_snps_phasesets
-from snps_loh import plot_snps_frequencies, plot_snps_ratios_genome, snps_df_loh
+from snps_loh import plot_snps_frequencies_without_phasing, plot_snps_frequencies, plot_snps_ratios_genome, snps_df_loh, variation_plots
 from phasing_correction import generate_phasesets_bins
 from optimization import peak_detection_optimization
 from extras import sv_vcf_bps_cn_check
@@ -38,7 +38,7 @@ def main():
     MAX_CUT_THRESHOLD = 100
     MIN_ALIGNED_LENGTH = 5000
     MAX_CUT_THRESHOLD_SNPS_COUNTS = 50
-    HETS_RATIO_LOH = 0.3
+    HETS_RATIO_LOH = 0.25
     HETS_SMOOTH_WINDOW = 45
     HETS_LOH_SEG_SIZE = 2000000
 
@@ -95,6 +95,8 @@ def main():
                         default=HETS_SMOOTH_WINDOW, metavar="int", type=int, help="Hetrozygous SNPs ratio smoothing window size for LOH detection [45]")
     parser.add_argument("--hets-loh-seg-size", "--hets_loh_seg_size", dest="hets_loh_seg_size",
                         default=HETS_LOH_SEG_SIZE, metavar="int", type=int, help="LOH detection minimum segment size where Het SNPs ratio is dropped [2M]")
+    parser.add_argument('--loh-enable', action="store_true",  dest="loh_enable", required=False,
+                        default=False, help="Enabling LOH regions in CN plots")
 
     parser.add_argument("--cut-threshold", "--cut_threshold", dest="cut_threshold",
                         default=MAX_CUT_THRESHOLD, metavar="int", type=int, help="Maximum cut threshold for coverage (readdepth) [100]")
@@ -283,9 +285,6 @@ def main():
         df_segs_hp1 = snps_cpd_means_df[0]
         df_segs_hp2 = snps_cpd_means_df[1]
 
-    print(snps_cpd_means)
-    print(snps_cpd_points_weights)
-
     #TODO remove centromeres only
     indices = []
     for i in range(len(snps_cpd_means)):
@@ -317,10 +316,8 @@ def main():
     #     print("purity, normal fraction:", purity, normal_fraction)
     #     centers = [normal_fraction] + [normal_fraction + (i * centers[1]) for i in range(1, len(centers))]
 
-    #SNPs df normal/tumor
+    #SNPs df from normal/tumor
     df_snps_in_csv = snps_df_loh(args, thread_pool)
-    #SNPs LOH and plots
-    plot_snps_ratios_genome(args, df_snps_in_csv)
 
     if args.without_phasing:
         logging.info('Generating coverage/copy numbers plots genome wide')
@@ -328,14 +325,23 @@ def main():
         df_segs_hp1_updated, df_segs_hp2_updated = adjust_diversified_segments(centers, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, args)
         df_segs_hp1_updated = merge_adjacent_regions_cn(df_segs_hp1_updated, args)
         df_segs_hp2_updated = merge_adjacent_regions_cn(df_segs_hp2_updated, args)
+        loh_regions = plot_snps_frequencies_without_phasing(args, csv_df_snps_mean, df_segs_hp1_updated, df_segs_hp2_updated, centers, integer_fractional_means, df_snps_in_csv)
         write_copynumber_segments_csv(df_segs_hp1_updated, args, centers, integer_fractional_means, None, '_copynumbers_segments.bed', None)
         copy_number_plots_genome(centers, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, x_axis, observed_hist, None)
-        copy_number_plots_genome_breakpoints(centers, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, None)
-        plot_snps_frequencies(args, csv_df_snps_mean, df_segs_hp1_updated, df_segs_hp2_updated, centers, integer_fractional_means, df_snps_in_csv, None)
+        copy_number_plots_genome_breakpoints(centers, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, None, loh_regions)
 
+        if args.copynumbers_subclonal_enable:
+            df_segs_hp1_updated, df_segs_hp2_updated = adjust_diversified_segments(centers, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, args)
+            df_segs_hp1_updated, df_segs_hp2_updated = update_subclonal_means_states(centers, subclonals, df_segs_hp1_updated, df_segs_hp2_updated, df_hp1, df_hp2, args)
+            df_segs_hp1_updated = merge_adjacent_regions_cn(df_segs_hp1_updated, args)
+            df_segs_hp2_updated = merge_adjacent_regions_cn(df_segs_hp2_updated, args)
+            cen_out = [int(i) for i in centers]
+            copy_number_plots_genome_breakpoints_subclonal(cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, None, loh_regions)
+            write_copynumber_segments_csv(df_segs_hp1_updated, args, cen_out, integer_fractional_means, None, '_copynumbers_subclonal_segments.bed', None)
     else:
         logging.info('Generating coverage/copy numbers plots genome wide')
         ################################
+        loh_regions = plot_snps_frequencies(args, csv_df_snps_mean, df_snps_in_csv)
         data = []
         average_p_value = []
         for normal_coverage in range(0, max_limit): # single_copy_cov - 2, single_copy_cov - 1, single_copy_cov, single_copy_cov + 1, single_copy_cov + 2, single_copy_cov + 3:
@@ -363,9 +369,8 @@ def main():
             write_copynumber_segments_csv(df_segs_hp2_updated, args, cen_out, integer_fractional_means, 2, '_'+ str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_'+ str(round(data[j][3], 2)) +'_copynumbers_segments.bed', round(data[j][3], 2))
 
             copy_number_plots_genome(cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_unphased, args, x_axis, observed_hist, round(data[j][3], 2))
-            copy_number_plots_genome_breakpoints(cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, round(data[j][3], 2))
-
-            plot_snps_frequencies(args, csv_df_snps_mean, df_segs_hp1_updated, df_segs_hp2_updated, cen_out, integer_fractional_means, df_snps_in_csv, round(data[j][3], 2))
+            copy_number_plots_genome_breakpoints(cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, round(data[j][3], 2), loh_regions)
+            variation_plots(args, csv_df_snps_mean, df_segs_hp1_updated, df_segs_hp2_updated, cen_out, integer_fractional_means, df_snps_in_csv, loh_regions, round(data[j][3], 2))
 
             if args.copynumbers_subclonal_enable:
                 df_segs_hp1_updated, df_segs_hp2_updated = adjust_diversified_segments(cen_out, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, args)
@@ -373,10 +378,12 @@ def main():
                 df_segs_hp1_updated = merge_adjacent_regions_cn(df_segs_hp1_updated, args)
                 df_segs_hp2_updated = merge_adjacent_regions_cn(df_segs_hp2_updated, args)
                 cen_out = [int(i) for i in cen_out]
-                copy_number_plots_genome_breakpoints_subclonal(cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, round(data[j][3], 2))
+                copy_number_plots_genome_breakpoints_subclonal(cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, round(data[j][3], 2), loh_regions)
                 write_copynumber_segments_csv(df_segs_hp1_updated, args, cen_out, integer_fractional_means, 1, '_' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) +'_'+ str(round(data[j][3], 2)) + '_copynumbers_subclonal_segments.bed', round(data[j][3], 2))
                 write_copynumber_segments_csv(df_segs_hp2_updated, args, cen_out, integer_fractional_means, 2, '_' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) +'_'+ str(round(data[j][3], 2)) + '_copynumbers_subclonal_segments.bed', round(data[j][3], 2))
 
+    #SNPs ratios and LOH and plots
+    plot_snps_ratios_genome(args, df_snps_in_csv, loh_regions)
     ################################
     if os.path.exists(args.out_dir_plots+'/data'): #
         shutil.rmtree(args.out_dir_plots+'/data')
@@ -419,6 +426,6 @@ if __name__ == "__main__":
 #--dryrun True --dryrun-path /home/rezkuh/gits/data/ --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --out-dir-plots colo829 --genome-name colo829  --cut-threshold 200   --normal-phased-vcf /home/rezkuh/gits/data/colo829/colo829BL.vcf.gz --breakpoints /home/rezkuh/gits/data/colo829/severus_somatic.vcf
 #--dryrun True --dryrun-path /home/rezkuh/gits/data/ --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --out-dir-plots colo357_R10  --copynumbers-enable True  --unphased-reads-coverage-enable True    --genome-name colo357_R10  --cut-threshold 150  --tumor-vcf /home/rezkuh/gits/data/R10/colo357_R10/colo357.vcf.gz  --phaseblock-flipping-enable True --breakpoints /home/rezkuh/gits/data/R10/colo357_R10/
 
-
-#--dryrun --dryrun-path /home/rezkuh/gits/data/ --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --cut-threshold 150  --normal-phased-vcf /home/rezkuh/gits/data/1437/1437BL.vcf.gz   --breakpoints /home/rezkuh/gits/data/1437/severus_somatic.vcf  --out-dir-plots 1437_merged_merged --genome-name 1437_merged_merged --copynumbers-subclonal-enable
-#--dryrun --dryrun-path /home/rezkuh/gits/data/ --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --cut-threshold 75  --without-phasing --phaseblock-flipping-disable --tumor-vcf /home/rezkuh/gits/data/mouse/somatic_calls/C23_somatic_calls_pass_snp.vcf.gz --breakpoints /home/rezkuh/gits/data/mouse/severus_somatic.vcf  --out-dir-plots C23 --contigs 1-19,X --genome-name C23 --bin-size-snps 1000000 --centromere annotations/mouse.bed --hets-smooth-window 10
+#--dryrun --dryrun-path /home/rezkuh/gits/data/ --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --cut-threshold 150  --normal-phased-vcf /home/rezkuh/gits/data/1437/1437BL.vcf.gz   --breakpoints /home/rezkuh/gits/data/1437/severus_somatic.vcf  --out-dir-plots 1437_merged_merged --genome-name 1437_merged_merged --copynumbers-subclonal-enable --loh-enable
+#--dryrun --dryrun-path /home/rezkuh/gits/data/ --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --cut-threshold 150  --normal-phased-vcf /home/rezkuh/gits/data/2009/2009BL.vcf.gz   --breakpoints /home/rezkuh/gits/data/2009/severus_somatic.vcf  --out-dir-plots 2009_merged --genome-name 2009_merged --copynumbers-subclonal-enable --loh-enable
+#--dryrun --dryrun-path /home/rezkuh/gits/data/ --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/C15_1_30000000.bam --cut-threshold 75  --without-phasing --phaseblock-flipping-disable --tumor-vcf /home/rezkuh/gits/data/mouse/somatic_calls/C23_somatic_calls_pass_snp.vcf.gz --breakpoints /home/rezkuh/gits/data/mouse/severus_somatic.vcf  --out-dir-plots C23 --contigs 1-19,X --genome-name C23 --bin-size-snps 1000000 --centromere annotations/mouse.bed --hets-smooth-window 10 --copynumbers-subclonal-enable --loh-enable

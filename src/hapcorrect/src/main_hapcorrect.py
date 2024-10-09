@@ -33,7 +33,7 @@ def main_process():
     MAX_CUT_THRESHOLD = 100
     MIN_ALIGNED_LENGTH = 5000
     MAX_CUT_THRESHOLD_SNPS_COUNTS = 50
-    HETS_RATIO_LOH = 0.3
+    HETS_RATIO_LOH = 0.25
     HETS_SMOOTH_WINDOW = 45
     HETS_LOH_SEG_SIZE = 2000000
 
@@ -93,6 +93,8 @@ def main_process():
                         default=HETS_SMOOTH_WINDOW, metavar="int", type=int, help="Hetrozygous SNPs ratio smoothing window size for LOH detection [45]")
     parser.add_argument("--hets-loh-seg-size", "--hets_loh_seg_size", dest="hets_loh_seg_size",
                         default=HETS_LOH_SEG_SIZE, metavar="int", type=int, help="LOH detection minimum segment size where Het SNPs ratio is dropped [2M]")
+    parser.add_argument('--loh-enable', action="store_true",  dest="loh_enable", required=False,
+                        default=False, help="Enabling LOH regions in CN plots")
 
     parser.add_argument("--cut-threshold", "--cut_threshold", dest="cut_threshold",
                         default=MAX_CUT_THRESHOLD, metavar="int", type=int, help="Maximum cut threshold for coverage (readdepth) [100]")

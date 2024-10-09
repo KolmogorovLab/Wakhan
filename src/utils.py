@@ -37,12 +37,14 @@ def get_chromosomes_bins_replica(bam_file, bin_size, args):
     return bed
 
 def get_chromosomes_regions(args):
+    chroms = get_contigs_list(args.contigs)
     bam_alignment = pysam.AlignmentFile(args.target_bam[0])
     headers = bam_alignment.header
     seq_dict = headers['SQ']
-    region = [''] * len(seq_dict)
+    region = [''] * len(chroms)
     for i, seq_elem in enumerate(seq_dict):
-        region[i] = seq_elem['LN']
+        if seq_elem['SN'] in chroms:
+            region[chroms.index(seq_elem['SN'])] = seq_elem['LN']
 
     return region
 
@@ -98,7 +100,6 @@ def get_chromosomes_bins(bam_file, bin_size, args):
     _,_,_,_, bps, bps_bnd = sv_vcf_bps_cn_check(args.breakpoints, args)
     bed = update_bins_with_bps(bed, bps, bps_bnd, args, region)
     _, bed_1 = update_bins_with_bps_new(bed, bps, bps_bnd, args, region)
-
 
     return bed, bed_1
 
@@ -463,14 +464,14 @@ def write_segments_coverage_dict(coverage_segments, output, args):
             if not items == None:
                 fp.write("%s\n" % items)
 
-def write_segments_coverage(coverage_segments, output, args, p_value, path_out):
-    with open(args.out_dir_plots + path_out +'/bed_output/' + output, 'a') as fp:
+def write_segments_coverage(coverage_segments, output, args):
+    with open(args.out_dir_plots + '/bed_output/' + output, 'a') as fp:
         for items in coverage_segments:
             if not items == None:
                 fp.write("%s\n" % items)
 
-def write_header_comments(header, header_comments, output, args, p_value, path_out):
-    with open(args.out_dir_plots + path_out  + '/bed_output/' + output, 'a') as fp:
+def write_header_comments(header, header_comments, output, args):
+    with open(args.out_dir_plots + '/bed_output/' + output, 'a') as fp:
         fp.write(header_comments)
         fp.write(header)
 
@@ -847,8 +848,13 @@ def update_subclonal_means_states(centers, subclonals, df_segs_hp1_updated, df_s
         df_segs_hp_1_updated_state = df_segs_hp_1_updated.state.values.tolist()
         df_segs_hp_2_updated_state = df_segs_hp_2_updated.state.values.tolist()
 
-        df_hp_1_val = df_hp_1.hp1.values.tolist()
-        df_hp_2_val = df_hp_2.hp2.values.tolist()
+        if args.without_phasing:
+            df_hp_1_val = df_hp_1.coverage.values.tolist()
+            df_hp_2_val = df_hp_2.coverage.values.tolist()
+        else:
+            df_hp_1_val = df_hp_1.hp1.values.tolist()
+            df_hp_2_val = df_hp_2.hp2.values.tolist()
+
 
         for j, (start, end) in enumerate(zip(df_segs_hp_1_updated_start, df_segs_hp_1_updated_end)):
             for i in range(len(centers)):
@@ -886,8 +892,12 @@ def update_subclonal_means_states(centers, subclonals, df_segs_hp1_updated, df_s
         df_segs_hp_1_updated_depth = []#df_segs_hp_1_updated.depth.values.tolist()
         df_segs_hp_2_updated_depth = []#df_segs_hp_2_updated.depth.values.tolist()
 
-        df_hp_1_val = df_hp_1.hp1.values.tolist()
-        df_hp_2_val = df_hp_2.hp2.values.tolist()
+        if args.without_phasing:
+            df_hp_1_val = df_hp_1.coverage.values.tolist()
+            df_hp_2_val = df_hp_2.coverage.values.tolist()
+        else:
+            df_hp_1_val = df_hp_1.hp1.values.tolist()
+            df_hp_2_val = df_hp_2.hp2.values.tolist()
 
         df_segs_hp_1_updated_p_score = []
         df_segs_hp_2_updated_p_score = []
@@ -1178,7 +1188,7 @@ def change_point_detection_algo(bin_size, hp_data, ref_start_values, args, ref_s
             #         if sub_list[i] >= means_hp1 + 10 or sub_list[i] <= means_hp1 - 10:
             #             sub_list[i] = randint(int(means_hp1) - 10, int(means_hp1) + 10)
             #     haplotype_means[start:point] = [sub_list[i] for i in range(len(sub_list))]
-            start = point + 1
+            start = point
             snps_haplotype_pos.append(point * bin_size)
 
             ###################################
