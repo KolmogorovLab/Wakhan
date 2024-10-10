@@ -868,7 +868,7 @@ def update_subclonal_means_states(centers, subclonals, df_segs_hp1_updated, df_s
     sample_mean = []
     sample_stdev = []
     for i in range(len(centers)):
-        if hp_1_values[i] + hp_2_values[i]:
+        if len(hp_1_values[i] + hp_2_values[i]) >=2:
             sample_mean.append(statistics.mean(remove_outliers_iqr(np.array(hp_1_values[i] + hp_2_values[i]))))
             sample_stdev.append(statistics.stdev(remove_outliers_iqr(np.array(hp_1_values[i] + hp_2_values[i]))))
         else:

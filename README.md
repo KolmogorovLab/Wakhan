@@ -125,7 +125,7 @@ Wakhan can also be used in case phasing is not good in input tumor or analysis i
 
 * `--without-phasing` enable it if CNA analysis is being performed without phasing in conjunction with `--phaseblock-flipping-disable` with all other required parameters as mentioned in example command
 
-* Here is a sample copy number/breakpoints output plot without phasing.
+Here is a sample copy number/breakpoints output plot without phasing.
 <img width="1373" alt="plots_example" src="examples/images/C15.png">
 
 ## Output produced
