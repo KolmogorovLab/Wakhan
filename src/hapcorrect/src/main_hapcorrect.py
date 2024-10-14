@@ -253,7 +253,7 @@ def main_process():
     if args.normal_phased_vcf:
         get_snp_frequencies_segments(args, args.target_bam[0], thread_pool)
         df_snps_frequencies = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/snps_frequencies.csv', ['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])
-        df_snps_frequencies = df_snps_frequencies.drop(df_snps_frequencies[(df_snps_frequencies.chr == "chrY")].index)
+        #df_snps_frequencies = df_snps_frequencies.drop(df_snps_frequencies[(df_snps_frequencies.chr == "chrY")].index)
         df_snps_in_csv = get_vafs_from_normal_phased_vcf(df_snps_frequencies, chroms)
 
         output_phasesets_file_path = vcf_parse_to_csv_for_snps(args.normal_phased_vcf, args)

@@ -1426,18 +1426,20 @@ def average_p_value_genome(args, centers, df_segs_hp1, df_segs_hp2, df_hp1, df_h
             sample_mean.append(centers[i])
             sample_stdev.append(5)
 
+
+    p_value_median = []
     df_segs_hp_1_updated_p_score = []
     df_segs_hp_2_updated_p_score = []
 
     df_segs_hp_1_updated_weight = []
     df_segs_hp_2_updated_weight = []
-    total_length = []
-    total_counts = 0
-    p_value_median = []
 
     sample_mean = centers
 
+    #diffs = df_segs_hp1.end.values.tolist() - df_segs_hp1.start.values.tolist()
+
     for index, chrom in enumerate(chroms):
+
         df_segs_hp_1_updated = df_segs_hp1[df_segs_hp1['chromosome'] == chrom]
         df_segs_hp_2_updated = df_segs_hp2[df_segs_hp2['chromosome'] == chrom]
         df_hp_1 = df_hp1[df_hp1['chr'] == chrom]
@@ -1458,8 +1460,9 @@ def average_p_value_genome(args, centers, df_segs_hp1, df_segs_hp2, df_hp1, df_h
                 index =  sample_mean.index(sample_mean_init)
                 z_score =  (seg_mean - sample_mean_init) / statistics.stdev(remove_outliers_iqr(np.array(df_hp_1_val[start//args.bin_size:end//args.bin_size])))
                 p_value = stats.norm.sf(abs(z_score)) * 2
-                df_segs_hp_1_updated_p_score.append(round(p_value, 7))
-                df_segs_hp_1_updated_weight.append(end-start)
+                if p_value >= 0:
+                    df_segs_hp_1_updated_p_score.append(round(p_value, 7))
+                    df_segs_hp_1_updated_weight.append(end-start)
 
         for i, (start,end) in enumerate(zip(df_segs_hp_2_updated_start, df_segs_hp_2_updated_end)):
             if end-start * args.bin_size > 5000000:
@@ -1468,8 +1471,9 @@ def average_p_value_genome(args, centers, df_segs_hp1, df_segs_hp2, df_hp1, df_h
                 index =  sample_mean.index(sample_mean_init)
                 z_score =  (seg_mean - sample_mean_init) / statistics.stdev(remove_outliers_iqr(np.array(df_hp_2_val[start//args.bin_size:end//args.bin_size])))
                 p_value = stats.norm.sf(abs(z_score)) * 2
-                df_segs_hp_2_updated_p_score.append(round(p_value, 7))
-                df_segs_hp_2_updated_weight.append(end-start)
+                if p_value >= 0:
+                    df_segs_hp_2_updated_p_score.append(round(p_value, 7))
+                    df_segs_hp_2_updated_weight.append(end-start)
 
         p_value_median.append(weighted_means(df_segs_hp_1_updated_p_score + df_segs_hp_2_updated_p_score, weights=df_segs_hp_1_updated_weight + df_segs_hp_2_updated_weight))
 
