@@ -98,7 +98,7 @@ Few cell lines arbitrary phase-switch correction and copy number estimation outp
 
 * `--normal-phased-vcf` normal phased VCF file to generate het SNPs frequncies pileup for tumor BAM (if tumor-only mode, use phased `--tumor-vcf` instead)
 
-* `--tumor-vcf` VCF file to plot snps frequencies, ratios and LOH regions (Note: phased VCF is required in tumor-only mode)
+* `--tumor-vcf` phased VCF is required in tumor-only mode
 
 * `--breakpoints` For segmentation to use in CN estimation, structural variations/breakpoints VCF file is required
 
@@ -111,11 +111,11 @@ Few cell lines arbitrary phase-switch correction and copy number estimation outp
 
 * `--phaseblocks-enable` enabling phaseblocks display in coverage plots
 
-* `--contigs` List of contigs (chromosomes, default: chr1-22) to be included in the plots (Note: chrX, chrY support in CNA plots is not included yet) [e.g., chr1-22,X,Y]
+* `--contigs` List of contigs (chromosomes, default: chr1-22) to be included in the plots [e.g., chr1-22,X,Y]
 
 * `--cut-threshold` Maximum cut threshold for coverage (readdepth) plots [default: 100]
 
-* `centromere` Path to centromere annotations BED file [default: annotations/grch38.cen_coord.curated.bed]
+* `--centromere` Path to centromere annotations BED file [default: annotations/grch38.cen_coord.curated.bed]
 
 * `--cancer-genes` Path to Cancer Genes in TSV format to display in CNA plots [default: annotations/CancerGenes.tsv]
 
