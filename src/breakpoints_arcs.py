@@ -8,8 +8,6 @@ def get_all_breakpoints_data(edges, edges_chr, height, path):
     bp_junctions_dup = [[]]
     bp_junctions_del = [[]]
     for variant in my_parser:
-        if variant['CHROM'] == 'chrY':
-            continue
         if "INV" in variant['ID']:
             bp_junctions_inv.append([variant['CHROM'], int(variant['POS'])])
         elif ("DUP" in variant['ID']) and int(variant['info_dict']['SVLEN'][0]) > 100000:

@@ -30,88 +30,87 @@ def copy_number_plots_chromosomes(df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_h
 
 def copy_number_plots_per_chromosome(centers, integer_fractional_means, ref_start_values, df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, args, chrom, html_graphs, loh_region_starts, loh_region_ends, p_value):
 
-    if not chrom == 'chrY':
-        logging.info('Plots generation for ' + chrom)
-        fig = go.Figure()
+    logging.info('Plots generation for ' + chrom)
+    fig = go.Figure()
 
-        #df_cnr_hp1_chrom = df_cnr_hp1[df_cnr_hp1['chromosome'] == chrom]
-        df_segs_hp1_chrom = df_segs_hp1[df_segs_hp1['chromosome'] == chrom]
+    #df_cnr_hp1_chrom = df_cnr_hp1[df_cnr_hp1['chromosome'] == chrom]
+    df_segs_hp1_chrom = df_segs_hp1[df_segs_hp1['chromosome'] == chrom]
 
-        #df_cnr_hp2_chrom = df_cnr_hp2[df_cnr_hp2['chromosome'] == chrom]
-        df_segs_hp2_chrom = df_segs_hp2[df_segs_hp2['chromosome'] == chrom]
+    #df_cnr_hp2_chrom = df_cnr_hp2[df_cnr_hp2['chromosome'] == chrom]
+    df_segs_hp2_chrom = df_segs_hp2[df_segs_hp2['chromosome'] == chrom]
 
-        haplotype_1_values_cnr = df_cnr_hp1 #df_cnr_hp1_chrom.log2.values.tolist()
-        haplotype_2_values_cnr = df_cnr_hp2 #df_cnr_hp2_chrom.log2.values.tolist()
-        haplotype_1_start_values_cnr = ref_start_values#df_cnr_hp1_chrom.start.values.tolist()
+    haplotype_1_values_cnr = df_cnr_hp1 #df_cnr_hp1_chrom.log2.values.tolist()
+    haplotype_2_values_cnr = df_cnr_hp2 #df_cnr_hp2_chrom.log2.values.tolist()
+    haplotype_1_start_values_cnr = ref_start_values#df_cnr_hp1_chrom.start.values.tolist()
 
-        haplotype_1_values_copyratios = df_segs_hp1_chrom.state.values.tolist()
-        haplotype_1_start_values_copyratios = df_segs_hp1_chrom.start.values.tolist()
-        haplotype_1_end_values_copyratios = df_segs_hp1_chrom.end.values.tolist()
+    haplotype_1_values_copyratios = df_segs_hp1_chrom.state.values.tolist()
+    haplotype_1_start_values_copyratios = df_segs_hp1_chrom.start.values.tolist()
+    haplotype_1_end_values_copyratios = df_segs_hp1_chrom.end.values.tolist()
 
-        haplotype_2_values_copyratios = df_segs_hp2_chrom.state.values.tolist()
-        haplotype_2_start_values_copyratios = df_segs_hp2_chrom.start.values.tolist()
-        haplotype_2_end_values_copyratios = df_segs_hp2_chrom.end.values.tolist()
+    haplotype_2_values_copyratios = df_segs_hp2_chrom.state.values.tolist()
+    haplotype_2_start_values_copyratios = df_segs_hp2_chrom.start.values.tolist()
+    haplotype_2_end_values_copyratios = df_segs_hp2_chrom.end.values.tolist()
 
-        if not args.copynumbers_disable:
-            logging.info('copynumbers plots module')
-            OFFSET=0
-            #haplotype_1_values_cnr = list(np.asarray(haplotype_1_values_cnr) + OFFSET)
-            #haplotype_2_values_cnr = list(np.asarray(haplotype_2_values_cnr) - OFFSET)
-
-            if args.without_phasing:
-                add_scatter_trace_coverage(fig, haplotype_1_start_values_cnr, haplotype_1_values_cnr, name='Unphased', text=None, yaxis=None, opacity=0.7, color='olive')
-                #plots_add_markers_lines(fig)
-                plot_copynumbers_scatter_lines(args, fig,haplotype_1_values_copyratios, haplotype_1_start_values_copyratios, haplotype_1_end_values_copyratios, haplotype_1_values_copyratios, haplotype_1_start_values_copyratios, haplotype_1_end_values_copyratios, df_segs_hp1_chrom, df_segs_hp2_chrom, 0)
-            else:
-                haplotype_2_values_cnr = [-x for x in haplotype_2_values_cnr]
-                add_scatter_trace_coverage(fig, haplotype_1_start_values_cnr, haplotype_1_values_cnr, name='HP-1', text=None, yaxis=None, opacity=0.7, color='firebrick')
-                add_scatter_trace_coverage(fig, haplotype_1_start_values_cnr, haplotype_2_values_cnr, name='HP-2', text=None, yaxis=None, opacity=0.7, color='steelblue')
-                #plots_add_markers_lines(fig)
-
-                haplotype_2_values_copyratios = [-x for x in haplotype_2_values_copyratios]
-                plot_copynumbers_scatter_lines(args, fig,haplotype_1_values_copyratios, haplotype_1_start_values_copyratios, haplotype_1_end_values_copyratios, haplotype_2_values_copyratios, haplotype_2_start_values_copyratios, haplotype_2_end_values_copyratios, df_segs_hp1_chrom, df_segs_hp2_chrom, OFFSET)
-
-            if loh_region_starts:
-                for k, (start_loh,end_loh) in enumerate(zip(loh_region_starts, loh_region_ends)):
-                    fig.add_vrect(x0=start_loh, x1=end_loh, fillcolor="#f1c40f", opacity=0.5, layer="below", line_width=0.5, )
-
-            plots_layout_settings(fig, chrom, args, haplotype_1_end_values_copyratios[-1:][0], args.cut_threshold)
-            if args.without_phasing:
-                fig.update_yaxes(range = [0, args.cut_threshold])
-            else:
-                fig.update_yaxes(range=[-(args.cut_threshold), args.cut_threshold])
-            #fig.update_yaxes(title='copy ratio (log2)')
-
-            centers_rev = [-x for x in centers[1:]]
-            centers_rev.reverse()
-            tick_vals = centers_rev + centers
-
-            integer_fractional_means_rev = [x for x in integer_fractional_means[1:]]
-            integer_fractional_means_rev.reverse()
-            tickt_ext = integer_fractional_means_rev + integer_fractional_means
-
-            fig.update_layout(
-                yaxis=dict(
-                    tickmode='array',
-                    tickvals=[i for i in range(-1000, 1000, 50)],
-                    ticktext= [str(abs(i)) for i in range(-1000, 1000, 50)]
-                ),
-                yaxis2=dict(
-                    tickmode='array',
-                    tickvals= tick_vals,#[-133, -99, -66, -33, 0.0, 33, 66, 99, 133],#[-99, -33, 0, 33, 99],#[i for i in range(-1000, 1000, 50)],
-                    ticktext= tickt_ext#['3-copy', '2-copy', '1-copy', 'neutral','loss', 'neutral', '1-copy', '2-copy', '3-copy'] #[str(abs(i)) for i in range(-1000, 1000, 50)]
-                )
-            )
+    if not args.copynumbers_disable:
+        logging.info('copynumbers plots module')
+        OFFSET=0
+        #haplotype_1_values_cnr = list(np.asarray(haplotype_1_values_cnr) + OFFSET)
+        #haplotype_2_values_cnr = list(np.asarray(haplotype_2_values_cnr) - OFFSET)
 
         if args.without_phasing:
-            path = args.out_dir_plots + '/snps_loh_plots/'
+            add_scatter_trace_coverage(fig, haplotype_1_start_values_cnr, haplotype_1_values_cnr, name='Unphased', text=None, yaxis=None, opacity=0.7, color='olive')
+            #plots_add_markers_lines(fig)
+            plot_copynumbers_scatter_lines(args, fig,haplotype_1_values_copyratios, haplotype_1_start_values_copyratios, haplotype_1_end_values_copyratios, haplotype_1_values_copyratios, haplotype_1_start_values_copyratios, haplotype_1_end_values_copyratios, df_segs_hp1_chrom, df_segs_hp2_chrom, 0)
         else:
-            path = args.out_dir_plots +'/'+ str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value) + '/variation_plots'
-        if args.pdf_enable:
-            print_chromosome_pdf(fig, chrom, path)
+            haplotype_2_values_cnr = [-x for x in haplotype_2_values_cnr]
+            add_scatter_trace_coverage(fig, haplotype_1_start_values_cnr, haplotype_1_values_cnr, name='HP-1', text=None, yaxis=None, opacity=0.7, color='firebrick')
+            add_scatter_trace_coverage(fig, haplotype_1_start_values_cnr, haplotype_2_values_cnr, name='HP-2', text=None, yaxis=None, opacity=0.7, color='steelblue')
+            #plots_add_markers_lines(fig)
 
-        print_chromosome_html(fig, chrom + '_cn', html_graphs, path)
-        html_graphs.write("  <object data=\"" + chrom + '_cn' + '.html' + "\" width=\"700\" height=\"420\"></object>" + "\n")
+            haplotype_2_values_copyratios = [-x for x in haplotype_2_values_copyratios]
+            plot_copynumbers_scatter_lines(args, fig,haplotype_1_values_copyratios, haplotype_1_start_values_copyratios, haplotype_1_end_values_copyratios, haplotype_2_values_copyratios, haplotype_2_start_values_copyratios, haplotype_2_end_values_copyratios, df_segs_hp1_chrom, df_segs_hp2_chrom, OFFSET)
+
+        if loh_region_starts:
+            for k, (start_loh,end_loh) in enumerate(zip(loh_region_starts, loh_region_ends)):
+                fig.add_vrect(x0=start_loh, x1=end_loh, fillcolor="#f1c40f", opacity=0.5, layer="below", line_width=0.5, )
+
+        plots_layout_settings(fig, chrom, args, haplotype_1_end_values_copyratios[-1:][0], args.cut_threshold)
+        if args.without_phasing:
+            fig.update_yaxes(range = [0, args.cut_threshold])
+        else:
+            fig.update_yaxes(range=[-(args.cut_threshold), args.cut_threshold])
+        #fig.update_yaxes(title='copy ratio (log2)')
+
+        centers_rev = [-x for x in centers[1:]]
+        centers_rev.reverse()
+        tick_vals = centers_rev + centers
+
+        integer_fractional_means_rev = [x for x in integer_fractional_means[1:]]
+        integer_fractional_means_rev.reverse()
+        tickt_ext = integer_fractional_means_rev + integer_fractional_means
+
+        fig.update_layout(
+            yaxis=dict(
+                tickmode='array',
+                tickvals=[i for i in range(-1000, 1000, 50)],
+                ticktext= [str(abs(i)) for i in range(-1000, 1000, 50)]
+            ),
+            yaxis2=dict(
+                tickmode='array',
+                tickvals= tick_vals,#[-133, -99, -66, -33, 0.0, 33, 66, 99, 133],#[-99, -33, 0, 33, 99],#[i for i in range(-1000, 1000, 50)],
+                ticktext= tickt_ext#['3-copy', '2-copy', '1-copy', 'neutral','loss', 'neutral', '1-copy', '2-copy', '3-copy'] #[str(abs(i)) for i in range(-1000, 1000, 50)]
+            )
+        )
+
+    if args.without_phasing:
+        path = args.out_dir_plots + '/snps_loh_plots/'
+    else:
+        path = args.out_dir_plots +'/'+ str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value) + '/variation_plots'
+    if args.pdf_enable:
+        print_chromosome_pdf(fig, chrom, path)
+
+    print_chromosome_html(fig, chrom + '_cn', html_graphs, path)
+    html_graphs.write("  <object data=\"" + chrom + '_cn' + '.html' + "\" width=\"700\" height=\"420\"></object>" + "\n")
 
 def plot_copynumbers_scatter_lines(args, fig,haplotype_1_values_copyratios, haplotype_1_start_values_copyratios, haplotype_1_end_values_copyratios, haplotype_2_values_copyratios, haplotype_2_start_values_copyratios, haplotype_2_end_values_copyratios, df_segs_hp1, df_segs_hp2, OFFSET):
     haplotype_1_values_copyratios = list(map(float, haplotype_1_values_copyratios))
@@ -166,7 +165,7 @@ def coverage_plots_chromosomes(df, df_phasesets, args, thread_pool):
         get_snp_segments(args, args.target_bam[0], thread_pool)
         df_snps = csv_df_chromosomes_sorter(args.out_dir_plots+'/data/snps_frequencies.csv', ['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])
         #df_snps = df_snps.drop(df_snps[(df_snps.chr == "chrX") | (df_snps.chr == "chrY")].index)
-        df_snps = df_snps.drop(df_snps[(df_snps.chr == "chrY")].index)
+        #df_snps = df_snps.drop(df_snps[(df_snps.chr == "chrY")].index)
     if args.tumor_vcf: #only for LOH
         output_phasesets_file_path = vcf_parse_to_csv_for_snps(args.tumor_vcf, args)
         df_snps_in_csv = csv_df_chromosomes_sorter(output_phasesets_file_path, ['chr', 'pos', 'qual', 'gt', 'dp', 'vaf'])
@@ -182,7 +181,7 @@ def coverage_plots_chromosomes(df, df_phasesets, args, thread_pool):
     haplotype_1_segs_dfs = [] #pd.DataFrame()
     haplotype_2_segs_dfs = [] #pd.DataFrame()
     for index, chrom in enumerate(chroms):
-        if chrom in chroms and not chrom == 'chrY':# and (chrom == '1' or chrom == '18'):# and (chrom == 'chr5' or chrom == 'chr16'):
+        if chrom in chroms:# and (chrom == '1' or chrom == '18'):# and (chrom == 'chr5' or chrom == 'chr16'):
             logging.info('Plots generation for ' + chrom)
             fig = go.Figure()
 
@@ -587,27 +586,26 @@ def copy_number_plots_genome(centers, integer_fractional_centers, df_cnr_hp1, df
         haplotype_2_end_values = []
         chroms = get_contigs_list(args.contigs)
         for index, chrom in enumerate(chroms):
-            if not chrom == 'chrY':
-                df_segs_hp1_chrom = df_segs_hp1[df_segs_hp1['chromosome'] == chrom]
-                df_segs_hp2_chrom = df_segs_hp2[df_segs_hp2['chromosome'] == chrom]
-                haplotype_1_start_values_copyratios = df_segs_hp1_chrom.start.values.tolist()
-                haplotype_1_end_values_copyratios = df_segs_hp1_chrom.end.values.tolist()
-                haplotype_2_start_values_copyratios = df_segs_hp2_chrom.start.values.tolist()
-                haplotype_2_end_values_copyratios = df_segs_hp2_chrom.end.values.tolist()
+            df_segs_hp1_chrom = df_segs_hp1[df_segs_hp1['chromosome'] == chrom]
+            df_segs_hp2_chrom = df_segs_hp2[df_segs_hp2['chromosome'] == chrom]
+            haplotype_1_start_values_copyratios = df_segs_hp1_chrom.start.values.tolist()
+            haplotype_1_end_values_copyratios = df_segs_hp1_chrom.end.values.tolist()
+            haplotype_2_start_values_copyratios = df_segs_hp2_chrom.start.values.tolist()
+            haplotype_2_end_values_copyratios = df_segs_hp2_chrom.end.values.tolist()
 
-                if chrom == args.contigs.split('-')[0]:
-                    haplotype_1_start_values.extend(haplotype_1_start_values_copyratios)
-                    haplotype_1_end_values.extend(haplotype_1_end_values_copyratios)
-                    haplotype_2_start_values.extend(haplotype_2_start_values_copyratios)
-                    haplotype_2_end_values.extend(haplotype_2_end_values_copyratios)
-                else:
-                    offset_start += regions[index-1]
-                    #lengths[index-1] * args.bin_size
-                    haplotype_1_start_values.extend([x + offset_start for x in haplotype_1_start_values_copyratios])
-                    haplotype_1_end_values.extend([x + offset_start for x in haplotype_1_end_values_copyratios])
-                    haplotype_2_start_values.extend([x + offset_start for x in haplotype_2_start_values_copyratios])
-                    haplotype_2_end_values.extend([x + offset_start for x in haplotype_2_end_values_copyratios])
-                    #offset_start += regions[index-1]
+            if chrom == args.contigs.split('-')[0]:
+                haplotype_1_start_values.extend(haplotype_1_start_values_copyratios)
+                haplotype_1_end_values.extend(haplotype_1_end_values_copyratios)
+                haplotype_2_start_values.extend(haplotype_2_start_values_copyratios)
+                haplotype_2_end_values.extend(haplotype_2_end_values_copyratios)
+            else:
+                offset_start += regions[index-1]
+                #lengths[index-1] * args.bin_size
+                haplotype_1_start_values.extend([x + offset_start for x in haplotype_1_start_values_copyratios])
+                haplotype_1_end_values.extend([x + offset_start for x in haplotype_1_end_values_copyratios])
+                haplotype_2_start_values.extend([x + offset_start for x in haplotype_2_start_values_copyratios])
+                haplotype_2_end_values.extend([x + offset_start for x in haplotype_2_end_values_copyratios])
+                #offset_start += regions[index-1]
 
         haplotype_1_gaps_values = np.full(len(df_segs_hp1.state.values.tolist()), 'None')
         haplotype_1_copyratios_values = list(itertools.chain.from_iterable(zip(df_segs_hp1.state.values.tolist(), df_segs_hp1.state.values.tolist(), haplotype_1_gaps_values)))
@@ -975,24 +973,23 @@ def copy_number_plots_genome_breakpoints(centers, integer_fractional_centers, df
         haplotype_2_start_values = []
         haplotype_2_end_values = []
         for index, chrom in enumerate(chroms):
-            if not chrom == 'chrY':
-                df_segs_hp1_chrom = df_segs_hp1[df_segs_hp1['chromosome'] == chrom]
-                df_segs_hp2_chrom = df_segs_hp2[df_segs_hp2['chromosome'] == chrom]
-                haplotype_1_start_values_copyratios = df_segs_hp1_chrom.start.values.tolist()
-                haplotype_1_end_values_copyratios = df_segs_hp1_chrom.end.values.tolist()
-                haplotype_2_start_values_copyratios = df_segs_hp2_chrom.start.values.tolist()
-                haplotype_2_end_values_copyratios = df_segs_hp2_chrom.end.values.tolist()
-                if chrom == args.contigs.split('-')[0]:
-                    haplotype_1_start_values.extend(haplotype_1_start_values_copyratios)
-                    haplotype_1_end_values.extend(haplotype_1_end_values_copyratios)
-                    haplotype_2_start_values.extend(haplotype_2_start_values_copyratios)
-                    haplotype_2_end_values.extend(haplotype_2_end_values_copyratios)
-                else:
-                    offset_start += regions[index-1]#lengths[index-1] * args.bin_size
-                    haplotype_1_start_values.extend([x + offset_start for x in haplotype_1_start_values_copyratios])
-                    haplotype_1_end_values.extend([x + offset_start for x in haplotype_1_end_values_copyratios])
-                    haplotype_2_start_values.extend([x + offset_start for x in haplotype_2_start_values_copyratios])
-                    haplotype_2_end_values.extend([x + offset_start for x in haplotype_2_end_values_copyratios])
+            df_segs_hp1_chrom = df_segs_hp1[df_segs_hp1['chromosome'] == chrom]
+            df_segs_hp2_chrom = df_segs_hp2[df_segs_hp2['chromosome'] == chrom]
+            haplotype_1_start_values_copyratios = df_segs_hp1_chrom.start.values.tolist()
+            haplotype_1_end_values_copyratios = df_segs_hp1_chrom.end.values.tolist()
+            haplotype_2_start_values_copyratios = df_segs_hp2_chrom.start.values.tolist()
+            haplotype_2_end_values_copyratios = df_segs_hp2_chrom.end.values.tolist()
+            if chrom == args.contigs.split('-')[0]:
+                haplotype_1_start_values.extend(haplotype_1_start_values_copyratios)
+                haplotype_1_end_values.extend(haplotype_1_end_values_copyratios)
+                haplotype_2_start_values.extend(haplotype_2_start_values_copyratios)
+                haplotype_2_end_values.extend(haplotype_2_end_values_copyratios)
+            else:
+                offset_start += regions[index-1]#lengths[index-1] * args.bin_size
+                haplotype_1_start_values.extend([x + offset_start for x in haplotype_1_start_values_copyratios])
+                haplotype_1_end_values.extend([x + offset_start for x in haplotype_1_end_values_copyratios])
+                haplotype_2_start_values.extend([x + offset_start for x in haplotype_2_start_values_copyratios])
+                haplotype_2_end_values.extend([x + offset_start for x in haplotype_2_end_values_copyratios])
 
         haplotype_1_gaps_values = np.full(len(df_segs_hp1.state.values.tolist()), 'None')
         haplotype_1_copyratios_values = list(itertools.chain.from_iterable(zip(df_segs_hp1.state.values.tolist(), df_segs_hp1.state.values.tolist(), haplotype_1_gaps_values)))
@@ -1428,24 +1425,23 @@ def copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_c
         haplotype_2_start_values = []
         haplotype_2_end_values = []
         for index, chrom in enumerate(chroms):
-            if not chrom == 'chrY':
-                df_segs_hp1_chrom = df_segs_hp1[df_segs_hp1['chromosome'] == chrom]
-                df_segs_hp2_chrom = df_segs_hp2[df_segs_hp2['chromosome'] == chrom]
-                haplotype_1_start_values_copyratios = df_segs_hp1_chrom.start.values.tolist()
-                haplotype_1_end_values_copyratios = df_segs_hp1_chrom.end.values.tolist()
-                haplotype_2_start_values_copyratios = df_segs_hp2_chrom.start.values.tolist()
-                haplotype_2_end_values_copyratios = df_segs_hp2_chrom.end.values.tolist()
-                if chrom == args.contigs.split('-')[0]:
-                    haplotype_1_start_values.extend(haplotype_1_start_values_copyratios)
-                    haplotype_1_end_values.extend(haplotype_1_end_values_copyratios)
-                    haplotype_2_start_values.extend(haplotype_2_start_values_copyratios)
-                    haplotype_2_end_values.extend(haplotype_2_end_values_copyratios)
-                else:
-                    offset_start += regions[index-1]#lengths[index-1] * args.bin_size
-                    haplotype_1_start_values.extend([x + offset_start for x in haplotype_1_start_values_copyratios])
-                    haplotype_1_end_values.extend([x + offset_start for x in haplotype_1_end_values_copyratios])
-                    haplotype_2_start_values.extend([x + offset_start for x in haplotype_2_start_values_copyratios])
-                    haplotype_2_end_values.extend([x + offset_start for x in haplotype_2_end_values_copyratios])
+            df_segs_hp1_chrom = df_segs_hp1[df_segs_hp1['chromosome'] == chrom]
+            df_segs_hp2_chrom = df_segs_hp2[df_segs_hp2['chromosome'] == chrom]
+            haplotype_1_start_values_copyratios = df_segs_hp1_chrom.start.values.tolist()
+            haplotype_1_end_values_copyratios = df_segs_hp1_chrom.end.values.tolist()
+            haplotype_2_start_values_copyratios = df_segs_hp2_chrom.start.values.tolist()
+            haplotype_2_end_values_copyratios = df_segs_hp2_chrom.end.values.tolist()
+            if chrom == args.contigs.split('-')[0]:
+                haplotype_1_start_values.extend(haplotype_1_start_values_copyratios)
+                haplotype_1_end_values.extend(haplotype_1_end_values_copyratios)
+                haplotype_2_start_values.extend(haplotype_2_start_values_copyratios)
+                haplotype_2_end_values.extend(haplotype_2_end_values_copyratios)
+            else:
+                offset_start += regions[index-1]#lengths[index-1] * args.bin_size
+                haplotype_1_start_values.extend([x + offset_start for x in haplotype_1_start_values_copyratios])
+                haplotype_1_end_values.extend([x + offset_start for x in haplotype_1_end_values_copyratios])
+                haplotype_2_start_values.extend([x + offset_start for x in haplotype_2_start_values_copyratios])
+                haplotype_2_end_values.extend([x + offset_start for x in haplotype_2_end_values_copyratios])
 
         haplotype_1_gaps_values = np.full(len(df_segs_hp1.state.values.tolist()), 'None')
         haplotype_1_copyratios_values = list(itertools.chain.from_iterable(zip(df_segs_hp1.state.values.tolist(), df_segs_hp1.state.values.tolist(), haplotype_1_gaps_values)))
@@ -1736,24 +1732,23 @@ def copy_number_plots_genome_breakpoints_unphased(centers, integer_fractional_ce
         haplotype_2_start_values = []
         haplotype_2_end_values = []
         for index, chrom in enumerate(chroms):
-            if not chrom == 'chrY':
-                df_segs_hp1_chrom = df_segs_hp1[df_segs_hp1['chromosome'] == chrom]
-                df_segs_hp2_chrom = df_segs_hp2[df_segs_hp2['chromosome'] == chrom]
-                haplotype_1_start_values_copyratios = df_segs_hp1_chrom.start.values.tolist()
-                haplotype_1_end_values_copyratios = df_segs_hp1_chrom.end.values.tolist()
-                haplotype_2_start_values_copyratios = df_segs_hp2_chrom.start.values.tolist()
-                haplotype_2_end_values_copyratios = df_segs_hp2_chrom.end.values.tolist()
-                if chrom == args.contigs.split('-')[0]:
-                    haplotype_1_start_values.extend(haplotype_1_start_values_copyratios)
-                    haplotype_1_end_values.extend(haplotype_1_end_values_copyratios)
-                    haplotype_2_start_values.extend(haplotype_2_start_values_copyratios)
-                    haplotype_2_end_values.extend(haplotype_2_end_values_copyratios)
-                else:
-                    offset += lengths[index-1] * args.bin_size
-                    haplotype_1_start_values.extend([x + offset for x in haplotype_1_start_values_copyratios])
-                    haplotype_1_end_values.extend([x + offset for x in haplotype_1_end_values_copyratios])
-                    haplotype_2_start_values.extend([x + offset for x in haplotype_2_start_values_copyratios])
-                    haplotype_2_end_values.extend([x + offset for x in haplotype_2_end_values_copyratios])
+            df_segs_hp1_chrom = df_segs_hp1[df_segs_hp1['chromosome'] == chrom]
+            df_segs_hp2_chrom = df_segs_hp2[df_segs_hp2['chromosome'] == chrom]
+            haplotype_1_start_values_copyratios = df_segs_hp1_chrom.start.values.tolist()
+            haplotype_1_end_values_copyratios = df_segs_hp1_chrom.end.values.tolist()
+            haplotype_2_start_values_copyratios = df_segs_hp2_chrom.start.values.tolist()
+            haplotype_2_end_values_copyratios = df_segs_hp2_chrom.end.values.tolist()
+            if chrom == args.contigs.split('-')[0]:
+                haplotype_1_start_values.extend(haplotype_1_start_values_copyratios)
+                haplotype_1_end_values.extend(haplotype_1_end_values_copyratios)
+                haplotype_2_start_values.extend(haplotype_2_start_values_copyratios)
+                haplotype_2_end_values.extend(haplotype_2_end_values_copyratios)
+            else:
+                offset += lengths[index-1] * args.bin_size
+                haplotype_1_start_values.extend([x + offset for x in haplotype_1_start_values_copyratios])
+                haplotype_1_end_values.extend([x + offset for x in haplotype_1_end_values_copyratios])
+                haplotype_2_start_values.extend([x + offset for x in haplotype_2_start_values_copyratios])
+                haplotype_2_end_values.extend([x + offset for x in haplotype_2_end_values_copyratios])
 
         haplotype_1_gaps_values = np.full(len(df_segs_hp1.state.values.tolist()), 'None')
         haplotype_1_copyratios_values = list(itertools.chain.from_iterable(zip(df_segs_hp1.state.values.tolist(), df_segs_hp1.state.values.tolist(), haplotype_1_gaps_values)))
@@ -1932,24 +1927,23 @@ def copy_number_plots_genome_details(centers, integer_fractional_centers, df_cnr
         haplotype_2_end_values = []
         chroms = get_contigs_list(args.contigs)
         for index, chrom in enumerate(chroms):
-            if not chrom == 'chrY':
-                df_segs_hp1_chrom = df_segs_hp1[df_segs_hp1['chromosome'] == chrom]
-                df_segs_hp2_chrom = df_segs_hp2[df_segs_hp2['chromosome'] == chrom]
-                haplotype_1_start_values_copyratios = df_segs_hp1_chrom.start.values.tolist()
-                haplotype_1_end_values_copyratios = df_segs_hp1_chrom.end.values.tolist()
-                haplotype_2_start_values_copyratios = df_segs_hp2_chrom.start.values.tolist()
-                haplotype_2_end_values_copyratios = df_segs_hp2_chrom.end.values.tolist()
-                if chrom == args.contigs.split('-')[0]:
-                    haplotype_1_start_values.extend(haplotype_1_start_values_copyratios)
-                    haplotype_1_end_values.extend(haplotype_1_end_values_copyratios)
-                    haplotype_2_start_values.extend(haplotype_2_start_values_copyratios)
-                    haplotype_2_end_values.extend(haplotype_2_end_values_copyratios)
-                else:
-                    offset += lengths[index-1] * args.bin_size
-                    haplotype_1_start_values.extend([x + offset for x in haplotype_1_start_values_copyratios])
-                    haplotype_1_end_values.extend([x + offset for x in haplotype_1_end_values_copyratios])
-                    haplotype_2_start_values.extend([x + offset for x in haplotype_2_start_values_copyratios])
-                    haplotype_2_end_values.extend([x + offset for x in haplotype_2_end_values_copyratios])
+            df_segs_hp1_chrom = df_segs_hp1[df_segs_hp1['chromosome'] == chrom]
+            df_segs_hp2_chrom = df_segs_hp2[df_segs_hp2['chromosome'] == chrom]
+            haplotype_1_start_values_copyratios = df_segs_hp1_chrom.start.values.tolist()
+            haplotype_1_end_values_copyratios = df_segs_hp1_chrom.end.values.tolist()
+            haplotype_2_start_values_copyratios = df_segs_hp2_chrom.start.values.tolist()
+            haplotype_2_end_values_copyratios = df_segs_hp2_chrom.end.values.tolist()
+            if chrom == args.contigs.split('-')[0]:
+                haplotype_1_start_values.extend(haplotype_1_start_values_copyratios)
+                haplotype_1_end_values.extend(haplotype_1_end_values_copyratios)
+                haplotype_2_start_values.extend(haplotype_2_start_values_copyratios)
+                haplotype_2_end_values.extend(haplotype_2_end_values_copyratios)
+            else:
+                offset += lengths[index-1] * args.bin_size
+                haplotype_1_start_values.extend([x + offset for x in haplotype_1_start_values_copyratios])
+                haplotype_1_end_values.extend([x + offset for x in haplotype_1_end_values_copyratios])
+                haplotype_2_start_values.extend([x + offset for x in haplotype_2_start_values_copyratios])
+                haplotype_2_end_values.extend([x + offset for x in haplotype_2_end_values_copyratios])
 
         haplotype_1_gaps_values = np.full(len(df_segs_hp1.state.values.tolist()), 'None')
         haplotype_1_copyratios_values = list(itertools.chain.from_iterable(zip(df_segs_hp1.state.values.tolist(), df_segs_hp1.state.values.tolist(), haplotype_1_gaps_values)))

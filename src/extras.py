@@ -63,14 +63,11 @@ def sv_vcf_bps_cn_check(path, args):
             if 'HP' in variant['info_dict']:
                 hp = int(variant['info_dict']['HP'][0])
 
-            if variant['CHROM'] == 'chrY':
-                continue
-            else:
-                # sample_list[variant['ID']] = bps_sample(variant['CHROM'], int(variant['POS']), hp, variant['CHROM'], int(variant['POS'])+1, hp, False)
-                # sample_list[variant['ID']] = bps_sample(chr2_id, chr2_end, hp, chr2_id, chr2_end+1, hp, False)
-                bp_junctions_bnd.append([variant['CHROM'], int(variant['POS'])])
-                bp_junctions_bnd.append([variant['CHROM'], int(variant['POS'])+int(variant['info_dict']['SVLEN'][0])])
-                sample_list[variant['ID']] = bps_sample(variant['CHROM'], int(variant['POS']), hp, variant['CHROM'], int(variant['POS'])+int(variant['info_dict']['SVLEN'][0]), hp, False)
+            # sample_list[variant['ID']] = bps_sample(variant['CHROM'], int(variant['POS']), hp, variant['CHROM'], int(variant['POS'])+1, hp, False)
+            # sample_list[variant['ID']] = bps_sample(chr2_id, chr2_end, hp, chr2_id, chr2_end+1, hp, False)
+            bp_junctions_bnd.append([variant['CHROM'], int(variant['POS'])])
+            bp_junctions_bnd.append([variant['CHROM'], int(variant['POS'])+int(variant['info_dict']['SVLEN'][0])])
+            sample_list[variant['ID']] = bps_sample(variant['CHROM'], int(variant['POS']), hp, variant['CHROM'], int(variant['POS'])+int(variant['info_dict']['SVLEN'][0]), hp, False)
 
         elif "BND" in variant['ID'] and not "sBND" in variant['ID']:
             s = variant['ALT']
@@ -84,14 +81,11 @@ def sv_vcf_bps_cn_check(path, args):
             if 'HP' in variant['info_dict']:
                 hp = int(variant['info_dict']['HP'][0])
 
-            if chr2_id == 'chrY' or variant['CHROM'] == 'chrY':
-                continue
-            else:
-                #sample_list[variant['ID']] = bps_sample(variant['CHROM'], int(variant['POS']), hp, variant['CHROM'], int(variant['POS'])+1, hp, False)
-                #sample_list[variant['ID']] = bps_sample(chr2_id, chr2_end, hp, chr2_id, chr2_end+1, hp, False)
-                bp_junctions_bnd.append([variant['CHROM'], int(variant['POS'])])
-                bp_junctions_bnd.append([chr2_id, chr2_end])
-                sample_list[variant['ID']] = bps_sample(variant['CHROM'], int(variant['POS']), hp, chr2_id, chr2_end, hp, False)
+            #sample_list[variant['ID']] = bps_sample(variant['CHROM'], int(variant['POS']), hp, variant['CHROM'], int(variant['POS'])+1, hp, False)
+            #sample_list[variant['ID']] = bps_sample(chr2_id, chr2_end, hp, chr2_id, chr2_end+1, hp, False)
+            bp_junctions_bnd.append([variant['CHROM'], int(variant['POS'])])
+            bp_junctions_bnd.append([chr2_id, chr2_end])
+            sample_list[variant['ID']] = bps_sample(variant['CHROM'], int(variant['POS']), hp, chr2_id, chr2_end, hp, False)
         '''
         else:
             if not "sBND" in variant['ID'] or not "INS" in variant['ID'] or not "DEL" in variant['ID']:

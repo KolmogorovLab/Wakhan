@@ -1331,8 +1331,6 @@ def parse_sv_vcf(path):
     my_parser = VCFParser(infile=path, split_variants=True, check_info = True)
     bp_junctions = [[]]
     for variant in my_parser:
-        if variant['CHROM'] == 'chrY':
-            continue
         if ("INV" in variant['ID'] or "DUP" in variant['ID'] or "INS" in variant['ID'] or "DEL" in variant['ID']) and int(variant['info_dict']['SVLEN'][0]) > 50000:
             if int(variant['POS']) < int(variant['POS']) + int(variant['info_dict']['SVLEN'][0]):
                 bp_junctions.append([variant['CHROM'], int(variant['POS']), variant['CHROM'], int(variant['POS']) + int(variant['info_dict']['SVLEN'][0])])
