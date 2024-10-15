@@ -398,7 +398,7 @@ def main_process():
         get_phasingblocks(args.normal_phased_vcf)
         logging.info('VCF edit for phase change segments')
         out_vcf = os.path.join(args.out_dir_plots, 'phasing_output', args.genome_name+'.rephased.vcf.gz')
-        rephase_vcf(csv_df_phase_change_segments, csv_df_phasesets_segments, args.normal_phased_vcf, out_vcf)
+        rephase_vcf(csv_df_phase_change_segments, csv_df_phasesets_segments, csv_df_loh_regions, args.normal_phased_vcf, out_vcf)
         index_vcf(out_vcf)
         get_phasingblocks(out_vcf)
 
@@ -406,7 +406,7 @@ def main_process():
         get_phasingblocks(args.tumor_vcf)
         logging.info('VCF edit for phase change segments')
         out_vcf = os.path.join(args.out_dir_plots, 'phasing_output', args.genome_name+'.rephased.vcf.gz')
-        rephase_vcf(csv_df_phase_change_segments, csv_df_phasesets_segments, args.tumor_vcf, out_vcf)
+        rephase_vcf(csv_df_phase_change_segments, csv_df_phasesets_segments, csv_df_loh_regions, args.tumor_vcf, out_vcf)
         index_vcf(out_vcf)
         get_phasingblocks(out_vcf)
 
