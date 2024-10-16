@@ -555,17 +555,15 @@ def rephase_vcf(df, id_df, loh_df, vcf_in, out_vcf):
     start_pos = defaultdict(list)
     end_pos = defaultdict(list)
     idls = defaultdict(list)
-    start_pos_loh = defaultdict(list)
-    end_pos_loh = defaultdict(list)
     for seq in chr_list:
         start_pos[seq] = sorted([key for key, val in Counter(df.loc[df['chr'] == seq, 'start']).items() if val%2 == 1])
         end_pos[seq] = sorted([key for key, val in Counter(df.loc[df['chr'] == seq, 'end']).items() if val%2 == 1])
-        start_pos_loh = sorted(df.loc[df['chr'] == seq, 'start'])
-        end_pos_loh = sorted(df.loc[df['chr'] == seq, 'start'])
         idls[seq] = sorted(id_df.loc[id_df['chr'] == seq, 'start'])
     vcf_in=pysam.VariantFile(vcf_in,"r")
     vcf_out = pysam.VariantFile(out_vcf, 'w', header=vcf_in.header)
     for var in vcf_in:
+        #if var.chrom == 'chr2' and var.pos > 232590367 and var.pos < 233682723: #chr2	232600001	233700000
+        #    print('here')
         sample = var.samples.keys()[0]
         if var.samples[sample].phased:
             ind = bisect.bisect_right(idls[var.chrom], var.pos)
@@ -578,14 +576,45 @@ def rephase_vcf(df, id_df, loh_df, vcf_in, out_vcf):
                 new_gt = (abs(a-1), abs(b-1))
                 var.samples[sample]['GT'] = new_gt
                 var.samples[sample].phased = True
-        elif var.samples[sample]['GT'] == (1,1):
-            strt = bisect.bisect_right(start_pos_loh[var.chrom], var.pos)
-            end = bisect.bisect_right(end_pos_loh[var.chrom], var.pos)
-            if strt == end + 1:
-                var.samples[sample]['GT'] = (0,1)
-                var.samples[sample].phased = True
         vcf_out.write(var)
     vcf_out.close()
+
+# def rephase_vcf(df, id_df, loh_df, vcf_in, out_vcf):
+#     chr_list = list(set(df['chr']))
+#     start_pos = defaultdict(list)
+#     end_pos = defaultdict(list)
+#     idls = defaultdict(list)
+#     start_pos_loh = defaultdict(list)
+#     end_pos_loh = defaultdict(list)
+#     for seq in chr_list:
+#         start_pos[seq] = sorted([key for key, val in Counter(df.loc[df['chr'] == seq, 'start']).items() if val%2 == 1])
+#         end_pos[seq] = sorted([key for key, val in Counter(df.loc[df['chr'] == seq, 'end']).items() if val%2 == 1])
+#         start_pos_loh = sorted(df.loc[df['chr'] == seq, 'start'])
+#         end_pos_loh = sorted(df.loc[df['chr'] == seq, 'start'])
+#         idls[seq] = sorted(id_df.loc[id_df['chr'] == seq, 'start'])
+#     vcf_in=pysam.VariantFile(vcf_in,"r")
+#     vcf_out = pysam.VariantFile(out_vcf, 'w', header=vcf_in.header)
+#     for var in vcf_in:
+#         sample = var.samples.keys()[0]
+#         if var.samples[sample].phased:
+#             ind = bisect.bisect_right(idls[var.chrom], var.pos)
+#             if ind > 0:
+#                 var.samples[sample]['PS'] = idls[var.chrom][ind-1]
+#             strt = bisect.bisect_right(start_pos[var.chrom], var.pos)
+#             end = bisect.bisect_right(end_pos[var.chrom], var.pos)
+#             if strt == end + 1:
+#                 (a,b) = var.samples[sample]['GT']
+#                 new_gt = (abs(a-1), abs(b-1))
+#                 var.samples[sample]['GT'] = new_gt
+#                 var.samples[sample].phased = True
+#         elif var.samples[sample]['GT'] == (1,1):
+#             strt = bisect.bisect_right(start_pos_loh[var.chrom], var.pos)
+#             end = bisect.bisect_right(end_pos_loh[var.chrom], var.pos)
+#             if strt == end + 1:
+#                 var.samples[sample]['GT'] = (0,1)
+#                 var.samples[sample].phased = True
+#         vcf_out.write(var)
+#     vcf_out.close()
 
 def index_vcf(out_vcf):
     bcf_cmd = ['bcftools', 'index', out_vcf]

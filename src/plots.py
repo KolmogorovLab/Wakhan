@@ -841,8 +841,8 @@ def copy_number_plots_genome_breakpoints(centers, integer_fractional_centers, df
     ###########################################################
     from breakpoints_arcs import get_all_breakpoints_data
 
-    arcs_data = get_all_breakpoints_data(coords, coords_chr, 75, args.breakpoints)
-    arcs_data1 = get_all_breakpoints_data(coords, coords_chr, -75, args.breakpoints)
+    arcs_data = get_all_breakpoints_data(coords, coords_chr, 75, args.breakpoints, args)
+    arcs_data1 = get_all_breakpoints_data(coords, coords_chr, -75, args.breakpoints, args)
 
     if args.without_phasing:
         row_heights = [220, 160, 40]
@@ -946,13 +946,12 @@ def copy_number_plots_genome_breakpoints(centers, integer_fractional_centers, df
     for index, chrom in enumerate(chroms):
         if not loh_regions.empty:
             df_loh_region = loh_regions[loh_regions['chr'] == chrom]
+            loh_starts = df_loh_region.start.values.tolist()
+            loh_ends = df_loh_region.end.values.tolist()
         current += lengths[index]
         label_pos.append(round(offset_chroms+regions[index]//2))
 
         fig.add_vline(x=offset_chroms,  line_width=1, line_dash="solid", line_color="#D7DBDD")
-
-        loh_starts = df_loh_region.start.values.tolist()
-        loh_ends  = df_loh_region.end.values.tolist()
 
         offset_chroms_1 += regions[index]
 
@@ -1271,8 +1270,8 @@ def copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_c
     ###########################################################
     from breakpoints_arcs import get_all_breakpoints_data
 
-    arcs_data = get_all_breakpoints_data(coords, coords_chr, 75, args.breakpoints)
-    arcs_data1 = get_all_breakpoints_data(coords, coords_chr, -75, args.breakpoints)
+    arcs_data = get_all_breakpoints_data(coords, coords_chr, 75, args.breakpoints, args)
+    arcs_data1 = get_all_breakpoints_data(coords, coords_chr, -75, args.breakpoints, args)
     # fig = go.Figure(data=arcs_data)
 
     #fig = go.Figure()
@@ -1394,6 +1393,8 @@ def copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_c
     for index, chrom in enumerate(chroms):
         if not loh_regions.empty:
             df_loh_region = loh_regions[loh_regions['chr'] == chrom]
+            loh_starts = df_loh_region.start.values.tolist()
+            loh_ends = df_loh_region.end.values.tolist()
 
         current += lengths[index]
         label_pos.append(round(offset_chroms+regions[index]//2))
@@ -1402,9 +1403,6 @@ def copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_c
 
         #label_chrms.append('0')
         #label_chrms.append(str(((lengths[index]//2) + regions[index])// 1000000)+'M')
-
-        loh_starts = df_loh_region.start.values.tolist()
-        loh_ends  = df_loh_region.end.values.tolist()
 
         offset_chroms_1 += regions[index]
 
@@ -1663,7 +1661,7 @@ def copy_number_plots_genome_breakpoints_unphased(centers, integer_fractional_ce
     #print(len(labels))
     L = len(labels)
 
-    arcs_data = get_all_breakpoints_data(edges, L, interact_strength)
+    arcs_data = get_all_breakpoints_data(edges, L, interact_strength, args)
     # fig = go.Figure(data=arcs_data)
 
     #fig = go.Figure()

@@ -1,13 +1,18 @@
 import numpy as np
 
-def get_all_breakpoints_data(edges, edges_chr, height, path):
+from utils import get_contigs_list
+
+def get_all_breakpoints_data(edges, edges_chr, height, path, args):
     from vcf_parser import VCFParser
     my_parser = VCFParser(infile=path, split_variants=True, check_info=True)
+    chroms = get_contigs_list(args.contigs)
     bp_junctions_inv = [[]]
     bp_junctions_ins = [[]]
     bp_junctions_dup = [[]]
     bp_junctions_del = [[]]
     for variant in my_parser:
+        if not variant['CHROM'] in chroms:
+            continue
         if "INV" in variant['ID']:
             bp_junctions_inv.append([variant['CHROM'], int(variant['POS'])])
         elif ("DUP" in variant['ID']) and int(variant['info_dict']['SVLEN'][0]) > 100000:
