@@ -349,13 +349,8 @@ def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, args): 
 
     return ref_start_values_updated, snps_het_counts_updated, snps_homo_counts_updated, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends
 
-
-    #return snps_het_counts, snps_homo_counts
-    #return snps_het, snps_homo, snps_het_pos, snps_homo_pos
-    #return snps_haplotype1, snps_haplotype2, snps_haplotype1_mean, snps_haplotype2_mean, snps_het_counts, snps_homo_counts
-
 def squash_regions(region, bin_size):
-    region = pd.Series(region).drop_duplicates().tolist()
+    region = pd.Series(region, dtype=object).drop_duplicates().tolist()
     region_starts = [v for i, v in enumerate(region) if i == 0 or region[i] > region[i - 1] + bin_size]
     region_ends = []
     for i, val in enumerate(region_starts):

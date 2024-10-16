@@ -18,6 +18,7 @@ from vcf_processing import get_snps_frquncies_coverage, get_snps_frquncies, het_
 from utils import get_chromosomes_bins, csv_df_chromosomes_sorter, get_breakpoints, flatten, get_snps_frquncies_coverage_from_bam, detect_alter_loh_regions, is_phasesets_check_simple_heuristics, change_point_detection_means, loh_regions_phasesets, get_chromosomes_regions, adjust_extreme_outliers
 from extras import get_contigs_list, sv_vcf_bps_cn_check
 
+pd.options.mode.chained_assignment = None
 def copy_number_plots_chromosomes(df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, args, loh_region_starts, loh_region_ends):
     filename = f"{os.path.join(args.out_dir_plots, 'COPY_NUMBERS.html')}"
     html_graphs = open(filename, 'w')
