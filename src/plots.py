@@ -944,11 +944,20 @@ def copy_number_plots_genome_breakpoints(centers, integer_fractional_centers, df
     offset_chroms = 0
     offset_chroms_1 = 0
     chroms = get_contigs_list(args.contigs)
+    fileDir = os.path.dirname(__file__) #os.path.dirname(os.path.realpath('__file__'))
+    cen_coord = os.path.join(fileDir, args.centromere)
+    df_centm = csv_df_chromosomes_sorter(cen_coord, ['chr', 'start', 'end'])
+
     for index, chrom in enumerate(chroms):
         if not loh_regions.empty:
             df_loh_region = loh_regions[loh_regions['chr'] == chrom]
             loh_starts = df_loh_region.start.values.tolist()
             loh_ends = df_loh_region.end.values.tolist()
+        if not df_centm.empty:
+            df_cent_region = df_centm[df_centm['chr'] == chrom]
+            cent_starts = df_cent_region.start.values.tolist()
+            cent_ends = df_cent_region.end.values.tolist()
+
         current += lengths[index]
         label_pos.append(round(offset_chroms+regions[index]//2))
 
@@ -962,6 +971,8 @@ def copy_number_plots_genome_breakpoints(centers, integer_fractional_centers, df
         if len(loh_starts) and args.loh_enable:
             for i in range(len(df_loh_region.start.values.tolist())):
                 fig.add_vrect(x0=offset_chroms+loh_starts[i], x1=offset_chroms+loh_ends[i], fillcolor="#2980b9", opacity=0.3, layer="below", line_width=0, row=2, col=1,)
+        if len(cent_starts) and args.loh_enable:
+            fig.add_vrect(x0=offset_chroms+cent_starts[0], x1=offset_chroms+cent_ends[0], fillcolor="#7e1f14", opacity=0.3, layer="above", line_width=0, row=2, col=1,)
 
         offset_chroms += regions[index]
 
@@ -1089,7 +1100,7 @@ def copy_number_plots_genome_breakpoints(centers, integer_fractional_centers, df
 
     if args.loh_enable:
         add_annotation(fig, 960000000 + 250000000 + 250000000, 0, ax, ay, "LOH", '#2980b9')
-        fig.add_annotation(text="Het SNPs ratio threshold: " + str(args.hets_ratio) , x = 960000000 + 250000000 + 250000000, y=args.cut_threshold, showarrow=False, row=2, col=1)
+        #fig.add_annotation(text="Het SNPs ratio threshold: " + str(args.hets_ratio) , x = 960000000 + 250000000 + 250000000, y=args.cut_threshold, showarrow=False, row=2, col=1)
 
     # Update layout
     fig.update_layout(
@@ -1391,11 +1402,19 @@ def copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_c
     offset_chroms = 0
     offset_chroms_1 = 0
     chroms = get_contigs_list(args.contigs)
+    fileDir = os.path.dirname(__file__) #os.path.dirname(os.path.realpath('__file__'))
+    cen_coord = os.path.join(fileDir, args.centromere)
+    df_centm = csv_df_chromosomes_sorter(cen_coord, ['chr', 'start', 'end'])
+
     for index, chrom in enumerate(chroms):
         if not loh_regions.empty:
             df_loh_region = loh_regions[loh_regions['chr'] == chrom]
             loh_starts = df_loh_region.start.values.tolist()
             loh_ends = df_loh_region.end.values.tolist()
+        if not df_centm.empty:
+            df_cent_region = df_centm[df_centm['chr'] == chrom]
+            cent_starts = df_cent_region.start.values.tolist()
+            cent_ends = df_cent_region.end.values.tolist()
 
         current += lengths[index]
         label_pos.append(round(offset_chroms+regions[index]//2))
@@ -1413,6 +1432,8 @@ def copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_c
         if len(loh_starts) and args.loh_enable:
             for i in range(len(df_loh_region.start.values.tolist())):
                 fig.add_vrect(x0=offset_chroms+loh_starts[i], x1=offset_chroms+loh_ends[i], fillcolor="#2980b9", opacity=0.3, layer="below", line_width=0, row=2, col=1,)
+        if len(cent_starts) and args.loh_enable:
+            fig.add_vrect(x0=offset_chroms+cent_starts[0], x1=offset_chroms+cent_ends[0], fillcolor="#7e1f14", opacity=0.3, layer="above", line_width=0, row=2, col=1,)
 
         offset_chroms += regions[index]
 
@@ -1564,7 +1585,7 @@ def copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_c
 
     if args.loh_enable:
         add_annotation(fig, 960000000 + 250000000 + 250000000, 0, ax, ay, "LOH", '#2980b9')
-        fig.add_annotation(text="Het SNPs ratio threshold: " + str(args.hets_ratio), x=960000000 + 250000000 + 250000000, y=args.cut_threshold, showarrow=False, row=2, col=1)
+        #fig.add_annotation(text="Het SNPs ratio threshold: " + str(args.hets_ratio), x=960000000 + 250000000 + 250000000, y=args.cut_threshold, showarrow=False, row=2, col=1)
 
     # Update layout
     fig.update_layout(

@@ -6,6 +6,7 @@ import scipy.stats as stats
 import os
 import math
 import statistics
+import logging
 import ruptures as rpt
 
 from smoothing import smoothing
@@ -1407,26 +1408,29 @@ def find_optimized_normal_peaks(args, data, n, spacing=1, limit=None):
     :param limit: peaks should have value greater or equal
     :return:
     """
-    ln = data.size
-    x = np.zeros(ln+2*spacing)
-    x[:spacing] = data[0]-1.e-6
-    x[-spacing:] = data[-1]-1.e-6
-    x[spacing:spacing+ln] = data
-    peak_candidate = np.zeros(ln)
-    peak_candidate[:] = True
-    for s in range(spacing):
-        start = spacing - s - 1
-        h_b = x[start : start + ln]  # before
-        start = spacing
-        h_c = x[start : start + ln]  # central
-        start = spacing + s + 1
-        h_a = x[start : start + ln]  # after
-        peak_candidate = np.logical_and(peak_candidate, np.logical_and(h_c > h_b, h_c > h_a))
+    for limit in [limit, limit-0.1, limit-0.2]:
+        ln = data.size
+        x = np.zeros(ln+2*spacing)
+        x[:spacing] = data[0]-1.e-6
+        x[-spacing:] = data[-1]-1.e-6
+        x[spacing:spacing+ln] = data
+        peak_candidate = np.zeros(ln)
+        peak_candidate[:] = True
+        for s in range(spacing):
+            start = spacing - s - 1
+            h_b = x[start : start + ln]  # before
+            start = spacing
+            h_c = x[start : start + ln]  # central
+            start = spacing + s + 1
+            h_a = x[start : start + ln]  # after
+            peak_candidate = np.logical_and(peak_candidate, np.logical_and(h_c > h_b, h_c > h_a))
 
-    ind = np.argwhere(peak_candidate)
-    ind = ind.reshape(ind.size)
-    if limit is not None:
-        ind = ind[data[ind] > limit]
+        ind = np.argwhere(peak_candidate)
+        ind = ind.reshape(ind.size)
+        if limit is not None:
+            ind = ind[data[ind] > limit]
+        if len(ind):
+            break
 
     # t = np.linspace(0., n, n)
     # import matplotlib.pyplot as plt
@@ -1436,4 +1440,44 @@ def find_optimized_normal_peaks(args, data, n, spacing=1, limit=None):
     # plt.title('Peaks: minimum value {limit}, minimum spacing {spacing} points'.format(**{'limit': limit, 'spacing': spacing}))
     # plt.savefig(args.out_dir_plots + '/' + args.genome_name + '_' + "normal_optimized_peak.pdf", format="pdf", bbox_inches="tight")
 
-    return [i for i in list(ind) if i > 0]
+    if len(ind):
+        normals =  [i for i in list(ind) if i > 0]
+    else:
+        normals = [0]
+        logging.info('No normal peak value detected under confidence [%.2f], so assuming only first estimated value', args.purity_range, args.ploidy_range, limit)
+
+    return normals
+
+def collect_loh_centromere_regions(df_segs_hp1_, df_segs_hp2_, centers, integer_fractional_means, args):
+    df_segs_hp1 = df_segs_hp1_.copy()
+    df_segs_hp2 = df_segs_hp2_.copy()
+    for i in range(len(integer_fractional_means)):
+        df_segs_hp1['state'].mask(df_segs_hp1['state'] == centers[i], integer_fractional_means[i], inplace=True)
+        df_segs_hp2['state'].mask(df_segs_hp2['state'] == centers[i], integer_fractional_means[i], inplace=True)
+
+    chroms = get_contigs_list(args.contigs)
+    loh_regions_all = []
+    for index, chrom in enumerate(chroms):
+        chrs_list = []
+        loh_region_starts = []
+        loh_region_ends = []
+
+        df_segs_hp_1 = df_segs_hp1[df_segs_hp1['chromosome'] == chrom]
+        df_segs_hp_2 = df_segs_hp2[df_segs_hp2['chromosome'] == chrom]
+
+        hp1_state = df_segs_hp_1.state.values.tolist()
+        hp2_state = df_segs_hp_2.state.values.tolist()
+
+        hp1_start = df_segs_hp_1.start.values.tolist()
+        hp1_end = df_segs_hp_1.end.values.tolist()
+
+        for index, (state1,state2) in enumerate(zip(hp1_state, hp2_state)):
+            if state1 == 0 or state2 == 0:
+                loh_region_starts.append(hp1_start[index])
+                loh_region_ends.append(hp1_end[index])
+
+        if loh_region_starts:
+            chrs_list.extend([chrom for ch in range(len(loh_region_starts))])
+            loh_regions_all.append(pd.DataFrame(list(zip(chrs_list, loh_region_starts, loh_region_ends)), columns=['chr', 'start', 'end']))
+
+    return pd.concat(loh_regions_all)

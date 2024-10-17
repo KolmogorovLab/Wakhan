@@ -41,6 +41,8 @@ def main_process():
     BCFTOOLS_BIN = "bcftools"
 
     DEFAULT_CONTIGS = 'chr1-22' #('chr1-22' '1-22') ('chr1-22,chrX' '1-22,X')
+    DEFAULT_PURITY = '1.0-0.5'
+    DEFAULT_PLOIDY = '2-4'
 
     parser = argparse.ArgumentParser \
         (description="Plot coverage and copy number profiles from a bam and phased VCF files")
@@ -146,6 +148,9 @@ def main_process():
     parser.add_argument("--bins-cluster-means", dest="bins_cluster_means",
                         default=None, required=False, type=lambda s: [int(item) for item in s.split(',')],
                         help="bins cluster means")
+
+    parser.add_argument("--purity-range", dest="purity_range", required=False, default=DEFAULT_PURITY, help="Estimated tumor purity range (fraction) between [default: 1.0-0.5]")
+    parser.add_argument("--ploidy-range", dest="ploidy_range", required=False, default=DEFAULT_PLOIDY, help="Estimated tumor ploidy range between [default: 2-4]")
 
     parser.add_argument("--tumor-purity", dest="tumor_purity", default=0.0, metavar="float", type=float, help="user input tumor purity")
     parser.add_argument("--tumor-ploidy", dest="tumor_ploidy", default=0.0, metavar="float", type=float, help="user input tumor ploidy")
