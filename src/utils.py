@@ -1367,7 +1367,7 @@ def average_p_value_genome(args, centers, df_segs_hp1, df_segs_hp2, df_hp1, df_h
                 seg_mean = statistics.median(remove_outliers_iqr(np.array(df_hp_1_val[start//args.bin_size:end//args.bin_size])))
                 sample_mean_init = min(sample_mean, key=lambda x: abs(x - seg_mean))
                 index =  sample_mean.index(sample_mean_init)
-                z_score =  (seg_mean - sample_mean_init) / statistics.stdev(remove_outliers_iqr(np.array(df_hp_1_val[start//args.bin_size:end//args.bin_size])))
+                z_score =  (seg_mean - sample_mean_init) / 10 #statistics.stdev(remove_outliers_iqr(np.array(df_hp_1_val[start//args.bin_size:end//args.bin_size])))
                 p_value = stats.norm.sf(abs(z_score)) * 2
                 if p_value >= 0:
                     df_segs_hp_1_updated_p_score.append(round(p_value, 7))
@@ -1378,7 +1378,7 @@ def average_p_value_genome(args, centers, df_segs_hp1, df_segs_hp2, df_hp1, df_h
                 seg_mean = statistics.median(remove_outliers_iqr(np.array(df_hp_2_val[start//args.bin_size:end//args.bin_size])))
                 sample_mean_init = min(sample_mean, key=lambda x: abs(x - seg_mean))
                 index =  sample_mean.index(sample_mean_init)
-                z_score =  (seg_mean - sample_mean_init) / statistics.stdev(remove_outliers_iqr(np.array(df_hp_2_val[start//args.bin_size:end//args.bin_size])))
+                z_score =  (seg_mean - sample_mean_init) / 10 #statistics.stdev(remove_outliers_iqr(np.array(df_hp_2_val[start//args.bin_size:end//args.bin_size])))
                 p_value = stats.norm.sf(abs(z_score)) * 2
                 if p_value >= 0:
                     df_segs_hp_2_updated_p_score.append(round(p_value, 7))
@@ -1408,29 +1408,27 @@ def find_optimized_normal_peaks(args, data, n, spacing=1, limit=None):
     :param limit: peaks should have value greater or equal
     :return:
     """
-    for limit in [limit, limit-0.1, limit-0.2]:
-        ln = data.size
-        x = np.zeros(ln+2*spacing)
-        x[:spacing] = data[0]-1.e-6
-        x[-spacing:] = data[-1]-1.e-6
-        x[spacing:spacing+ln] = data
-        peak_candidate = np.zeros(ln)
-        peak_candidate[:] = True
-        for s in range(spacing):
-            start = spacing - s - 1
-            h_b = x[start : start + ln]  # before
-            start = spacing
-            h_c = x[start : start + ln]  # central
-            start = spacing + s + 1
-            h_a = x[start : start + ln]  # after
-            peak_candidate = np.logical_and(peak_candidate, np.logical_and(h_c > h_b, h_c > h_a))
 
-        ind = np.argwhere(peak_candidate)
-        ind = ind.reshape(ind.size)
-        if limit is not None:
-            ind = ind[data[ind] > limit]
-        if len(ind):
-            break
+    ln = data.size
+    x = np.zeros(ln+2*spacing)
+    x[:spacing] = data[0]-1.e-6
+    x[-spacing:] = data[-1]-1.e-6
+    x[spacing:spacing+ln] = data
+    peak_candidate = np.zeros(ln)
+    peak_candidate[:] = True
+    for s in range(spacing):
+        start = spacing - s - 1
+        h_b = x[start : start + ln]  # before
+        start = spacing
+        h_c = x[start : start + ln]  # central
+        start = spacing + s + 1
+        h_a = x[start : start + ln]  # after
+        peak_candidate = np.logical_and(peak_candidate, np.logical_and(h_c > h_b, h_c > h_a))
+
+    ind = np.argwhere(peak_candidate)
+    ind = ind.reshape(ind.size)
+    if limit is not None:
+        ind = ind[data[ind] > limit]
 
     # t = np.linspace(0., n, n)
     # import matplotlib.pyplot as plt
@@ -1441,7 +1439,7 @@ def find_optimized_normal_peaks(args, data, n, spacing=1, limit=None):
     # plt.savefig(args.out_dir_plots + '/' + args.genome_name + '_' + "normal_optimized_peak.pdf", format="pdf", bbox_inches="tight")
 
     if len(ind):
-        normals =  [i for i in list(ind) if i > 0]
+        normals =  [i for i in list(ind)]
     else:
         normals = [0]
         logging.info('No normal peak value detected under confidence [%.2f], so assuming only first estimated value', args.purity_range, args.ploidy_range, limit)

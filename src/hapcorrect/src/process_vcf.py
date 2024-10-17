@@ -579,6 +579,7 @@ def rephase_vcf(df, id_df, loh_df, vcf_in, out_vcf):
         vcf_out.write(var)
     vcf_out.close()
 
+#ayse's
 # def rephase_vcf(df, id_df, loh_df, vcf_in, out_vcf):
 #     chr_list = list(set(df['chr']))
 #     start_pos = defaultdict(list)
@@ -589,8 +590,8 @@ def rephase_vcf(df, id_df, loh_df, vcf_in, out_vcf):
 #     for seq in chr_list:
 #         start_pos[seq] = sorted([key for key, val in Counter(df.loc[df['chr'] == seq, 'start']).items() if val%2 == 1])
 #         end_pos[seq] = sorted([key for key, val in Counter(df.loc[df['chr'] == seq, 'end']).items() if val%2 == 1])
-#         start_pos_loh = sorted(df.loc[df['chr'] == seq, 'start'])
-#         end_pos_loh = sorted(df.loc[df['chr'] == seq, 'start'])
+#         start_pos_loh = sorted(loh_df.loc[df['chr'] == seq, 'start'])
+#         end_pos_loh = sorted(loh_df.loc[df['chr'] == seq, 'start'])
 #         idls[seq] = sorted(id_df.loc[id_df['chr'] == seq, 'start'])
 #     vcf_in=pysam.VariantFile(vcf_in,"r")
 #     vcf_out = pysam.VariantFile(out_vcf, 'w', header=vcf_in.header)
