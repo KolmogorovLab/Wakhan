@@ -347,7 +347,7 @@ def process_bam_for_snps_freqs(args, thread_pool):
     beds = split_file(output_csv, args.threads, args)
     pileups_outputs = process_pileups(output_bam, args.reference, beds, thread_pool, args)
 
-    output_pileup = f"{os.path.join(args.out_dir_plots+'/data', args.genome_name + '_SNPs.csv')}"
+    output_pileup = f"{os.path.join(args.out_dir_plots+'/coverage_data', 'pileup_SNPs.csv')}"
 
     for i in pileups_outputs:
         with open(i, 'r') as content_file:
@@ -374,7 +374,7 @@ def process_pileups(bam, ref, input_beds, thread_pool, args):
 
 def process_pileups_parallel(bam, ref, bed, args):
     basefile = pathlib.Path(bed).stem
-    output_csv = f"{os.path.join(args.out_dir_plots+'/data', basefile + '_SNPs.csv')}"
+    output_csv = f"{os.path.join(args.out_dir_plots+'/coverage_data', basefile + '_SNPs.csv')}"
     cmd = ['samtools', 'mpileup', '-l', bed, '-f', ref, bam,  '-o', output_csv]
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     process.wait()

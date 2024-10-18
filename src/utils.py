@@ -817,7 +817,7 @@ def update_subclonal_means_states(centers, subclonals, df_segs_hp1_updated, df_s
             seg_mean = statistics.median(remove_outliers_iqr(np.array(df_hp_1_val[start//args.bin_size:end//args.bin_size])))
             sample_mean_init = min(sample_mean, key=lambda x: abs(x - seg_mean))
             index =  sample_mean.index(sample_mean_init)
-            z_score =  (seg_mean - sample_mean_init) / sample_stdev[index]
+            z_score =  (seg_mean - sample_mean_init) / 10 #sample_stdev[index]
             p_value = stats.norm.sf(abs(z_score)) * 2
             df_segs_hp_1_updated_p_score.append(round(p_value, 7))
             if p_value < args.confidence_subclonal_score:
@@ -844,7 +844,7 @@ def update_subclonal_means_states(centers, subclonals, df_segs_hp1_updated, df_s
             seg_mean = statistics.median(remove_outliers_iqr(np.array(df_hp_2_val[start//args.bin_size:end//args.bin_size])))
             sample_mean_init = min(sample_mean, key=lambda x: abs(x - seg_mean))
             index =  sample_mean.index(sample_mean_init)
-            z_score =  (seg_mean - sample_mean_init) / sample_stdev[index]
+            z_score =  (seg_mean - sample_mean_init) / 10 #sample_stdev[index]
             p_value = stats.norm.sf(abs(z_score)) * 2
             df_segs_hp_2_updated_p_score.append(round(p_value, 7))
             if p_value < args.confidence_subclonal_score:

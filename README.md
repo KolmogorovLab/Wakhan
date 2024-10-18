@@ -66,15 +66,20 @@ cd src/
 python main.py --threads <4> --reference <ref.fa>  --target-bam <data.tumor.bam>  --normal-phased-vcf <data.normal_phased.vcf.gz>  --genome-name <cellline/dataset name> --out-dir-plots <genome_abc_output> --breakpoints <severus-sv-VCF>
 ```
 
-##### Tumor-Normal mixture and purity/ploidy estimation
-
-User can input both `--ploidy-range` [default: 2-4 -> [min-max]] and `--purity-range` [default: 1.0-0.5 -> [max-min] to inform copy number model about normal contamination in tumor to estimate copy number states correctly.
-
-
 ### Tumor-only (requires tumor phased/haplotagged BAM and phased VCF)
 ```
 python main.py --threads <4> --reference <ref.fa>  --target-bam <data.tumor_haplotagged.bam>  --tumor-vcf <data.tumor_phased.vcf.gz> --genome-name <cellline/dataset name> --out-dir-plots <genome_abc_output> --breakpoints <severus-sv-VCF>
 ```
+
+##### Tumor-Normal mixture and purity/ploidy estimation
+
+User can input both `--ploidy-range` [default: 2-4 -> [min-max]] and `--purity-range` [default: 0.5-1.0 -> [min-max] to inform copy number model about normal contamination in tumor to estimate copy number states correctly.
+
+##### Quickrun if coverage/pileup data is already available
+
+Wakhan produces reads coverage `coverage.csv` (bin-size based reads coverage) and phasesets reads coverage `coverage_ps.csv` data as well as tumor BAM pileup `pileup_SNPs.csv` in case Tumor/normal mode and stores in directory `coverage_data` inside `--out-dir-plots` location.
+If this data has already been generated in a previous Wakhan run, user can rerun the Wakhan with additionally passing `--quick-start` and `--quick-start-coverage-path <path to coverage_data directory>`
+This will save runtime significantly by not invoking coverage and pileup methods. 
 
 [//]: # (## Note)
 

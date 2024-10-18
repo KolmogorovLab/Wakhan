@@ -9,7 +9,7 @@ import bisect
 import pandas as pd
 from collections import  defaultdict, Counter
 
-from hapcorrect.src.utils import write_segments_coverage, csv_df_chromosomes_sorter
+from hapcorrect.src.utils import write_segments_coverage_snps, csv_df_chromosomes_sorter
 from hapcorrect.src.process_bam import process_bam_for_snps_freqs
 from hapcorrect.src.smoothing import smoothing
 
@@ -463,8 +463,8 @@ def get_snp_frequencies_segments(args, target_bam, thread_pool):
     logging.info('SNPs frequency -> Comuting het SNPs frequency from tumor BAM')
 
     #output_pileups = bam_pileups_snps(output_bed, target_bam, args)
-    if args.dryrun:
-        output_pileups = args.dryrun_path + args.genome_name+'/'+args.genome_name+'_SNPs.csv'
+    if args.quick_start:
+        output_pileups = args.quick_start_coverage_path + '/'+ 'pileup_SNPs.csv'
     else:
         output_pileups = process_bam_for_snps_freqs(args, thread_pool)  # TODO Updated
 
@@ -472,7 +472,7 @@ def get_snp_frequencies_segments(args, target_bam, thread_pool):
     dataframe_acgt_frequency = csv_df_chromosomes_sorter(output_acgts, ['chr', 'start', 'a', 'c', 'g', 't'], ',')
     dataframe_acgt_frequency = pd.merge(dataframe_snps, dataframe_acgt_frequency, on=['chr', 'start'])
     snp_segments_frequencies = get_snp_segments_frequencies_final(dataframe_acgt_frequency)
-    write_segments_coverage(snp_segments_frequencies, 'snps_frequencies.csv', args)
+    write_segments_coverage_snps(snp_segments_frequencies, 'snps_frequencies.csv', args)
 
 def get_snp_segments_frequencies_final(dataframe_acgt_frequency):
     snp_segments = dataframe_acgt_frequency.values.tolist()

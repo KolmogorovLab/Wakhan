@@ -54,7 +54,7 @@ def snps_df_loh(args, thread_pool):
         df_snps_in_csv = csv_df_chromosomes_sorter(output_phasesets_file_path, ['chr', 'pos', 'qual', 'gt', 'dp', 'vaf'])
     else:
         get_snp_segments(args, args.target_bam[0], thread_pool)
-        if args.phaseblock_flipping_disable and args.dryrun:
+        if args.phaseblock_flipping_disable and args.quick_start:
             df_snps_frequencies = csv_df_chromosomes_sorter(args.out_dir_plots+'/data/snps_frequencies.csv', ['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])
         else:
             df_snps_frequencies = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/snps_frequencies.csv', ['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])

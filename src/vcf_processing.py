@@ -543,10 +543,10 @@ def get_snp_segments(args, target_bam, thread_pool):
     dataframe_snps = csv_df_chromosomes_sorter(output_csv, ['chr', 'start', 'ref', 'alt', 'gt'])
     logging.info('SNPs frequency -> Comuting het SNPs frequency from tumor BAM')
 
-    if not args.phaseblock_flipping_disable and not args.dryrun:
-        output_pileups = args.out_dir_plots + '/data/' + args.genome_name + '_SNPs.csv'
-    elif args.dryrun:
-            output_pileups = args.dryrun_path + args.genome_name + '/' + args.genome_name + '_SNPs.csv'
+    if not args.phaseblock_flipping_disable and not args.quick_start:
+        output_pileups = args.out_dir_plots + '/coverage_data/' +  'pileup_SNPs.csv'
+    elif args.quick_start:
+            output_pileups = args.quick_start_coverage_path + '/' + 'pileup_SNPs.csv'
     else:
         output_pileups = process_bam_for_snps_freqs(args, thread_pool)  # TODO Updated
 

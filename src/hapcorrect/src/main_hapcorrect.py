@@ -41,7 +41,7 @@ def main_process():
     BCFTOOLS_BIN = "bcftools"
 
     DEFAULT_CONTIGS = 'chr1-22' #('chr1-22' '1-22') ('chr1-22,chrX' '1-22,X')
-    DEFAULT_PURITY = '1.0-0.5'
+    DEFAULT_PURITY = '0.5-1.0'
     DEFAULT_PLOIDY = '2-4'
 
     parser = argparse.ArgumentParser \
@@ -149,7 +149,7 @@ def main_process():
                         default=None, required=False, type=lambda s: [int(item) for item in s.split(',')],
                         help="bins cluster means")
 
-    parser.add_argument("--purity-range", dest="purity_range", required=False, default=DEFAULT_PURITY, help="Estimated tumor purity range (fraction) between [default: 1.0-0.5]")
+    parser.add_argument("--purity-range", dest="purity_range", required=False, default=DEFAULT_PURITY, help="Estimated tumor purity range (fraction) between [default: 0.5-1.0]")
     parser.add_argument("--ploidy-range", dest="ploidy_range", required=False, default=DEFAULT_PLOIDY, help="Estimated tumor ploidy range between [default: 2-4]")
 
     parser.add_argument("--tumor-purity", dest="tumor_purity", default=0.0, metavar="float", type=float, help="user input tumor purity")
@@ -158,11 +158,11 @@ def main_process():
 
     parser.add_argument("-t", "--threads", dest="threads",
                         default=1, metavar="int", type=int, help="number of parallel threads [8]")
-    parser.add_argument('--dryrun', action="store_true", dest="dryrun", required=False,
-                        default=False, help="Enabling dryrun")
-    parser.add_argument("--dryrun-path", dest="dryrun_path",
+    parser.add_argument('--quick-start', action="store_true", dest="quick_start", required=False,
+                        default=False, help="Enabling quick_start")
+    parser.add_argument("--quick-start-coverage-path", dest="quick_start_coverage_path",
                         default=None, required=False,
-                        metavar="path", help="dryrun data directory")
+                        metavar="path", help="quick start coverage data directory")
 
     parser.add_argument("--max-read-error", dest="max_read_error",
                         default=MAX_READ_ERROR, metavar="float", type=float,
@@ -193,12 +193,19 @@ def main_process():
 
     if not os.path.isdir(args.out_dir_plots):
         os.mkdir(args.out_dir_plots)
-    #if not os.path.isdir('data'):
+
     if os.path.exists(args.out_dir_plots+'/data_phasing'):
         shutil.rmtree(args.out_dir_plots+'/data_phasing')
         os.mkdir(args.out_dir_plots+'/data_phasing')
     else:
         os.mkdir(args.out_dir_plots+'/data_phasing')
+
+    if not args.quick_start:
+        if os.path.exists(args.out_dir_plots+'/coverage_data'):
+            shutil.rmtree(args.out_dir_plots+'/coverage_data')
+            os.mkdir(args.out_dir_plots+'/coverage_data')
+        else:
+            os.mkdir(args.out_dir_plots+'/coverage_data')
 
     thread_pool = Pool(args.threads)
 
@@ -219,12 +226,9 @@ def main_process():
     del segments_by_read
     chroms = get_contigs_list(args.contigs)
 
-    if args.dryrun:
-        csv_df_phasesets = csv_df_chromosomes_sorter(args.dryrun_path + args.genome_name + '/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
-        #csv_df_phasesets_missing = csv_df_chromosomes_sorter(args.dryrun_path'] + args.genome_name'] + '/coverage_ps_missing.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
-        #csv_df_phasesets = df_chromosomes_sorter(pd.concat([csv_df_phasesets, csv_df_phasesets_missing], ignore_index=True), ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
-
-        csv_df_coverage = csv_df_chromosomes_sorter(args.dryrun_path + args.genome_name + '/coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
+    if args.quick_start:
+        csv_df_phasesets = csv_df_chromosomes_sorter(args.quick_start_coverage_path + '/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
+        csv_df_coverage = csv_df_chromosomes_sorter(args.quick_start_coverage_path + '/coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
     else:
         logging.info('Computing coverage for bins')
         segments = get_chromosomes_bins(args.target_bam[0], args.bin_size, args)
@@ -245,8 +249,8 @@ def main_process():
         write_segments_coverage(phasesets_coverage, 'coverage_ps.csv', args)
 
         logging.info('Loading coverage (bins) and coverage (phaseblocks) files...')
-        csv_df_phasesets = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
-        csv_df_coverage = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
+        csv_df_phasesets = csv_df_chromosomes_sorter(args.out_dir_plots+'/coverage_data/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
+        csv_df_coverage = csv_df_chromosomes_sorter(args.out_dir_plots+'/coverage_data/coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
 
         #Missing phaseblocks and coverage added
         #phasesets_coverage_missing = update_phasesets_coverage_with_missing_phasesets(chroms, csv_df_phasesets, args.target_bam[0], coverage_histograms)
@@ -317,11 +321,13 @@ def main_process():
                     detect_loh_centromere_regions(chrom, args, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
                 else:
                     snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, loh_region_starts, loh_region_ends, hp = detect_loh_centromere_regions(chrom, args, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
-                    loh_regions_events_all.extend(loh_regions_events(chrom, loh_region_starts, loh_region_ends, hp))
+                    #loh_regions_events_all.extend(loh_regions_events(chrom, loh_region_starts, loh_region_ends, hp))
+                    if len(loh_region_starts):
+                        chr_list = [chrom for ch in range(len(loh_region_starts))]
+                        loh_regions_events_all.append(pd.DataFrame(list(zip(chr_list, loh_region_starts, loh_region_ends, hp)), columns=['chr', 'start', 'end', 'hp']))
             else:
                loh_region_starts = []
                loh_region_ends = []
-               hp = []
             ##################################
             # change_point_detection(snps_haplotype1_mean, ref_start_values, ref_end_values, args, chrom,
             #                        html_graphs, 1, color='#6A5ACD')
@@ -391,13 +397,16 @@ def main_process():
 
     html_graphs.write("</body></html>")
 
-    write_segments_coverage(loh_regions_events_all, args.genome_name + '_loh_segments.csv', args)
+    if args.tumor_vcf and len(loh_regions_events_all):
+        write_df_csv(pd.concat(loh_regions_events_all), args.out_dir_plots+'/data_phasing/'+args.genome_name+'_loh_segments.csv')
+        csv_df_loh_regions = csv_df_chromosomes_sorter(args.out_dir_plots + '/data_phasing/' + args.genome_name + '_loh_segments.csv', ['chr', 'start', 'end', 'hp'])
+    else:
+        csv_df_loh_regions = []
     write_df_csv(pd.concat(start_values_phasesets_contiguous_all), args.out_dir_plots+'/data_phasing/'+args.genome_name+'_phasesets.csv')
     write_df_csv(pd.concat(df_updated_coverage), args.out_dir_plots+'/data_phasing/'+args.genome_name+'_coverage.csv')
 
     csv_df_phase_change_segments = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/' + args.genome_name + '_phase_change_segments.csv', ['chr', 'start', 'end'])
     csv_df_phasesets_segments = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/' + args.genome_name + '_phasesets.csv', ['chr', 'start'])
-    csv_df_loh_regions = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/' + args.genome_name + '_loh_segments.csv', ['chr', 'start', 'end', 'hp'])
 
     if args.normal_phased_vcf:
         get_phasingblocks(args.normal_phased_vcf)
@@ -423,11 +432,11 @@ def main_process():
 
 
 #Tumor-normal (tumor and normal VCFs)
-#--dryrun True --dryrun-path /home/rezkuh/gits/data/ --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam  --tumor-vcf /home/rezkuh/gits/data/HG008_HiFi/HG008_HiFi.vcf.gz  --normal-phased-vcf /home/rezkuh/gits/data/HG008_HiFi/HG008BL_HiFi.vcf.gz --genome-name HG008_HiFi --out-dir-plots HG008_HiFi --cut-threshold 150 --rephase-normal-vcf True
-#--dryrun True --dryrun-path /home/rezkuh/gits/data/ --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam  --tumor-vcf /home/rezkuh/gits/data/1395/1395.vcf.gz  --normal-phased-vcf /home/rezkuh/gits/data/1395/1395BL.vcf.gz --genome-name 1395 --out-dir-plots 1395 --cut-threshold 150 --rephase-normal-vcf True
+#--quick_start True --quick_start-path /home/rezkuh/gits/data/ --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam  --tumor-vcf /home/rezkuh/gits/data/HG008_HiFi/HG008_HiFi.vcf.gz  --normal-phased-vcf /home/rezkuh/gits/data/HG008_HiFi/HG008BL_HiFi.vcf.gz --genome-name HG008_HiFi --out-dir-plots HG008_HiFi --cut-threshold 150 --rephase-normal-vcf True
+#--quick_start True --quick_start-path /home/rezkuh/gits/data/ --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam  --tumor-vcf /home/rezkuh/gits/data/1395/1395.vcf.gz  --normal-phased-vcf /home/rezkuh/gits/data/1395/1395BL.vcf.gz --genome-name 1395 --out-dir-plots 1395 --cut-threshold 150 --rephase-normal-vcf True
 
 #Tumor-normal (normal VCF)
-#--dryrun True --dryrun-path /home/rezkuh/gits/data/ --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam   --normal-phased-vcf /home/rezkuh/gits/data/1437/1437BL.vcf.gz --genome-name 1437 --out-dir-plots 1437 --cut-threshold 150
+#--quick_start True --quick_start-path /home/rezkuh/gits/data/ --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam   --normal-phased-vcf /home/rezkuh/gits/data/1437/1437BL.vcf.gz --genome-name 1437 --out-dir-plots 1437 --cut-threshold 150
 
 #Tumor only (tumor VCF)
-#--dryrun True --dryrun-path /home/rezkuh/gits/data/ --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam   --tumor-vcf /home/rezkuh/gits/data/colo357_R10/colo357.vcf.gz --genome-name colo357 --out-dir-plots colo357 --cut-threshold 150
+#--quick_start True --quick_start-path /home/rezkuh/gits/data/ --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam   --tumor-vcf /home/rezkuh/gits/data/colo357_R10/colo357.vcf.gz --genome-name colo357 --out-dir-plots colo357 --cut-threshold 150
