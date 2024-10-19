@@ -78,7 +78,7 @@ def main():
     parser.add_argument("--cancer-genes", dest="cancer_genes", metavar="path", required=False, default='annotations/CancerGenes.tsv', help="Path to Cancer Genes TSV file")
 
     parser.add_argument("--breakpoints", dest="breakpoints", metavar="path", required=True, default=None, help="Path to breakpoints/SVs VCF file")
-    parser.add_argument("--cpd-internal-segments", dest="cpd_internal_segments", metavar="path", required=False, default=None, help="change point detection algo for more precise segments after breakpoint segments")
+    parser.add_argument("--cpd-internal-segments", dest="cpd_internal_segments", action="store_true", required=False, help="change point detection algo for more precise segments after breakpoint/cpd segments")
 
     parser.add_argument("--genome-name", dest="genome_name",
                         required=True, default=None,
