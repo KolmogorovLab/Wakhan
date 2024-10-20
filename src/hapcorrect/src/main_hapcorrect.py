@@ -197,12 +197,11 @@ def main_process():
     else:
         os.mkdir(args.out_dir_plots+'/data_phasing')
 
-    if not args.quick_start:
-        if os.path.exists(args.out_dir_plots+'/coverage_data'):
-            shutil.rmtree(args.out_dir_plots+'/coverage_data')
-            os.mkdir(args.out_dir_plots+'/coverage_data')
-        else:
-            os.mkdir(args.out_dir_plots+'/coverage_data')
+    if os.path.exists(args.out_dir_plots+'/coverage_data'):
+        shutil.rmtree(args.out_dir_plots+'/coverage_data')
+        os.mkdir(args.out_dir_plots+'/coverage_data')
+    else:
+        os.mkdir(args.out_dir_plots+'/coverage_data')
 
     thread_pool = Pool(args.threads)
 
