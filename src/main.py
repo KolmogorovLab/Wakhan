@@ -232,7 +232,7 @@ def main():
                csv_df_coverage = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/'+args.genome_name+'_coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
        else:
            csv_df_phasesets = csv_df_chromosomes_sorter(args.out_dir_plots+'/coverage_data/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
-           csv_df_coverage = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/'+args.genome_name+'_coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
+           csv_df_coverage = csv_df_chromosomes_sorter(args.out_dir_plots+'/coverage_data/phase_corrected_coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
     else:
         if args.quick_start and not args.without_phasing:
             csv_df_coverage = csv_df_chromosomes_sorter(args.quick_start_coverage_path + '/coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])

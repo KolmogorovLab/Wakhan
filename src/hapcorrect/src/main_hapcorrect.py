@@ -400,7 +400,7 @@ def main_process():
     else:
         csv_df_loh_regions = []
     write_df_csv(pd.concat(start_values_phasesets_contiguous_all), args.out_dir_plots+'/data_phasing/'+args.genome_name+'_phasesets.csv')
-    write_df_csv(pd.concat(df_updated_coverage), args.out_dir_plots+'/data_phasing/'+args.genome_name+'_coverage.csv')
+    write_df_csv(pd.concat(df_updated_coverage), args.out_dir_plots+'/coverage_data/phase_corrected_coverage.csv')
 
     csv_df_phase_change_segments = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/' + args.genome_name + '_phase_change_segments.csv', ['chr', 'start', 'end'])
     csv_df_phasesets_segments = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/' + args.genome_name + '_phasesets.csv', ['chr', 'start'])
