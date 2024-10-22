@@ -424,8 +424,6 @@ def main_process():
         logging.info('Rehaplotagging tumor BAM')
         tumor_bam_haplotag(args, out_vcf)
 
-    return 0
-
 
 #Tumor-normal (tumor and normal VCFs)
 #--quick_start True --quick_start-path /home/rezkuh/gits/data/ --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam  --tumor-vcf /home/rezkuh/gits/data/HG008_HiFi/HG008_HiFi.vcf.gz  --normal-phased-vcf /home/rezkuh/gits/data/HG008_HiFi/HG008BL_HiFi.vcf.gz --genome-name HG008_HiFi --out-dir-plots HG008_HiFi --cut-threshold 150 --rephase-normal-vcf True
