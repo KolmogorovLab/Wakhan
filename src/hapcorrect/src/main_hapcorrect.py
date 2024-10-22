@@ -42,7 +42,7 @@ def main_process():
 
     DEFAULT_CONTIGS = 'chr1-22' #('chr1-22' '1-22') ('chr1-22,chrX' '1-22,X')
     DEFAULT_PURITY = '0.5-1.0'
-    DEFAULT_PLOIDY = '2-4'
+    DEFAULT_PLOIDY = '1.5-5.5'
 
     parser = argparse.ArgumentParser \
         (description="Plot coverage and copy number profiles from a bam and phased VCF files")
@@ -72,10 +72,10 @@ def main_process():
     parser.add_argument("--cancer-genes", dest="cancer_genes", metavar="path", required=False, default='annotations/CancerGenes.tsv', help="Path to Cancer Genes TSV file")
 
     parser.add_argument("--breakpoints", dest="breakpoints",
-                        metavar="path", required=True, default=None,
+                        metavar="path", required=False, default=None,
                         help="Path to breakpoints/SVs VCF file")
     parser.add_argument("--cpd-internal-segments", dest="cpd_internal_segments",
-                        metavar="path", required=False, default=None,
+                        action="store_true", required=False, default=None,
                         help="change point detection algo for more precise segments after breakpoint segments")
 
     parser.add_argument("--genome-name", dest="genome_name",
@@ -150,7 +150,7 @@ def main_process():
                         help="bins cluster means")
 
     parser.add_argument("--purity-range", dest="purity_range", required=False, default=DEFAULT_PURITY, help="Estimated tumor purity range (fraction) between [default: 0.5-1.0]")
-    parser.add_argument("--ploidy-range", dest="ploidy_range", required=False, default=DEFAULT_PLOIDY, help="Estimated tumor ploidy range between [default: 2-4]")
+    parser.add_argument("--ploidy-range", dest="ploidy_range", required=False, default=DEFAULT_PLOIDY, help="Estimated tumor ploidy range between [default: 1.5-5.5]")
 
     parser.add_argument("--tumor-purity", dest="tumor_purity", default=0.0, metavar="float", type=float, help="user input tumor purity")
     parser.add_argument("--tumor-ploidy", dest="tumor_ploidy", default=0.0, metavar="float", type=float, help="user input tumor ploidy")
@@ -200,12 +200,11 @@ def main_process():
     else:
         os.mkdir(args.out_dir_plots+'/data_phasing')
 
-    if not args.quick_start:
-        if os.path.exists(args.out_dir_plots+'/coverage_data'):
-            shutil.rmtree(args.out_dir_plots+'/coverage_data')
-            os.mkdir(args.out_dir_plots+'/coverage_data')
-        else:
-            os.mkdir(args.out_dir_plots+'/coverage_data')
+    if os.path.exists(args.out_dir_plots+'/coverage_data'):
+        shutil.rmtree(args.out_dir_plots+'/coverage_data')
+        os.mkdir(args.out_dir_plots+'/coverage_data')
+    else:
+        os.mkdir(args.out_dir_plots+'/coverage_data')
 
     thread_pool = Pool(args.threads)
 
@@ -399,11 +398,11 @@ def main_process():
 
     if args.tumor_vcf and len(loh_regions_events_all):
         write_df_csv(pd.concat(loh_regions_events_all), args.out_dir_plots+'/data_phasing/'+args.genome_name+'_loh_segments.csv')
-        csv_df_loh_regions = csv_df_chromosomes_sorter(args.out_dir_plots + '/data_phasing/' + args.genome_name + '_loh_segments.csv', ['chr', 'start', 'end', 'hp'])
+        csv_df_loh_regions = csv_df_chromosomes_sorter(args.out_dir_plots + '/data_phasing/'+args.genome_name + '_loh_segments.csv', ['chr', 'start', 'end', 'hp'])
     else:
         csv_df_loh_regions = []
     write_df_csv(pd.concat(start_values_phasesets_contiguous_all), args.out_dir_plots+'/data_phasing/'+args.genome_name+'_phasesets.csv')
-    write_df_csv(pd.concat(df_updated_coverage), args.out_dir_plots+'/data_phasing/'+args.genome_name+'_coverage.csv')
+    write_df_csv(pd.concat(df_updated_coverage), args.out_dir_plots+'/coverage_data/phase_corrected_coverage.csv')
 
     csv_df_phase_change_segments = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/' + args.genome_name + '_phase_change_segments.csv', ['chr', 'start', 'end'])
     csv_df_phasesets_segments = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/' + args.genome_name + '_phasesets.csv', ['chr', 'start'])
@@ -427,9 +426,6 @@ def main_process():
     if args.rehaplotag_tumor_bam:
         logging.info('Rehaplotagging tumor BAM')
         tumor_bam_haplotag(args, out_vcf)
-
-    return 0
-
 
 #Tumor-normal (tumor and normal VCFs)
 #--quick_start True --quick_start-path /home/rezkuh/gits/data/ --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam  --tumor-vcf /home/rezkuh/gits/data/HG008_HiFi/HG008_HiFi.vcf.gz  --normal-phased-vcf /home/rezkuh/gits/data/HG008_HiFi/HG008BL_HiFi.vcf.gz --genome-name HG008_HiFi --out-dir-plots HG008_HiFi --cut-threshold 150 --rephase-normal-vcf True

@@ -334,7 +334,7 @@ def process_bam_for_snps_freqs(args, thread_pool):
     output_vcf = basefile + '_het_phased_snps.vcf.gz'
     output_vcf = f"{os.path.join(args.out_dir_plots, 'data', output_vcf)}"
 
-    cmd = ['bcftools', 'view', '--threads', str(args.threads),  '--phased', '-g', 'het', '--types', 'snps', args.normal_phased_vcf, '-o', output_vcf]
+    cmd = ['bcftools', 'view', '--threads', str(args.threads),  '-g', 'het', '--types', 'snps', args.normal_phased_vcf, '-o', output_vcf]
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     process.wait()
 

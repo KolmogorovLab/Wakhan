@@ -8,6 +8,7 @@ import pysam
 import bisect
 import pandas as pd
 
+from utils import get_contigs_list
 def generate_phasesets_bins(bam, path, bin_size, args):
     return get_phasesets_bins(bam, path, bin_size, args)
 def get_phasesets_bins(bam, phasesets, bin_size, args):
@@ -938,3 +939,81 @@ def switch_inter_phaseblocks_bins(chrom, args, ref_start_values, haplotype_1_val
                 i = i +1
 
     return haplotype_1_values, haplotype_2_values
+
+def fix_inter_cn_phase_switch_errors(args, df_segs_hp_1_, df_segs_hp_2_, df_hp_1_, df_hp_2_):
+    chroms = get_contigs_list(args.contigs)
+    df_segs_hp_1 = df_segs_hp_1_.copy()
+    df_segs_hp_2 = df_segs_hp_2_.copy()
+    df_hp_1 = df_hp_1_.copy()
+    df_hp_2 = df_hp_2_.copy()
+
+    updated_df_segs_hp1 = []
+    updated_df_segs_hp2 = []
+    updated_df_hp_1 = []
+    updated_df_hp_2 = []
+
+    for index, chrom in enumerate(chroms):
+        df_seg_hp_1 = df_segs_hp_1[df_segs_hp_1['chromosome'] == chrom]
+        df_seg_hp_2 = df_segs_hp_2[df_segs_hp_2['chromosome'] == chrom]
+
+        hp_1 = df_hp_1[df_hp_1['chr'] == chrom]
+        hp_2 = df_hp_2[df_hp_2['chr'] == chrom]
+
+        hp_1_hp1 = hp_1.hp1.values.tolist()
+        hp_1_start = hp_1.start.values.tolist()
+
+        hp_2_hp2 = hp_2.hp2.values.tolist()
+
+        haplotype_1_state_copyrnumbers = df_seg_hp_1.state.values.tolist()
+        haplotype_1_depth_copyrnumbers = df_seg_hp_1.state.values.tolist()
+
+        haplotype_2_state_copyrnumbers = df_seg_hp_2.state.values.tolist()
+        haplotype_2_depth_copyrnumbers = df_seg_hp_2.depth.values.tolist()
+        haplotype_2_start_values_copyrnumbers = df_seg_hp_2.start.values.tolist()
+        haplotype_2_end_values_copyrnumbers = df_seg_hp_2.end.values.tolist()
+
+        for i in range(len(haplotype_1_state_copyrnumbers)-2):
+            if haplotype_1_state_copyrnumbers[i] == haplotype_1_state_copyrnumbers[i+2] and \
+               haplotype_2_state_copyrnumbers[i] == haplotype_2_state_copyrnumbers[i+2] and \
+               not haplotype_1_state_copyrnumbers[i] ==  haplotype_2_state_copyrnumbers[i] and \
+               haplotype_1_state_copyrnumbers[i+1] == haplotype_2_state_copyrnumbers[i+1]:
+                print(chrom, haplotype_2_start_values_copyrnumbers[i], haplotype_2_end_values_copyrnumbers[i])
+                #CN states change
+                haplotype_1_state_copyrnumbers[i+1] = haplotype_2_state_copyrnumbers[i]
+                haplotype_2_state_copyrnumbers[i+1] = haplotype_1_state_copyrnumbers[i]
+
+                new_depth_hp2 = haplotype_2_depth_copyrnumbers[i + 1]
+                new_depth_hp1 = haplotype_1_depth_copyrnumbers[i + 1]
+                haplotype_1_depth_copyrnumbers[i + 1] = new_depth_hp2
+                haplotype_2_depth_copyrnumbers[i + 1] = new_depth_hp1
+
+                #bins change
+                internal_bins = [k for k in hp_1_start if k >= haplotype_2_start_values_copyrnumbers[i] and k <= haplotype_2_end_values_copyrnumbers[i]]
+                if internal_bins:
+                    l = hp_1_start.index(internal_bins[0])
+                    for j in range(len(internal_bins)):
+                        new_hp2 = hp_2_hp2[l]
+                        new_hp1 = hp_1_hp1[l]
+                        hp_1_hp1[l] = new_hp2
+                        hp_2_hp2[l] = new_hp1
+                        l = l + 1
+
+        updated_df_hp_1.append(pd.DataFrame(list(zip(hp_1.chr.values.tolist(), hp_1.start.values.tolist(),
+                                  hp_1.end.values.tolist(), hp_1_hp1)),
+                         columns=['chr', 'start', 'end', 'hp1']))
+        updated_df_hp_2.append(pd.DataFrame(list(zip(hp_2.chr.values.tolist(), hp_2.start.values.tolist(),
+                                  hp_2.end.values.tolist(), hp_2_hp2)),
+                         columns=['chr', 'start', 'end', 'hp2']))
+
+        updated_df_segs_hp1.append(pd.DataFrame(list(zip(df_seg_hp_1.chromosome.values.tolist(), df_seg_hp_1.start.values.tolist(),
+                                  df_seg_hp_1.end.values.tolist(), haplotype_1_depth_copyrnumbers, haplotype_1_state_copyrnumbers)),
+                         columns=['chromosome', 'start', 'end', 'depth', 'state']))
+        updated_df_segs_hp2.append(pd.DataFrame(list(zip(df_seg_hp_2.chromosome.values.tolist(), df_seg_hp_2.start.values.tolist(),
+                                  df_seg_hp_2.end.values.tolist(), haplotype_2_depth_copyrnumbers, haplotype_2_state_copyrnumbers)),
+                         columns=['chromosome', 'start', 'end', 'depth', 'state']))
+
+    return pd.concat(updated_df_segs_hp1), pd.concat(updated_df_segs_hp2), pd.concat(updated_df_hp_1), pd.concat(updated_df_hp_2)
+
+
+
+

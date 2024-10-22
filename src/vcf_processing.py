@@ -163,8 +163,7 @@ def get_snps_frquncies_genome(snps_df):  # TODO This module needs better impleme
 
     return snps_het, snps_homo, snps_het_pos, snps_homo_pos
 
-def het_homo_snps_gts(snps_df_sorted, chrom, ref_start_values,
-                                bin_size):
+def het_homo_snps_gts(snps_df_sorted, chrom, ref_start_values, bin_size):
     snps_df = snps_df_sorted[snps_df_sorted['chr'] == chrom]
     if 'gt' in snps_df.columns:
         snps_df['gt'].astype(str)
@@ -187,6 +186,45 @@ def het_homo_snps_gts(snps_df_sorted, chrom, ref_start_values,
     snps_df_haplotype2_pos = snps_df_haplotype2.pos.values.tolist()
 
     return snps_df_haplotype1_vaf, snps_df_haplotype2_vaf, snps_df_haplotype1_pos, snps_df_haplotype2_pos
+
+def het_snps_means_df(args, chrom, snps_df_sorted, ref_start_values):
+    snps_df = snps_df_sorted[snps_df_sorted['chr'] == chrom]
+    snps_df['gt'].astype(str)
+    snps_df = snps_df[(snps_df['qual'] > 15)]
+
+    snps_df_A_allele = snps_df[(snps_df['gt'] == '0|1') | (snps_df['gt'] == '1|0')]
+    snps_df_A_allele.reindex(snps_df_A_allele)
+    if snps_df_A_allele.vaf.dtype == object:
+        snps_df_A_allele_vaf = [eval(i) for i in snps_df_A_allele.vaf.str.split(',').str[0].values.tolist()]
+    else:
+        snps_df_A_allele_vaf = [i for i in snps_df_A_allele.vaf.values.tolist()]
+    snps_df_A_allele_pos = [i for i in snps_df_A_allele.pos.values.tolist()]
+    snps_df_A_allele_vaf = [1 - x if x > 0.5 else x for x in snps_df_A_allele_vaf]
+
+    # snps_df_B_allele = snps_df[(snps_df['gt'] == '1|0') | (snps_df['gt'] == '1/0')]
+    # snps_df_B_allele.reindex(snps_df_B_allele)
+    # if snps_df_B_allele.vaf.dtype == object:
+    #     snps_df_B_allele_vaf = [eval(i) for i in snps_df_B_allele.vaf.str.split(',').str[0].values.tolist() if eval(i) > 0.5]
+    # else:
+    #     snps_df_B_allele_vaf = [i for i in snps_df.vaf.values.tolist() if i > 0.5]
+
+    snps_A_allele_mean = []
+    total = 0
+    for index, i in enumerate(ref_start_values):
+        len_cov = len(snps_df_A_allele[(snps_df_A_allele.pos >= i) & (snps_df_A_allele.pos < i + args.bin_size)])
+        if len_cov == 0:
+            snps_A_allele_mean.append(0)
+        else:
+            sub_list = snps_df_A_allele_vaf[total:(total + len_cov)]
+            if sub_list:
+                snps_A_allele_mean.append(statistics.mean(sub_list))
+                #snps_A_allele_mean.append(min(sub_list)/sum(sub_list))
+            else:
+                snps_A_allele_mean.append(0)
+        total += len_cov
+
+    return pd.DataFrame(list(zip([chrom for ch in range(len(ref_start_values))], ref_start_values, snps_A_allele_mean)), columns=['chr', 'start', 'vaf_mean'])
+
 def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, args): #TODO This module needs better implementation, currently slow
     snps_df = snps_df_sorted[snps_df_sorted['chr'] == chrom]
     if 'gt' in snps_df.columns:
@@ -484,6 +522,30 @@ def vcf_parse_to_csv_for_snps(input_vcf, args):
     process.wait()
 
     return output_csv
+
+def vcf_parse_to_csv_for_het_phased_snps(input_vcf, args):
+    #pathlib.Path(input_vcf).suffix #extension
+    # TODO add output check conditions with all these processes
+    basefile = pathlib.Path(input_vcf).stem #filename without extension
+    output_vcf = basefile + '_het_phased_snps_bafs.vcf.gz'
+    output_vcf = f"{os.path.join(args.out_dir_plots, 'data', output_vcf)}"
+
+    output_csv = basefile + '_bafs.csv'
+    output_csv = f"{os.path.join(args.out_dir_plots, 'data', output_csv)}"
+
+    logging.info('bcftools -> Filtering out hetrozygous and phased SNPs and generating a new VCF')
+    # Filter out het, phased SNPs
+    cmd = ['bcftools', 'view', '--threads', '$(nproc)',  '-g', 'het', '--types', 'snps', input_vcf, '-Oz', '-o', output_vcf]
+    process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+    process.wait()
+
+    logging.info('bcftools -> Query for phasesets and GT, DP, VAF feilds by creating a CSV file')
+    # bcftools query for phasesets and GT,DP,VAF
+    cmd = ['bcftools', 'query', '-f',  '%CHROM\t%POS\t[%PS]\n', '-i PS>1', output_vcf, '-o', output_csv] #
+    process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+    process.wait()
+
+    return output_csv
 def vcf_parse_to_csv_for_het_phased_snps_phasesets(input_vcf, args):
     #pathlib.Path(input_vcf).suffix #extension
     # TODO add output check conditions with all these processes
@@ -568,34 +630,14 @@ def get_snp_segments_frequencies_final(dataframe_acgt_frequency):
         acgts['G'] = g
         acgts['T'] = t
 
-        # hp = 0
-        # if gt == '1|0':  # ref freqs
-        #     hp = 1
-        # elif gt == '0|1':  # alt freqs
-        #     hp = 2
-        #
-        # freq_value = acgts.get(ref)
-        ######################################
-        # if (hp == 1):
-        #     freq_value = acgts.get(alt)
-        # elif (hp == 2):
-        #     freq_value = acgts.get(ref)
-        ######################################
-        hp = 0
-
-        hp_a = 1
-        hp_b = 2
-
         freq_value_a = 0
         freq_value_b = 0
 
-        if gt == '1|0':  # ref freqs
-            hp = 2
+        if gt == '1|0' or gt == '1/0' :  # ref freqs
             freq_value_a = acgts.get(ref)
             freq_value_b = acgts.get(alt)
 
-        elif gt == '0|1':  # alt freqs
-            hp = 1
+        elif gt == '0|1' or gt == '0/1':  # alt freqs
             freq_value_a = acgts.get(alt)
             freq_value_b = acgts.get(ref)
 
@@ -604,7 +646,9 @@ def get_snp_segments_frequencies_final(dataframe_acgt_frequency):
         if freq_value_b == None:
             freq_value_b = 0
 
-        #snp_segments_final.append((contig+'\t'+str(pos)+'\t'+ref+'\t'+alt+'\t'+str(ref_value_new)+'\t'+str(alt_value_new)+'\t'+str(hp)))
+        hp_a = 1
+        hp_b = 2
+
         snp_segments_final.append((contig + '\t' + str(pos) + '\t' + str(freq_value_a) + '\t'+ str(hp_a) + '\t' + str(freq_value_b) + '\t' + str(hp_b)))
 
     return snp_segments_final

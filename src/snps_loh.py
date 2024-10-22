@@ -47,7 +47,8 @@ def plot_snps_ratios_genome(args, df_snps_in_csv, df_loh_regions):
 
     loh_plots_genome(df_snps_in_csv, pd.concat(df_snps_ratios), args, df_loh_regions)
 
-def snps_df_loh(args, thread_pool):
+def snps_df_loh(args, thread_pool, df_coverage_data):
+    df_coverage = df_coverage_data.copy()
     chroms = get_contigs_list(args.contigs)
     if args.tumor_vcf:
         output_phasesets_file_path = vcf_parse_to_csv_for_snps(args.tumor_vcf, args)
@@ -59,7 +60,7 @@ def snps_df_loh(args, thread_pool):
         else:
             df_snps_frequencies = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/snps_frequencies.csv', ['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])
         #df_snps_frequencies = df_snps_frequencies.drop(df_snps_frequencies[(df_snps_frequencies.chr == "chrY")].index)
-        df_snps_in_csv = get_vafs_from_normal_phased_vcf(df_snps_frequencies, chroms)
+        df_snps_in_csv = get_vafs_from_normal_phased_vcf(df_snps_frequencies, df_coverage, chroms, args)
 
     return df_snps_in_csv
 
@@ -291,6 +292,15 @@ def write_snps_counts_per_cn_region(df, args):
     fp.write('#homos_count: homozygous SNPs count in this region\n')
 
     header = ['chr','start', 'end', 'hets_count','homos_count']
+    df.to_csv(fp, sep='\t', columns=header, index=False, mode='a', header=True)
+
+def write_loh_regions(df, path, args, p_value_confidence):
+    fp = open(args.out_dir_plots + '/' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) +'_'+ str(p_value_confidence) + '/bed_output/' + path, 'a')
+    fp.write('#chr: chromosome number\n')
+    fp.write('#start: start address for loh segment\n')
+    fp.write('#end: end address for loh segment\n')
+
+    header = ['chr','start', 'end']
     df.to_csv(fp, sep='\t', columns=header, index=False, mode='a', header=True)
 
 def coverage_bins(df):
