@@ -2,6 +2,7 @@ import pysam
 import numpy as np
 import subprocess
 import pathlib
+import logging
 import os
 import pandas
 from collections import defaultdict
@@ -348,13 +349,13 @@ def process_bam_for_snps_freqs(args, thread_pool):
     pileups_outputs = process_pileups(output_bam, args.reference, beds, thread_pool, args)
 
     output_pileup = f"{os.path.join(args.out_dir_plots+'/coverage_data', 'pileup_SNPs.csv')}"
-
+    logging.info('SNPs frequency -> Merging individual pileups and creating pileup_SNPs.csv')
     for i in pileups_outputs:
         with open(i, 'r') as content_file:
             content = content_file.read()
         with open(output_pileup, 'a') as target_device:
             target_device.write(content)
-
+    logging.info('SNPs frequency -> pileup_SNPs.csv has been created')
     return output_pileup
 
 def split_file(fname, parts, args):
