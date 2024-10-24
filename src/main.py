@@ -218,7 +218,8 @@ def main():
         del segments_by_read
 
     if not args.phaseblock_flipping_disable:
-       main_process() #hapcorrect
+       phased_vcf_updated = main_process(args) #hapcorrect
+       logging.info('Returning to main process...')
        if args.quick_start:
            if args.without_phasing:
                df = pd.read_csv(args.quick_start_coverage_path + '/coverage_hps.csv', sep='\t', names=['chr', 'start', 'end', 'hp1', 'hp2', 'unphased'])
@@ -231,6 +232,7 @@ def main():
                csv_df_phasesets = csv_df_chromosomes_sorter(args.quick_start_coverage_path + '/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
                csv_df_coverage = csv_df_chromosomes_sorter(args.out_dir_plots+'/coverage_data/phase_corrected_coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
        else:
+           logging.info('Loading coverage data...')
            csv_df_phasesets = csv_df_chromosomes_sorter(args.out_dir_plots+'/coverage_data/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
            csv_df_coverage = csv_df_chromosomes_sorter(args.out_dir_plots+'/coverage_data/phase_corrected_coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
     else:
@@ -440,7 +442,9 @@ if __name__ == "__main__":
 
 #--quick-start --quick-start-coverage-path /home/rezkuh/gits/data/ --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --cut-threshold 150  --normal-phased-vcf /home/rezkuh/gits/data/1437/1437BL.vcf.gz   --breakpoints /home/rezkuh/gits/data/1437/severus_somatic.vcf  --out-dir-plots 1437_merged_merged --genome-name 1437_merged_merged --copynumbers-subclonal-enable --loh-enable --purity-range 0.5-1.0 --ploidy-range 2-8
 #--quick-start --quick-start-coverage-path /home/rezkuh/gits/data/ --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --cut-threshold 150  --normal-phased-vcf /home/rezkuh/gits/data/2009/2009BL.vcf.gz   --breakpoints /home/rezkuh/gits/data/2009/severus_somatic.vcf  --out-dir-plots 2009_merged --genome-name 2009_merged --copynumbers-subclonal-enable --loh-enable --purity-range 0.5-1.0 --ploidy-range 2-8
+
 #--quick-start --quick-start-coverage-path /home/rezkuh/gits/data/ --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/C15_1_30000000.bam --cut-threshold 75  --without-phasing --phaseblock-flipping-disable --tumor-vcf /home/rezkuh/gits/data/mouse/somatic_calls/C23_somatic_calls_pass_snp.vcf.gz --breakpoints /home/rezkuh/gits/data/mouse/severus_somatic.vcf  --out-dir-plots C23 --contigs 1-19,X --genome-name C23 --bin-size-snps 1000000 --centromere annotations/mouse.bed --hets-smooth-window 10 --copynumbers-subclonal-enable --loh-enable
+#--quick-start --quick-start-coverage-path /home/rezkuh/gits/data/C14 --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/C15_1_30000000.bam --cut-threshold 75  --without-phasing --phaseblock-flipping-disable --tumor-vcf /home/rezkuh/gits/data/mouse/somatic_calls/C14_somatic_calls_pass_snp.vcf.gz --breakpoints /home/rezkuh/gits/data/mouse/severus_somatic.vcf  --out-dir-plots C14 --contigs 1-19,X --genome-name C14 --bin-size-snps 1000000 --centromere annotations/mouse.bed --hets-smooth-window 10 --copynumbers-subclonal-enable --loh-enable
 
 #--quick-start --quick-start-coverage-path /home/rezkuh/gits/data/ --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam  --out-dir-plots colo357_R10  --tumor-vcf /home/rezkuh/gits/data/colo357_R10/colo357_phased.vcf.gz  --phaseblocks-enable  --genome-name colo357_R10  --cut-threshold 75  --breakpoints /home/rezkuh/gits/data/colo357_R10/severus_somatic.vcf --contigs chr1-22 --copynumbers-subclonal-enable --loh-enable  --purity-range 0.5-1.0 --ploidy-range 1-4
 

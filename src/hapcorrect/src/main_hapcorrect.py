@@ -23,152 +23,153 @@ from hapcorrect.src.plots import plot_coverage_data, change_point_detection, plo
 from hapcorrect.src.cpd import cpd_positions_means
 from hapcorrect.src.loh import detect_loh_centromere_regions, plot_snps
 
-def main_process():
-    # default tunable parameters
-    MAX_READ_ERROR = 0.1
-    MIN_MAPQ = 10
+def main_process(args):
     MIN_SV_SIZE = 50
-    BIN_SIZE = 50000
-    BIN_SIZE_SNPS = 50000
-    MAX_CUT_THRESHOLD = 100
-    MIN_ALIGNED_LENGTH = 5000
-    MAX_CUT_THRESHOLD_SNPS_COUNTS = 50
-    HETS_RATIO_LOH = 0.25
-    HETS_SMOOTH_WINDOW = 45
-    HETS_LOH_SEG_SIZE = 2000000
-
-    SAMTOOLS_BIN = "samtools"
-    BCFTOOLS_BIN = "bcftools"
-
-    DEFAULT_CONTIGS = 'chr1-22' #('chr1-22' '1-22') ('chr1-22,chrX' '1-22,X')
-    DEFAULT_PURITY = '0.5-1.0'
-    DEFAULT_PLOIDY = '2-4'
-
-    parser = argparse.ArgumentParser \
-        (description="Plot coverage and copy number profiles from a bam and phased VCF files")
-
-    parser.add_argument("--target-bam", dest="target_bam",
-                        metavar="path", required=True, default=None, nargs="+",
-                        help="path to one or 1/4 multiple target haplotagged bam files (must be indexed)")
-    parser.add_argument("--control-bam", dest="control_bam",
-                        metavar="path", required=False, default=None, nargs="+",
-                        help="path to one or multiple control haplotagged bam files (must be indexed)")
-    parser.add_argument("--reference", dest="reference",
-                        metavar="path", required=False, default=None,
-                        help="path to reference")
-
-    parser.add_argument("--out-dir-plots", dest="out_dir_plots",
-                        default=None, required=True,
-                        metavar="path", help="Output directory")
-
-    parser.add_argument("--normal-phased-vcf", dest="normal_phased_vcf",
-                        metavar="path", required=False, default=None,
-                        help="Path to normal phased vcf")
-    parser.add_argument("--tumor-vcf", dest="tumor_vcf",
-                        metavar="path", required=False, default=None,
-                        help="Path to tumor VCF for LOH detection")
-
-    parser.add_argument("--centromere", dest="centromere", metavar="path", required=False, default='annotations/grch38.cen_coord.curated.bed', help="Path to centromere annotations BED file")
-    parser.add_argument("--cancer-genes", dest="cancer_genes", metavar="path", required=False, default='annotations/CancerGenes.tsv', help="Path to Cancer Genes TSV file")
-
-    parser.add_argument("--breakpoints", dest="breakpoints", metavar="path", required=False, default=None, help="Path to breakpoints/SVs VCF file")
-    parser.add_argument("--cpd-internal-segments", dest="cpd_internal_segments", action="store_true", required=False, help="change point detection algo for more precise segments after breakpoint/cpd segments")
-
-
-    parser.add_argument("--genome-name", dest="genome_name",
-                        required=True, default=None,
-                        help="Genome sample/cellline name to be displayed on plots")
-    parser.add_argument("--contigs", dest="contigs",
-                        required=False, default=DEFAULT_CONTIGS,
-                        help="List of contigs (choromosomes) to be included in the plots [e.g., chr1-22,X,Y]")
-
-    parser.add_argument("--bin-size", "--bin_size", dest="bin_size",
-                        default=BIN_SIZE, metavar="int", type=int, help="coverage (readdepth) bin size [50k]")
-    parser.add_argument("--bin-size-snps", "--bin_size_snps", dest="bin_size_snps",
-                        default=BIN_SIZE_SNPS, metavar="int", type=int, help="SNPs bin size [50k]")
-    parser.add_argument("--hets-ratio", "--hets_ratio", dest="hets_ratio",
-                        default=HETS_RATIO_LOH, metavar="float", type=float, help="Hetrozygous SNPs ratio threshold for LOH detection [0.3]")
-    parser.add_argument("--hets-smooth-window", "--hets_smooth_window", dest="hets_smooth_window",
-                        default=HETS_SMOOTH_WINDOW, metavar="int", type=int, help="Hetrozygous SNPs ratio smoothing window size for LOH detection [45]")
-    parser.add_argument("--hets-loh-seg-size", "--hets_loh_seg_size", dest="hets_loh_seg_size",
-                        default=HETS_LOH_SEG_SIZE, metavar="int", type=int, help="LOH detection minimum segment size where Het SNPs ratio is dropped [2M]")
-    parser.add_argument('--loh-enable', action="store_true",  dest="loh_enable", required=False,
-                        default=False, help="Enabling LOH regions in CN plots")
-
-    parser.add_argument("--cut-threshold", "--cut_threshold", dest="cut_threshold",
-                        default=MAX_CUT_THRESHOLD, metavar="int", type=int, help="Maximum cut threshold for coverage (readdepth) [100]")
-    parser.add_argument("--cut-threshold-snps-counts", "--cut_threshold_snps_counts", dest="cut_threshold_snps_counts",
-                        default=MAX_CUT_THRESHOLD_SNPS_COUNTS, metavar="int", type=int,
-                        help="Maximum cut threshold for SNPs counts [50]")
-
-    parser.add_argument("--min-aligned-length", "--min_aligned_length", dest="min_aligned_length",
-                        default=MIN_ALIGNED_LENGTH, metavar="int", type=int, help="Minimum aligned reads length [5000]")
-
-    parser.add_argument('--pdf-enable', action="store_true",  dest="pdf_enable", required=False,
-                        default=False, help="Enabling PDF output coverage plots")
-
-    parser.add_argument('--unphased-reads-coverage-disable', action="store_true",
-                        dest="unphased_reads_coverage_disable", required=False,
-                        default=False, help="Disabling unphased reads coverage output in plots")
-    parser.add_argument('--without-phasing', action="store_true", dest="without_phasing", required=False,
-                        default=False, help="Enabling coverage and copynumbers without phasing in plots")
-
-    parser.add_argument('--phaseblock-flipping-disable', action="store_true", dest="phaseblock_flipping_disable",
-                        required=False, default=False, help="Disabling phaseblock flipping in coverage plots")
-    parser.add_argument('--smoothing-enable', action="store_true", dest="smoothing_enable", required=False,
-                        default=False, help="Enabling smoothing in coverage plots")
-    parser.add_argument('--phaseblocks-enable', action="store_true", dest="phaseblocks_enable", required=False,
-                        default=False, help="Enabling phaseblocks display in coverage plots")
-
-    parser.add_argument('--copynumbers-disable', action="store_true", dest="copynumbers_disable", required=False,
-                        default=False, help="Disabling copy number in coverage plots")
-
-    parser.add_argument('--copynumbers-subclonal-enable', action="store_true", dest="copynumbers_subclonal_enable", required=False,
-                        default=False, help="Enabling subclonal copy number in coverage plots")
-
-    parser.add_argument('--enable-debug', action="store_true", dest="enable_debug", required=False,
-                        default=False, help="Enabling debug")
-
-    parser.add_argument('--rephase-normal-vcf', action="store_true", dest="rephase_normal_vcf", required=False,
-                        default=False, help="enable rephase normal vcf")
-    parser.add_argument('--rephase-tumor-vcf', action="store_true", dest="rephase_tumor_vcf", required=False,
-                        default=False, help="enable rephase tumor vcf")
-    parser.add_argument('--rehaplotag-tumor-bam', action="store_true", dest="rehaplotag_tumor_bam", required=False,
-                        default=False, help="enable rehaplotag tumor bam")
-
-    parser.add_argument('--variable-size-bins', action="store_true", dest="variable_size_bins", required=False,
-                        default=False, help="enable variable size bins to use breakpoints")
-
-    parser.add_argument('--enable-simple-heuristics', action="store_true", dest="enable_simple_heuristics", required=False,
-                        default=False, help="enable simple heuristics")
-
-    parser.add_argument("--bins-cluster-means", dest="bins_cluster_means",
-                        default=None, required=False, type=lambda s: [int(item) for item in s.split(',')],
-                        help="bins cluster means")
-
-    parser.add_argument("--purity-range", dest="purity_range", required=False, default=DEFAULT_PURITY, help="Estimated tumor purity range (fraction) between [default: 0.5-1.0]")
-    parser.add_argument("--ploidy-range", dest="ploidy_range", required=False, default=DEFAULT_PLOIDY, help="Estimated tumor ploidy range between [default: 2-4]")
-
-    parser.add_argument("--tumor-purity", dest="tumor_purity", default=0.0, metavar="float", type=float, help="user input tumor purity")
-    parser.add_argument("--tumor-ploidy", dest="tumor_ploidy", default=0.0, metavar="float", type=float, help="user input tumor ploidy")
-    parser.add_argument("--confidence-subclonal-score", dest="confidence_subclonal_score", default=0.6, metavar="float", type=float, help="user input p-value to detect if a segment is subclonal/off to integer copynumber")
-
-    parser.add_argument("-t", "--threads", dest="threads",
-                        default=1, metavar="int", type=int, help="number of parallel threads [8]")
-    parser.add_argument('--quick-start', action="store_true", dest="quick_start", required=False,
-                        default=False, help="Enabling quick_start")
-    parser.add_argument("--quick-start-coverage-path", dest="quick_start_coverage_path",
-                        default=None, required=False,
-                        metavar="path", help="quick start coverage data directory")
-
-    parser.add_argument("--max-read-error", dest="max_read_error",
-                        default=MAX_READ_ERROR, metavar="float", type=float,
-                        help=f"maximum base alignment error [{MAX_READ_ERROR}]")
-    parser.add_argument("--min-mapq", dest="min_mapping_quality",
-                        default=MIN_MAPQ, metavar="int", type=int,
-                        help=f"minimum mapping quality for aligned segment [{MIN_MAPQ}]")
-
-    args = parser.parse_args()
+    # # default tunable parameters
+    # MAX_READ_ERROR = 0.1
+    # MIN_MAPQ = 10
+    # MIN_SV_SIZE = 50
+    # BIN_SIZE = 50000
+    # BIN_SIZE_SNPS = 50000
+    # MAX_CUT_THRESHOLD = 100
+    # MIN_ALIGNED_LENGTH = 5000
+    # MAX_CUT_THRESHOLD_SNPS_COUNTS = 50
+    # HETS_RATIO_LOH = 0.25
+    # HETS_SMOOTH_WINDOW = 45
+    # HETS_LOH_SEG_SIZE = 2000000
+    #
+    # SAMTOOLS_BIN = "samtools"
+    # BCFTOOLS_BIN = "bcftools"
+    #
+    # DEFAULT_CONTIGS = 'chr1-22' #('chr1-22' '1-22') ('chr1-22,chrX' '1-22,X')
+    # DEFAULT_PURITY = '0.5-1.0'
+    # DEFAULT_PLOIDY = '2-4'
+    #
+    # parser = argparse.ArgumentParser \
+    #     (description="Plot coverage and copy number profiles from a bam and phased VCF files")
+    #
+    # parser.add_argument("--target-bam", dest="target_bam",
+    #                     metavar="path", required=True, default=None, nargs="+",
+    #                     help="path to one or 1/4 multiple target haplotagged bam files (must be indexed)")
+    # parser.add_argument("--control-bam", dest="control_bam",
+    #                     metavar="path", required=False, default=None, nargs="+",
+    #                     help="path to one or multiple control haplotagged bam files (must be indexed)")
+    # parser.add_argument("--reference", dest="reference",
+    #                     metavar="path", required=False, default=None,
+    #                     help="path to reference")
+    #
+    # parser.add_argument("--out-dir-plots", dest="out_dir_plots",
+    #                     default=None, required=True,
+    #                     metavar="path", help="Output directory")
+    #
+    # parser.add_argument("--normal-phased-vcf", dest="normal_phased_vcf",
+    #                     metavar="path", required=False, default=None,
+    #                     help="Path to normal phased vcf")
+    # parser.add_argument("--tumor-vcf", dest="tumor_vcf",
+    #                     metavar="path", required=False, default=None,
+    #                     help="Path to tumor VCF for LOH detection")
+    #
+    # parser.add_argument("--centromere", dest="centromere", metavar="path", required=False, default='annotations/grch38.cen_coord.curated.bed', help="Path to centromere annotations BED file")
+    # parser.add_argument("--cancer-genes", dest="cancer_genes", metavar="path", required=False, default='annotations/CancerGenes.tsv', help="Path to Cancer Genes TSV file")
+    #
+    # parser.add_argument("--breakpoints", dest="breakpoints", metavar="path", required=False, default=None, help="Path to breakpoints/SVs VCF file")
+    # parser.add_argument("--cpd-internal-segments", dest="cpd_internal_segments", action="store_true", required=False, help="change point detection algo for more precise segments after breakpoint/cpd segments")
+    #
+    #
+    # parser.add_argument("--genome-name", dest="genome_name",
+    #                     required=True, default=None,
+    #                     help="Genome sample/cellline name to be displayed on plots")
+    # parser.add_argument("--contigs", dest="contigs",
+    #                     required=False, default=DEFAULT_CONTIGS,
+    #                     help="List of contigs (choromosomes) to be included in the plots [e.g., chr1-22,X,Y]")
+    #
+    # parser.add_argument("--bin-size", "--bin_size", dest="bin_size",
+    #                     default=BIN_SIZE, metavar="int", type=int, help="coverage (readdepth) bin size [50k]")
+    # parser.add_argument("--bin-size-snps", "--bin_size_snps", dest="bin_size_snps",
+    #                     default=BIN_SIZE_SNPS, metavar="int", type=int, help="SNPs bin size [50k]")
+    # parser.add_argument("--hets-ratio", "--hets_ratio", dest="hets_ratio",
+    #                     default=HETS_RATIO_LOH, metavar="float", type=float, help="Hetrozygous SNPs ratio threshold for LOH detection [0.3]")
+    # parser.add_argument("--hets-smooth-window", "--hets_smooth_window", dest="hets_smooth_window",
+    #                     default=HETS_SMOOTH_WINDOW, metavar="int", type=int, help="Hetrozygous SNPs ratio smoothing window size for LOH detection [45]")
+    # parser.add_argument("--hets-loh-seg-size", "--hets_loh_seg_size", dest="hets_loh_seg_size",
+    #                     default=HETS_LOH_SEG_SIZE, metavar="int", type=int, help="LOH detection minimum segment size where Het SNPs ratio is dropped [2M]")
+    # parser.add_argument('--loh-enable', action="store_true",  dest="loh_enable", required=False,
+    #                     default=False, help="Enabling LOH regions in CN plots")
+    #
+    # parser.add_argument("--cut-threshold", "--cut_threshold", dest="cut_threshold",
+    #                     default=MAX_CUT_THRESHOLD, metavar="int", type=int, help="Maximum cut threshold for coverage (readdepth) [100]")
+    # parser.add_argument("--cut-threshold-snps-counts", "--cut_threshold_snps_counts", dest="cut_threshold_snps_counts",
+    #                     default=MAX_CUT_THRESHOLD_SNPS_COUNTS, metavar="int", type=int,
+    #                     help="Maximum cut threshold for SNPs counts [50]")
+    #
+    # parser.add_argument("--min-aligned-length", "--min_aligned_length", dest="min_aligned_length",
+    #                     default=MIN_ALIGNED_LENGTH, metavar="int", type=int, help="Minimum aligned reads length [5000]")
+    #
+    # parser.add_argument('--pdf-enable', action="store_true",  dest="pdf_enable", required=False,
+    #                     default=False, help="Enabling PDF output coverage plots")
+    #
+    # parser.add_argument('--unphased-reads-coverage-disable', action="store_true",
+    #                     dest="unphased_reads_coverage_disable", required=False,
+    #                     default=False, help="Disabling unphased reads coverage output in plots")
+    # parser.add_argument('--without-phasing', action="store_true", dest="without_phasing", required=False,
+    #                     default=False, help="Enabling coverage and copynumbers without phasing in plots")
+    #
+    # parser.add_argument('--phaseblock-flipping-disable', action="store_true", dest="phaseblock_flipping_disable",
+    #                     required=False, default=False, help="Disabling phaseblock flipping in coverage plots")
+    # parser.add_argument('--smoothing-enable', action="store_true", dest="smoothing_enable", required=False,
+    #                     default=False, help="Enabling smoothing in coverage plots")
+    # parser.add_argument('--phaseblocks-enable', action="store_true", dest="phaseblocks_enable", required=False,
+    #                     default=False, help="Enabling phaseblocks display in coverage plots")
+    #
+    # parser.add_argument('--copynumbers-disable', action="store_true", dest="copynumbers_disable", required=False,
+    #                     default=False, help="Disabling copy number in coverage plots")
+    #
+    # parser.add_argument('--copynumbers-subclonal-enable', action="store_true", dest="copynumbers_subclonal_enable", required=False,
+    #                     default=False, help="Enabling subclonal copy number in coverage plots")
+    #
+    # parser.add_argument('--enable-debug', action="store_true", dest="enable_debug", required=False,
+    #                     default=False, help="Enabling debug")
+    #
+    # parser.add_argument('--rephase-normal-vcf', action="store_true", dest="rephase_normal_vcf", required=False,
+    #                     default=False, help="enable rephase normal vcf")
+    # parser.add_argument('--rephase-tumor-vcf', action="store_true", dest="rephase_tumor_vcf", required=False,
+    #                     default=False, help="enable rephase tumor vcf")
+    # parser.add_argument('--rehaplotag-tumor-bam', action="store_true", dest="rehaplotag_tumor_bam", required=False,
+    #                     default=False, help="enable rehaplotag tumor bam")
+    #
+    # parser.add_argument('--variable-size-bins', action="store_true", dest="variable_size_bins", required=False,
+    #                     default=False, help="enable variable size bins to use breakpoints")
+    #
+    # parser.add_argument('--enable-simple-heuristics', action="store_true", dest="enable_simple_heuristics", required=False,
+    #                     default=False, help="enable simple heuristics")
+    #
+    # parser.add_argument("--bins-cluster-means", dest="bins_cluster_means",
+    #                     default=None, required=False, type=lambda s: [int(item) for item in s.split(',')],
+    #                     help="bins cluster means")
+    #
+    # parser.add_argument("--purity-range", dest="purity_range", required=False, default=DEFAULT_PURITY, help="Estimated tumor purity range (fraction) between [default: 0.5-1.0]")
+    # parser.add_argument("--ploidy-range", dest="ploidy_range", required=False, default=DEFAULT_PLOIDY, help="Estimated tumor ploidy range between [default: 2-4]")
+    #
+    # parser.add_argument("--tumor-purity", dest="tumor_purity", default=0.0, metavar="float", type=float, help="user input tumor purity")
+    # parser.add_argument("--tumor-ploidy", dest="tumor_ploidy", default=0.0, metavar="float", type=float, help="user input tumor ploidy")
+    # parser.add_argument("--confidence-subclonal-score", dest="confidence_subclonal_score", default=0.6, metavar="float", type=float, help="user input p-value to detect if a segment is subclonal/off to integer copynumber")
+    #
+    # parser.add_argument("-t", "--threads", dest="threads",
+    #                     default=1, metavar="int", type=int, help="number of parallel threads [8]")
+    # parser.add_argument('--quick-start', action="store_true", dest="quick_start", required=False,
+    #                     default=False, help="Enabling quick_start")
+    # parser.add_argument("--quick-start-coverage-path", dest="quick_start_coverage_path",
+    #                     default=None, required=False,
+    #                     metavar="path", help="quick start coverage data directory")
+    #
+    # parser.add_argument("--max-read-error", dest="max_read_error",
+    #                     default=MAX_READ_ERROR, metavar="float", type=float,
+    #                     help=f"maximum base alignment error [{MAX_READ_ERROR}]")
+    # parser.add_argument("--min-mapq", dest="min_mapping_quality",
+    #                     default=MIN_MAPQ, metavar="int", type=int,
+    #                     help=f"minimum mapping quality for aligned segment [{MIN_MAPQ}]")
+    #
+    # args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
 
@@ -178,9 +179,9 @@ def main_process():
     target_genomes = set(os.path.basename(b) for b in args.target_bam)
     control_genomes = set(os.path.basename(b) for b in args.control_bam)
 
-    if not shutil.which(SAMTOOLS_BIN):
-        print("samtools not found", file=sys.stderr)
-        return 1
+    # if not shutil.which(SAMTOOLS_BIN):
+    #     print("samtools not found", file=sys.stderr)
+    #     return 1
 
     # TODO: check that all bams have the same reference
     first_bam = all_bams[0]
@@ -424,6 +425,9 @@ def main_process():
         logging.info('Rehaplotagging tumor BAM')
         tumor_bam_haplotag(args, out_vcf)
 
+    logging.info('End of hapcorrect process')
+
+    return out_vcf
 
 #Tumor-normal (tumor and normal VCFs)
 #--quick_start True --quick_start-path /home/rezkuh/gits/data/ --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam  --tumor-vcf /home/rezkuh/gits/data/HG008_HiFi/HG008_HiFi.vcf.gz  --normal-phased-vcf /home/rezkuh/gits/data/HG008_HiFi/HG008BL_HiFi.vcf.gz --genome-name HG008_HiFi --out-dir-plots HG008_HiFi --cut-threshold 150 --rephase-normal-vcf True
