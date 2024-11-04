@@ -71,16 +71,16 @@ python main.py --threads <4> --reference <ref.fa>  --target-bam <data.tumor.bam>
 python main.py --threads <4> --reference <ref.fa>  --target-bam <data.tumor_haplotagged.bam>  --tumor-vcf <data.tumor_phased.vcf.gz> --genome-name <cellline/dataset name> --out-dir-plots <genome_abc_output> --breakpoints <severus-sv-VCF>
 ```
 
-##### Breakpoints/Structural variations feed for copy number model
+##### Breakpoints/Structural variations or change point detection algo for copy number model
 
-Wakhan accepts [Severus](https://github.com/KolmogorovLab/Severus) or any other structural variant caller VCF as breakpoints with param `--breakpoints` inputs to detect copy number changes. 
-If `--breakpoints` option is not used, Wakhan will use change point detection algorithm [ruptures](https://centre-borelli.github.io/ruptures-docs/) as default option.
+Wakhan accepts [Severus](https://github.com/KolmogorovLab/Severus) or any other structural variant caller VCF as breakpoints with param `--breakpoints` inputs to detect copy number changes and this option is highly recommended. 
+However, if `--breakpoints` option is not used, `--change-point-detection-for-cna` should be used instead to use change point detection algorithm [ruptures](https://centre-borelli.github.io/ruptures-docs/) alternatively.
 
 ##### Tumor-Normal mixture and purity/ploidy estimation
 
 User can input both `--ploidy-range` [default: 1.5-5.5 -> [min-max]] and `--purity-range` [default: 0.5-1.0 -> [min-max] to inform copy number model about normal contamination in tumor to estimate copy number states correctly.
 
-##### Quickrun if coverage/pileup data is already available
+##### Quick-run if coverage/pileup data is already available
 
 Wakhan produces reads coverage `coverage.csv` (bin-size based reads coverage) and phasesets reads coverage `coverage_ps.csv` data, phase-corrected coverage `phase_corrected_coverage.csv` (as well as tumor BAM pileup `pileup_SNPs.csv` in case Tumor/normal mode) and stores in directory `coverage_data` inside `--out-dir-plots` location.
 If this data has already been generated in a previous Wakhan run, user can rerun the Wakhan with additionally passing `--quick-start` and `--quick-start-coverage-path <path to coverage_data directory -> e.g., /home/rezkuh/data/1437/coverage_data>` in addition to required params in above example runs.
@@ -113,6 +113,8 @@ Few cell lines arbitrary phase-switch correction and copy number estimation outp
 
 ## Optional parameters
 * `--breakpoints` For segmentation to use in CN estimation, structural variations/breakpoints VCF file is required
+
+* `--breakpoints-min-length` To adjust breakpoints min length to be included in copy number analysis [default: 10000]
 
 * `--cpd-internal-segments` For change point detection algo on internal segments after breakpoint/cpd algo for more precise segmentation.
 

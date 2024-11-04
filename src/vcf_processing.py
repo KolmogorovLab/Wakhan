@@ -612,7 +612,7 @@ def get_snp_segments(args, target_bam, thread_pool):
     else:
         output_pileups = process_bam_for_snps_freqs(args, thread_pool)  # TODO Updated
 
-    compute_acgt_frequency(output_pileups, output_acgts)
+    compute_acgt_frequency(output_pileups, output_acgts, args)
     dataframe_acgt_frequency = csv_df_chromosomes_sorter(output_acgts, ['chr', 'start', 'a', 'c', 'g', 't'], ',')
     dataframe_acgt_frequency = pd.merge(dataframe_snps, dataframe_acgt_frequency, on=['chr', 'start'])
     snp_segments_frequencies = get_snp_segments_frequencies_final(dataframe_acgt_frequency)
@@ -676,7 +676,7 @@ def chunks(lst, n):
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
 
-def compute_acgt_frequency(pileup, snps_frequency): #https://www.biostars.org/p/95700/
+def compute_acgt_frequency(pileup, snps_frequency, args): #https://www.biostars.org/p/95700/
     with open(pileup, 'r') as f:
         input_data = f.readlines()
     base_counts = []
@@ -684,7 +684,7 @@ def compute_acgt_frequency(pileup, snps_frequency): #https://www.biostars.org/p/
     for line in input_data:
         elements = line.strip().split('\t')
         positions.append((elements[0], int(elements[1]), elements[2], elements[4]))
-    with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as pool:
+    with multiprocessing.Pool(processes=args.threads) as pool:
         base_counts = list(pool.imap(count_bases, chunks(positions, 1000)))
     base_counts = [item for sublist in base_counts for item in sublist]
     with open(snps_frequency, 'w') as f:

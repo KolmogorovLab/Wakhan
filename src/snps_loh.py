@@ -7,14 +7,15 @@ import pandas as pd
 import numpy as np
 
 from vcf_processing import get_snps_frquncies, het_homo_snps_gts, vcf_parse_to_csv_for_het_phased_snps_phasesets, snps_mean, cpd_mean, get_snp_segments, get_snps_frquncies_coverage, vcf_parse_to_csv_for_snps, get_snps_counts, get_snps_counts_cn_regions, get_snps_frquncies_genome
-from utils import csv_df_chromosomes_sorter
+from utils import csv_df_chromosomes_sorter, get_vafs_from_tumor_phased_vcf
 from extras import get_contigs_list
 from plots import add_scatter_trace_coverage, print_chromosome_html, plots_add_markers_lines, plots_layout_settings,\
 whole_genome_combined_df, copy_number_plots_per_chromosome, print_genome_pdf, add_annotation
 from utils import detect_alter_loh_regions, loh_regions_events, write_segments_coverage, write_header_comments, get_vafs_from_normal_phased_vcf, get_chromosomes_regions
 
 def plot_snps_ratios_genome(args, df_snps_in_csv, df_loh_regions):
-
+    if not os.path.isdir(args.out_dir_plots + '/snps_loh_plots'):
+        os.makedirs(args.out_dir_plots + '/snps_loh_plots')
     chroms = get_contigs_list(args.contigs)
     df_snps_ratios = []
     offset = 0
@@ -53,6 +54,7 @@ def snps_df_loh(args, thread_pool, df_coverage_data):
     if args.tumor_vcf:
         output_phasesets_file_path = vcf_parse_to_csv_for_snps(args.tumor_vcf, args)
         df_snps_in_csv = csv_df_chromosomes_sorter(output_phasesets_file_path, ['chr', 'pos', 'qual', 'gt', 'dp', 'vaf'])
+        df_snps_in_csv = get_vafs_from_tumor_phased_vcf(df_snps_in_csv, df_coverage, chroms, args)
     else:
         get_snp_segments(args, args.target_bam[0], thread_pool)
         if args.phaseblock_flipping_disable and args.quick_start:
@@ -381,9 +383,9 @@ def loh_plots_genome(df_snps_in_csv, df_snps_ratios, args, df_loh_regions):
         loh_starts = df_loh_region.start.values.tolist()
         loh_ends  = df_loh_region.end.values.tolist()
 
-        if len(loh_starts):
-            for i in range(len(df_loh_region.start.values.tolist())):
-                fig.add_vrect(x0=offset_chroms+loh_starts[i], x1=offset_chroms+loh_ends[i], fillcolor="#2980b9", opacity=0.4, line_width=0, row=2, col=1,)
+        # if len(loh_starts):
+        #     for i in range(len(df_loh_region.start.values.tolist())):
+        #         fig.add_vrect(x0=offset_chroms+loh_starts[i], x1=offset_chroms+loh_ends[i], fillcolor="#2980b9", opacity=0.4, line_width=0, row=2, col=1,)
 
         if index % 2 == 0:
             fig.add_vrect(x0=offset_chroms, x1=offset_chroms_1, fillcolor="#E5E7E9", opacity=0.9, layer="below", line_width=0, )
@@ -418,4 +420,4 @@ def loh_plots_genome(df_snps_in_csv, df_snps_ratios, args, df_loh_regions):
     if args.pdf_enable:
         print_genome_pdf(fig, args.genome_name+'_loh', args.out_dir_plots + '/snps_loh_plots')
 
-    fig.write_html(args.out_dir_plots + '/snps_loh_plots' +'/'+ args.genome_name + "_genome_loh.html")
+    fig.write_html(args.out_dir_plots + '/snps_loh_plots' +'/'+ args.genome_name + "_genome_snps_ratio_loh.html")

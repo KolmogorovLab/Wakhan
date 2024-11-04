@@ -643,18 +643,57 @@ def detect_first_copy_integers_fractional_cluster_means(args, df_segs_hp1, df_se
 
     return integer_centers, fractional_centers
 
+
+def subclonal_values_adjusted(x, centers):
+    if x == -3300.0:
+        return x
+    if x < 0:
+        x = -x
+    centers = centers + [centers[-1] + centers[1]]
+    for i in range(len(centers) - 1):
+        if centers[i + 1] >= x >= centers[i]:
+            return round(i + ((x - centers[i]) / (centers[i + 1] - centers[i])), 2)
+        elif x < centers[0]:
+            return 0
+    return len(centers)-2 #round((len(centers) - 1) + ((x - centers[-1]) / ((centers[-1] + (centers[-1] - centers[-2])) - centers[-1])), 2)
+
+def integers_values_adjusted(x, centers):
+    if x == -3300.0:
+        return x
+    if x < 0:
+        x = -x
+    centers = centers + [centers[-1] + centers[1]]
+    for i in range(len(centers) - 1):
+        if centers[i + 1] >= x >= centers[i]:
+            return math.ceil(round(i + ((x - centers[i]) / (centers[i + 1] - centers[i])), 2))
+        elif x < centers[0]:
+            return 0
+    return len(centers)-2 #round((len(centers) - 1) + ((x - centers[-1]) / ((centers[-1] + (centers[-1] - centers[-2])) - centers[-1])), 2)
+
+
+def mask_df_states(haplotype_df, centers, integer_fractional_means):
+    for i in range(len(integer_fractional_means)):
+        haplotype_df['state'].mask(haplotype_df['state'] == centers[i], integer_fractional_means[i], inplace=True)
+
+    return haplotype_df
 def write_copynumber_segments_csv(haplotype_df_, args, centers, integer_fractional_means, hp, filename, p_value):
 
     haplotype_df = haplotype_df_.copy()
     uniques = sorted(haplotype_df['state'].unique())
     #integer_fractional_means = sorted([i for i in range(0, len(uniques))])
     for i in range(len(integer_fractional_means)):
-        haplotype_df['state'].mask(haplotype_df['state'] == centers[i], integer_fractional_means[i], inplace=True)
+       haplotype_df['state'].mask(haplotype_df['state'] == centers[i], integer_fractional_means[i], inplace=True)
+    #haplotype_df = mask_df_states(haplotype_df_copy, centers, integer_fractional_means)
 
     if 'p_value' in haplotype_df.columns:
-        haplotype_df = haplotype_df.rename(columns={'chromosome': 'chr', 'start': 'start', 'end': 'end', 'depth': 'coverage', 'state': 'copynumber_state', 'p_value': 'confidence'})
+        haplotype_df['if_subclonal'] = ['Y' if element < args.confidence_subclonal_score and  not state == 0  else 'N' for (element,state) in zip(haplotype_df.p_value.values.tolist(), haplotype_df.state.values.tolist())]
+        haplotype_df['state'] =  [subclonal_values_adjusted(element, centers) if sub == 'Y' else integers_values_adjusted(element, centers) for (element, sub) in zip(haplotype_df.state.values.tolist(), haplotype_df.if_subclonal.values.tolist())]
+        haplotype_df = haplotype_df.rename(columns={'chromosome': 'chr', 'start': 'start', 'end': 'end', 'depth': 'coverage', 'state': 'copynumber_state', 'p_value': 'confidence', 'if_subclonal': 'if_subclonal'})
     else:
         haplotype_df = haplotype_df.rename(columns={'chromosome': 'chr', 'start': 'start', 'end': 'end', 'depth':'coverage', 'state':'copynumber_state'})
+
+    haplotype_df['coverage'] = haplotype_df['coverage'].apply(lambda x: round(x, 2))
+
     if args.without_phasing:
         fp = open(args.out_dir_plots + '/bed_output/' + args.genome_name + filename, 'a')
         fp.write('#chr: chromosome number\n')
@@ -662,14 +701,19 @@ def write_copynumber_segments_csv(haplotype_df_, args, centers, integer_fraction
         fp.write('#end: end address for CN segment\n')
         fp.write('#coverage: median coverage for this segment\n')
         fp.write('#copynumber_state: detected copy number state (integer/fraction)\n')
-        header = ['chr', 'start', 'end', 'coverage', 'copynumber_state']
+        if 'confidence' in haplotype_df.columns:
+            fp.write('#confidence: confidence score\n')
+            fp.write('#if_subclonal: if entry is subclonal [Y/N]\n')
+            header = ['chr', 'start', 'end', 'coverage', 'copynumber_state', 'confidence', 'if_subclonal']
+        else:
+            header = ['chr', 'start', 'end', 'coverage', 'copynumber_state']
         haplotype_df.to_csv(fp, sep='\t', columns=header, index=False, mode='a', header=True)
     else:
         if not os.path.isdir(args.out_dir_plots + '/' + str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_'+ str(p_value) +'/bed_output'):
             os.makedirs(args.out_dir_plots + '/' + str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_'+ str(p_value) +'/bed_output')
         fp = open(args.out_dir_plots +'/'+ str(args.tumor_ploidy) + '_'+ str(args.tumor_purity)  +'_'+ str(p_value) +'/bed_output/' + args.genome_name + filename, 'a')
         if 'confidence' in haplotype_df.columns:
-            header = ['chr', 'start', 'end', 'coverage', 'copynumber_state', 'confidence', 'haplotype']
+            header = ['chr', 'start', 'end', 'coverage', 'copynumber_state', 'confidence', 'if_subclonal', 'haplotype']
         else:
             header = ['chr', 'start', 'end', 'coverage', 'copynumber_state', 'haplotype']
         haplotype_df['haplotype'] = hp
@@ -682,6 +726,7 @@ def write_copynumber_segments_csv(haplotype_df_, args, centers, integer_fraction
             fp.write('#copynumber_state: detected copy number state (integer/fraction)\n')
             if 'confidence' in haplotype_df.columns:
                 fp.write('#confidence: confidence score\n')
+                fp.write('#if_subclonal: if entry is subclonal [Y/N]\n')
             fp.write('#haplotype: haplotype number\n')
 
             header_enable = True
@@ -813,6 +858,9 @@ def update_subclonal_means_states(centers, subclonals, df_segs_hp1_updated, df_s
         df_segs_hp_1_updated_p_score = []
         df_segs_hp_2_updated_p_score = []
 
+        df_segs_hp_1_updated_subclonal_check = []
+        df_segs_hp_2_updated_subclonal_check = []
+
         for i, (start,end) in enumerate(zip(df_segs_hp_1_updated_start, df_segs_hp_1_updated_end)):
             if len(df_hp_1_val[start//args.bin_size:end//args.bin_size]) > 0:
                 seg_mean = statistics.median(remove_outliers_iqr(np.array(df_hp_1_val[start//args.bin_size:end//args.bin_size])))
@@ -825,8 +873,10 @@ def update_subclonal_means_states(centers, subclonals, df_segs_hp1_updated, df_s
             df_segs_hp_1_updated_p_score.append(round(p_value, 7))
             if p_value < args.confidence_subclonal_score:
                 df_segs_hp_1_updated_state[i] = seg_mean #statistics.median(remove_outliers_iqr(np.array(df_hp_1_val[start//args.bin_size:end//args.bin_size])))
+                df_segs_hp_2_updated_subclonal_check.append('Y')
             else:
-                df_segs_hp_1_updated_state[i] = math.trunc(df_segs_hp_1_updated_state[i])#min(centers, key=lambda x: abs(x - seg_mean)) #statistics.median(remove_outliers_iqr(np.array(df_hp_1_val[start//args.bin_size:end//args.bin_size])))
+                df_segs_hp_1_updated_state[i] = df_segs_hp_1_updated_state[i]#min(centers, key=lambda x: abs(x - seg_mean)) #statistics.median(remove_outliers_iqr(np.array(df_hp_1_val[start//args.bin_size:end//args.bin_size])))
+                df_segs_hp_2_updated_subclonal_check.append('N')
             df_segs_hp_1_updated_depth.append(seg_mean)
 
         indices = []
@@ -855,8 +905,10 @@ def update_subclonal_means_states(centers, subclonals, df_segs_hp1_updated, df_s
             df_segs_hp_2_updated_p_score.append(round(p_value, 7))
             if p_value < args.confidence_subclonal_score:
                 df_segs_hp_2_updated_state[i] = seg_mean #statistics.median(remove_outliers_iqr(np.array(df_hp_2_val[start//args.bin_size:end//args.bin_size])))
+                df_segs_hp_2_updated_subclonal_check.append('Y')
             else:
-                df_segs_hp_2_updated_state[i] = math.trunc(df_segs_hp_2_updated_state[i]) #min(centers, key=lambda x: abs(x - seg_mean)) #statistics.median(remove_outliers_iqr(np.array(df_hp_2_val[start//args.bin_size:end//args.bin_size])))
+                df_segs_hp_2_updated_state[i] = df_segs_hp_2_updated_state[i] #min(centers, key=lambda x: abs(x - seg_mean)) #statistics.median(remove_outliers_iqr(np.array(df_hp_2_val[start//args.bin_size:end//args.bin_size])))
+                df_segs_hp_2_updated_subclonal_check.append('N')
             df_segs_hp_2_updated_depth.append(seg_mean)
 
         indices = []
@@ -1164,14 +1216,21 @@ def merge_adjacent_regions_cn(segarr, args):
     for index, chrom in enumerate(chroms):
         seg = segarr[segarr['chromosome'] == chrom]
         label_groups = seg['state'].ne(seg['state'].shift()).cumsum()
-        if args.without_phasing:
-            df = (seg.groupby(label_groups).agg({'chromosome': 'first', 'start': 'min', 'end': 'max', 'depth': 'first', 'state': 'first'}).reset_index(drop=True))
-        else:
-            df = (seg.groupby(label_groups).agg({'chromosome': 'first', 'start': 'min', 'end': 'max', 'depth': 'first', 'state': 'first', 'p_value': 'first'}).reset_index(drop=True))
+        df = (seg.groupby(label_groups).agg({'chromosome': 'first', 'start': 'min', 'end': 'max', 'depth': 'first', 'state': 'first', 'p_value': 'max'}).reset_index(drop=True))
         dfs.append(df)
     out = pd.concat(dfs)
     return out
 
+def merge_adjacent_regions_cn_unphased(segarr, args):
+    chroms = get_contigs_list(args.contigs)
+    dfs = []
+    for index, chrom in enumerate(chroms):
+        seg = segarr[segarr['chromosome'] == chrom]
+        label_groups = seg['state'].ne(seg['state'].shift()).cumsum()
+        df = (seg.groupby(label_groups).agg({'chromosome': 'first', 'start': 'min', 'end': 'max', 'depth': 'first', 'state': 'first'}).reset_index(drop=True))
+        dfs.append(df)
+    out = pd.concat(dfs)
+    return out
 def adjust_extreme_outliers(hp_data):
     for j, val in enumerate(hp_data):
         if val > 500 and j > 0 and j < len(hp_data):
@@ -1207,7 +1266,7 @@ def get_vafs_from_normal_phased_vcf(df_snps, df_coverages, chroms, args):
         haplotype_2_position = df.pos.values.tolist()
         haplotype_2_coverage = df.freq_value_a.values.tolist()
         # vaf = a/a+b
-        vaf = [round(i / (i + j + 0.0000000001), 3) for i, j in zip(haplotype_1_coverage, haplotype_2_coverage)]
+        vaf = [round(min(i,j) / (i + j + 0.0000001), 3) for i, j in zip(haplotype_1_coverage, haplotype_2_coverage)]
         #vaf = list(map(lambda x: 1 - x if x > 0.5 else x, vaf))
 
         snps_het_vaf = []
@@ -1218,7 +1277,54 @@ def get_vafs_from_normal_phased_vcf(df_snps, df_coverages, chroms, args):
             else:
                 snps_het_vaf.append(0)
 
-        df_final.append(pd.DataFrame(list(zip([df['chr'].iloc[0] for ch in range(len(starts_pos))], starts_pos, snps_het_vaf)), columns=['chr', 'start', 'vaf_mean']))
+        df_final.append(pd.DataFrame(list(zip([df['chr'].iloc[0] for ch in range(len(starts_pos))], starts_pos, snps_het_vaf)), columns=['chr', 'pos', 'vaf']))
+
+    return pd.concat(df_final)
+
+def get_vafs_from_tumor_phased_vcf(df_snps, df_coverages, chroms, args):
+    df_final = []
+
+    for index, chrom in enumerate(chroms):
+        df = df_snps[df_snps['chr'] == chrom]
+        df_coverage = df_coverages[df_coverages['chr'] == chrom]
+        starts_pos = df_coverage.start.values.tolist()
+        vaf = []
+        # df = dict(tuple(df_snps.groupby('hp')))
+
+        snps_df_haplotype1 = df[(df['gt'] == '0|1') | (df['gt'] == '0/1') | (df['gt'] == '1|0') | (df['gt'] == '1/0')]
+        snps_df_haplotype1.reindex(snps_df_haplotype1)
+        if df.vaf.dtype == object:
+            haplotype_1_coverage = [eval(i) for i in df.vaf.str.split(',').str[0].values.tolist()]
+        else:
+            haplotype_1_coverage = df.vaf.values.tolist()
+        haplotype_1_position = snps_df_haplotype1.pos.values.tolist()
+
+        # snps_df_haplotype1 = df[(df['gt'] == '1|0') | (df['gt'] == '1/0')]
+        # snps_df_haplotype1.reindex(snps_df_haplotype1)
+        # if df.vaf.dtype == object:
+        #     haplotype_2_coverage = [eval(i) for i in df.vaf.str.split(',').str[0].values.tolist()]
+        # else:
+        #     haplotype_2_coverage = df.vaf.values.tolist()
+        # haplotype_2_position = snps_df_haplotype1.pos.values.tolist()
+
+        # vaf = a/a+b
+        #vaf = [round(min(i,j) / (i + j + 0.0000001), 3) for i, j in zip(haplotype_1_coverage, haplotype_2_coverage)]
+
+        haplotype_1_coverage = list(map(lambda x: 1 - x if x > 0.5 else x, haplotype_1_coverage))
+
+        snps_het_vaf = []
+        for index, pos in enumerate(starts_pos):
+            l2 = [i for i in haplotype_1_position if i > pos and i < pos + args.bin_size]
+            #print(haplotype_1_position.index(min(l2)), ':', haplotype_1_position.index(max(l2)))
+            #data = haplotype_1_coverage[haplotype_1_position.index(min(l2)):haplotype_1_position.index(max(l2))]
+            if len(l2) == 1:
+                snps_het_vaf.append(haplotype_1_coverage[haplotype_1_position.index(l2[0])])
+            elif len(l2) > 1:
+                snps_het_vaf.append(statistics.mean(haplotype_1_coverage[haplotype_1_position.index(min(l2)):haplotype_1_position.index(max(l2))]))
+            else:
+                snps_het_vaf.append(0)
+
+        df_final.append(pd.DataFrame(list(zip([df['chr'].iloc[0] for ch in range(len(starts_pos))], starts_pos, snps_het_vaf)), columns=['chr', 'pos', 'vaf']))
 
     return pd.concat(df_final)
 
@@ -1460,6 +1566,7 @@ def collect_loh_centromere_regions(df_segs_hp1_, df_segs_hp2_, centers, integer_
 
         if args.breakpoints:
             for index, (state1, state2, start, end) in enumerate(zip(hp1_state, hp2_state, hp1_start, hp1_end)):
+                #print(chrom, hp1_state, hp2_state, hp1_start, hp1_end, hp2_start, hp2_end)
                 if state1 == 0 or state2 == 0:# and end - start > 2000000:
                     loh_region_starts.append(start)
                     loh_region_ends.append(end)
@@ -1478,5 +1585,7 @@ def collect_loh_centromere_regions(df_segs_hp1_, df_segs_hp2_, centers, integer_
         if loh_region_starts:
             chrs_list.extend([chrom for ch in range(len(loh_region_starts))])
             loh_regions_all.append(pd.DataFrame(list(zip(chrs_list, loh_region_starts, loh_region_ends)), columns=['chr', 'start', 'end']))
-
-    return pd.concat(loh_regions_all)
+    if loh_regions_all:
+        return pd.concat(loh_regions_all)
+    else:
+        return pd.DataFrame(columns=['chr', 'start', 'end'])

@@ -237,20 +237,20 @@ def peak_detection_optimization(args, input_segments, input_weights):
     #plt.savefig(args.out_dir_plots +'/'+ args.genome_name + '_'+ "correlation_peak.pdf", format="pdf", bbox_inches="tight")
 
     # testing if 1/2 of the highest peak is also a peak. compare it with 1/4 and 3/4 (which should be valleys)
-    half_peak = corr_max // 2
+    half_peak = corr_max // 2  #change to 1 if dodn't want to consider neraset as half peak
     valley_left, valley_right = corr_max // 4, corr_max * 3 // 4
     is_half_peak = corr[half_peak] > max(corr[valley_left], corr[valley_right])
     # print(half_peak, valley_left, valley_right)
     print("Half peak:", is_half_peak)
 
     if not is_half_peak:
-        single_copy_cov = corr_max
+        single_copy_cov = corr_max  + 0.012
     else:
-        single_copy_cov = half_peak
+        single_copy_cov = half_peak + 0.012
     print("Estimated single copy coverage:", single_copy_cov)
 
     last_copy_state = int(max(observed) // single_copy_cov + 1)
-    final_peaks = [i * single_copy_cov for i in range(0, last_copy_state)]
+    final_peaks = [i * single_copy_cov for i in range(0, last_copy_state + 1)]
 
     final_peaks_subclonal = [single_copy_cov//2] + [i * single_copy_cov+(single_copy_cov//2) for i in range(1, last_copy_state)]
 

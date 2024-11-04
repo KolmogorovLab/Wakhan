@@ -5,6 +5,9 @@ import pandas as pd
 import pysam
 import os
 
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
 from hapcorrect.src.extras import get_contigs_list
 from hapcorrect.src.process_bam import get_segments_coverage
 
@@ -148,7 +151,72 @@ def detect_alter_loh_regions(args, event, chrom, ref_ends, haplotype_1_values, h
 
     return haplotype_1_values, haplotype_2_values, unphased_reads_values, region_starts, region_ends, hp
 
+def snps_frequencies_chrom_genes(df_snps_frequencies, args):
+    df_chroms = []
 
+    df_genes_all = csv_df_chromosomes_sorter(args.cancer_genes, ['chr', 'start', 'end', 'gene', 'len'])
+
+    chroms = get_contigs_list(args.contigs)
+    for index, chrom in enumerate(chroms):
+        df = df_snps_frequencies[df_snps_frequencies['chr'] == chrom]
+        df_genes = df_genes_all[df_genes_all['chr'] == chrom]
+
+        if not df_genes.empty:
+
+            # df = dict(tuple(df_snps.groupby('hp')))
+            haplotype_1_position = df.pos.values.tolist()
+            haplotype_1_coverage = df.freq_value_b.values.tolist()
+            haplotype_2_position = df.pos.values.tolist()
+            haplotype_2_coverage = df.freq_value_a.values.tolist()
+
+            snps_haplotype1_mean = []
+            for index, (i,j) in enumerate(zip(df_genes.start.values.tolist(), df_genes.end.values.tolist())):
+                sub_list = haplotype_1_coverage[haplotype_1_position.index(min(haplotype_1_position, key=lambda x:abs(x-i))):haplotype_1_position.index(min(haplotype_1_position, key=lambda x:abs(x-j)))]
+                if sub_list:
+                    snps_haplotype1_mean.append(statistics.mean(sub_list))
+                else:
+                    snps_haplotype1_mean.append(0)
+
+            snps_haplotype2_mean = []
+            for index, (i, j) in enumerate(zip(df_genes.start.values.tolist(), df_genes.end.values.tolist())):
+                sub_list = haplotype_2_coverage[haplotype_2_position.index(
+                    min(haplotype_2_position, key=lambda x: abs(x - i))):haplotype_2_position.index(
+                    min(haplotype_2_position, key=lambda x: abs(x - j)))]
+                if sub_list:
+                    snps_haplotype2_mean.append(statistics.mean(sub_list))
+                else:
+                    snps_haplotype2_mean.append(0)
+
+            snps_mean = [round(i + j, 2) for i, j in zip(snps_haplotype1_mean, snps_haplotype2_mean)]
+
+            df_chroms.append(pd.DataFrame(list(zip(df_genes.chr.values.tolist(), df_genes.start.values.tolist(), df_genes.end.values.tolist(), \
+                                         df_genes.gene.values.tolist(), df_genes.len.values.tolist(), snps_mean)),
+                                 columns=['chr', 'start', 'end', 'gene', 'len', 'coverage']))
+    return pd.concat(df_chroms)
+
+def genes_segments_list(bam, args):
+    head, tail = os.path.split(bam)
+
+    df_genes = csv_df_chromosomes_sorter(args.cancer_genes, ['chr', 'start', 'end', 'gene', 'len'])
+    starts = df_genes.start.values.tolist()
+    ends = df_genes.end.values.tolist()
+
+    bed = []
+    for ind, chrom in enumerate(df_genes.chr.values.tolist()):
+        bed.append([tail, chrom, starts[ind], ends[ind]])
+
+    return bed
+def genes_segments_coverage(genes_coverage, args):
+
+    df_genes = csv_df_chromosomes_sorter(args.cancer_genes, ['chr', 'start', 'end', 'gene', 'len'])
+
+    snps_mean = []
+    for items in genes_coverage:
+        snps_mean.append(round(float(items.split('\t')[3]) + float(items.split('\t')[4]), 2))
+
+    return pd.DataFrame(list(zip(df_genes.chr.values.tolist(), df_genes.start.values.tolist(), df_genes.end.values.tolist(), \
+                                 df_genes.gene.values.tolist(), df_genes.len.values.tolist(), snps_mean)),
+                         columns=['chr', 'start', 'end', 'gene', 'len', 'coverage'])
 def mean_values(selected_list, start_index, end_index):
     result = []
     for i in range(end_index - start_index):

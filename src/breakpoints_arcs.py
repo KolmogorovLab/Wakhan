@@ -10,16 +10,19 @@ def get_all_breakpoints_data(edges, edges_chr, height, path, args):
     bp_junctions_ins = [[]]
     bp_junctions_dup = [[]]
     bp_junctions_del = [[]]
+    bp_junctions_sbnd = [[]]
     for variant in my_parser:
         if not variant['CHROM'] in chroms:
             continue
         if "INV" in variant['ID']:
             bp_junctions_inv.append([variant['CHROM'], int(variant['POS'])])
-        elif ("DUP" in variant['ID']) and int(variant['info_dict']['SVLEN'][0]) > 100000:
+        elif "sBND" in variant['ID']:
+            bp_junctions_sbnd.append([variant['CHROM'], int(variant['POS'])])
+        elif ("DUP" in variant['ID']) and int(variant['info_dict']['SVLEN'][0]) > args.breakpoints_min_length:
             bp_junctions_dup.append([variant['CHROM'], int(variant['POS'])])
-        elif ("INS" in variant['ID']) and int(variant['info_dict']['SVLEN'][0]) > 100000:
+        elif ("INS" in variant['ID']) and int(variant['info_dict']['SVLEN'][0]) > args.breakpoints_min_length:
             bp_junctions_ins.append([variant['CHROM'], int(variant['POS'])])
-        elif "DEL" in variant['ID'] and int(variant['info_dict']['SVLEN'][0]) > 100000:
+        elif "DEL" in variant['ID'] and int(variant['info_dict']['SVLEN'][0]) > args.breakpoints_min_length:
             bp_junctions_del.append([variant['CHROM'], int(variant['POS'])])
 
     #keys = sorted(set(interact_strength))
@@ -59,6 +62,8 @@ def get_all_breakpoints_data(edges, edges_chr, height, path, args):
             colors.append('#2830DE')
         elif [a,b] in bp_junctions_dup:
             colors.append('#178117')
+        elif [a,b] in bp_junctions_sbnd:
+            colors.append('#7f8c8d')
         elif [a,b] in bp_junctions_ins:
             colors.append('#e0cf03')
         elif [a,b] in bp_junctions_del:
