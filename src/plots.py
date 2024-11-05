@@ -2589,7 +2589,7 @@ def genes_copy_number_plots_genome(centers, integer_fractional_centers, df_cnr_h
                             row = 1,
                             col = 1,
                             )
-                    fig.add_annotation(x=offset_chroms+genes_starts[i], y=-args.cut_threshold,
+                    fig.add_annotation(x=offset_chroms+genes_starts[i], y=centers[1],
                                        text=genes_name[i],
                                        showarrow=False,
                                        yshift=10)
@@ -2638,7 +2638,7 @@ def genes_copy_number_plots_genome(centers, integer_fractional_centers, df_cnr_h
             OFFSET = args.cut_threshold/150
             colors = ['firebrick', 'steelblue']
         haplotype_1_copyratios_values = [x if x == 'None' else x  for x in haplotype_1_copyratios_values]
-        haplotype_2_copyratios_values = [x if x == 'None' else x for x in haplotype_2_copyratios_values]
+        haplotype_2_copyratios_values = [x if x == 'None' else x + OFFSET for x in haplotype_2_copyratios_values]
         name = "Copynumbers"
 
         add_scatter_trace_copyratios(args, fig, colors, name, haplotype_1_copyratios_positions, haplotype_2_copyratios_positions, haplotype_1_copyratios_values, haplotype_2_copyratios_values, df_segs_hp1, df_segs_hp2, mul_cols=True, row=1, visibility='legendonly')

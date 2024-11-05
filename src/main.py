@@ -487,7 +487,6 @@ if __name__ == "__main__":
 
 #means/medians chr6 in guest sample
 
-#Mike's genes plots
 #first copy adjustment
 #cpd inside centromeres regions
 
