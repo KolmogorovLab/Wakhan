@@ -187,11 +187,11 @@ def snps_frequencies_chrom_genes(df_snps_frequencies, args):
                 else:
                     snps_haplotype2_mean.append(0)
 
-            snps_mean = [round(i + j, 2) for i, j in zip(snps_haplotype1_mean, snps_haplotype2_mean)]
+            #snps_mean = [round(i + j, 2) for i, j in zip(snps_haplotype1_mean, snps_haplotype2_mean)]
 
             df_chroms.append(pd.DataFrame(list(zip(df_genes.chr.values.tolist(), df_genes.start.values.tolist(), df_genes.end.values.tolist(), \
-                                         df_genes.gene.values.tolist(), df_genes.len.values.tolist(), snps_mean)),
-                                 columns=['chr', 'start', 'end', 'gene', 'len', 'coverage']))
+                                         df_genes.gene.values.tolist(), df_genes.len.values.tolist(), snps_haplotype1_mean, snps_haplotype2_mean)),
+                                 columns=['chr', 'start', 'end', 'gene', 'len', 'hp1', 'hp2']))
     return pd.concat(df_chroms)
 
 def genes_segments_list(bam, args):
@@ -210,13 +210,17 @@ def genes_segments_coverage(genes_coverage, args):
 
     df_genes = csv_df_chromosomes_sorter(args.cancer_genes, ['chr', 'start', 'end', 'gene', 'len'])
 
-    snps_mean = []
+    hp1 = []
+    hp2 = []
+    hp3 = []
     for items in genes_coverage:
-        snps_mean.append(round(float(items.split('\t')[3]) + float(items.split('\t')[4]), 2))
+        hp1.append(round(float(items.split('\t')[3]), 2))
+        hp2.append(round(float(items.split('\t')[4]), 2))
+        #hp3.append(round(float(items.split('\t')[5]), 2))
 
-    return pd.DataFrame(list(zip(df_genes.chr.values.tolist(), df_genes.start.values.tolist(), df_genes.end.values.tolist(), \
-                                 df_genes.gene.values.tolist(), df_genes.len.values.tolist(), snps_mean)),
-                         columns=['chr', 'start', 'end', 'gene', 'len', 'coverage'])
+    return pd.DataFrame(list(zip(df_genes.chr.values.tolist(), df_genes.start.values.tolist(), df_genes.end.values.tolist(),
+                                 df_genes.gene.values.tolist(), df_genes.len.values.tolist(), hp1, hp2)),
+                         columns=['chr', 'start', 'end', 'gene', 'len', 'hp1', 'hp2'])
 def mean_values(selected_list, start_index, end_index):
     result = []
     for i in range(end_index - start_index):

@@ -2379,7 +2379,7 @@ def genes_copy_number_plots_genome(centers, integer_fractional_centers, df_cnr_h
     df_segs_hp2_ = []
     df_genes_1_ = []
     df_genes_2_ = []
-    df_genes = csv_df_chromosomes_sorter(args.out_dir_plots + '/coverage_data/cancer_genes_coverage.csv', ['chr','start','end','gene','length', 'coverage'])
+    df_genes = csv_df_chromosomes_sorter(args.out_dir_plots + '/coverage_data/cancer_genes_coverage.csv', ['chr','start','end','gene','length', 'hp1', 'hp2'])
     genestart_1 = []
     genestart_2 = []
     last_len = 0
@@ -2473,7 +2473,7 @@ def genes_copy_number_plots_genome(centers, integer_fractional_centers, df_cnr_h
         add_scatter_trace_coverage(fig, df_1['start'], df_cnr_hp1.hp1.values.tolist(), name='HP-1',
                                    text=custom_text_data_hp1,
                                    yaxis="y", opacity=0.7, color='firebrick', visibility='legendonly', mul_cols=True, row=1)
-        add_scatter_trace_coverage(fig, df_1['start'],df_cnr_hp2.hp2.values.tolist(), name='HP-2',
+        add_scatter_trace_coverage(fig, df_1['start'],[-x for x in df_cnr_hp2.hp2.values.tolist()], name='HP-2',
                                    text=custom_text_data_hp2,
                                    yaxis="y", opacity=0.7, color='steelblue', visibility='legendonly', mul_cols=True, row=1)
 
@@ -2514,12 +2514,19 @@ def genes_copy_number_plots_genome(centers, integer_fractional_centers, df_cnr_h
     cen_coord = os.path.join(fileDir, args.centromere)
     df_centm = csv_df_chromosomes_sorter(cen_coord, ['chr', 'start', 'end'])
 
+    fig.add_trace(go.Bar(x=df_genes_1['start'], y=[x for x in df_genes.hp1.values.tolist()], name='HP-1', marker={'color': '#E3B448'}, width=2000000), row = 1, col = 1)
+    #fig.add_bar(x=df_genes_1['start'], y=[-(x/2) for x in df_genes.hp2.values.tolist()], name='HP-2', marker={'color': '#3A6B35'}, width=2000000)
+    fig.add_trace(go.Bar(x=df_genes_1['start'], y=[-(x) for x in df_genes.hp2.values.tolist()], name='HP-2', marker={'color': '#3A6B35'}, width=2000000), row = 1, col = 1)
+
+    #fig.update_layout(barmode='stack')
+
     for index, chrom in enumerate(chroms):
         df_gene = df_genes[df_genes['chr'] == chrom]
         genes_starts = df_gene.start.values.tolist()
         genes_ends = df_gene.end.values.tolist()
         genes_name = df_gene.gene.values.tolist()
-        genes_coverage = df_gene.coverage.values.tolist()
+        genes_coverage_hp1 = df_gene.hp1.values.tolist()
+        genes_coverage_hp2 = df_gene.hp2.values.tolist()
 
         loh_starts = []
         if not loh_regions.empty:
@@ -2548,51 +2555,51 @@ def genes_copy_number_plots_genome(centers, integer_fractional_centers, df_cnr_h
         # if len(cent_starts) and args.loh_enable:
         #     fig.add_vrect(x0=offset_chroms+cent_starts[0], x1=offset_chroms+cent_ends[0], fillcolor="#7e1f14", opacity=0.3, layer="above", line_width=0, row=1, col=1,)
 
-        if len(genes_starts):
-            for i in range(len(genes_starts)):
-                if genes_coverage[i] > 0:
-                    #fig.add_vrect(x0=offset_chroms+genes_starts[i], x1=offset_chroms+genes_ends[i], y0=0, y1=genes_coverage[i], fillcolor="#108c0b",  layer="below", line_width=1, row=1, col=1,)
-                    fig.add_shape(
-                        plotly.graph_objects.layout.Shape(
-                            type="rect",
-                            xref="x",
-                            yref="y",
-                            x0=offset_chroms+genes_starts[i],
-                            y0 = 0,
-                            x1 = offset_chroms+genes_ends[i],
-                            y1 = genes_coverage[i],
-                            name = 'name',
-                            fillcolor="#0c8702",
-                            line = dict(color="#c7c7c7", width=0.01, dash='solid'),
-                            ),
-                            row = 1,
-                            col = 1,
-                            )
-                    fig.add_annotation(x=offset_chroms+genes_starts[i], y=genes_coverage[i],
-                                       text=genes_name[i],
-                                       showarrow=False,
-                                       yshift=10)
-                else:
-                    fig.add_shape(
-                        plotly.graph_objects.layout.Shape(
-                            type="rect",
-                            xref="x",
-                            yref="y",
-                            x0=offset_chroms+genes_starts[i],
-                            y0 = 0,
-                            x1 = offset_chroms+genes_ends[i],
-                            y1 = centers[1],
-                            name = 'name',
-                            fillcolor="#d30000",
-                            line = dict(color="#c7c7c7", width=0.01, dash='solid'),
-                            ),
-                            row = 1,
-                            col = 1,
-                            )
-                    fig.add_annotation(x=offset_chroms+genes_starts[i], y=centers[1],
-                                       text=genes_name[i],
-                                       showarrow=False,
-                                       yshift=10)
+        # if len(genes_starts):
+        #     for i in range(len(genes_starts)):
+        #         if genes_coverage[i] > 0:
+        #             #fig.add_vrect(x0=offset_chroms+genes_starts[i], x1=offset_chroms+genes_ends[i], y0=0, y1=genes_coverage[i], fillcolor="#108c0b",  layer="below", line_width=1, row=1, col=1,)
+        #             fig.add_shape(
+        #                 plotly.graph_objects.layout.Shape(
+        #                     type="rect",
+        #                     xref="x",
+        #                     yref="y",
+        #                     x0=offset_chroms+genes_starts[i],
+        #                     y0 = 0,
+        #                     x1 = offset_chroms+genes_ends[i],
+        #                     y1 = genes_coverage[i],
+        #                     name = 'name',
+        #                     fillcolor="#0c8702",
+        #                     line = dict(color="#c7c7c7", width=0.01, dash='solid'),
+        #                     ),
+        #                     row = 1,
+        #                     col = 1,
+        #                     )
+        #             fig.add_annotation(x=offset_chroms+genes_starts[i], y=genes_coverage[i],
+        #                                text=genes_name[i],
+        #                                showarrow=False,
+        #                                yshift=10)
+        #         else:
+        #             fig.add_shape(
+        #                 plotly.graph_objects.layout.Shape(
+        #                     type="rect",
+        #                     xref="x",
+        #                     yref="y",
+        #                     x0=offset_chroms+genes_starts[i],
+        #                     y0 = 0,
+        #                     x1 = offset_chroms+genes_ends[i],
+        #                     y1 = centers[1],
+        #                     name = 'name',
+        #                     fillcolor="#d30000",
+        #                     line = dict(color="#c7c7c7", width=0.01, dash='solid'),
+        #                     ),
+        #                     row = 1,
+        #                     col = 1,
+        #                     )
+        #             fig.add_annotation(x=offset_chroms+genes_starts[i], y=centers[1],
+        #                                text=genes_name[i],
+        #                                showarrow=False,
+        #                                yshift=10)
 
         offset_chroms += regions[index]
 
@@ -2638,7 +2645,7 @@ def genes_copy_number_plots_genome(centers, integer_fractional_centers, df_cnr_h
             OFFSET = args.cut_threshold/150
             colors = ['firebrick', 'steelblue']
         haplotype_1_copyratios_values = [x if x == 'None' else x  for x in haplotype_1_copyratios_values]
-        haplotype_2_copyratios_values = [x if x == 'None' else x + OFFSET for x in haplotype_2_copyratios_values]
+        haplotype_2_copyratios_values = [x if x == 'None' else -x for x in haplotype_2_copyratios_values]
         name = "Copynumbers"
 
         add_scatter_trace_copyratios(args, fig, colors, name, haplotype_1_copyratios_positions, haplotype_2_copyratios_positions, haplotype_1_copyratios_values, haplotype_2_copyratios_values, df_segs_hp1, df_segs_hp2, mul_cols=True, row=1, visibility='legendonly')
@@ -2648,13 +2655,13 @@ def genes_copy_number_plots_genome(centers, integer_fractional_centers, df_cnr_h
     integer_fractional_means_rev = [x for x in integer_fractional_centers]
     integer_fractional_means_rev.reverse()
 
-    tick_vals = centers
-    tickt_ext = integer_fractional_centers
-    tickvals = [i for i in range(0, 1000, 25)]
-    ticktext = [str(abs(i)) for i in range(0, 1000, 25)]
-    yaxis2_3_range = [0, args.cut_threshold + 5]
+    tick_vals = centers + centers_rev
+    tickt_ext = integer_fractional_centers + integer_fractional_means_rev
+    tickvals = [i for i in range(-1000, 1000, 25)]
+    ticktext = [str(abs(i)) for i in range(-1000, 1000, 25)]
+    yaxis2_3_range = [-(args.cut_threshold + 5), args.cut_threshold + 5]
     plot_height = 420  + 40 + 15
-    legend_y = 1.3
+    legend_y = 1.12
 
     # #############################################################
     # #############################################################

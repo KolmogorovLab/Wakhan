@@ -59,7 +59,7 @@ def sv_vcf_bps_cn_check(path, args):
 
     for variant in my_parser:
         #if ("INV" in variant['ID'] and variant['info_dict']['DETAILED_TYPE'] == ['reciprocal_inv']) or  "INS" in variant['ID']:
-        if "INV" in variant['ID'] or "DUP" in variant['ID'] or (("INS" in variant['ID'] or "DEL" in variant['ID']) and int(variant['info_dict']['SVLEN'][0]) > args.breakpoints_min_length):
+        if variant['info_dict']['SVTYPE'][0] == 'INV' or variant['info_dict']['SVTYPE'][0] == 'DUP' or ((variant['info_dict']['SVTYPE'][0] == 'INS' or variant['info_dict']['SVTYPE'][0] == 'DEL') and int(variant['info_dict']['SVLEN'][0]) > args.breakpoints_min_length):
             if not variant['CHROM'] in chroms:
                 continue
             hp = 0
@@ -72,32 +72,31 @@ def sv_vcf_bps_cn_check(path, args):
             bp_junctions_bnd.append([variant['CHROM'], int(variant['POS'])+int(variant['info_dict']['SVLEN'][0])])
             sample_list[variant['ID']] = bps_sample(variant['CHROM'], int(variant['POS']), hp, variant['CHROM'], int(variant['POS'])+int(variant['info_dict']['SVLEN'][0]), hp, False)
 
-        elif "BND" in variant['ID']:
-            if "sBND" in variant['ID']:
-                hp = 0
-                if 'HP' in variant['info_dict']:
-                    hp = int(variant['info_dict']['HP'][0])
-                bp_junctions_bnd.append([variant['CHROM'], int(variant['POS'])])
-                bp_junctions_bnd.append([variant['CHROM'], int(variant['POS']) + 1])
-                sample_list[variant['ID']] = bps_sample(variant['CHROM'], int(variant['POS']), hp, variant['CHROM'], int(variant['POS']) + 1, hp, False)
-            else:
-                s = variant['ALT']
-                for ch in ['[', ']', 'N']:
-                    if ch in s:
-                        s = s.replace(ch, '')
-                chr2_id = s.split(':')[0]
-                chr2_end = int(s.split(':')[1])
+        elif variant['info_dict']['SVTYPE'][0] == 'sBND':
+            hp = 0
+            if 'HP' in variant['info_dict']:
+                hp = int(variant['info_dict']['HP'][0])
+            bp_junctions_bnd.append([variant['CHROM'], int(variant['POS'])])
+            bp_junctions_bnd.append([variant['CHROM'], int(variant['POS']) + 1])
+            sample_list[variant['ID']] = bps_sample(variant['CHROM'], int(variant['POS']), hp, variant['CHROM'], int(variant['POS']) + 1, hp, False)
 
-                if not variant['CHROM'] in chroms or not chr2_id in chroms:
-                    continue
+        elif variant['info_dict']['SVTYPE'][0] == 'BND':
+            s = variant['ALT']
+            for ch in ['[', ']', 'N']:
+                if ch in s:
+                    s = s.replace(ch, '')
+            chr2_id = s.split(':')[0]
+            chr2_end = int(s.split(':')[1])
 
-                hp = 0
-                if 'HP' in variant['info_dict']:
-                    hp = int(variant['info_dict']['HP'][0])
+            if not variant['CHROM'] in chroms or not chr2_id in chroms:
+                continue
+            hp = 0
+            if 'HP' in variant['info_dict']:
+                hp = int(variant['info_dict']['HP'][0])
 
-                bp_junctions_bnd.append([variant['CHROM'], int(variant['POS'])])
-                bp_junctions_bnd.append([chr2_id, chr2_end])
-                sample_list[variant['ID']] = bps_sample(variant['CHROM'], int(variant['POS']), hp, chr2_id, chr2_end, hp, False)
+            bp_junctions_bnd.append([variant['CHROM'], int(variant['POS'])])
+            bp_junctions_bnd.append([chr2_id, chr2_end])
+            sample_list[variant['ID']] = bps_sample(variant['CHROM'], int(variant['POS']), hp, chr2_id, chr2_end, hp, False)
 
     bp_junctions = sorted(bp_junctions[1:], key=lambda x: (x[0], x[1]))
     bp_junctions_bnd = sorted(bp_junctions_bnd[1:], key=lambda x: (x[0], x[1]))

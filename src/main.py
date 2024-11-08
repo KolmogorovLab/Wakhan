@@ -49,7 +49,7 @@ def main():
 
     DEFAULT_CONTIGS = 'chr1-22' #('chr1-22' '1-22') ('chr1-22,chrX' '1-22,X')
     DEFAULT_PURITY = '0.5-1.0'
-    DEFAULT_PLOIDY = '1.5-5.5'
+    DEFAULT_PLOIDY = '1.0-5.5'
 
     parser = argparse.ArgumentParser \
         (description="Plot coverage and copy number profiles from a bam and phased VCF files")
@@ -152,7 +152,7 @@ def main():
                         help="bins cluster means")
 
     parser.add_argument("--purity-range", dest="purity_range", required=False, default=DEFAULT_PURITY, help="Estimated tumor purity range (fraction) between [default: 0.5-1.0]")
-    parser.add_argument("--ploidy-range", dest="ploidy_range", required=False, default=DEFAULT_PLOIDY, help="Estimated tumor ploidy range between [default: 1.5-5.5]")
+    parser.add_argument("--ploidy-range", dest="ploidy_range", required=False, default=DEFAULT_PLOIDY, help="Estimated tumor ploidy range between [default: 1.0-5.5]")
 
     parser.add_argument("--tumor-purity", dest="tumor_purity", default=0.0, metavar="float", type=float, help="user input tumor purity")
     parser.add_argument("--tumor-ploidy", dest="tumor_ploidy", default=0.0, metavar="float", type=float, help="user input tumor ploidy")
@@ -490,3 +490,4 @@ if __name__ == "__main__":
 #first copy adjustment
 #cpd inside centromeres regions
 
+#exlude centromere from ploidy

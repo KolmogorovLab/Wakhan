@@ -14,15 +14,15 @@ def get_all_breakpoints_data(edges, edges_chr, height, path, args):
     for variant in my_parser:
         if not variant['CHROM'] in chroms:
             continue
-        if "INV" in variant['ID']:
+        if variant['info_dict']['SVTYPE'][0] == 'INV':
             bp_junctions_inv.append([variant['CHROM'], int(variant['POS'])])
-        elif "sBND" in variant['ID']:
+        elif variant['info_dict']['SVTYPE'][0] == 'sBND':
             bp_junctions_sbnd.append([variant['CHROM'], int(variant['POS'])])
-        elif ("DUP" in variant['ID']) and int(variant['info_dict']['SVLEN'][0]) > args.breakpoints_min_length:
+        elif (variant['info_dict']['SVTYPE'][0] == 'DUP') and int(variant['info_dict']['SVLEN'][0]) > args.breakpoints_min_length:
             bp_junctions_dup.append([variant['CHROM'], int(variant['POS'])])
-        elif ("INS" in variant['ID']) and int(variant['info_dict']['SVLEN'][0]) > args.breakpoints_min_length:
+        elif (variant['info_dict']['SVTYPE'][0] == 'INS') and int(variant['info_dict']['SVLEN'][0]) > args.breakpoints_min_length:
             bp_junctions_ins.append([variant['CHROM'], int(variant['POS'])])
-        elif "DEL" in variant['ID'] and int(variant['info_dict']['SVLEN'][0]) > args.breakpoints_min_length:
+        elif variant['info_dict']['SVTYPE'][0] == 'DEL' and int(variant['info_dict']['SVLEN'][0]) > args.breakpoints_min_length:
             bp_junctions_del.append([variant['CHROM'], int(variant['POS'])])
 
     #keys = sorted(set(interact_strength))

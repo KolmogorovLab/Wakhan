@@ -649,26 +649,26 @@ def subclonal_values_adjusted(x, centers):
         return x
     if x < 0:
         x = -x
-    centers = centers + [centers[-1] + centers[1]]
+    #centers = centers + [centers[-1] + centers[1]]
     for i in range(len(centers) - 1):
         if centers[i + 1] >= x >= centers[i]:
             return round(i + ((x - centers[i]) / (centers[i + 1] - centers[i])), 2)
         elif x < centers[0]:
             return 0
-    return len(centers)-2 #round((len(centers) - 1) + ((x - centers[-1]) / ((centers[-1] + (centers[-1] - centers[-2])) - centers[-1])), 2)
+    return len(centers)-1 #round((len(centers) - 1) + ((x - centers[-1]) / ((centers[-1] + (centers[-1] - centers[-2])) - centers[-1])), 2)
 
 def integers_values_adjusted(x, centers):
     if x == -3300.0:
         return x
     if x < 0:
         x = -x
-    centers = centers + [centers[-1] + centers[1]]
+    #centers = centers + [centers[-1] + centers[1]]
     for i in range(len(centers) - 1):
         if centers[i + 1] >= x >= centers[i]:
             return math.ceil(round(i + ((x - centers[i]) / (centers[i + 1] - centers[i])), 2))
         elif x < centers[0]:
             return 0
-    return len(centers)-2 #round((len(centers) - 1) + ((x - centers[-1]) / ((centers[-1] + (centers[-1] - centers[-2])) - centers[-1])), 2)
+    return len(centers)-1 #round((len(centers) - 1) + ((x - centers[-1]) / ((centers[-1] + (centers[-1] - centers[-2])) - centers[-1])), 2)
 
 
 def mask_df_states(haplotype_df, centers, integer_fractional_means):
