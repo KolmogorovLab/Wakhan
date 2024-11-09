@@ -1589,3 +1589,56 @@ def collect_loh_centromere_regions(df_segs_hp1_, df_segs_hp2_, centers, integer_
         return pd.concat(loh_regions_all)
     else:
         return pd.DataFrame(columns=['chr', 'start', 'end'])
+
+def overlap_check(start, end, starts, ends):
+  for i in range(len(starts)):
+    if (start < ends[i] and end > starts[i]) or (start <= starts[i] and end >= ends[i]):
+      return True, i
+  return False, -1
+def genes_phase_correction(df_genes, df_segs_hp1, df_segs_hp2, args):
+    chroms = get_contigs_list(args.contigs)
+    df_genes_updated = []
+
+    for index, chrom in enumerate(chroms):
+        df_gene = df_genes[df_genes['chr'] == chrom]
+        df_seg_hp1 = df_segs_hp1[df_segs_hp1['chromosome'] == chrom]
+        df_seg_hp2 = df_segs_hp2[df_segs_hp2['chromosome'] == chrom]
+
+        seg_coverage_hp1 = df_seg_hp1.depth.values.tolist()
+        seg_coverage_hp2 = df_seg_hp2.depth.values.tolist()
+
+        genes_starts = df_gene.start.values.tolist()
+        genes_ends = df_gene.end.values.tolist()
+        genes_coverage_hp1 = df_gene.hp1.values.tolist()
+        genes_coverage_hp2 = df_gene.hp2.values.tolist()
+
+        for i, (start_b, end_b) in enumerate(zip(genes_starts, genes_ends)):
+            hp_1_val = 0
+            hp_2_val = 0
+            check, index = overlap_check(start_b, end_b, df_seg_hp1.start.values.tolist(), df_seg_hp1.end.values.tolist())
+            if check:
+                hp_1_val = seg_coverage_hp1[index]
+                print(chrom, start_b, end_b, hp_1_val)
+            check, index = overlap_check(start_b, end_b, df_seg_hp2.start.values.tolist(), df_seg_hp2.end.values.tolist())
+            if check:
+                hp_2_val = seg_coverage_hp2[index]
+                print(chrom, start_b, end_b, hp_2_val)
+
+            if hp_1_val == 0 and hp_2_val == 0:
+                continue
+
+            print(genes_coverage_hp1[i], genes_coverage_hp2[i])
+            print(abs(genes_coverage_hp1[i] -  hp_2_val) + abs(genes_coverage_hp2[i] -  hp_1_val))
+            print(abs(genes_coverage_hp1[i] -  hp_1_val) + abs(genes_coverage_hp2[i] -  hp_2_val))
+
+            if abs(genes_coverage_hp1[i] -  hp_2_val) < abs(genes_coverage_hp1[i] -  hp_1_val):
+                new_hp2 = genes_coverage_hp1[i]
+                new_hp1 = genes_coverage_hp2[i]
+                genes_coverage_hp2[i] = new_hp2
+                genes_coverage_hp1[i] = new_hp1
+
+        df_genes_updated.append(pd.DataFrame(list(zip(df_gene.chr.values.tolist(), df_gene.start.values.tolist(), df_gene.end.values.tolist(), \
+                     df_gene.gene.values.tolist(), df_gene.len.values.tolist(), genes_coverage_hp1, genes_coverage_hp2)),
+            columns=['chr', 'start', 'end', 'gene', 'len', 'hp1', 'hp2']))
+
+    return pd.concat(df_genes_updated)

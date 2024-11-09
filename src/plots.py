@@ -15,7 +15,7 @@ import logging
 from phasing_correction import phaseblock_flipping, phase_correction_centers, contiguous_phaseblocks, detect_centromeres, flip_phaseblocks_contigous, remove_overlaping_contiguous, switch_inter_phaseblocks_bins
 from smoothing import smoothing
 from vcf_processing import get_snps_frquncies_coverage, get_snps_frquncies, het_homo_snps_gts, vcf_parse_to_csv_for_het_phased_snps_phasesets, snps_mean, cpd_mean, get_snp_segments, vcf_parse_to_csv_for_snps, het_snps_means_df
-from utils import subclonal_values_adjusted, get_chromosomes_bins, csv_df_chromosomes_sorter, get_breakpoints, flatten, get_snps_frquncies_coverage_from_bam, detect_alter_loh_regions, is_phasesets_check_simple_heuristics, change_point_detection_means, loh_regions_phasesets, get_chromosomes_regions, adjust_extreme_outliers
+from utils import subclonal_values_adjusted, get_chromosomes_bins, csv_df_chromosomes_sorter, get_breakpoints, flatten, get_snps_frquncies_coverage_from_bam, detect_alter_loh_regions, is_phasesets_check_simple_heuristics, change_point_detection_means, loh_regions_phasesets, get_chromosomes_regions, adjust_extreme_outliers, genes_phase_correction
 from extras import get_contigs_list, sv_vcf_bps_cn_check
 
 pd.options.mode.chained_assignment = None
@@ -2379,7 +2379,10 @@ def genes_copy_number_plots_genome(centers, integer_fractional_centers, df_cnr_h
     df_segs_hp2_ = []
     df_genes_1_ = []
     df_genes_2_ = []
-    df_genes = csv_df_chromosomes_sorter(args.out_dir_plots + '/coverage_data/cancer_genes_coverage.csv', ['chr','start','end','gene','length', 'hp1', 'hp2'])
+    df_genes = csv_df_chromosomes_sorter(args.out_dir_plots + '/coverage_data/cancer_genes_coverage.csv', ['chr','start','end','gene','len', 'hp1', 'hp2'])
+
+    df_genes = genes_phase_correction(df_genes, df_segs_hp1, df_segs_hp2, args)
+
     genestart_1 = []
     genestart_2 = []
     last_len = 0
@@ -2660,7 +2663,7 @@ def genes_copy_number_plots_genome(centers, integer_fractional_centers, df_cnr_h
     tickvals = [i for i in range(-1000, 1000, 25)]
     ticktext = [str(abs(i)) for i in range(-1000, 1000, 25)]
     yaxis2_3_range = [-(args.cut_threshold + 5), args.cut_threshold + 5]
-    plot_height = 420  + 40 + 15
+    plot_height = 420 + 40 + 15
     legend_y = 1.12
 
     # #############################################################
@@ -2712,9 +2715,9 @@ def genes_copy_number_plots_genome(centers, integer_fractional_centers, df_cnr_h
     ax = 20
     ay = -30
 
-    if args.loh_enable:
-        add_annotation(fig, 960000000 + 250000000 + 250000000, args.cut_threshold, ax, ay, "LOSS", '#d30000')
-        add_annotation(fig, 960000000 + 250000000 + 250000000 + 250000000, args.cut_threshold, ax, ay, "GAIN", '#0c8702')
+    # if args.loh_enable:
+    #     add_annotation(fig, 960000000 + 250000000 + 250000000, args.cut_threshold, ax, ay, "LOSS", '#d30000')
+    #     add_annotation(fig, 960000000 + 250000000 + 250000000 + 250000000, args.cut_threshold, ax, ay, "GAIN", '#0c8702')
 
         #fig.add_annotation(text="Het SNPs ratio threshold: " + str(args.hets_ratio) , x = 960000000 + 250000000 + 250000000, y=args.cut_threshold, showarrow=False, row=2, col=1)
 
