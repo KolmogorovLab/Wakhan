@@ -263,7 +263,7 @@ def main_process(args):
     write_df_csv(pd.concat(df_updated_coverage), args.out_dir_plots+'/coverage_data/phase_corrected_coverage.csv')
 
     if not cancer_genes_df_all.empty:
-        write_df_csv(cancer_genes_df_all, args.out_dir_plots + '/coverage_data/cancer_genes_coverage.csv')
+        write_df_csv(cancer_genes_df_all, args.out_dir_plots + '/data_phasing/cancer_genes_coverage.csv')
 
     csv_df_phase_change_segments = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/' + args.genome_name + '_phase_change_segments.csv', ['chr', 'start', 'end'])
     csv_df_phasesets_segments = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/' + args.genome_name + '_phasesets.csv', ['chr', 'start'])

@@ -431,6 +431,9 @@ def chromosomes_sorter(label):
             key = (3000 + nums, chars)
     return key
 
+def write_df_csv(df, file_name):
+    df.to_csv(file_name, sep='\t', index=False, header=False)
+
 def csv_df_chromosomes_sorter(path, names, sept='\t'):
     dataframe = pd.read_csv(path, sep=sept, names=names)
     dataframe['chr'] = dataframe['chr'].astype(str)

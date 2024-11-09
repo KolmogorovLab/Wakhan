@@ -2379,8 +2379,8 @@ def genes_copy_number_plots_genome(centers, integer_fractional_centers, df_cnr_h
     df_segs_hp2_ = []
     df_genes_1_ = []
     df_genes_2_ = []
-    df_genes = csv_df_chromosomes_sorter(args.out_dir_plots + '/coverage_data/cancer_genes_coverage.csv', ['chr','start','end','gene','len', 'hp1', 'hp2'])
-
+    df_genes = csv_df_chromosomes_sorter(args.out_dir_plots + '/data_phasing/cancer_genes_coverage.csv', ['chr','start','end','gene','len', 'hp1', 'hp2'])
+    write_df_csv(df_genes, args.out_dir_plots + '/coverage_data/cancer_genes_coverage.csv')
     df_genes = genes_phase_correction(df_genes, df_segs_hp1, df_segs_hp2, args)
 
     genestart_1 = []
