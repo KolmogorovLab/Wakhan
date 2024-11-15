@@ -19,9 +19,9 @@ from bam_processing import get_all_reads_parallel, update_coverage_hist, get_seg
 from utils import get_chromosomes_bins, write_segments_coverage, write_segments_coverage_dict, csv_df_chromosomes_sorter,\
     seperate_dfs_coverage, flatten_smooth, get_contigs_list, write_copynumber_segments_csv, integer_fractional_cluster_means, \
     adjust_diversified_segments, get_chromosomes_bins_bam, normal_genome_proportion, update_subclonal_means_states, adjust_first_copy_mean, \
-    merge_adjacent_regions_cn, merge_adjacent_regions_cn_unphased, parse_sv_vcf, weigted_means_ploidy, average_p_value_genome, collect_loh_centromere_regions, find_optimized_normal_peaks
+    merge_adjacent_regions_cn, merge_adjacent_regions_cn_unphased, parse_sv_vcf, weigted_means_ploidy, average_p_value_genome, collect_loh_centromere_regions, find_optimized_normal_peaks, update_genes_phase_corrected_coverage
 from plots import coverage_plots_chromosomes, copy_number_plots_genome_details, copy_number_plots_genome, plots_genome_coverage, copy_number_plots_chromosomes, \
-    copy_number_plots_genome_breakpoints, copy_number_plots_genome_breakpoints_subclonal, copy_number_plots_genome_subclonal, genes_copy_number_plots_genome
+    copy_number_plots_genome_breakpoints, copy_number_plots_genome_breakpoints_subclonal, copy_number_plots_genome_subclonal, genes_copy_number_plots_genome, genes_plots_genome, heatmap_copy_number_plots_genome
 from vcf_processing import vcf_parse_to_csv_for_het_phased_snps_phasesets
 from snps_loh import plot_snps_frequencies_without_phasing, plot_snps_frequencies, plot_snps_ratios_genome, snps_df_loh, variation_plots, write_loh_regions
 from phasing_correction import generate_phasesets_bins, fix_inter_cn_phase_switch_errors
@@ -320,7 +320,7 @@ def main():
         max_limit = int(statistics.mean(snps_cpd_means))
 
     centers, subclonals, x_axis, observed_hist, single_copy_cov = peak_detection_optimization(args, snps_cpd_means, snps_cpd_points_weights)
-
+    logging.info('Initial detected clusters means: %s', centers)
     #centers, subclonals, x_axis, observed_hist = peak_detection_optimization(csv_df_snps_mean.hp1.tolist()+csv_df_snps_mean.hp2.tolist(), [1 for i in range(2*len(csv_df_snps_mean.hp2.tolist()))])
     tumor_cov = statistics.mean([sum(x) for x in zip(haplotype_1_values_updated, haplotype_2_values_updated, unphased)])
     # if args.tumor_purity and args.tumor_ploidy:
@@ -378,7 +378,10 @@ def main():
                 break
             tumor_purity = (tumor_cov / overall_ploidy) / (((normal_coverage * 2) / 2) + (tumor_cov / overall_ploidy))
             _, _, _, normal_fraction = normal_genome_proportion(tumor_purity, overall_ploidy, tumor_cov)
-
+            if normal_coverage == 0:
+                average_p_value.append(p_value)
+                data.append([overall_ploidy, tumor_purity, cen_out, p_value])
+                continue
             if (float(args.purity_range.split('-')[0])  <= tumor_purity <= float(args.purity_range.split('-')[1])) and (float(args.ploidy_range.split('-')[0])  <= overall_ploidy <= float(args.ploidy_range.split('-')[1])):
                 average_p_value.append(p_value)
                 data.append([overall_ploidy, tumor_purity, cen_out, p_value])
@@ -390,6 +393,7 @@ def main():
                 args.tumor_ploidy = round(data[j][0], 2)
                 args.tumor_purity = round(data[j][1], 2)
                 cen_out = data[j][2]
+                logging.info('Normal optimized clusters means: %s', cen_out)
                 integer_fractional_means = sorted([i for i in range(0, len(cen_out))])
                 p_value_confidence = round(data[j][3], 2)
                 logging.info('Generating coverage/copy numbers plots genome wide for solution with purity {0} and ploidy {1}'.format(args.tumor_purity, args.tumor_ploidy))
@@ -408,7 +412,10 @@ def main():
                     copy_number_plots_genome(cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, p_value_confidence, loh_regions, df_snps_in_csv)
                 variation_plots(args, csv_df_snps_mean, df_segs_hp1_updated, df_segs_hp2_updated, cen_out, integer_fractional_means, df_snps_in_csv, loh_regions, p_value_confidence)
                 if not args.phaseblock_flipping_disable:
-                    genes_copy_number_plots_genome(cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, p_value_confidence, loh_regions, df_snps_in_csv)
+                    df_genes = update_genes_phase_corrected_coverage(args, df_segs_hp1_updated, df_segs_hp2_updated, p_value_confidence, centers, integer_fractional_means)
+                    genes_plots_genome(df_genes, cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, p_value_confidence, loh_regions, df_snps_in_csv)
+                    #genes_copy_number_plots_genome(df_genes, cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, p_value_confidence, loh_regions, df_snps_in_csv)
+                    heatmap_copy_number_plots_genome(df_genes, cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, p_value_confidence, loh_regions, df_snps_in_csv)
 
                 if args.copynumbers_subclonal_enable:
                     df_segs_hp1_updated, df_segs_hp2_updated = adjust_diversified_segments(cen_out, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, args)

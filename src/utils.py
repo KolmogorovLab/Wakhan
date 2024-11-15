@@ -1598,7 +1598,46 @@ def overlap_check(start, end, starts, ends):
     if (start < ends[i] and end > starts[i]) or (start <= starts[i] and end >= ends[i]):
       return True, i
   return False, -1
-def genes_phase_correction(df_genes, df_segs_hp1, df_segs_hp2, args):
+
+def bins_with_copynumber_states(df_segs_hp1, df_segs_hp2, df_hp1, df_hp2, args, centers, integer_fractional_centers):
+    chroms = get_contigs_list(args.contigs)
+    df_hp1_updated = []
+    df_hp2_updated = []
+
+    for index, chrom in enumerate(chroms):
+        df_hp1_chrom = df_hp1[df_hp1['chr'] == chrom]
+        df_hp2_chrom = df_hp2[df_hp2['chr'] == chrom]
+        df_seg_hp1 = df_segs_hp1[df_segs_hp1['chromosome'] == chrom]
+        df_seg_hp2 = df_segs_hp2[df_segs_hp2['chromosome'] == chrom]
+
+        seg_coverage_hp1 = df_seg_hp1.state.values.tolist()
+        seg_coverage_hp2 = df_seg_hp2.state.values.tolist()
+
+        starts = df_hp1_chrom.start.values.tolist()
+        ends = df_hp1_chrom.end.values.tolist()
+
+        hp1_chrom_coverage = df_hp1_chrom.hp1.values.tolist()
+        hp2_chrom_coverage = df_hp2_chrom.hp2.values.tolist()
+
+        for i, (start_b, end_b) in enumerate(zip(starts, ends)):
+            check, index = overlap_check(start_b, end_b, df_seg_hp1.start.values.tolist(), df_seg_hp1.end.values.tolist())
+            if check:
+                hp1_chrom_coverage[i] = integer_fractional_centers[centers.index(seg_coverage_hp1[index])]
+            else:
+                hp1_chrom_coverage[i] = 0
+            check, index = overlap_check(start_b, end_b, df_seg_hp2.start.values.tolist(), df_seg_hp2.end.values.tolist())
+            if check:
+                hp2_chrom_coverage[i] = integer_fractional_centers[centers.index(seg_coverage_hp2[index])]
+            else:
+                hp2_chrom_coverage[i] = 0
+        df_hp1_updated.append(pd.DataFrame(list(zip(df_hp1_chrom.chr.values.tolist(), df_hp1_chrom.start.values.tolist(), df_hp1_chrom.start.values.tolist(), \
+                     hp1_chrom_coverage)), columns=['chr', 'start', 'end', 'hp1']))
+
+        df_hp2_updated.append(pd.DataFrame(list(zip(df_hp2_chrom.chr.values.tolist(), df_hp2_chrom.start.values.tolist(), df_hp2_chrom.start.values.tolist(), \
+                     hp2_chrom_coverage)), columns=['chr', 'start', 'end', 'hp2']))
+
+    return pd.concat(df_hp1_updated), pd.concat(df_hp2_updated)
+def genes_phase_correction(df_genes, df_segs_hp1, df_segs_hp2, args, centers, integer_fractional_centers):
     chroms = get_contigs_list(args.contigs)
     df_genes_updated = []
 
@@ -1610,10 +1649,16 @@ def genes_phase_correction(df_genes, df_segs_hp1, df_segs_hp2, args):
         seg_coverage_hp1 = df_seg_hp1.depth.values.tolist()
         seg_coverage_hp2 = df_seg_hp2.depth.values.tolist()
 
+        seg_state_hp1 = df_seg_hp1.state.values.tolist()
+        seg_state_hp2 = df_seg_hp2.state.values.tolist()
+
         genes_starts = df_gene.start.values.tolist()
         genes_ends = df_gene.end.values.tolist()
         genes_coverage_hp1 = df_gene.hp1.values.tolist()
         genes_coverage_hp2 = df_gene.hp2.values.tolist()
+
+        gene_hp1_state = [0 for x in range(len(genes_coverage_hp1))]
+        gene_hp2_state = [0 for x in range(len(genes_coverage_hp2))]
 
         for i, (start_b, end_b) in enumerate(zip(genes_starts, genes_ends)):
             hp_1_val = 0
@@ -1621,18 +1666,20 @@ def genes_phase_correction(df_genes, df_segs_hp1, df_segs_hp2, args):
             check, index = overlap_check(start_b, end_b, df_seg_hp1.start.values.tolist(), df_seg_hp1.end.values.tolist())
             if check:
                 hp_1_val = seg_coverage_hp1[index]
-                print(chrom, start_b, end_b, hp_1_val)
+                #gene_hp1_state[i] = integer_fractional_centers[centers.index(min(centers, key=lambda x:abs(x - seg_coverage_hp1[index])))]  #(integer_fractional_centers[centers.index(seg_coverage_hp1[index])])
             check, index = overlap_check(start_b, end_b, df_seg_hp2.start.values.tolist(), df_seg_hp2.end.values.tolist())
             if check:
                 hp_2_val = seg_coverage_hp2[index]
-                print(chrom, start_b, end_b, hp_2_val)
+                #gene_hp2_state[i] = integer_fractional_centers[centers.index(min(centers, key=lambda x:abs(x - seg_coverage_hp2[index])))]
 
             if hp_1_val == 0 and hp_2_val == 0:
+                gene_hp1_state[i] = integers_values_adjusted(genes_coverage_hp1[i], centers)
+                gene_hp2_state[i] = integers_values_adjusted(genes_coverage_hp2[i], centers)
                 continue
 
-            print(genes_coverage_hp1[i], genes_coverage_hp2[i])
-            print(abs(genes_coverage_hp1[i] -  hp_2_val) + abs(genes_coverage_hp2[i] -  hp_1_val))
-            print(abs(genes_coverage_hp1[i] -  hp_1_val) + abs(genes_coverage_hp2[i] -  hp_2_val))
+            #print(genes_coverage_hp1[i], genes_coverage_hp2[i])
+            #print(abs(genes_coverage_hp1[i] -  hp_2_val) + abs(genes_coverage_hp2[i] -  hp_1_val))
+            #print(abs(genes_coverage_hp1[i] -  hp_1_val) + abs(genes_coverage_hp2[i] -  hp_2_val))
 
             if abs(genes_coverage_hp1[i] -  hp_2_val) < abs(genes_coverage_hp1[i] -  hp_1_val):
                 new_hp2 = genes_coverage_hp1[i]
@@ -1640,8 +1687,20 @@ def genes_phase_correction(df_genes, df_segs_hp1, df_segs_hp2, args):
                 genes_coverage_hp2[i] = new_hp2
                 genes_coverage_hp1[i] = new_hp1
 
+            gene_hp1_state[i] = integers_values_adjusted(genes_coverage_hp1[i], centers)
+            gene_hp2_state[i] = integers_values_adjusted(genes_coverage_hp2[i], centers)
+
         df_genes_updated.append(pd.DataFrame(list(zip(df_gene.chr.values.tolist(), df_gene.start.values.tolist(), df_gene.end.values.tolist(), \
-                     df_gene.gene.values.tolist(), df_gene.len.values.tolist(), genes_coverage_hp1, genes_coverage_hp2)),
-            columns=['chr', 'start', 'end', 'gene', 'len', 'hp1', 'hp2']))
+                     df_gene.gene.values.tolist(), df_gene.len.values.tolist(), [round(l,2) for l in genes_coverage_hp1], gene_hp1_state, [round(l,2) for l in genes_coverage_hp2], gene_hp2_state)),
+            columns=['chr', 'start', 'end', 'gene', 'len', 'hp1', 'hp1_state', 'hp2', 'hp2_state']))
 
     return pd.concat(df_genes_updated)
+
+def update_genes_phase_corrected_coverage(args, df_segs_hp1, df_segs_hp2, p_value, centers, integer_fractional_centers):
+
+    df_genes = csv_df_chromosomes_sorter(args.out_dir_plots + '/data_phasing/cancer_genes_coverage.csv', ['chr','start','end','gene','len', 'hp1', 'hp2'])
+    write_df_csv(df_genes, args.out_dir_plots + '/' + str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_'+ str(p_value) +'/bed_output/' + 'cancer_genes_coverage.csv')
+    df_genes = genes_phase_correction(df_genes, df_segs_hp1, df_segs_hp2, args, centers, integer_fractional_centers)
+    write_df_csv(df_genes, args.out_dir_plots + '/' + str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_'+ str(p_value) +'/bed_output/' + 'cancer_genes_copynumber_states.csv')
+
+    return df_genes
