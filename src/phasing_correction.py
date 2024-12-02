@@ -972,31 +972,35 @@ def fix_inter_cn_phase_switch_errors(args, df_segs_hp_1_, df_segs_hp_2_, df_hp_1
         haplotype_2_start_values_copyrnumbers = df_seg_hp_2.start.values.tolist()
         haplotype_2_end_values_copyrnumbers = df_seg_hp_2.end.values.tolist()
 
-        for i in range(len(haplotype_1_state_copyrnumbers)-2):
-            if haplotype_1_state_copyrnumbers[i] == haplotype_1_state_copyrnumbers[i+2] and \
-               haplotype_2_state_copyrnumbers[i] == haplotype_2_state_copyrnumbers[i+2] and \
-               not haplotype_1_state_copyrnumbers[i] ==  haplotype_2_state_copyrnumbers[i] and \
-               haplotype_1_state_copyrnumbers[i+1] == haplotype_2_state_copyrnumbers[i+1]:
-                print(chrom, haplotype_2_start_values_copyrnumbers[i], haplotype_2_end_values_copyrnumbers[i])
-                #CN states change
-                haplotype_1_state_copyrnumbers[i+1] = haplotype_2_state_copyrnumbers[i]
-                haplotype_2_state_copyrnumbers[i+1] = haplotype_1_state_copyrnumbers[i]
+        for i, (val_hp1, val_hp2) in enumerate(zip(haplotype_1_state_copyrnumbers, haplotype_2_state_copyrnumbers)):
+            if not i == 0 and not i == len(haplotype_1_state_copyrnumbers):
+                if haplotype_1_state_copyrnumbers[i-1] == haplotype_1_state_copyrnumbers[i+1] and \
+                   haplotype_2_state_copyrnumbers[i-1] == haplotype_2_state_copyrnumbers[i+1] and \
+                   not haplotype_1_state_copyrnumbers[i] == haplotype_2_state_copyrnumbers[i]:# and \
+                   #haplotype_1_state_copyrnumbers[i+1] == haplotype_2_state_copyrnumbers[i+1]:
 
-                new_depth_hp2 = haplotype_2_depth_copyrnumbers[i + 1]
-                new_depth_hp1 = haplotype_1_depth_copyrnumbers[i + 1]
-                haplotype_1_depth_copyrnumbers[i + 1] = new_depth_hp2
-                haplotype_2_depth_copyrnumbers[i + 1] = new_depth_hp1
+                    #print(chrom, haplotype_2_start_values_copyrnumbers[i], haplotype_2_end_values_copyrnumbers[i])
+                    #CN states change
+                    new_state_hp2 = haplotype_2_state_copyrnumbers[i]
+                    new_state_hp1 = haplotype_1_state_copyrnumbers[i]
+                    haplotype_1_state_copyrnumbers[i] = new_state_hp2
+                    haplotype_2_state_copyrnumbers[i] = new_state_hp1
 
-                #bins change
-                internal_bins = [k for k in hp_1_start if k >= haplotype_2_start_values_copyrnumbers[i] and k <= haplotype_2_end_values_copyrnumbers[i]]
-                if internal_bins:
-                    l = hp_1_start.index(internal_bins[0])
-                    for j in range(len(internal_bins)):
-                        new_hp2 = hp_2_hp2[l]
-                        new_hp1 = hp_1_hp1[l]
-                        hp_1_hp1[l] = new_hp2
-                        hp_2_hp2[l] = new_hp1
-                        l = l + 1
+                    new_depth_hp2 = haplotype_2_depth_copyrnumbers[i]
+                    new_depth_hp1 = haplotype_1_depth_copyrnumbers[i]
+                    haplotype_1_depth_copyrnumbers[i] = new_depth_hp2
+                    haplotype_2_depth_copyrnumbers[i] = new_depth_hp1
+
+                    #bins change
+                    internal_bins = [k for k in hp_1_start if k >= haplotype_2_start_values_copyrnumbers[i] and k <= haplotype_2_end_values_copyrnumbers[i]]
+                    if internal_bins:
+                        l = hp_1_start.index(internal_bins[0])
+                        for j in range(len(internal_bins)):
+                            new_hp2 = hp_2_hp2[l]
+                            new_hp1 = hp_1_hp1[l]
+                            hp_1_hp1[l] = new_hp2
+                            hp_2_hp2[l] = new_hp1
+                            l = l + 1
 
         updated_df_hp_1.append(pd.DataFrame(list(zip(hp_1.chr.values.tolist(), hp_1.start.values.tolist(),
                                   hp_1.end.values.tolist(), hp_1_hp1)),

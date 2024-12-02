@@ -19,7 +19,7 @@ from bam_processing import get_all_reads_parallel, update_coverage_hist, get_seg
 from utils import get_chromosomes_bins, write_segments_coverage, write_segments_coverage_dict, csv_df_chromosomes_sorter,\
     seperate_dfs_coverage, flatten_smooth, get_contigs_list, write_copynumber_segments_csv, integer_fractional_cluster_means, \
     adjust_diversified_segments, get_chromosomes_bins_bam, normal_genome_proportion, update_subclonal_means_states, adjust_first_copy_mean, \
-    merge_adjacent_regions_cn, merge_adjacent_regions_cn_unphased, parse_sv_vcf, weigted_means_ploidy, average_p_value_genome, collect_loh_centromere_regions, find_optimized_normal_peaks, update_genes_phase_corrected_coverage
+    merge_adjacent_regions_cn, merge_adjacent_regions_cn_unphased, parse_sv_vcf, weigted_means_ploidy, average_p_value_genome, collect_loh_centromere_regions, find_optimized_normal_peaks, update_genes_phase_corrected_coverage, weighted_means
 from plots import coverage_plots_chromosomes, copy_number_plots_genome_details, copy_number_plots_genome, plots_genome_coverage, copy_number_plots_chromosomes, \
     copy_number_plots_genome_breakpoints, copy_number_plots_genome_breakpoints_subclonal, copy_number_plots_genome_subclonal, genes_copy_number_plots_genome, genes_plots_genome, heatmap_copy_number_plots_genome
 from vcf_processing import vcf_parse_to_csv_for_het_phased_snps_phasesets
@@ -300,29 +300,24 @@ def main():
         df_segs_hp1 = snps_cpd_means_df[0]
         df_segs_hp2 = snps_cpd_means_df[1]
 
-    #TODO remove centromeres only
-    indices = []
-    for i in range(len(snps_cpd_means)):
-        if snps_cpd_means[i] == 0:
-            indices.append(i)
-    if indices:
-        for index in sorted(list(set(indices)), reverse=True):
-            del snps_cpd_means[index]
-            del snps_cpd_points_weights[index]
-
-    indices_min = []
+    seg_min = []
+    seg_min_weights = []
     for i in range(len(snps_cpd_means)):
         if snps_cpd_points_weights[i] * args.bin_size > 20000000:
-            indices_min.append(snps_cpd_means[i])
-    if indices_min:
-        max_limit = int(statistics.median(indices_min))
+            seg_min.append(snps_cpd_means[i])
+            seg_min_weights.append(snps_cpd_points_weights[i])
+    if len(seg_min) > 1:
+        max_limit = int(weighted_means(seg_min, seg_min_weights))
+        logging.info('Max limit for normal optimization through 20Mb segments: %s', max_limit)
     else:
-        max_limit = int(statistics.mean(snps_cpd_means))
+        max_limit = int(weighted_means(snps_cpd_means, snps_cpd_points_weights))
+        logging.info('Max limit for normal optimization: %s', max_limit)
 
-    centers, subclonals, x_axis, observed_hist, single_copy_cov = peak_detection_optimization(args, snps_cpd_means, snps_cpd_points_weights)
-    logging.info('Initial detected clusters means: %s', centers)
-    #centers, subclonals, x_axis, observed_hist = peak_detection_optimization(csv_df_snps_mean.hp1.tolist()+csv_df_snps_mean.hp2.tolist(), [1 for i in range(2*len(csv_df_snps_mean.hp2.tolist()))])
     tumor_cov = statistics.mean([sum(x) for x in zip(haplotype_1_values_updated, haplotype_2_values_updated, unphased)])
+    logging.info('Tumor coverage: %s', tumor_cov)
+    centers, subclonals, x_axis, observed_hist, single_copy_cov = peak_detection_optimization(args, snps_cpd_means, snps_cpd_points_weights, tumor_cov)
+    logging.info('Initial detected clusters means: %s', centers)
+
     # if args.tumor_purity and args.tumor_ploidy:
     #     #print(normal_genome_proportion(0.45, 8, 100))
     #     #tumor_cov = 100
@@ -375,7 +370,7 @@ def main():
             #TODO remove centromeres
             overall_ploidy = weigted_means_ploidy(df_segs_hp1_updated, df_segs_hp2_updated, cen_out, sorted([i for i in range(0, len(cen_out))]))
             if overall_ploidy < 0.1:
-                break
+                continue
             tumor_purity = (tumor_cov / overall_ploidy) / (((normal_coverage * 2) / 2) + (tumor_cov / overall_ploidy))
             _, _, _, normal_fraction = normal_genome_proportion(tumor_purity, overall_ploidy, tumor_cov)
             if normal_coverage == 0:
@@ -399,13 +394,20 @@ def main():
                 logging.info('Generating coverage/copy numbers plots genome wide for solution with purity {0} and ploidy {1}'.format(args.tumor_purity, args.tumor_ploidy))
 
                 df_segs_hp1_updated, df_segs_hp2_updated = adjust_diversified_segments(cen_out, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, args)
-                #df_segs_hp1_updated, df_segs_hp2_updated, df_hp1, df_hp2 = fix_inter_cn_phase_switch_errors(args, df_segs_hp1_updated, df_segs_hp2_updated, df_hp1, df_hp2)
+
                 loh_regions = collect_loh_centromere_regions(df_segs_hp1_updated, df_segs_hp2_updated, cen_out, integer_fractional_means, args)
+
+                df_segs_hp1_updated = merge_adjacent_regions_cn(df_segs_hp1_updated, args)
+                df_segs_hp2_updated = merge_adjacent_regions_cn(df_segs_hp2_updated, args)
+
                 write_copynumber_segments_csv(df_segs_hp1_updated, args, cen_out, integer_fractional_means, 1, '_'+ str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_'+ str(p_value_confidence) +'_copynumbers_segments.bed', p_value_confidence)
                 write_copynumber_segments_csv(df_segs_hp2_updated, args, cen_out, integer_fractional_means, 2, '_'+ str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_'+ str(p_value_confidence) +'_copynumbers_segments.bed', p_value_confidence)
                 write_loh_regions(loh_regions, 'loh_regions.bed', args, p_value_confidence)
 
                 copy_number_plots_genome_details(cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_unphased, args, x_axis, observed_hist, p_value_confidence)
+
+                #df_segs_hp1_updated, df_segs_hp2_updated, df_hp1, df_hp2 = fix_inter_cn_phase_switch_errors(args, df_segs_hp1_updated, df_segs_hp2_updated, df_hp1, df_hp2)
+
                 if args.breakpoints:
                     copy_number_plots_genome_breakpoints(cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, p_value_confidence, loh_regions, df_snps_in_csv)
                 else:
@@ -433,10 +435,11 @@ def main():
                     write_copynumber_segments_csv(df_segs_hp1_updated, args, cen_out, integer_fractional_means, 1, '_' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) +'_'+ str(p_value_confidence) + '_copynumbers_subclonal_segments.bed', p_value_confidence)
                     write_copynumber_segments_csv(df_segs_hp2_updated, args, cen_out, integer_fractional_means, 2, '_' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) +'_'+ str(p_value_confidence) + '_copynumbers_subclonal_segments.bed', p_value_confidence)
         else:
-            logging.info('No estimated purity [%s] and ploidy [%s] value detected inside given ranges', args.purity_range, args.ploidy_range)
+            logging.info('No estimated purity [%s] and ploidy [%s] value detected inside given ranges or overall ploidy is less than 0.1', args.purity_range, args.ploidy_range)
 
-    #SNPs ratios and LOH and plots
-    plot_snps_ratios_genome(args, df_snps_in_csv, loh_regions)
+    if average_p_value:
+        #SNPs ratios and LOH and plots
+        plot_snps_ratios_genome(args, df_snps_in_csv, loh_regions)
     ################################
     if os.path.exists(args.out_dir_plots+'/data'): #
         shutil.rmtree(args.out_dir_plots+'/data')
@@ -489,6 +492,11 @@ if __name__ == "__main__":
 
 #--quick-start --quick-start-coverage-path /home/rezkuh/gits/data/2009_merged --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --cut-threshold 150  --normal-phased-vcf /home/rezkuh/gits/data/2009/2009BL.vcf.gz    --out-dir-plots 2009_merged --genome-name 2009_merged --copynumbers-subclonal-enable --loh-enable --purity-range 0.5-1.0 --ploidy-range 2-8 --phaseblocks-enable --change-point-detection-for-cna
 #--quick-start  --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/C15_1_30000000.bam --cut-threshold 75  --without-phasing --phaseblock-flipping-disable    --contigs 1-19,X  --bin-size-snps 1000000 --centromere annotations/mouse.bed --hets-smooth-window 10 --copynumbers-subclonal-enable --loh-enable --tumor-vcf  /home/rezkuh/gits/data/mouse/somatic_calls/C23_somatic_calls_pass_snp.vcf.gz --breakpoints /home/rezkuh/gits/data/mouse/C23.haplotagged.vcf  --quick-start-coverage-path /home/rezkuh/gits/data/C23 --genome-name C23 --cpd-internal-segments  --out-dir-plots C23
+
+#1437 BPs
+#--quick-start --quick-start-coverage-path /home/rezkuh/gits/data/1437_merged --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --cut-threshold 150  --normal-phased-vcf /home/rezkuh/gits/data/1437/1437BL.vcf.gz    --out-dir-plots 1437_merged --genome-name 1437_merged --copynumbers-subclonal-enable --loh-enable --purity-range 0.5-1.0 --ploidy-range 2-8 --phaseblocks-enable --breakpoints /home/rezkuh/gits/data/1437/severus_somatic.vcf
+
+#--quick-start --quick-start-coverage-path /home/rezkuh/gits/data/rouf3 --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --cut-threshold 50  --normal-phased-vcf /home/rezkuh/gits/data/rouf3/rouf3BL.vcf.gz    --out-dir-plots rouf3 --genome-name rouf3 --copynumbers-subclonal-enable --loh-enable --purity-range 0.5-1.0 --ploidy-range 0.5-8 --phaseblocks-enable --breakpoints /home/rezkuh/gits/data/rouf3/severus_somatic.vcf --breakpoints-min-length 100
 
 #Wakhan TODOs
 

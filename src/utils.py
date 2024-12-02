@@ -783,6 +783,7 @@ def adjust_first_copy_mean(args, centers, df_segs_hp1, df_segs_hp2, df_hp1, df_h
         centers = [centers[0]] + [int(sample_mean[1]*i) for i in range(1, len(centers))]
 
     return centers
+
 def update_subclonal_means_states(centers, subclonals, df_segs_hp1_updated, df_segs_hp2_updated, df_hp1, df_hp2, args):
     chroms = get_contigs_list(args.contigs)
     updated_df_segs_hp_1 = []
@@ -994,17 +995,27 @@ def change_point_detection_means(args, df_chrom, ref_start_values, ref_start_val
         snps_haplotype1_mean, snps_haplotype1_len, snps_haplotype1_pos = change_point_detection_algo(args.bin_size, haplotype1_means, ref_start_values, args, ref_start_values_1, df_centm_chrom)
         snps_haplotype2_mean, snps_haplotype2_len, snps_haplotype2_pos = change_point_detection_algo(args.bin_size, haplotype2_means, ref_start_values, args, ref_start_values_1, df_centm_chrom)
 
+        cent_index_hp1 = snps_haplotype1_pos.index([df_centm_chrom.start.values.tolist()[0], df_centm_chrom.end.values.tolist()[0]][0]) -1
+        cent_index_hp2 = snps_haplotype2_pos.index([df_centm_chrom.start.values.tolist()[0], df_centm_chrom.end.values.tolist()[0]][0]) -1
+        #if not cent_index_hp1 == 0:
+
         if args.breakpoints:
-            snps_haplotype1_mean = []
-            snps_haplotype2_mean = []
+            cent_index_hp1 = cent_index_hp1 + 1
+            cent_index_hp2 = cent_index_hp2 + 1
+            # snps_haplotype1_mean = []
+            # snps_haplotype2_mean = []
             snps_haplotype1_len = []
             snps_haplotype2_len = []
             snps_pos = sorted(list(set(snps_haplotype1_pos + snps_haplotype2_pos)))
             snps_pos_start = list(map(lambda x: x + 1 if x > 0 else x, snps_pos[:-1]))
             snps_pos_end = list(map(lambda x: x if x > 0 else x, snps_pos[1:]))
             for index, (start, end) in enumerate(zip(snps_pos_start, snps_pos_end)):
-                snps_haplotype1_mean.append(statistics.median(remove_outliers_iqr(np.array(haplotype1_means[start//args.bin_size:end//args.bin_size]))))
-                snps_haplotype2_mean.append(statistics.median(remove_outliers_iqr(np.array(haplotype2_means[start//args.bin_size:end//args.bin_size]))))
+                if cent_index_hp1 == index:
+                    snps_haplotype1_mean[index] = 0
+                    snps_haplotype2_mean[index] = 0
+                else:
+                    snps_haplotype1_mean[index] = statistics.median(remove_outliers_iqr(np.array(haplotype1_means[start//args.bin_size:end//args.bin_size])))
+                    snps_haplotype2_mean[index] = statistics.median(remove_outliers_iqr(np.array(haplotype2_means[start//args.bin_size:end//args.bin_size])))
                 snps_haplotype1_len.append(len(haplotype1_means[start//args.bin_size:end//args.bin_size]))
                 snps_haplotype2_len.append(len(haplotype2_means[start//args.bin_size:end//args.bin_size]))
 
@@ -1019,7 +1030,8 @@ def change_point_detection_means(args, df_chrom, ref_start_values, ref_start_val
             for i in range(len(snps_haplotype1_pos) - 1):
                 snps_pos_start.append(snps_haplotype1_pos[i] if snps_haplotype1_pos[i] < 1 else snps_haplotype1_pos[i] + 1)
                 snps_pos_end.append(snps_haplotype1_pos[i + 1])
-
+                if cent_index_hp1 == i:
+                    snps_haplotype1_mean[i] = 0
             chr_list = [df_chrom['chr'].iloc[0] for ch in range(len(snps_haplotype1_mean))]
             df_means_chr.append(pd.DataFrame(list(zip(chr_list, snps_pos_start, snps_pos_end, snps_haplotype1_mean)),
                                         columns=['chromosome', 'start', 'end', 'state']))
@@ -1028,11 +1040,19 @@ def change_point_detection_means(args, df_chrom, ref_start_values, ref_start_val
             for i in range(len(snps_haplotype2_pos) - 1):
                 snps_pos_start.append(snps_haplotype2_pos[i] if snps_haplotype2_pos[i] < 1 else snps_haplotype2_pos[i] + 1)
                 snps_pos_end.append(snps_haplotype2_pos[i + 1])
-
+                if cent_index_hp2 == i:
+                    snps_haplotype2_mean[i] = 0
             chr_list = [df_chrom['chr'].iloc[0] for ch in range(len(snps_haplotype2_mean))]
             df_means_chr.append(pd.DataFrame(list(zip(chr_list, snps_pos_start, snps_pos_end, snps_haplotype2_mean)),
                                              columns=['chromosome', 'start', 'end', 'state']))
 
+        #remove cent segment
+        chroms = get_contigs_list(args.contigs)
+        if not df_chrom['chr'].iloc[0] == chroms[1]:
+            del snps_haplotype1_mean[cent_index_hp1]
+            del snps_haplotype2_mean[cent_index_hp2]
+            del snps_haplotype1_len[cent_index_hp1]
+            del snps_haplotype2_len[cent_index_hp2]
         return snps_haplotype1_mean + snps_haplotype2_mean, snps_haplotype1_len + snps_haplotype2_len, df_means_chr
 
 def change_point_detection_algo(bin_size, hp_data, ref_start_values, args, ref_start_values_1, df_centm_chrom):
@@ -1086,8 +1106,9 @@ def change_point_detection_algo(bin_size, hp_data, ref_start_values, args, ref_s
             if cen1 > cen:
                 cent_cpds.append(l)
                 break
+    cent_cpds_updated = [i for i in cent_cpds if i > 1]
     change_points = [i for i in change_points if i < cent_cpds[0] or i > cent_cpds[1]]
-    change_points = sorted(list(set(change_points + cent_cpds + [len(hp_data) - 1])))
+    change_points = sorted(list(set(change_points + cent_cpds_updated + [len(hp_data) - 1])))
     ############################################
     from smoothing import smooth_triangle
     hp_data_new = []
@@ -1122,10 +1143,12 @@ def change_point_detection_algo(bin_size, hp_data, ref_start_values, args, ref_s
         if sub_list:
             median = statistics.median(sub_list)
             # TODO make cent_cpds segments as 0
-            #if point in cent_cpds:
-            #    snps_haplotype_mean.append(0)
-            #else:
-            snps_haplotype_mean.append(statistics.mean(remove_outliers_iqr(np.array(sub_list))))
+            if (index == 0 and point == cent_cpds[0]):
+                snps_haplotype_mean.append(statistics.mean(remove_outliers_iqr(np.array(sub_list))))
+            elif point in [cent_cpds[0]] or (index == 0 and cent_cpds[0] == 1):
+               snps_haplotype_mean.append(0)
+            else:
+                snps_haplotype_mean.append(statistics.mean(remove_outliers_iqr(np.array(sub_list))))
         else:
             snps_haplotype_mean.append(0)
         snps_haplotype_len.append(len(sub_list))
@@ -1219,7 +1242,7 @@ def merge_adjacent_regions_cn(segarr, args):
     for index, chrom in enumerate(chroms):
         seg = segarr[segarr['chromosome'] == chrom]
         label_groups = seg['state'].ne(seg['state'].shift()).cumsum()
-        df = (seg.groupby(label_groups).agg({'chromosome': 'first', 'start': 'min', 'end': 'max', 'depth': 'first', 'state': 'first', 'p_value': 'max'}).reset_index(drop=True))
+        df = (seg.groupby(label_groups).agg({'chromosome': 'first', 'start': 'min', 'end': 'max', 'depth': 'first', 'state': 'first'}).reset_index(drop=True))
         dfs.append(df)
     out = pd.concat(dfs)
     return out
@@ -1569,7 +1592,7 @@ def collect_loh_centromere_regions(df_segs_hp1_, df_segs_hp2_, centers, integer_
 
         if args.breakpoints:
             for index, (state1, state2, start, end) in enumerate(zip(hp1_state, hp2_state, hp1_start, hp1_end)):
-                #print(chrom, hp1_state, hp2_state, hp1_start, hp1_end, hp2_start, hp2_end)
+                #print(chrom, state1, state2, start, end)
                 if state1 == 0 or state2 == 0:# and end - start > 2000000:
                     loh_region_starts.append(start)
                     loh_region_ends.append(end)
@@ -1595,9 +1618,11 @@ def collect_loh_centromere_regions(df_segs_hp1_, df_segs_hp2_, centers, integer_
 
 def overlap_check(start, end, starts, ends):
   for i in range(len(starts)):
-    if (start < ends[i] and end > starts[i]) or (start <= starts[i] and end >= ends[i]):
+    #if (start < ends[i] and end > starts[i]) or (start <= starts[i] and end >= ends[i]):
+    if start >= starts[i] and start <= ends[i]:
       return True, i
   return False, -1
+
 
 def bins_with_copynumber_states(df_segs_hp1, df_segs_hp2, df_hp1, df_hp2, args, centers, integer_fractional_centers):
     chroms = get_contigs_list(args.contigs)
@@ -1665,27 +1690,30 @@ def genes_phase_correction(df_genes, df_segs_hp1, df_segs_hp2, args, centers, in
             hp_2_val = 0
             check, index = overlap_check(start_b, end_b, df_seg_hp1.start.values.tolist(), df_seg_hp1.end.values.tolist())
             if check:
-                hp_1_val = seg_coverage_hp1[index]
+                hp_1_val = centers[integers_values_adjusted(seg_state_hp1[index], centers)]
                 #gene_hp1_state[i] = integer_fractional_centers[centers.index(min(centers, key=lambda x:abs(x - seg_coverage_hp1[index])))]  #(integer_fractional_centers[centers.index(seg_coverage_hp1[index])])
             check, index = overlap_check(start_b, end_b, df_seg_hp2.start.values.tolist(), df_seg_hp2.end.values.tolist())
             if check:
-                hp_2_val = seg_coverage_hp2[index]
+                hp_2_val = centers[integers_values_adjusted(seg_state_hp2[index], centers)]
                 #gene_hp2_state[i] = integer_fractional_centers[centers.index(min(centers, key=lambda x:abs(x - seg_coverage_hp2[index])))]
 
-            if hp_1_val == 0 and hp_2_val == 0:
-                gene_hp1_state[i] = integers_values_adjusted(genes_coverage_hp1[i], centers)
-                gene_hp2_state[i] = integers_values_adjusted(genes_coverage_hp2[i], centers)
-                continue
+            # if hp_1_val == 0 and hp_2_val == 0:
+            #     gene_hp1_state[i] = integers_values_adjusted(genes_coverage_hp1[i], centers)
+            #     gene_hp2_state[i] = integers_values_adjusted(genes_coverage_hp2[i], centers)
+            #     continue
 
             #print(genes_coverage_hp1[i], genes_coverage_hp2[i])
             #print(abs(genes_coverage_hp1[i] -  hp_2_val) + abs(genes_coverage_hp2[i] -  hp_1_val))
             #print(abs(genes_coverage_hp1[i] -  hp_1_val) + abs(genes_coverage_hp2[i] -  hp_2_val))
 
-            if abs(genes_coverage_hp1[i] -  hp_2_val) < abs(genes_coverage_hp1[i] -  hp_1_val):
-                new_hp2 = genes_coverage_hp1[i]
-                new_hp1 = genes_coverage_hp2[i]
-                genes_coverage_hp2[i] = new_hp2
-                genes_coverage_hp1[i] = new_hp1
+            # if abs(genes_coverage_hp1[i] -  hp_2_val) < abs(genes_coverage_hp1[i] -  hp_1_val):
+            #     new_hp2 = genes_coverage_hp1[i]
+            #     new_hp1 = genes_coverage_hp2[i]
+            #     genes_coverage_hp2[i] = new_hp2
+            #     genes_coverage_hp1[i] = new_hp1
+
+            genes_coverage_hp1[i] = hp_1_val #centers[integers_values_adjusted(genes_coverage_hp1[i], centers)]
+            genes_coverage_hp2[i] = hp_2_val #centers[integers_values_adjusted(genes_coverage_hp2[i], centers)]
 
             gene_hp1_state[i] = integers_values_adjusted(genes_coverage_hp1[i], centers)
             gene_hp2_state[i] = integers_values_adjusted(genes_coverage_hp2[i], centers)

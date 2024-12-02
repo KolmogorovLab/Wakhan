@@ -141,16 +141,21 @@ def parse_segments_cov_bins(filename):
     return cov
 
 
-def peak_detection_optimization(args, input_segments, input_weights):
+def peak_detection_optimization(args, input_segments, input_weights, tumor_cov):
 
     NUM_SAMPLES = 1000
+
     # observed = simulate(NUM_SAMPLES)
     # observed = parse_segments_cov(sys.argv[1])
     observed = input_segments#parse_segments_cov_bins(sys.argv[1])
     weights = input_weights
+    #observed, weights = zip(*((x, y) for x, y in zip(observed, weights) if x <= 100))
+    #observed = list(observed)
+    #weights = list(weights)
+
     # observed = [x1 for x1 in observed if x1 > 250 and x1 < 300]
     #NUM_SAMPLES = len(observed)
-    print(observed)
+    #print(observed)
 
     # computing observed histogram + normalization
     hist_bins = range(HIST_RANGE[0], HIST_RANGE[1] + 1)
@@ -163,9 +168,9 @@ def peak_detection_optimization(args, input_segments, input_weights):
 
     # peak peaking (independent from optimization approach)
     peaks = scipy.signal.find_peaks_cwt(observed_hist, range(1, 5)).tolist()
-    print("Peaks", peaks)
+    #print("Peaks", peaks)
     peaks =  merge_similar_elements([peaks[0]] + peaks, 3)
-    print("Peaks", peaks)
+    #print("Peaks", peaks)
 
     # https://stackoverflow.com/questions/25571260/scipy-signal-find-peaks-cwt-not-finding-the-peaks-accurately
     from scipy.ndimage.filters import gaussian_filter1d
@@ -176,9 +181,9 @@ def peak_detection_optimization(args, input_segments, input_weights):
 
     pair_distance = [peaks[i] - peaks[i - 1] for i in range(1, len(peaks))]
     est_gauss_dist = np.median(pair_distance)
-    print("Estimated peak distance", est_gauss_dist)
+    #print("Estimated peak distance", est_gauss_dist)
     est_offset = peaks[0]
-    print("Estimated offset", est_offset)
+    #print("Estimated offset", est_offset)
     est_sigma = 3
 
     # if peaks[-1] > tMax[-1] + est_gauss_dist:

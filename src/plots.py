@@ -181,6 +181,7 @@ def coverage_plots_chromosomes(df, df_phasesets, args, thread_pool):
     fileDir = os.path.dirname(__file__) #os.path.dirname(os.path.realpath('__file__'))
     cen_coord = os.path.join(fileDir, args.centromere)
     df_centm = csv_df_chromosomes_sorter(cen_coord, ['chr', 'start', 'end'])
+    df_centm['start'].mask(df_centm['start'] == 1, 0, inplace=True)
 
     haplotype_1_segs_dfs = [] #pd.DataFrame()
     haplotype_2_segs_dfs = [] #pd.DataFrame()
@@ -862,7 +863,8 @@ def copy_number_plots_genome_breakpoints(centers, integer_fractional_centers, df
                                      yaxis="y",
                                      opacity=0.5,
                                      text = arcs_data[i][5],
-                                     #hovertemplate=arcs_data[i][6],
+                                     customdata = [arcs_data[i][6]],
+                                     hovertemplate= '<br><b>Breakpoint info: </b>' + arcs_data[i][6],
                                      showlegend=arcs_data[i][7]), row=1, col=1,
                          )
     # #############################################################
@@ -884,7 +886,7 @@ def copy_number_plots_genome_breakpoints(centers, integer_fractional_centers, df
 
     add_scatter_trace_coverage(fig, df_1['start'], het_snps_bafs_means.vaf.values.tolist(), name='BAF',
                                    text=het_snps_bafs_means.pos.values.tolist(),
-                                   yaxis="y4", opacity=0.7, color='olive', visibility='legendonly', mul_cols=True, row=3)
+                                   yaxis="y4", opacity=0.7, color='olive', visibility='legendonly', mul_cols=True, row=3, baf=True)
         # if not args.unphased_reads_coverage_disable:
         #     add_scatter_trace_coverage(fig, indices, df_unphased.hp3.values.tolist(), name='Unphased', text=None,
         #                                yaxis=None, opacity=0.7, color='olive', visibility='legendonly', mul_cols=True)
@@ -1245,7 +1247,7 @@ def copy_number_plots_genome(centers, integer_fractional_centers, df_cnr_hp1, df
 
     add_scatter_trace_coverage(fig, df_1['start'], het_snps_bafs_means.vaf.values.tolist(), name='BAF',
                                    text=het_snps_bafs_means.pos.values.tolist(),
-                                   yaxis="y3", opacity=0.7, color='olive', visibility='legendonly', mul_cols=True, row=2)
+                                   yaxis="y3", opacity=0.7, color='olive', visibility='legendonly', mul_cols=True, row=2, baf=True)
         # if not args.unphased_reads_coverage_disable:
         #     add_scatter_trace_coverage(fig, indices, df_unphased.hp3.values.tolist(), name='Unphased', text=None,
         #                                yaxis=None, opacity=0.7, color='olive', visibility='legendonly', mul_cols=True)
@@ -1637,7 +1639,7 @@ def copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_c
                                  yaxis="y",
                                  opacity=0.5,
                                  text = arcs_data[i][5],
-                                 #hovertemplate=arcs_data[i][6],
+                                 hovertemplate= '<br><b>Breakpoint info: </b>' + arcs_data[i][6],
                                  showlegend=arcs_data[i][7]), row=1, col=1,
                      )
     # #############################################################
@@ -1662,7 +1664,7 @@ def copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_c
 
     add_scatter_trace_coverage(fig, df_1['start'], het_snps_bafs_means.vaf.values.tolist(), name='BAF',
                                    text=het_snps_bafs_means.pos.values.tolist(),
-                                   yaxis="y4", opacity=0.7, color='olive', visibility='legendonly', mul_cols=True, row=3)
+                                   yaxis="y4", opacity=0.7, color='olive', visibility='legendonly', mul_cols=True, row=3, baf=True)
 
     fig.add_trace(go.Scatter(x=df_genes_1['start'], y=[0.5] * len(df_genes_1), #[1, 2, 3, 4, 5] * (len(df_genes_1)//5),
                              mode='markers',
@@ -2107,7 +2109,7 @@ def copy_number_plots_genome_subclonal(centers, integer_fractional_centers, df_c
         #                                yaxis=None, opacity=0.7, color='olive', visibility='legendonly', mul_cols=True)
     add_scatter_trace_coverage(fig, df_1['start'], het_snps_bafs_means.vaf.values.tolist(), name='BAF',
                                    text=het_snps_bafs_means.pos.values.tolist(),
-                                   yaxis="y3", opacity=0.7, color='olive', visibility='legendonly', mul_cols=True, row=2)
+                                   yaxis="y3", opacity=0.7, color='olive', visibility='legendonly', mul_cols=True, row=2, baf=True)
 
     fig.add_trace(go.Scatter(x=df_genes_1['start'], y=[0.5] * len(df_genes_1), #[1, 2, 3, 4, 5] * (len(df_genes_1)//5),
                              mode='markers',
@@ -3393,17 +3395,21 @@ def plots_add_markers_lines(fig):
         showlegend=True
     )
 
-def add_scatter_trace_coverage(fig, x, y, name, text, yaxis, opacity, color, visibility=True, mul_cols=False, row=2):
+def add_scatter_trace_coverage(fig, x, y, name, text, yaxis, opacity, color, visibility=True, mul_cols=False, row=2, baf=None):
     if any(value < 0 for value in y):
         xy = [round(-y2, 2) for y2 in y]
     else:
         xy = [round(y2, 2) for y2 in y]
+    if baf:
+        ht = '<br><b>Position</b>: %{text}' + '<br><b>BAF</b>: %{customdata}<br>'
+    else:
+        ht = '<br><b>Position</b>: %{text}' + '<br><b>Coverage</b>: %{customdata}<br>'
     if mul_cols:
         fig.add_trace(go.Scatter(
             customdata=xy,
             # legendgroup="group1",  # this can be any string, not just "group"
             # legendgrouptitle_text="Coverage",
-            hovertemplate= '<br><b>Position</b>: %{text}' + '<br><b>Coverage</b>: %{customdata}<br>',
+            hovertemplate= ht,
             x=x,
             y=y,
             name=name,
@@ -3420,7 +3426,7 @@ def add_scatter_trace_coverage(fig, x, y, name, text, yaxis, opacity, color, vis
             # legendgroup="group1",  # this can be any string, not just "group"
             # legendgrouptitle_text="Coverage",
             customdata=xy,
-            hovertemplate='<br><b>Position</b>: %{text}' + '<br><b>Coverage</b>: %{customdata}<br>',
+            hovertemplate=ht,
             x=x,
             y=y,
             name=name,

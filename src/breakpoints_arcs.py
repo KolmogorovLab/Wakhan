@@ -46,7 +46,7 @@ def get_all_breakpoints_data(edges, edges_chr, height, path, args):
     edges_chr = [edges_chr[i] + (edges_chr[i + 1] if i + 1 < n else []) for i in range(0, n, 2)]
     #BNDs and INVs
     for i, (a,b,c,d,e,f) in enumerate(edges_chr):
-        hover_info.append(a+':'+str(b)+'-'+d+':'+str(e))
+        #hover_info.append(a+':'+str(b)+'-'+d+':'+str(e))
 
         if a == d:
             nr = 35
@@ -60,16 +60,22 @@ def get_all_breakpoints_data(edges, edges_chr, height, path, args):
         #     colors.append('#737373')
         if [a,b] in bp_junctions_inv:
             colors.append('#2830DE')
+            hover_info.append('INV - ' + a + ':' + str(b) + '-' + d + ':' + str(e))
         elif [a,b] in bp_junctions_dup:
             colors.append('#178117')
+            hover_info.append('DUP - ' + a + ':' + str(b) + '-' + d + ':' + str(e))
         elif [a,b] in bp_junctions_sbnd:
             colors.append('#7f8c8d')
+            hover_info.append('sBND - ' + a + ':' + str(b) + '-' + d + ':' + str(e))
         elif [a,b] in bp_junctions_ins:
             colors.append('#e0cf03')
+            hover_info.append('INS - ' + a + ':' + str(b) + '-' + d + ':' + str(e))
         elif [a,b] in bp_junctions_del:
             colors.append('#CF0759')
+            hover_info.append('DEL - ' + a + ':' + str(b) + '-' + d + ':' + str(e))
         else:
             colors.append('#737373')
+            hover_info.append('BND - ' + a + ':' + str(b) + '-' + d + ':' + str(e))
 
     #edges = [[0, 1000000], [0, 100000000], [0, 190000000], [358000001, 234000000], [68754445, 345000000], [6577777, 462000000]]
     #edges = [[358000001, 234000000]]
@@ -101,7 +107,7 @@ def get_all_breakpoints_data(edges, edges_chr, height, path, args):
         #                  )
         #             )
 
-        data.append([x, y, '',  'lines', dict(width=1.2, color=colors[i], shape='spline'), hover_info[i], '<br><b>Breakpoint info</b>: %{text}<br>', False])
+        data.append([x, y, '',  'lines', dict(width=1.2, color=colors[i], shape='spline'), hover_info[i], hover_info[i], False])
     return data
 #Foolowing Bezier curve code is adopted from https://notebook.community/empet/Plotly-plots/Arc-diagram-Force-Awakens
 def get_b1(b0, b2):
