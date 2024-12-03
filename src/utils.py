@@ -1407,14 +1407,14 @@ def weigted_means_ploidy(args, df_hp_1, df_hp_2, centers, integer_fractional_mea
     cent_indices = []
     for index, row in df_1.iterrows():
         for index_cent, row_cent in df_centm.iterrows():
-            if row['chromosome'] == row_cent['chr'] and ((row['start'] - 1) == row_cent['start'] and row_cent['end'] == row_cent['end']):
+            if row['chromosome'] == row_cent['chr'] and (((row['start'] - 1) == row_cent['start'] or (row['start']) == row_cent['start']) and row_cent['end'] == row_cent['end']):
                 cent_indices.append(index)
     df_1 = df_1.drop(cent_indices)
 
     cent_indices = []
     for index, row in df_2.iterrows():
         for index_cent, row_cent in df_centm.iterrows():
-            if row['chromosome'] == row_cent['chr'] and ((row['start'] - 1) == row_cent['start'] and row_cent['end'] == row_cent['end']):
+            if row['chromosome'] == row_cent['chr'] and (((row['start'] - 1) == row_cent['start'] or (row['start']) == row_cent['start']) and row_cent['end'] == row_cent['end']):
                 cent_indices.append(index)
     df_2 = df_2.drop(cent_indices)
 
