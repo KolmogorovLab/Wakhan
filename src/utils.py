@@ -431,8 +431,20 @@ def chromosomes_sorter(label):
             key = (3000 + nums, chars)
     return key
 
-def write_df_csv(df, file_name):
-    df.to_csv(file_name, sep='\t', index=False, header=False)
+def write_df_csv(df, path):
+    fp = open(path, 'a')
+    fp.write('#chr: chromosome number\n')
+    fp.write('#start: start address gene\n')
+    fp.write('#end: end address of gene\n')
+    fp.write('#gene: name of gene\n')
+    fp.write('#length: length of gene\n')
+    fp.write('#coverage_hp1: gene coverage value of HP-1\n')
+    fp.write('#copynumber_state_hp1: gene copy number state of HP-1\n')
+    fp.write('#coverage_hp2: gene coverage value of HP-2\n')
+    fp.write('#copynumber_state_hp2: gene copy number state of HP-2\n')
+    fp.write('#chr\tstart\tend\tgene_name\tlength\tcoverage_hp1\tcopynumber_state_hp1\tcoverage_hp2\tcopynumber_state_hp2\n')
+
+    df.to_csv(fp, sep='\t', index=False, header=False)
 
 def csv_df_chromosomes_sorter(path, names, sept='\t'):
     dataframe = pd.read_csv(path, sep=sept, names=names)
@@ -707,18 +719,14 @@ def write_copynumber_segments_csv(haplotype_df_, args, centers, integer_fraction
         if 'confidence' in haplotype_df.columns:
             fp.write('#confidence: confidence score\n')
             fp.write('#if_subclonal: if entry is subclonal [Y/N]\n')
-            header = ['chr', 'start', 'end', 'coverage', 'copynumber_state', 'confidence', 'if_subclonal']
+            fp.write('#chr\tstart\tend\tcoverage\tcopynumber_state\tconfidence\tif_subclonal\n')
         else:
-            header = ['chr', 'start', 'end', 'coverage', 'copynumber_state']
-        haplotype_df.to_csv(fp, sep='\t', columns=header, index=False, mode='a', header=True)
+            fp.write('#chr\tstart\tend\tcoverage\tcopynumber_state\n')
+        haplotype_df.to_csv(fp, sep='\t', index=False, mode='a', header=False)
     else:
         if not os.path.isdir(args.out_dir_plots + '/' + str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_'+ str(p_value) +'/bed_output'):
             os.makedirs(args.out_dir_plots + '/' + str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_'+ str(p_value) +'/bed_output')
         fp = open(args.out_dir_plots +'/'+ str(args.tumor_ploidy) + '_'+ str(args.tumor_purity)  +'_'+ str(p_value) +'/bed_output/' + args.genome_name + filename, 'a')
-        if 'confidence' in haplotype_df.columns:
-            header = ['chr', 'start', 'end', 'coverage', 'copynumber_state', 'confidence', 'if_subclonal', 'haplotype']
-        else:
-            header = ['chr', 'start', 'end', 'coverage', 'copynumber_state', 'haplotype']
         haplotype_df['haplotype'] = hp
         header_enable = False
         if hp == 1:
@@ -731,9 +739,14 @@ def write_copynumber_segments_csv(haplotype_df_, args, centers, integer_fraction
                 fp.write('#confidence: confidence score\n')
                 fp.write('#if_subclonal: if entry is subclonal [Y/N]\n')
             fp.write('#haplotype: haplotype number\n')
-
             header_enable = True
-        haplotype_df.to_csv(fp, sep='\t', columns=header, index=False, mode='a', header=header_enable)
+        if 'confidence' in haplotype_df.columns:
+            if header_enable:
+                fp.write('#chr\tstart\tend\tcoverage\tcopynumber_state\tconfidence\tif_subclonal\thaplotype\n')
+        else:
+            if header_enable:
+                fp.write('#chr\tstart\tend\tcoverage\tcopynumber_state\thaplotype\n')
+        haplotype_df.to_csv(fp, sep='\t', index=False, mode='a', header=False)
 
 def adjust_first_copy_mean(args, centers, df_segs_hp1, df_segs_hp2, df_hp1, df_hp2):
     chroms = get_contigs_list(args.contigs)
@@ -1382,12 +1395,32 @@ def parse_sv_vcf(path):
     df = pd.DataFrame(bp_junctions[1:], columns = ['chr', 'pos', 'chr1', 'pos1'])
     return df.drop_duplicates()
 
-def weigted_means_ploidy(df_hp_1, df_hp_2, centers, integer_fractional_means):
+def weigted_means_ploidy(args, df_hp_1, df_hp_2, centers, integer_fractional_means):
     df_1 = df_hp_1.copy()
     df_2 = df_hp_2.copy()
 
+    fileDir = os.path.dirname(__file__) #os.path.dirname(os.path.realpath('__file__'))
+    cen_coord = os.path.join(fileDir, args.centromere)
+    df_centm = csv_df_chromosomes_sorter(cen_coord, ['chr', 'start', 'end'])
+    df_centm['start'].mask(df_centm['start'] == 1, 0, inplace=True)
+
+    cent_indices = []
+    for index, row in df_1.iterrows():
+        for index_cent, row_cent in df_centm.iterrows():
+            if row['chromosome'] == row_cent['chr'] and ((row['start'] - 1) == row_cent['start'] and row_cent['end'] == row_cent['end']):
+                cent_indices.append(index)
+    df_1 = df_1.drop(cent_indices)
+
+    cent_indices = []
+    for index, row in df_2.iterrows():
+        for index_cent, row_cent in df_centm.iterrows():
+            if row['chromosome'] == row_cent['chr'] and ((row['start'] - 1) == row_cent['start'] and row_cent['end'] == row_cent['end']):
+                cent_indices.append(index)
+    df_2 = df_2.drop(cent_indices)
+
     for i in range(len(integer_fractional_means)):
         df_1['state'].mask(df_1['state'] == centers[i], integer_fractional_means[i], inplace=True)
+
     vals = df_1.state.values.tolist()
     weights = [i-j for i,j in zip(df_1.end.values.tolist(), df_1.start.values.tolist())]
 
@@ -1395,6 +1428,7 @@ def weigted_means_ploidy(df_hp_1, df_hp_2, centers, integer_fractional_means):
 
     for i in range(len(integer_fractional_means)):
         df_2['state'].mask(df_2['state'] == centers[i], integer_fractional_means[i], inplace=True)
+
     vals = df_2.state.values.tolist()
     weights = [i-j for i,j in zip(df_2.end.values.tolist(), df_2.start.values.tolist())]
 
@@ -1729,6 +1763,6 @@ def update_genes_phase_corrected_coverage(args, df_segs_hp1, df_segs_hp2, p_valu
     df_genes = csv_df_chromosomes_sorter(args.out_dir_plots + '/data_phasing/cancer_genes_coverage.csv', ['chr','start','end','gene','len', 'hp1', 'hp2'])
     #write_df_csv(df_genes, args.out_dir_plots + '/' + str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_'+ str(p_value) +'/bed_output/' + 'cancer_genes_coverage.csv')
     df_genes = genes_phase_correction(df_genes, df_segs_hp1, df_segs_hp2, args, centers, integer_fractional_centers)
-    write_df_csv(df_genes, args.out_dir_plots + '/' + str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_'+ str(p_value) +'/bed_output/' + 'cancer_genes_copynumber_states.csv')
+    write_df_csv(df_genes, args.out_dir_plots + '/' + str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_'+ str(p_value) +'/bed_output/' + 'cancer_genes_copynumber_states.bed')
 
     return df_genes

@@ -368,7 +368,7 @@ def main():
             p_value = average_p_value_genome(args, cen_out, df_segs_hp1_updated, df_segs_hp2_updated, df_hp1, df_hp2)
 
             #TODO remove centromeres
-            overall_ploidy = weigted_means_ploidy(df_segs_hp1_updated, df_segs_hp2_updated, cen_out, sorted([i for i in range(0, len(cen_out))]))
+            overall_ploidy = weigted_means_ploidy(args, df_segs_hp1_updated, df_segs_hp2_updated, cen_out, sorted([i for i in range(0, len(cen_out))]))
             if overall_ploidy < 0.1:
                 continue
             tumor_purity = (tumor_cov / overall_ploidy) / (((normal_coverage * 2) / 2) + (tumor_cov / overall_ploidy))
@@ -397,8 +397,8 @@ def main():
 
                 loh_regions = collect_loh_centromere_regions(df_segs_hp1_updated, df_segs_hp2_updated, cen_out, integer_fractional_means, args)
 
-                df_segs_hp1_updated = merge_adjacent_regions_cn(df_segs_hp1_updated, args)
-                df_segs_hp2_updated = merge_adjacent_regions_cn(df_segs_hp2_updated, args)
+                #df_segs_hp1_updated = merge_adjacent_regions_cn(df_segs_hp1_updated, args)
+                #df_segs_hp2_updated = merge_adjacent_regions_cn(df_segs_hp2_updated, args)
 
                 write_copynumber_segments_csv(df_segs_hp1_updated, args, cen_out, integer_fractional_means, 1, '_'+ str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_'+ str(p_value_confidence) +'_copynumbers_segments.bed', p_value_confidence)
                 write_copynumber_segments_csv(df_segs_hp2_updated, args, cen_out, integer_fractional_means, 2, '_'+ str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_'+ str(p_value_confidence) +'_copynumbers_segments.bed', p_value_confidence)

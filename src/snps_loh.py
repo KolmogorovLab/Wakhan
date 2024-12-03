@@ -292,18 +292,18 @@ def write_snps_counts_per_cn_region(df, args):
     fp.write('#end: end address for CN segment\n')
     fp.write('#hets_count: hetrozygous SNPs count in this region\n')
     fp.write('#homos_count: homozygous SNPs count in this region\n')
+    fp.write('#chr\tstart\tend\thets_count\thomos_count\n')
 
-    header = ['chr','start', 'end', 'hets_count','homos_count']
-    df.to_csv(fp, sep='\t', columns=header, index=False, mode='a', header=True)
+    df.to_csv(fp, sep='\t', index=False, mode='a', header=False)
 
 def write_loh_regions(df, path, args, p_value_confidence):
     fp = open(args.out_dir_plots + '/' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) +'_'+ str(p_value_confidence) + '/bed_output/' + path, 'a')
     fp.write('#chr: chromosome number\n')
     fp.write('#start: start address for loh segment\n')
     fp.write('#end: end address for loh segment\n')
+    fp.write('#chr\tstart\tend\n')
 
-    header = ['chr','start', 'end']
-    df.to_csv(fp, sep='\t', columns=header, index=False, mode='a', header=True)
+    df.to_csv(fp, sep='\t', index=False, mode='a', header=False)
 
 def coverage_bins(df):
     ref_start_values = df.start.values.tolist()
