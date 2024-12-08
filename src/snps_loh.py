@@ -41,7 +41,7 @@ def plot_snps_ratios_genome(args, df_snps_in_csv, df_loh_regions):
                 df_snps_ratios_chrom = pd.DataFrame(list(zip(chr_list, ref_start_values_updated, snps_het_counts, snps_homo_counts)),
                     columns=['chr', 'start', 'hets_ratios', 'homos_ratios'])
                 regions = get_chromosomes_regions(args)
-                df_snps_ratios_chrom['start'] = df_snps_ratios_chrom['start'].apply(lambda x: x + offset)
+                df_snps_ratios_chrom['start_overall'] = df_snps_ratios_chrom['start'].apply(lambda x: x + offset)
                 offset += regions[index]
 
                 df_snps_ratios.append(df_snps_ratios_chrom)
@@ -354,9 +354,9 @@ def loh_plots_genome(df_snps_in_csv, df_snps_ratios, args, df_loh_regions):
 
     custom_text_data = df_snps_ratios.start.values.tolist()
 
-    add_scatter_trace_coverage(fig, df_snps_ratios.start.values.tolist(), df_snps_ratios.hets_ratios.values.tolist(), name='Het SNPs Ratios', text=custom_text_data,
+    add_scatter_trace_coverage(fig, df_snps_ratios.start_overall.values.tolist(), df_snps_ratios.hets_ratios.values.tolist(), name='Het SNPs Ratios', text=custom_text_data,
                                yaxis=None, opacity=0.7, color='#E3B448', mul_cols=False)
-    add_scatter_trace_coverage(fig, df_snps_ratios.start.values.tolist(), df_snps_ratios.homos_ratios.values.tolist(), name='Homo SNPs Ratios', text=custom_text_data,
+    add_scatter_trace_coverage(fig, df_snps_ratios.start_overall.values.tolist(), df_snps_ratios.homos_ratios.values.tolist(), name='Homo SNPs Ratios', text=custom_text_data,
                                yaxis=None, opacity=0.7, color='#3A6B35', mul_cols=False)
 
     ###################################
@@ -404,14 +404,13 @@ def loh_plots_genome(df_snps_in_csv, df_snps_ratios, args, df_loh_regions):
         ),
         font=dict(size=18, color="black"))
 
-    plots_layout_settings(fig, 'Genome', args, df_snps_ratios.start.values.tolist()[-1], args.cut_threshold)
+    plots_layout_settings(fig, 'Genome', args, df_snps_ratios.start_overall.values.tolist()[-1], args.cut_threshold)
 
     ax = 20
     ay = -30
     add_annotation(fig, 960000000 + 250000000 + 120000000, 1, ax, ay, "LOH", '#2980b9')
+
     fig.add_annotation(text="Het SNPs ratio threshold: " + str(args.hets_ratio), x=960000000 + 250000000 + 120000000, y=0.95, showarrow=False)
-
-
     fig.update_yaxes(range=[0,1])
     fig.update_yaxes(range=[0,1])
     fig.update_yaxes(title_text="<b>SNPs Frequencies</b> (ratios)")

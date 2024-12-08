@@ -24,7 +24,7 @@ from plots import coverage_plots_chromosomes, copy_number_plots_genome_details, 
     copy_number_plots_genome_breakpoints, copy_number_plots_genome_breakpoints_subclonal, copy_number_plots_genome_subclonal, genes_copy_number_plots_genome, genes_plots_genome, heatmap_copy_number_plots_genome
 from vcf_processing import vcf_parse_to_csv_for_het_phased_snps_phasesets
 from snps_loh import plot_snps_frequencies_without_phasing, plot_snps_frequencies, plot_snps_ratios_genome, snps_df_loh, variation_plots, write_loh_regions
-from phasing_correction import generate_phasesets_bins, fix_inter_cn_phase_switch_errors
+from phasing_correction import generate_phasesets_bins, fix_inter_cn_phase_switch_errors, bins_correction_phaseblocks
 from optimization import peak_detection_optimization
 from extras import sv_vcf_bps_cn_check
 
@@ -318,17 +318,6 @@ def main():
     centers, subclonals, x_axis, observed_hist, single_copy_cov = peak_detection_optimization(args, snps_cpd_means, snps_cpd_points_weights, tumor_cov)
     logging.info('Initial detected clusters means: %s', centers)
 
-    # if args.tumor_purity and args.tumor_ploidy:
-    #     #print(normal_genome_proportion(0.45, 8, 100))
-    #     #tumor_cov = 100
-    #     normal_cov = 60
-    #     tumor_cov = statistics.mean([sum(x) for x in zip(haplotype_1_values_updated, haplotype_2_values_updated, unphased)])
-    #     purity = (tumor_cov / args.tumor_ploidy) / ((normal_cov / 2) + (tumor_cov / args.tumor_ploidy))
-    #     print("tumor_coverage:", tumor_cov)
-    #     _, _, _, normal_fraction = normal_genome_proportion(args.tumor_purity, args.tumor_ploidy, tumor_cov)
-    #     print("purity, normal fraction:", purity, normal_fraction)
-    #     centers = [normal_fraction] + [normal_fraction + (i * centers[1]) for i in range(1, len(centers))]
-
     #SNPs df from normal/tumor
     df_snps_in_csv = snps_df_loh(args, thread_pool, df_hp1)
 
@@ -395,6 +384,8 @@ def main():
 
                 df_segs_hp1_updated, df_segs_hp2_updated = adjust_diversified_segments(cen_out, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, args)
 
+                #df_hp1, df_hp2 = bins_correction_phaseblocks(args, csv_df_phasesets, df_segs_hp1_updated, df_segs_hp2_updated, df_hp1, df_hp2)
+
                 loh_regions = collect_loh_centromere_regions(df_segs_hp1_updated, df_segs_hp2_updated, cen_out, integer_fractional_means, args)
 
                 #df_segs_hp1_updated = merge_adjacent_regions_cn(df_segs_hp1_updated, args)
@@ -437,9 +428,9 @@ def main():
         else:
             logging.info('No estimated purity [%s] and ploidy [%s] value detected inside given ranges or overall ploidy is less than 0.1', args.purity_range, args.ploidy_range)
 
-    if average_p_value:
-        #SNPs ratios and LOH and plots
-        plot_snps_ratios_genome(args, df_snps_in_csv, loh_regions)
+    #if average_p_value:
+    #    #SNPs ratios and LOH and plots
+    #    plot_snps_ratios_genome(args, df_snps_in_csv, loh_regions)
     ################################
     if os.path.exists(args.out_dir_plots+'/data'): #
         shutil.rmtree(args.out_dir_plots+'/data')

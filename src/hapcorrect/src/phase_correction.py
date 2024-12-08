@@ -962,3 +962,31 @@ def switch_inter_phaseblocks_bins(chrom, args, ref_start_values, haplotype_1_val
                 i = i +1
 
     return haplotype_1_values, haplotype_2_values
+
+def flip_phaseblocks_unresolved(chrom, ref_start_values, snps_haplotype1_mean, snps_haplotype2_mean, ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets):
+    for i in range(len(ref_start_values_phasesets) - 1):
+        if i == 0:
+            print('do nothing')
+        else:
+            if chrom == 'chr16':
+                print('here')
+            if abs(haplotype_1_values_phasesets[i-1] - haplotype_1_values_phasesets[i+1]) < 5 and \
+               abs(haplotype_1_values_phasesets[i - 1] - haplotype_2_values_phasesets[i]) < 5 and \
+               abs(haplotype_1_values_phasesets[i + 1] - haplotype_2_values_phasesets[i]) < 5 and \
+               abs(haplotype_1_values_phasesets[i] - haplotype_1_values_phasesets[i + 1]) > 10 and \
+               abs(haplotype_1_values_phasesets[i] - haplotype_1_values_phasesets[i - 1]) > 10:
+                new_hp2_ps = haplotype_2_values_phasesets[i]
+                new_hp1_ps = haplotype_1_values_phasesets[i]
+                haplotype_2_values_phasesets[i] = new_hp1_ps
+                haplotype_1_values_phasesets[i] = new_hp2_ps
+                internal_bins = [j for j in ref_start_values if j >= ref_start_values_phasesets[i] and j <= ref_end_values_phasesets[i]]
+                if internal_bins:
+                    k = ref_start_values.index(internal_bins[0])
+                    for j, bin in enumerate(internal_bins):
+                        new_hp2 = snps_haplotype2_mean[k]
+                        new_hp1 = snps_haplotype1_mean[k]
+                        snps_haplotype1_mean[k] = new_hp2
+                        snps_haplotype2_mean[k] = new_hp1
+                        k = k + 1
+
+    return snps_haplotype1_mean, snps_haplotype2_mean, haplotype_1_values_phasesets, haplotype_2_values_phasesets

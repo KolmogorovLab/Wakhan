@@ -4,6 +4,8 @@ import numpy as np
 import os
 import itertools
 
+from hapcorrect.src.utils import get_contigs_list, get_chromosomes_regions
+
 def plot_coverage_data(html_graphs, args, chrom, ref_start_values, ref_end_values, haplotype_1_values, haplotype_2_values, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, sufix):
     fig = go.Figure()
     add_scatter_trace_coverage(fig, ref_start_values, haplotype_1_values, name='HP-1', text=None, yaxis=None,
@@ -118,20 +120,50 @@ def plots_add_markers_lines(fig):
         showlegend=True
     )
 
-def add_scatter_trace_coverage(fig, x, y, name, text, yaxis, opacity, color, visibility=True):
+def add_scatter_trace_coverage(fig, x, y, name, text, yaxis, opacity, color, visibility=True, mul_cols=False, row=2, baf=None):
+    if any(value < 0 for value in y):
+        xy = [round(-y2, 2) for y2 in y]
+    else:
+        xy = [round(y2, 2) for y2 in y]
+    if baf:
+        ht = '<br><b>Position</b>: %{text}' + '<br><b>BAF</b>: %{customdata}<br>'
+    else:
+        ht = '<br><b>Position</b>: %{text}' + '<br><b>Coverage</b>: %{customdata}<br>'
+    if mul_cols:
+        fig.add_trace(go.Scatter(
+            customdata=xy,
+            # legendgroup="group1",  # this can be any string, not just "group"
+            # legendgrouptitle_text="Coverage",
+            hovertemplate= ht,
+            x=x,
+            y=y,
+            name=name,
+            text=text,
+            yaxis=yaxis,
+            opacity=opacity,
+            marker_color=color,
+            visible=visibility,
+            marker={"size": 2},
+            mode="markers",
+        ), row = row, col = 1)
+    else:
+        fig.add_trace(go.Scatter(
+            # legendgroup="group1",  # this can be any string, not just "group"
+            # legendgrouptitle_text="Coverage",
+            customdata=xy,
+            hovertemplate=ht,
+            x=x,
+            y=y,
+            name=name,
+            text=text,
+            # yaxis="y5",
+            opacity=opacity,
+            marker_color=color,
+            visible=visibility,
+            marker={"size": 2},
+            mode="markers",
+        ))
 
-    fig.add_trace(go.Scatter(
-        #legendgroup="group1",  # this can be any string, not just "group"
-        #legendgrouptitle_text="Coverage",
-        x=x,
-        y=y,
-        name=name,
-        text=text,
-        #yaxis="y5",
-        opacity=opacity,
-        marker_color=color,
-        visible=visibility,
-    ))
 
 def plots_layout_settings(fig, chrom, args, limit_x, limit_y):
     # Update axes
@@ -303,3 +335,87 @@ def slice_list_sums(input):
     print(res)
 
     return first + [sum(sub_list) / len(sub_list) for sub_list in res[1:]]
+
+def loh_plots_genome(df_snps_ratios, args, df_loh_regions):
+    # TODO genome-wide plots
+    if not os.path.isdir(args.out_dir_plots + '/snps_loh_plots'):
+        os.makedirs(args.out_dir_plots + '/snps_loh_plots')
+
+    lengths = []
+    chroms = get_contigs_list(args.contigs)
+    for index, chrom in enumerate(chroms):
+        df_snps_ratios_chrom = df_snps_ratios[df_snps_ratios['chr'] == chrom]
+        lengths.append(len(df_snps_ratios_chrom))
+
+    indices = np.arange(0, len(df_snps_ratios)*args.bin_size_snps, args.bin_size_snps, dtype=int)
+
+    fig = go.Figure()
+
+    custom_text_data = df_snps_ratios.start.values.tolist()
+
+    add_scatter_trace_coverage(fig, df_snps_ratios.start_overall.values.tolist(), df_snps_ratios.hets_ratios.values.tolist(), name='Het SNPs Ratios', text=custom_text_data,
+                               yaxis=None, opacity=0.7, color='#E3B448', mul_cols=False)
+    add_scatter_trace_coverage(fig, df_snps_ratios.start_overall.values.tolist(), df_snps_ratios.homos_ratios.values.tolist(), name='Homo SNPs Ratios', text=custom_text_data,
+                               yaxis=None, opacity=0.7, color='#3A6B35', mul_cols=False)
+
+    ###################################
+    #snps_het, snps_homo, indices_het_freqs, indices_homo_freqs = get_snps_frquncies_genome(df_snps_in_csv)
+
+    #add_scatter_trace_coverage(fig, indices_het_freqs, snps_het, name='Het SNPs Freqs', text=None, yaxis=None,
+    #                           opacity=0.7, color='#E3B448', visibility='legendonly')
+    #add_scatter_trace_coverage(fig, indices_homo_freqs, snps_homo, name='Homo SNPs Freqs', text=None, yaxis=None,
+    #                           opacity=0.7, color='#3A6B35', visibility='legendonly')
+    regions = get_chromosomes_regions(args)
+    current = 0
+    label_pos = []
+    offset_chroms = 0
+    offset_chroms_1 = 0
+    chroms = get_contigs_list(args.contigs)
+    for index, chrom in enumerate(chroms):
+        if not df_loh_regions.empty:
+            df_loh_region = df_loh_regions[df_loh_regions['chr'] == chrom]
+        current += lengths[index]
+        label_pos.append(round(offset_chroms+regions[index]//2)) #y0=-10, y1=args.cut_threshold
+        fig.add_vline(x=offset_chroms,  line_width=1, line_dash="solid", line_color="#D7DBDD")
+        offset_chroms_1 += regions[index]
+
+        loh_starts = df_loh_region.start.values.tolist()
+        loh_ends  = df_loh_region.end.values.tolist()
+
+        # if len(loh_starts):
+        #     for i in range(len(df_loh_region.start.values.tolist())):
+        #         fig.add_vrect(x0=offset_chroms+loh_starts[i], x1=offset_chroms+loh_ends[i], fillcolor="#2980b9", opacity=0.4, line_width=0, row=2, col=1,)
+
+        if index % 2 == 0:
+            fig.add_vrect(x0=offset_chroms, x1=offset_chroms_1, fillcolor="#E5E7E9", opacity=0.9, layer="below", line_width=0, )
+
+        offset_chroms += regions[index]
+
+    fig.add_hline(y=1-args.hets_ratio,  line_width=1.5, line_dash="solid", line_color="#7a7b7b")
+    fig.add_hline(y=args.hets_ratio,  line_width=1.5, line_dash="solid", line_color="#7a7b7b")
+
+    fig.update_layout(
+        xaxis=dict(
+            tickangle=90,
+            tickmode='array',  # change 1
+            tickvals=label_pos,  # change 2
+            ticktext=chroms,  # change 3
+        ),
+        font=dict(size=18, color="black"))
+
+    plots_layout_settings(fig, 'Genome', args, df_snps_ratios.start_overall.values.tolist()[-1], args.cut_threshold)
+
+    #ax = 20
+    #ay = -30
+    #add_annotation(fig, 960000000 + 250000000 + 120000000, 1, ax, ay, "LOH", '#2980b9')
+
+    fig.add_annotation(text="Het SNPs ratio threshold: " + str(args.hets_ratio), x=960000000 + 250000000 + 120000000, y=0.95, showarrow=False)
+    fig.update_yaxes(range=[0,1])
+    fig.update_yaxes(range=[0,1])
+    fig.update_yaxes(title_text="<b>SNPs Frequencies</b> (ratios)")
+    fig.update_layout(width=1680, height=600,)
+    fig.update_layout(legend=dict(orientation = 'h', xanchor = "center", x = 0.5, y= 1.1))
+    #if args.pdf_enable:
+    #    print_genome_pdf(fig, args.genome_name+'_loh', args.out_dir_plots + '/snps_loh_plots')
+
+    fig.write_html(args.out_dir_plots + '/snps_loh_plots' +'/'+ args.genome_name + "_genome_snps_ratio_loh.html")

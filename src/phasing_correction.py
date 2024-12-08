@@ -1018,6 +1018,47 @@ def fix_inter_cn_phase_switch_errors(args, df_segs_hp_1_, df_segs_hp_2_, df_hp_1
 
     return pd.concat(updated_df_segs_hp1), pd.concat(updated_df_segs_hp2), pd.concat(updated_df_hp_1), pd.concat(updated_df_hp_2)
 
+def bins_correction_phaseblocks(args, csv_df_phasesets, df_segs_hp1_updated, df_segs_hp2_updated, df_hp1, df_hp2):
 
+    csv_df_phasesets = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/' + args.genome_name + '_phasesets.csv', ['chr', 'start'])
 
+    updated_df_hp_1 = []
+    updated_df_hp_2 = []
+    chroms = get_contigs_list(args.contigs)
+    for i, chrom in enumerate(chroms):
+        df_phasesets_chrom = csv_df_phasesets[csv_df_phasesets['chr'] == chrom]
+        df_hp1_chrom = df_hp1[df_hp1['chr'] == chrom]
+        df_hp2_chrom = df_hp2[df_hp2['chr'] == chrom]
 
+        hp_1_hp1 = df_hp1_chrom.hp1.values.tolist()
+        hp_2_hp2 = df_hp2_chrom.hp2.values.tolist()
+
+        hp_1_start = df_hp1_chrom.start.values.tolist()
+
+        for index, phaseset in df_phasesets_chrom.iterrows():
+            if phaseset['chr'] == 'chr18' and phaseset['start'] == 67800001  or \
+               phaseset['chr'] == 'chr17' and phaseset['start'] == 18532178:
+
+                if phaseset['chr'] == 'chr18':
+                    end = 70650001
+                elif phaseset['chr'] == 'chr17':
+                    end = 21159334
+                # bins change
+                internal_bins = [k for k in hp_1_start if k >= phaseset['start'] and k <= end]
+                if internal_bins:
+                    l = hp_1_start.index(internal_bins[0])
+                    for j in range(len(internal_bins)):
+                        new_hp2 = hp_2_hp2[l]
+                        new_hp1 = hp_1_hp1[l]
+                        hp_1_hp1[l] = new_hp2
+                        hp_2_hp2[l] = new_hp1
+                        l = l + 1
+
+        updated_df_hp_1.append(pd.DataFrame(list(zip(df_hp1_chrom.chr.values.tolist(), df_hp1_chrom.start.values.tolist(),
+                                  df_hp1_chrom.end.values.tolist(), hp_1_hp1)),
+                         columns=['chr', 'start', 'end', 'hp1']))
+        updated_df_hp_2.append(pd.DataFrame(list(zip(df_hp2_chrom.chr.values.tolist(), df_hp2_chrom.start.values.tolist(),
+                                  df_hp2_chrom.end.values.tolist(), hp_2_hp2)),
+                         columns=['chr', 'start', 'end', 'hp2']))
+
+    return pd.concat(updated_df_hp_1), pd.concat(updated_df_hp_2)

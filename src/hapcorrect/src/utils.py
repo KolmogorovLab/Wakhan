@@ -341,3 +341,40 @@ def merge_regions(starts, ends, values, values_next, loh_starts, loh_ends, thres
             merged_values_2.append(sum(values_next[i:j]) / (j - i))
         i = j
     return merged_starts, merged_ends, merged_values, merged_values_2
+
+def get_chromosomes_regions(args):
+    chroms = get_contigs_list(args.contigs)
+    bam_alignment = pysam.AlignmentFile(args.target_bam[0])
+    headers = bam_alignment.header
+    seq_dict = headers['SQ']
+    region = [''] * len(chroms)
+    for i, seq_elem in enumerate(seq_dict):
+        if seq_elem['SN'] in chroms:
+            region[chroms.index(seq_elem['SN'])] = seq_elem['LN']
+
+    return region
+
+def get_contigs_list(contigs):
+    chroms_list_final = []
+    chroms = contigs.split(',')
+    for chrom in chroms:
+        chrom = chrom[len('chr'):] if chrom.startswith('chr') else chrom
+        chrom = chrom.split('-')
+        if len(chrom) > 1:
+            chroms_list_final.extend(list(range(int(chrom[0]), int(chrom[1]) + 1)))
+        else:
+            chroms_list_final.extend(chrom)
+
+    chroms_list_final = ['chr' + x if chroms[0].startswith('chr') else x for x in map(str, chroms_list_final)]
+    return chroms_list_final
+
+def extend_snps_ratios_df(chrom, offset, ref_start_values_updated, snps_het_counts, snps_homo_counts):
+    chr_list = [chrom for ch in range(len(ref_start_values_updated))]
+
+    df_snps_ratios_chrom = pd.DataFrame(
+        list(zip(chr_list, ref_start_values_updated, snps_het_counts, snps_homo_counts)),
+        columns=['chr', 'start', 'hets_ratios', 'homos_ratios'])
+
+    df_snps_ratios_chrom['start_overall'] = df_snps_ratios_chrom['start'].apply(lambda x: x + offset)
+
+    return df_snps_ratios_chrom
