@@ -968,7 +968,7 @@ def flip_phaseblocks_unresolved(chrom, args, ref_start_values, snps_haplotype1_m
     for index, (start_ps,end_ps) in enumerate(zip(ref_start_values_phasesets, ref_end_values_phasesets)):
         #if chrom == 'chr18' and start_ps == 67800001 and end_ps == 70650001 or \
         #   chrom == 'chr17' and start_ps == 18532178 and end_ps == 21159334:
-        if index == 0:
+        if index == 0 and len(ref_start_values_phasesets) > 1:
             if haplotype_1_values_phasesets[index] > haplotype_2_values_phasesets[index] and haplotype_2_values_phasesets[index + 1] > haplotype_1_values_phasesets[index + 1] or \
                haplotype_1_values_phasesets[index] < haplotype_2_values_phasesets[index] and haplotype_2_values_phasesets[index + 1] < haplotype_1_values_phasesets[index + 1]:
                 ps_indices.append(index)
@@ -1007,7 +1007,7 @@ def flip_phaseblocks_unresolved_ends(chrom, args, ref_start_values, snps_haploty
     for index, (start_ps,end_ps) in enumerate(zip(ref_start_values_phasesets, ref_end_values_phasesets)):
         #if chrom == 'chr18' and start_ps == 67800001 and end_ps == 70650001 or \
         #   chrom == 'chr17' and start_ps == 18532178 and end_ps == 21159334:
-        if index == 0:
+        if index == 0 and len(ref_start_values_phasesets) > 1:
             if haplotype_1_values_phasesets[index] > haplotype_2_values_phasesets[index] and haplotype_2_values_phasesets[index + 1] > haplotype_1_values_phasesets[index + 1] or \
                haplotype_1_values_phasesets[index] < haplotype_2_values_phasesets[index] and haplotype_2_values_phasesets[index + 1] < haplotype_1_values_phasesets[index + 1]:
                 ps_indices.append(index)
