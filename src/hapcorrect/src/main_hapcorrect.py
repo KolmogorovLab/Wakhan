@@ -96,8 +96,8 @@ def main_process(args, breakpoints_additional):
         else:
             output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(args.tumor_vcf, args)
         phasesets_segments = generate_phasesets_bins(args.target_bam[0], output_phasesets_file_path, args.bin_size, args) #TODO update for multiple bam files
-        if args.breakpoints:
-            phasesets_segments = add_breakpoints(args, phasesets_segments, breakpoints_additional)
+        #if args.breakpoints:
+        #    phasesets_segments = add_breakpoints(args, phasesets_segments, breakpoints_additional)
         logging.info('Computing coverage for phaseblocks')
         phasesets_coverage = get_segments_coverage(phasesets_segments, coverage_histograms)
 

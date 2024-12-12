@@ -388,8 +388,9 @@ def main():
 
                 loh_regions = collect_loh_centromere_regions(df_segs_hp1_updated, df_segs_hp2_updated, cen_out, integer_fractional_means, args)
 
-                df_segs_hp1_updated = merge_adjacent_regions_cn(df_segs_hp1_updated, args)
-                df_segs_hp2_updated = merge_adjacent_regions_cn(df_segs_hp2_updated, args)
+                #df_segs_hp1_updated = merge_adjacent_regions_cn(df_segs_hp1_updated, args)
+                #df_segs_hp2_updated = merge_adjacent_regions_cn(df_segs_hp2_updated, args)
+
                 #df_hp1, df_hp2 = bins_correction_phaseblocks(args, csv_df_phasesets, df_segs_hp1_updated, df_segs_hp2_updated, df_hp1, df_hp2)
 
                 write_copynumber_segments_csv(df_segs_hp1_updated, args, cen_out, integer_fractional_means, 1, '_'+ str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_'+ str(p_value_confidence) +'_copynumbers_segments_HP_1.bed', p_value_confidence)
@@ -398,7 +399,7 @@ def main():
 
                 copy_number_plots_genome_details(cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_unphased, args, x_axis, observed_hist, p_value_confidence)
 
-                df_segs_hp1_updated, df_segs_hp2_updated, df_hp1, df_hp2 = fix_inter_cn_phase_switch_errors(args, df_segs_hp1_updated, df_segs_hp2_updated, df_hp1, df_hp2)
+                #df_segs_hp1_updated, df_segs_hp2_updated, df_hp1, df_hp2 = fix_inter_cn_phase_switch_errors(args, df_segs_hp1_updated, df_segs_hp2_updated, df_hp1, df_hp2)
 
                 if args.breakpoints:
                     copy_number_plots_genome_breakpoints(cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, p_value_confidence, loh_regions, df_snps_in_csv)
