@@ -1,6 +1,7 @@
 import numpy as np
+import pandas as pd
 
-from utils import get_contigs_list
+from utils import get_contigs_list, df_chromosomes_sorter
 
 def get_all_breakpoints_data(edges, edges_chr, height, path, args):
     from vcf_parser import VCFParser
@@ -46,18 +47,20 @@ def get_all_breakpoints_data(edges, edges_chr, height, path, args):
     edges_chr = [edges_chr[i] + (edges_chr[i + 1] if i + 1 < n else []) for i in range(0, n, 2)]
     #BNDs and INVs
     for i, (a,b,c,d,e,f) in enumerate(edges_chr):
-        #hover_info.append(a+':'+str(b)+'-'+d+':'+str(e))
+        #sort coordinates
+        data_df = {'chr': [a, d], 'start': [b, e]}
+        df = pd.DataFrame(data_df)
+        df_sorted = df_chromosomes_sorter(df, ['chr','start'])
+        a = df_sorted.iloc[0,0]
+        b = df_sorted.iloc[0,1]
+        d = df_sorted.iloc[1,0]
+        e = df_sorted.iloc[1,1]
 
         if a == d:
             nr = 35
         else:
             nr = 75
-        # if c == 1 and f == 1:
-        #     colors.append('#DC3A3A')
-        # elif c == 2 and f == 2:
-        #     colors.append('#1D28C3')
-        # else:
-        #     colors.append('#737373')
+
         if [a,b] in bp_junctions_inv:
             colors.append('#2830DE')
             hover_info.append('INV - ' + a + ':' + str(b) + '-' + d + ':' + str(e))

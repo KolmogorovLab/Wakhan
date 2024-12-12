@@ -15,16 +15,16 @@ from collections import defaultdict
 
 from hapcorrect.src.process_bam import get_all_reads_parallel, update_coverage_hist, get_segments_coverage, haplotype_update_all_bins_parallel, get_snps_frequencies, tumor_bam_haplotag
 from hapcorrect.src.process_vcf import vcf_parse_to_csv_for_het_phased_snps_phasesets, get_snp_frequencies_segments, snps_frequencies_chrom_mean, get_snps_frquncies_coverage, vcf_parse_to_csv_for_snps, index_vcf, rephase_vcf, get_phasingblocks, snps_frequencies_chrom_mean_phasesets, get_vafs_from_normal_phased_vcf
-from hapcorrect.src.phase_correction import generate_phasesets_bins, phaseblock_flipping, phase_correction_centers, contiguous_phaseblocks, detect_centromeres, flip_phaseblocks_contigous, remove_overlaping_contiguous, switch_inter_phaseblocks_bins, flip_phaseblocks_unresolved
+from hapcorrect.src.phase_correction import generate_phasesets_bins, phaseblock_flipping, phase_correction_centers, contiguous_phaseblocks, detect_centromeres, flip_phaseblocks_contigous, remove_overlaping_contiguous, switch_inter_phaseblocks_bins, flip_phaseblocks_unresolved, flip_phaseblocks_unresolved_ends
 from hapcorrect.src.utils import get_chromosomes_bins, write_segments_coverage, csv_df_chromosomes_sorter, get_snps_frquncies_coverage_from_bam, \
-                    infer_missing_phaseblocks, df_chromosomes_sorter, is_phasesets_check_simple_heuristics, write_df_csv, loh_regions_events, snps_frequencies_chrom_genes, genes_segments_coverage, genes_segments_list, extend_snps_ratios_df, get_chromosomes_regions
+                    infer_missing_phaseblocks, df_chromosomes_sorter, is_phasesets_check_simple_heuristics, write_df_csv, loh_regions_events, snps_frequencies_chrom_genes, genes_segments_coverage, genes_segments_list, extend_snps_ratios_df, get_chromosomes_regions, add_breakpoints
 from hapcorrect.src.extras import get_contigs_list
 from hapcorrect.src.plots import plot_coverage_data, change_point_detection, plot_coverage_data_after_correction, loh_plots_genome
 from hapcorrect.src.cpd import cpd_positions_means
 from hapcorrect.src.loh import detect_loh_centromere_regions, plot_snps
 
 MIN_SV_SIZE = 50
-def main_process(args):
+def main_process(args, breakpoints_additional):
     logging.basicConfig(level=logging.INFO)
 
     if args.control_bam is None:
@@ -96,6 +96,8 @@ def main_process(args):
         else:
             output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(args.tumor_vcf, args)
         phasesets_segments = generate_phasesets_bins(args.target_bam[0], output_phasesets_file_path, args.bin_size, args) #TODO update for multiple bam files
+        if args.breakpoints:
+            phasesets_segments = add_breakpoints(phasesets_segments, breakpoints_additional)
         logging.info('Computing coverage for phaseblocks')
         phasesets_coverage = get_segments_coverage(phasesets_segments, coverage_histograms)
 
@@ -159,6 +161,9 @@ def main_process(args):
             haplotype_2_values = csv_df_coverage_chrom.hp2.values.tolist()
             ref_start_values = csv_df_coverage_chrom.start.values.tolist()
             ref_end_values = csv_df_coverage_chrom.end.values.tolist()
+
+            #ref_start_values_phasesets, ref_end_values_phasesets = add_breakpoints(ref_start_values_phasesets, ref_end_values_phasesets, breakpoints)
+
 
             if args.normal_phased_vcf:
                 snps_haplotype1_mean, snps_haplotype2_mean  = snps_frequencies_chrom_mean(df_snps_frequencies, ref_start_values, chrom, args)
@@ -236,14 +241,16 @@ def main_process(args):
                 snps_haplotype1_mean, snps_haplotype2_mean, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets = \
                     phaseblock_flipping(chrom, args, is_simple_heuristics, snps_haplotype1_mean, snps_haplotype2_mean, ref_start_values, ref_start_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
 
-                #switch inter phaseblocks bins
-                snps_haplotype1_mean, snps_haplotype2_mean = switch_inter_phaseblocks_bins(chrom, args, ref_start_values, snps_haplotype1_mean, snps_haplotype2_mean, ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets)
-
                 plot_coverage_data(html_graphs, args, chrom, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values,
                                    haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, "phase_correction_0")
 
+                snps_haplotype1_mean, snps_haplotype2_mean, haplotype_1_values_phasesets, haplotype_2_values_phasesets = flip_phaseblocks_unresolved(chrom, args, ref_start_values, snps_haplotype1_mean, snps_haplotype2_mean, ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets)
+                # switch inter phaseblocks bins
+                snps_haplotype1_mean, snps_haplotype2_mean = switch_inter_phaseblocks_bins(chrom, args, ref_start_values, snps_haplotype1_mean, snps_haplotype2_mean, ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets)
+
                 ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets = contiguous_phaseblocks(haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, loh_region_starts, loh_region_ends)
-                #snps_haplotype1_mean, snps_haplotype2_mean, haplotype_1_values_phasesets, haplotype_2_values_phasesets = flip_phaseblocks_unresolved(chrom, ref_start_values, snps_haplotype1_mean, snps_haplotype2_mean, ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets)
+                snps_haplotype1_mean, snps_haplotype2_mean, haplotype_1_values_phasesets, haplotype_2_values_phasesets = flip_phaseblocks_unresolved_ends(chrom, args, ref_start_values, snps_haplotype1_mean, snps_haplotype2_mean, ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets)
+
             #flip phaseblocks based on more contiguous phaseblocks
             #haplotype_1_values_phasesets, haplotype_2_values_phasesets, snps_haplotype1_mean, snps_haplotype2_mean = flip_phaseblocks_contigous(chrom, args, ref_start_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, snps_haplotype1_mean, snps_haplotype2_mean)
             plot_coverage_data(html_graphs, args, chrom, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, "phase_correction_1")
@@ -256,7 +263,7 @@ def main_process(args):
             ##################################
             # start_values_phasesets_contiguous_df_all = remove_overlaping_contiguous(chrom, ref_start_values_phasesets_hp1, ref_end_values_phasesets_hp1, ref_start_values_phasesets_hp2, ref_end_values_phasesets_hp2)
             chr_list = [chrom for ch in range(len(ref_start_values_phasesets))]
-            start_values_phasesets_contiguous_all.append(pd.DataFrame(list(zip(chr_list, ref_start_values_phasesets)), columns=['chr', 'start']))
+            start_values_phasesets_contiguous_all.append(pd.DataFrame(list(zip(chr_list, ref_start_values_phasesets, ref_end_values_phasesets)), columns=['chr', 'start', 'end']))
 
     html_graphs.write("</body></html>")
 
@@ -272,7 +279,7 @@ def main_process(args):
         write_df_csv(cancer_genes_df_all, args.out_dir_plots + '/data_phasing/cancer_genes_coverage.csv')
 
     csv_df_phase_change_segments = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/' + args.genome_name + '_phase_change_segments.csv', ['chr', 'start', 'end'])
-    csv_df_phasesets_segments = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/' + args.genome_name + '_phasesets.csv', ['chr', 'start'])
+    csv_df_phasesets_segments = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/' + args.genome_name + '_phasesets.csv', ['chr', 'start', 'end'])
 
     if args.normal_phased_vcf:
         get_phasingblocks(args.normal_phased_vcf)

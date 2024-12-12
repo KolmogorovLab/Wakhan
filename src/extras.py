@@ -70,7 +70,7 @@ def sv_vcf_bps_cn_check(path, args):
             # sample_list[variant['ID']] = bps_sample(chr2_id, chr2_end, hp, chr2_id, chr2_end+1, hp, False)
             bp_junctions_bnd.append([variant['CHROM'], int(variant['POS'])])
             bp_junctions_bnd.append([variant['CHROM'], int(variant['POS'])+int(variant['info_dict']['SVLEN'][0])])
-            sample_list[variant['ID']] = bps_sample(variant['CHROM'], int(variant['POS']), hp, variant['CHROM'], int(variant['POS'])+int(variant['info_dict']['SVLEN'][0]), hp, False)
+            sample_list[variant['ID']] = bps_sample(variant['CHROM'], int(variant['POS']), variant['ID'], variant['CHROM'], int(variant['POS'])+int(variant['info_dict']['SVLEN'][0]), variant['ID'], False)
 
         elif variant['info_dict']['SVTYPE'][0] == 'sBND' or 'sBND' in variant['ID']:
             hp = 0
@@ -78,7 +78,7 @@ def sv_vcf_bps_cn_check(path, args):
                 hp = int(variant['info_dict']['HP'][0])
             bp_junctions_bnd.append([variant['CHROM'], int(variant['POS'])])
             bp_junctions_bnd.append([variant['CHROM'], int(variant['POS']) + 1])
-            sample_list[variant['ID']] = bps_sample(variant['CHROM'], int(variant['POS']), hp, variant['CHROM'], int(variant['POS']) + 1, hp, False)
+            sample_list[variant['ID']] = bps_sample(variant['CHROM'], int(variant['POS']), variant['ID'], variant['CHROM'], int(variant['POS']) + 1, variant['ID'], False)
 
         elif variant['info_dict']['SVTYPE'][0] == 'BND':
             s = variant['ALT']
@@ -96,7 +96,7 @@ def sv_vcf_bps_cn_check(path, args):
 
             bp_junctions_bnd.append([variant['CHROM'], int(variant['POS'])])
             bp_junctions_bnd.append([chr2_id, chr2_end])
-            sample_list[variant['ID']] = bps_sample(variant['CHROM'], int(variant['POS']), hp, chr2_id, chr2_end, hp, False)
+            sample_list[variant['ID']] = bps_sample(variant['CHROM'], int(variant['POS']), variant['ID'], chr2_id, chr2_end, variant['ID'], False)
 
     bp_junctions = sorted(bp_junctions[1:], key=lambda x: (x[0], x[1]))
     bp_junctions_bnd = sorted(bp_junctions_bnd[1:], key=lambda x: (x[0], x[1]))

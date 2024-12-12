@@ -8,7 +8,7 @@ import pysam
 import bisect
 import pandas as pd
 
-from utils import get_contigs_list
+from utils import get_contigs_list, remove_outliers_iqr
 def generate_phasesets_bins(bam, path, bin_size, args):
     return get_phasesets_bins(bam, path, bin_size, args)
 def get_phasesets_bins(bam, phasesets, bin_size, args):
@@ -966,33 +966,36 @@ def fix_inter_cn_phase_switch_errors(args, df_segs_hp_1_, df_segs_hp_2_, df_hp_1
 
         haplotype_1_state_copyrnumbers = df_seg_hp_1.state.values.tolist()
         haplotype_1_depth_copyrnumbers = df_seg_hp_1.state.values.tolist()
+        haplotype_1_start_values_copyrnumbers = df_seg_hp_1.start.values.tolist()
+        haplotype_1_end_values_copyrnumbers = df_seg_hp_1.end.values.tolist()
 
         haplotype_2_state_copyrnumbers = df_seg_hp_2.state.values.tolist()
         haplotype_2_depth_copyrnumbers = df_seg_hp_2.depth.values.tolist()
         haplotype_2_start_values_copyrnumbers = df_seg_hp_2.start.values.tolist()
         haplotype_2_end_values_copyrnumbers = df_seg_hp_2.end.values.tolist()
 
-        for i, (val_hp1, val_hp2) in enumerate(zip(haplotype_1_state_copyrnumbers, haplotype_2_state_copyrnumbers)):
-            if not i == 0 and not i == len(haplotype_1_state_copyrnumbers):
-                if haplotype_1_state_copyrnumbers[i-1] == haplotype_1_state_copyrnumbers[i+1] and \
-                   haplotype_2_state_copyrnumbers[i-1] == haplotype_2_state_copyrnumbers[i+1] and \
-                   not haplotype_1_state_copyrnumbers[i] == haplotype_2_state_copyrnumbers[i]:# and \
-                   #haplotype_1_state_copyrnumbers[i+1] == haplotype_2_state_copyrnumbers[i+1]:
+        matching_indices_hp1 = []
+        matching_indices_hp2 = []
+        for i, (start_a, end_a) in enumerate(zip(haplotype_1_start_values_copyrnumbers, haplotype_1_end_values_copyrnumbers)):
+            if start_a in haplotype_2_start_values_copyrnumbers and end_a in haplotype_2_end_values_copyrnumbers:
+                matching_indices_hp1.append(i)
+                matching_indices_hp2.append(haplotype_2_start_values_copyrnumbers.index(start_a))
 
-                    #print(chrom, haplotype_2_start_values_copyrnumbers[i], haplotype_2_end_values_copyrnumbers[i])
+        for index, (index_hp1, index_hp2) in enumerate(zip(matching_indices_hp1, matching_indices_hp2)):
+            if chrom == 'chr10' and ((index_hp1 == 0 and index_hp2 == 0) or (index_hp1 == len(haplotype_1_start_values_copyrnumbers)-1 and index_hp2 == len(haplotype_2_start_values_copyrnumbers)-1)):
                     #CN states change
-                    new_state_hp2 = haplotype_2_state_copyrnumbers[i]
-                    new_state_hp1 = haplotype_1_state_copyrnumbers[i]
-                    haplotype_1_state_copyrnumbers[i] = new_state_hp2
-                    haplotype_2_state_copyrnumbers[i] = new_state_hp1
+                    new_state_hp2 = haplotype_2_state_copyrnumbers[index_hp2]
+                    new_state_hp1 = haplotype_1_state_copyrnumbers[index_hp1]
+                    haplotype_1_state_copyrnumbers[index_hp1] = new_state_hp2
+                    haplotype_2_state_copyrnumbers[index_hp2] = new_state_hp1
 
-                    new_depth_hp2 = haplotype_2_depth_copyrnumbers[i]
-                    new_depth_hp1 = haplotype_1_depth_copyrnumbers[i]
-                    haplotype_1_depth_copyrnumbers[i] = new_depth_hp2
-                    haplotype_2_depth_copyrnumbers[i] = new_depth_hp1
+                    new_depth_hp2 = haplotype_2_depth_copyrnumbers[index_hp2]
+                    new_depth_hp1 = haplotype_1_depth_copyrnumbers[index_hp1]
+                    haplotype_1_depth_copyrnumbers[index_hp1] = new_depth_hp2
+                    haplotype_2_depth_copyrnumbers[index_hp2] = new_depth_hp1
 
                     #bins change
-                    internal_bins = [k for k in hp_1_start if k >= haplotype_2_start_values_copyrnumbers[i] and k <= haplotype_2_end_values_copyrnumbers[i]]
+                    internal_bins = [k for k in hp_1_start if k >= haplotype_2_start_values_copyrnumbers[index_hp2] and k <= haplotype_2_end_values_copyrnumbers[index_hp2]]
                     if internal_bins:
                         l = hp_1_start.index(internal_bins[0])
                         for j in range(len(internal_bins)):
@@ -1018,9 +1021,25 @@ def fix_inter_cn_phase_switch_errors(args, df_segs_hp_1_, df_segs_hp_2_, df_hp_1
 
     return pd.concat(updated_df_segs_hp1), pd.concat(updated_df_segs_hp2), pd.concat(updated_df_hp_1), pd.concat(updated_df_hp_2)
 
+def check_cn_state_phaseset(phaseset, df_segs_hp1_updated_chrom, df_segs_hp2_updated_chrom):
+    hp1_state = -1
+    hp2_state = -1
+    df_hp1_state = df_segs_hp1_updated_chrom.depth.values.tolist()
+    df_hp2_state = df_segs_hp2_updated_chrom.depth.values.tolist()
+
+    for i, (start, end) in enumerate(zip(df_segs_hp1_updated_chrom.start.values.tolist(), df_segs_hp1_updated_chrom.end.values.tolist())):
+        if start >= phaseset['start'] and end <= phaseset['end']:
+            hp1_state = df_hp1_state[i]
+
+    for i, (start, end) in enumerate(zip(df_segs_hp2_updated_chrom.start.values.tolist(), df_segs_hp2_updated_chrom.end.values.tolist())):
+        if start >= phaseset['start'] and end <= phaseset['end']:
+            hp2_state = df_hp2_state[i]
+
+    return hp1_state, hp2_state
+
 def bins_correction_phaseblocks(args, csv_df_phasesets, df_segs_hp1_updated, df_segs_hp2_updated, df_hp1, df_hp2):
 
-    csv_df_phasesets = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/' + args.genome_name + '_phasesets.csv', ['chr', 'start'])
+    csv_df_phasesets = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/' + args.genome_name + '_phasesets.csv', ['chr', 'start', 'end'])
 
     updated_df_hp_1 = []
     updated_df_hp_2 = []
@@ -1030,21 +1049,24 @@ def bins_correction_phaseblocks(args, csv_df_phasesets, df_segs_hp1_updated, df_
         df_hp1_chrom = df_hp1[df_hp1['chr'] == chrom]
         df_hp2_chrom = df_hp2[df_hp2['chr'] == chrom]
 
+        df_segs_hp1_updated_chrom = df_segs_hp1_updated[df_segs_hp1_updated['chromosome'] == chrom]
+        df_segs_hp2_updated_chrom = df_segs_hp2_updated[df_segs_hp2_updated['chromosome'] == chrom]
+
         hp_1_hp1 = df_hp1_chrom.hp1.values.tolist()
         hp_2_hp2 = df_hp2_chrom.hp2.values.tolist()
 
         hp_1_start = df_hp1_chrom.start.values.tolist()
 
         for index, phaseset in df_phasesets_chrom.iterrows():
-            if phaseset['chr'] == 'chr18' and phaseset['start'] == 67800001  or \
-               phaseset['chr'] == 'chr17' and phaseset['start'] == 18532178:
+            hp1_mean_ps, hp2_mean_ps = check_cn_state_phaseset(phaseset, df_segs_hp1_updated_chrom, df_segs_hp2_updated_chrom)
+            hp1_mean = statistics.mean(remove_outliers_iqr(np.array(hp_1_hp1[phaseset['start'] // args.bin_size:phaseset['end'] // args.bin_size])))
+            hp2_mean = statistics.mean(remove_outliers_iqr(np.array(hp_2_hp2[phaseset['start'] // args.bin_size:phaseset['end'] // args.bin_size])))
+            if ((abs(hp1_mean_ps - hp1_mean) > abs(hp1_mean_ps - hp2_mean)) and (not hp1_mean_ps == -1 and not hp2_mean_ps == -1)):
+            #if phaseset['chr'] == 'chr18' and phaseset['start'] == 67800001 and phaseset['end'] == 70650001 or \
+            #   phaseset['chr'] == 'chr17' and phaseset['start'] == 18532178 and phaseset['end'] == 21159334:
 
-                if phaseset['chr'] == 'chr18':
-                    end = 70650001
-                elif phaseset['chr'] == 'chr17':
-                    end = 21159334
                 # bins change
-                internal_bins = [k for k in hp_1_start if k >= phaseset['start'] and k <= end]
+                internal_bins = [k for k in hp_1_start if k >= phaseset['start'] and k <= phaseset['end']]
                 if internal_bins:
                     l = hp_1_start.index(internal_bins[0])
                     for j in range(len(internal_bins)):

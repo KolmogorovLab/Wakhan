@@ -454,6 +454,11 @@ def csv_df_chromosomes_sorter(path, names, sept='\t'):
     dataframe.sort_values(by=['chr', names[1]], ascending=[True, True], inplace=True)
     return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
 
+def df_chromosomes_sorter(dataframe, names):
+    dataframe['chr'] = dataframe['chr'].astype(str)
+    dataframe.sort_values(by=['chr', names[1]], ascending=[True, True], inplace=True)
+    return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
+
 def get_breakpoints(chrom, bp_file_path): #TODO add call in plots
     break_points = []
     with open(bp_file_path) as bp_file:
@@ -708,6 +713,16 @@ def write_copynumber_segments_csv(haplotype_df_, args, centers, integer_fraction
         haplotype_df = haplotype_df.rename(columns={'chromosome': 'chr', 'start': 'start', 'end': 'end', 'depth':'coverage', 'state':'copynumber_state'})
 
     haplotype_df['coverage'] = haplotype_df['coverage'].apply(lambda x: round(x, 2))
+    if args.breakpoints:
+        _, _, _, bps_ids_all, bps, bps_bnd = sv_vcf_bps_cn_check(args.breakpoints, args)
+        bps_ids_global= []
+        for index, row in haplotype_df.iterrows():
+            bps_ids = []
+            for bp in bps_ids_all:
+                if bp[0] == row['chr'] and int(bp[1]) >= int(row['start']) and int(bp[1]) <= int(row['end']):
+                    bps_ids.append(bp[2])
+            bps_ids_global.append(bps_ids)
+        haplotype_df['svs_breakpoints_ids'] = bps_ids_global
 
     if args.without_phasing:
         fp = open(args.out_dir_plots + '/bed_output/' + args.genome_name + filename, 'a')
@@ -716,36 +731,53 @@ def write_copynumber_segments_csv(haplotype_df_, args, centers, integer_fraction
         fp.write('#end: end address for CN segment\n')
         fp.write('#coverage: median coverage for this segment\n')
         fp.write('#copynumber_state: detected copy number state (integer/fraction)\n')
+
         if 'confidence' in haplotype_df.columns:
             fp.write('#confidence: confidence score\n')
             fp.write('#if_subclonal: if entry is subclonal [Y/N]\n')
-            fp.write('#chr\tstart\tend\tcoverage\tcopynumber_state\tconfidence\tif_subclonal\n')
+        if args.breakpoints:
+            fp.write('#svs_breakpoints_ids: corresponding structural variations (breakpoints) IDs from VCF file\n')
+
+        if 'confidence' in haplotype_df.columns:
+            if args.breakpoints:
+                fp.write('#chr\tstart\tend\tcoverage\tcopynumber_state\tconfidence\tif_subclonal\tsvs_breakpoints_ids\n')
+            else:
+                fp.write('#chr\tstart\tend\tcoverage\tcopynumber_state\tconfidence\tif_subclonal\n')
         else:
-            fp.write('#chr\tstart\tend\tcoverage\tcopynumber_state\n')
+            if args.breakpoints:
+                fp.write('#chr\tstart\tend\tcoverage\tcopynumber_state\tsvs_breakpoints_ids\n')
+            else:
+                fp.write('#chr\tstart\tend\tcoverage\tcopynumber_state\n')
+
         haplotype_df.to_csv(fp, sep='\t', index=False, mode='a', header=False)
     else:
         if not os.path.isdir(args.out_dir_plots + '/' + str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_'+ str(p_value) +'/bed_output'):
             os.makedirs(args.out_dir_plots + '/' + str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_'+ str(p_value) +'/bed_output')
         fp = open(args.out_dir_plots +'/'+ str(args.tumor_ploidy) + '_'+ str(args.tumor_purity)  +'_'+ str(p_value) +'/bed_output/' + args.genome_name + filename, 'a')
-        haplotype_df['haplotype'] = hp
-        header_enable = False
-        if hp == 1:
-            fp.write('#chr: chromosome number\n')
-            fp.write('#start: start address for CN segment\n')
-            fp.write('#end: end address for CN segment\n')
-            fp.write('#coverage: median coverage for this segment\n')
-            fp.write('#copynumber_state: detected copy number state (integer/fraction)\n')
-            if 'confidence' in haplotype_df.columns:
-                fp.write('#confidence: confidence score\n')
-                fp.write('#if_subclonal: if entry is subclonal [Y/N]\n')
-            fp.write('#haplotype: haplotype number\n')
-            header_enable = True
+        fp.write('#chr: chromosome number\n')
+        fp.write('#start: start address for CN segment\n')
+        fp.write('#end: end address for CN segment\n')
+        fp.write('#coverage: median coverage for this segment\n')
+        fp.write('#copynumber_state: detected copy number state (integer/fraction)\n')
+
         if 'confidence' in haplotype_df.columns:
-            if header_enable:
-                fp.write('#chr\tstart\tend\tcoverage\tcopynumber_state\tconfidence\tif_subclonal\thaplotype\n')
+            fp.write('#confidence: confidence score\n')
+            fp.write('#if_subclonal: if entry is subclonal [Y/N]\n')
+
+        if args.breakpoints:
+            fp.write('#svs_breakpoints_ids: corresponding structural variations (breakpoints) IDs from VCF file\n')
+
+        if 'confidence' in haplotype_df.columns:
+            if args.breakpoints:
+                fp.write('#chr\tstart\tend\tcoverage\tcopynumber_state\tconfidence\tif_subclonal\tsvs_breakpoints_ids\n')
+            else:
+                fp.write('#chr\tstart\tend\tcoverage\tcopynumber_state\tconfidence\tif_subclonal\n')
         else:
-            if header_enable:
-                fp.write('#chr\tstart\tend\tcoverage\tcopynumber_state\thaplotype\n')
+            if args.breakpoints:
+                fp.write('#chr\tstart\tend\tcoverage\tcopynumber_state\tsvs_breakpoints_ids\n')
+            else:
+                fp.write('#chr\tstart\tend\tcoverage\tcopynumber_state\n')
+
         haplotype_df.to_csv(fp, sep='\t', index=False, mode='a', header=False)
 
 def adjust_first_copy_mean(args, centers, df_segs_hp1, df_segs_hp2, df_hp1, df_hp2):
@@ -1255,7 +1287,7 @@ def merge_adjacent_regions_cn(segarr, args):
     for index, chrom in enumerate(chroms):
         seg = segarr[segarr['chromosome'] == chrom]
         label_groups = seg['state'].ne(seg['state'].shift()).cumsum()
-        df = (seg.groupby(label_groups).agg({'chromosome': 'first', 'start': 'min', 'end': 'max', 'depth': 'first', 'state': 'first'}).reset_index(drop=True))
+        df = (seg.groupby(label_groups).agg({'chromosome': 'first', 'start': 'min', 'end': 'max', 'depth': 'mean', 'state': 'first'}).reset_index(drop=True))
         dfs.append(df)
     out = pd.concat(dfs)
     return out
@@ -1753,16 +1785,27 @@ def genes_phase_correction(df_genes, df_segs_hp1, df_segs_hp2, args, centers, in
             gene_hp2_state[i] = integers_values_adjusted(genes_coverage_hp2[i], centers)
 
         df_genes_updated.append(pd.DataFrame(list(zip(df_gene.chr.values.tolist(), df_gene.start.values.tolist(), df_gene.end.values.tolist(), \
-                     df_gene.gene.values.tolist(), df_gene.len.values.tolist(), [round(l,2) for l in genes_coverage_hp1], gene_hp1_state, [round(l,2) for l in genes_coverage_hp2], gene_hp2_state)),
-            columns=['chr', 'start', 'end', 'gene', 'len', 'hp1', 'hp1_state', 'hp2', 'hp2_state']))
+                     df_gene.gene.values.tolist(), [round(l,2) for l in genes_coverage_hp1], gene_hp1_state, [round(l,2) for l in genes_coverage_hp2], gene_hp2_state)),
+            columns=['chr', 'start', 'end', 'gene', 'hp1', 'hp1_state', 'hp2', 'hp2_state']))
 
     return pd.concat(df_genes_updated)
 
 def update_genes_phase_corrected_coverage(args, df_segs_hp1, df_segs_hp2, p_value, centers, integer_fractional_centers):
 
-    df_genes = csv_df_chromosomes_sorter(args.out_dir_plots + '/data_phasing/cancer_genes_coverage.csv', ['chr','start','end','gene','len', 'hp1', 'hp2'])
+    df_genes = csv_df_chromosomes_sorter(args.out_dir_plots + '/data_phasing/cancer_genes_coverage.csv', ['chr','start','end','gene', 'hp1', 'hp2'])
     #write_df_csv(df_genes, args.out_dir_plots + '/' + str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_'+ str(p_value) +'/bed_output/' + 'cancer_genes_coverage.csv')
     df_genes = genes_phase_correction(df_genes, df_segs_hp1, df_segs_hp2, args, centers, integer_fractional_centers)
-    write_df_csv(df_genes, args.out_dir_plots + '/' + str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_'+ str(p_value) +'/bed_output/' + 'cancer_genes_copynumber_states.bed')
+    write_df_csv(df_genes, args.out_dir_plots + '/' + str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_'+ str(p_value) +'/bed_output/' + 'genes_copynumber_states.bed')
 
     return df_genes
+
+def extract_breakpoints_additional(args):
+    if args.breakpoints:
+        df_var_bins, df_var_bins_1 = get_chromosomes_bins(args.target_bam[0], args.bin_size, args)
+        return df_var_bins_1
+        # chroms = get_contigs_list(args.contigs)
+        # for index, chrom in enumerate(chroms):
+        #     df_var_bins_chr_1 = df_var_bins_1[df_var_bins_1['chr'] == chrom]
+        #     ref_start_values_1 = df_var_bins_chr_1.start.values.tolist()
+    else:
+        return None

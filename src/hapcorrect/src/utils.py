@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import pysam
 import os
+import logging
 
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
@@ -154,7 +155,37 @@ def detect_alter_loh_regions(args, event, chrom, ref_ends, haplotype_1_values, h
 def snps_frequencies_chrom_genes(df_snps_frequencies, args):
     df_chroms = []
 
-    df_genes_all = csv_df_chromosomes_sorter(args.cancer_genes, ['chr', 'start', 'end', 'gene', 'len'])
+    df_genes_all = csv_df_chromosomes_sorter(args.cancer_genes, ['chr', 'start', 'end', 'gene'])
+
+    if args.user_input_genes:
+        with open(args.user_input_genes, 'r') as file:
+            entries = file.readlines()
+        entries = [line.rstrip('\n') for line in entries]
+        if not entries[0] in ['chm13','grch38']:
+            ref = 'grch38' #default
+        else:
+            ref = entries[0]
+        import csv
+        prefix, filename = os.path.split(args.cancer_genes)
+        ref_name = prefix + '/' + ref + '_genes.tsv'
+        chroms = []
+        starts = []
+        ends = []
+        genes = []
+        with open(ref_name, 'r') as file:
+            tsv_reader = csv.reader(file, delimiter='\t')
+            for row in tsv_reader:
+                if row[3] in entries:
+                    chroms.append(row[0])
+                    starts.append(row[1])
+                    ends.append(row[2])
+                    genes.append(row[3])
+
+        data = {"chr": chroms, "start": starts, "end": ends, "gene": genes}
+        df_user_genes = pd.DataFrame(data)
+        if not df_user_genes.empty:
+            write_df_csv(df_user_genes, args.out_dir_plots + '/data_phasing/user_genes.csv')
+            df_genes_all = csv_df_chromosomes_sorter(args.out_dir_plots + '/data_phasing/user_genes.csv', ['chr', 'start', 'end', 'gene'])
 
     chroms = get_contigs_list(args.contigs)
     for index, chrom in enumerate(chroms):
@@ -190,14 +221,14 @@ def snps_frequencies_chrom_genes(df_snps_frequencies, args):
             #snps_mean = [round(i + j, 2) for i, j in zip(snps_haplotype1_mean, snps_haplotype2_mean)]
 
             df_chroms.append(pd.DataFrame(list(zip(df_genes.chr.values.tolist(), df_genes.start.values.tolist(), df_genes.end.values.tolist(), \
-                                         df_genes.gene.values.tolist(), df_genes.len.values.tolist(), snps_haplotype1_mean, snps_haplotype2_mean)),
-                                 columns=['chr', 'start', 'end', 'gene', 'len', 'hp1', 'hp2']))
+                                         df_genes.gene.values.tolist(), snps_haplotype1_mean, snps_haplotype2_mean)),
+                                 columns=['chr', 'start', 'end', 'gene', 'hp1', 'hp2']))
     return pd.concat(df_chroms)
 
 def genes_segments_list(bam, args):
     head, tail = os.path.split(bam)
 
-    df_genes = csv_df_chromosomes_sorter(args.cancer_genes, ['chr', 'start', 'end', 'gene', 'len'])
+    df_genes = csv_df_chromosomes_sorter(args.cancer_genes, ['chr', 'start', 'end', 'gene'])
     starts = df_genes.start.values.tolist()
     ends = df_genes.end.values.tolist()
 
@@ -208,7 +239,7 @@ def genes_segments_list(bam, args):
     return bed
 def genes_segments_coverage(genes_coverage, args):
 
-    df_genes = csv_df_chromosomes_sorter(args.cancer_genes, ['chr', 'start', 'end', 'gene', 'len'])
+    df_genes = csv_df_chromosomes_sorter(args.cancer_genes, ['chr', 'start', 'end', 'gene'])
 
     hp1 = []
     hp2 = []
@@ -219,8 +250,8 @@ def genes_segments_coverage(genes_coverage, args):
         #hp3.append(round(float(items.split('\t')[5]), 2))
 
     return pd.DataFrame(list(zip(df_genes.chr.values.tolist(), df_genes.start.values.tolist(), df_genes.end.values.tolist(),
-                                 df_genes.gene.values.tolist(), df_genes.len.values.tolist(), hp1, hp2)),
-                         columns=['chr', 'start', 'end', 'gene', 'len', 'hp1', 'hp2'])
+                                 df_genes.gene.values.tolist(), hp1, hp2)),
+                         columns=['chr', 'start', 'end', 'gene', 'hp1', 'hp2'])
 def mean_values(selected_list, start_index, end_index):
     result = []
     for i in range(end_index - start_index):
@@ -378,3 +409,28 @@ def extend_snps_ratios_df(chrom, offset, ref_start_values_updated, snps_het_coun
     df_snps_ratios_chrom['start_overall'] = df_snps_ratios_chrom['start'].apply(lambda x: x + offset)
 
     return df_snps_ratios_chrom
+
+
+def add_breakpoints(args, phasesets_segments, breakpoints):
+    bed = []
+    head, tail = os.path.split(args.target_bam[0])
+    chroms = get_contigs_list(args.contigs)
+    for index, chrom in enumerate(chroms):
+        original_list_start = []
+        original_list_end = []
+        df_bps_chrom = breakpoints[breakpoints['chr'] == chrom]
+        new_breakpoints = df_bps_chrom.start.values.tolist()
+
+        for k, val in enumerate(phasesets_segments):
+            if val[1] == chrom:
+                original_list_start.append(val[2])
+                original_list_end.append(val[3])
+
+        for i, (start, end) in enumerate(zip(original_list_start, original_list_end)):
+            for breakpoint in new_breakpoints:
+                if start <= breakpoint <= end and (not breakpoint == start and not breakpoint == end) and (breakpoint - start > args.bin_size*6):
+                    bed.append([tail, chrom, start, breakpoint])
+                    start = breakpoint + 1
+            bed.append([tail, chrom, start, end])
+
+    return bed

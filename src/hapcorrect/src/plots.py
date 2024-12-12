@@ -8,13 +8,14 @@ from hapcorrect.src.utils import get_contigs_list, get_chromosomes_regions
 
 def plot_coverage_data(html_graphs, args, chrom, ref_start_values, ref_end_values, haplotype_1_values, haplotype_2_values, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, sufix):
     fig = go.Figure()
-    add_scatter_trace_coverage(fig, ref_start_values, haplotype_1_values, name='HP-1', text=None, yaxis=None,
+
+    add_scatter_trace_coverage(fig, ref_start_values, haplotype_1_values, name='HP-1', text=ref_start_values, yaxis=None,
                                opacity=0.7, color='firebrick')
-    add_scatter_trace_coverage(fig, ref_start_values, haplotype_2_values, name='HP-2', text=None, yaxis=None,
+    add_scatter_trace_coverage(fig, ref_start_values, haplotype_2_values, name='HP-2', text=ref_start_values, yaxis=None,
                                opacity=0.7, color='steelblue')
 
     if not args.unphased_reads_coverage_disable:
-        add_scatter_trace_coverage(fig, ref_start_values, unphased_reads_values, name='Unphased', text=None,
+        add_scatter_trace_coverage(fig, ref_start_values, unphased_reads_values, name='Unphased', text=ref_start_values,
                                    yaxis=None, opacity=0.7, color='olive')
     plots_add_markers_lines(fig)
 

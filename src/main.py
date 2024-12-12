@@ -19,7 +19,7 @@ from bam_processing import get_all_reads_parallel, update_coverage_hist, get_seg
 from utils import get_chromosomes_bins, write_segments_coverage, write_segments_coverage_dict, csv_df_chromosomes_sorter,\
     seperate_dfs_coverage, flatten_smooth, get_contigs_list, write_copynumber_segments_csv, integer_fractional_cluster_means, \
     adjust_diversified_segments, get_chromosomes_bins_bam, normal_genome_proportion, update_subclonal_means_states, adjust_first_copy_mean, \
-    merge_adjacent_regions_cn, merge_adjacent_regions_cn_unphased, parse_sv_vcf, weigted_means_ploidy, average_p_value_genome, collect_loh_centromere_regions, find_optimized_normal_peaks, update_genes_phase_corrected_coverage, weighted_means
+    merge_adjacent_regions_cn, merge_adjacent_regions_cn_unphased, parse_sv_vcf, weigted_means_ploidy, average_p_value_genome, collect_loh_centromere_regions, find_optimized_normal_peaks, update_genes_phase_corrected_coverage, weighted_means, extract_breakpoints_additional
 from plots import coverage_plots_chromosomes, copy_number_plots_genome_details, copy_number_plots_genome, plots_genome_coverage, copy_number_plots_chromosomes, \
     copy_number_plots_genome_breakpoints, copy_number_plots_genome_breakpoints_subclonal, copy_number_plots_genome_subclonal, genes_copy_number_plots_genome, genes_plots_genome, heatmap_copy_number_plots_genome
 from vcf_processing import vcf_parse_to_csv_for_het_phased_snps_phasesets
@@ -76,7 +76,8 @@ def main():
                         help="Path to tumor VCF for LOH detection")
 
     parser.add_argument("--centromere", dest="centromere", metavar="path", required=False, default='annotations/grch38.cen_coord.curated.bed', help="Path to centromere annotations BED file")
-    parser.add_argument("--cancer-genes", dest="cancer_genes", metavar="path", required=False, default='annotations/CancerGenes.tsv', help="Path to Cancer Genes TSV file")
+    parser.add_argument("--cancer-genes", dest="cancer_genes", metavar="path", required=False, default='annotations/COSMIC_cancer_genes.tsv', help="Path to default COSMIC Cancer Genes TSV file")
+    parser.add_argument("--user-input-genes", dest="user_input_genes", metavar="path", required=False, help="Path to user input genes names in *.txt file [each name in a single line, first entry in file should be either chm13 or grch38], these genes will be used in plots instead of default COSMIC cancer genes")
 
     parser.add_argument("--breakpoints", dest="breakpoints", metavar="path", required=False, default=None, help="Path to breakpoints/SVs VCF file")
     parser.add_argument("--breakpoints-min-length", dest="breakpoints_min_length", default=BP_MIN_LENGTH, metavar="int", type=int, help="breakpoints minimum length to include [10k]")
@@ -229,8 +230,9 @@ def main():
         coverage_histograms = update_coverage_hist(genome_ids, ref_lengths, segments_by_read, args.min_mapping_quality, args.max_read_error, args)
         del segments_by_read
 
+    breakpoints_additional = extract_breakpoints_additional(args)
     if not args.phaseblock_flipping_disable:
-       main_process(args) #hapcorrect
+       main_process(args, breakpoints_additional) #hapcorrect
        if args.quick_start:
            if args.without_phasing:
                df = pd.read_csv(args.quick_start_coverage_path + '/coverage_hps.csv', sep='\t', names=['chr', 'start', 'end', 'hp1', 'hp2', 'unphased'])
@@ -384,20 +386,19 @@ def main():
 
                 df_segs_hp1_updated, df_segs_hp2_updated = adjust_diversified_segments(cen_out, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, args)
 
-                #df_hp1, df_hp2 = bins_correction_phaseblocks(args, csv_df_phasesets, df_segs_hp1_updated, df_segs_hp2_updated, df_hp1, df_hp2)
-
                 loh_regions = collect_loh_centromere_regions(df_segs_hp1_updated, df_segs_hp2_updated, cen_out, integer_fractional_means, args)
 
-                #df_segs_hp1_updated = merge_adjacent_regions_cn(df_segs_hp1_updated, args)
-                #df_segs_hp2_updated = merge_adjacent_regions_cn(df_segs_hp2_updated, args)
+                df_segs_hp1_updated = merge_adjacent_regions_cn(df_segs_hp1_updated, args)
+                df_segs_hp2_updated = merge_adjacent_regions_cn(df_segs_hp2_updated, args)
+                #df_hp1, df_hp2 = bins_correction_phaseblocks(args, csv_df_phasesets, df_segs_hp1_updated, df_segs_hp2_updated, df_hp1, df_hp2)
 
-                write_copynumber_segments_csv(df_segs_hp1_updated, args, cen_out, integer_fractional_means, 1, '_'+ str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_'+ str(p_value_confidence) +'_copynumbers_segments.bed', p_value_confidence)
-                write_copynumber_segments_csv(df_segs_hp2_updated, args, cen_out, integer_fractional_means, 2, '_'+ str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_'+ str(p_value_confidence) +'_copynumbers_segments.bed', p_value_confidence)
+                write_copynumber_segments_csv(df_segs_hp1_updated, args, cen_out, integer_fractional_means, 1, '_'+ str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_'+ str(p_value_confidence) +'_copynumbers_segments_HP_1.bed', p_value_confidence)
+                write_copynumber_segments_csv(df_segs_hp2_updated, args, cen_out, integer_fractional_means, 1, '_'+ str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_'+ str(p_value_confidence) +'_copynumbers_segments_HP_2.bed', p_value_confidence)
                 write_loh_regions(loh_regions, 'loh_regions.bed', args, p_value_confidence)
 
                 copy_number_plots_genome_details(cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_unphased, args, x_axis, observed_hist, p_value_confidence)
 
-                #df_segs_hp1_updated, df_segs_hp2_updated, df_hp1, df_hp2 = fix_inter_cn_phase_switch_errors(args, df_segs_hp1_updated, df_segs_hp2_updated, df_hp1, df_hp2)
+                df_segs_hp1_updated, df_segs_hp2_updated, df_hp1, df_hp2 = fix_inter_cn_phase_switch_errors(args, df_segs_hp1_updated, df_segs_hp2_updated, df_hp1, df_hp2)
 
                 if args.breakpoints:
                     copy_number_plots_genome_breakpoints(cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, p_value_confidence, loh_regions, df_snps_in_csv)
@@ -423,8 +424,8 @@ def main():
                         copy_number_plots_genome_breakpoints_subclonal(cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, p_value_confidence, loh_regions, df_snps_in_csv)
                     else:
                         copy_number_plots_genome_subclonal(cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, p_value_confidence, loh_regions, df_snps_in_csv)
-                    write_copynumber_segments_csv(df_segs_hp1_updated, args, cen_out, integer_fractional_means, 1, '_' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) +'_'+ str(p_value_confidence) + '_copynumbers_subclonal_segments.bed', p_value_confidence)
-                    write_copynumber_segments_csv(df_segs_hp2_updated, args, cen_out, integer_fractional_means, 2, '_' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) +'_'+ str(p_value_confidence) + '_copynumbers_subclonal_segments.bed', p_value_confidence)
+                    write_copynumber_segments_csv(df_segs_hp1_updated, args, cen_out, integer_fractional_means, 1, '_' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) +'_'+ str(p_value_confidence) + '_copynumbers_subclonal_segments_HP_1.bed', p_value_confidence)
+                    write_copynumber_segments_csv(df_segs_hp2_updated, args, cen_out, integer_fractional_means, 1, '_' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) +'_'+ str(p_value_confidence) + '_copynumbers_subclonal_segments_HP_2.bed', p_value_confidence)
         else:
             logging.info('No estimated purity [%s] and ploidy [%s] value detected inside given ranges or overall ploidy is less than 0.1', args.purity_range, args.ploidy_range)
 
@@ -486,6 +487,8 @@ if __name__ == "__main__":
 
 #1437 BPs
 #--quick-start --quick-start-coverage-path /home/rezkuh/gits/data/1437_merged --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --cut-threshold 150  --normal-phased-vcf /home/rezkuh/gits/data/1437/1437BL.vcf.gz    --out-dir-plots 1437_merged --genome-name 1437_merged --copynumbers-subclonal-enable --loh-enable --purity-range 0.5-1.0 --ploidy-range 2-8 --phaseblocks-enable --breakpoints /home/rezkuh/gits/data/1437/severus_somatic.vcf
+#1437 BPs and input genes
+#--quick-start --quick-start-coverage-path /home/rezkuh/gits/data/1437_merged --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --cut-threshold 150  --normal-phased-vcf /home/rezkuh/gits/data/1437/1437BL.vcf.gz    --out-dir-plots 1437_merged --genome-name 1437_merged --copynumbers-subclonal-enable --loh-enable --purity-range 0.5-1.0 --ploidy-range 2-8 --phaseblocks-enable --breakpoints /home/rezkuh/gits/data/1437/severus_somatic.vcf --user-input-genes /home/rezkuh/gits/backup/872024/Wakhan/src/annotations/user_input_genes.txt
 
 #--quick-start --quick-start-coverage-path /home/rezkuh/gits/data/rouf3 --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --cut-threshold 50  --normal-phased-vcf /home/rezkuh/gits/data/rouf3/rouf3BL.vcf.gz    --out-dir-plots rouf3 --genome-name rouf3 --copynumbers-subclonal-enable --loh-enable --purity-range 0.5-1.0 --ploidy-range 0.5-8 --phaseblocks-enable --breakpoints /home/rezkuh/gits/data/rouf3/severus_somatic.vcf --breakpoints-min-length 100
 

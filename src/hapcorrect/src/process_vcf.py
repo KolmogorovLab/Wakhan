@@ -269,7 +269,7 @@ def snps_frequencies_chrom_mean_phasesets(df_snps, ref_start_values, ref_end_val
         sub_list = haplotype_1_coverage[haplotype_1_position.index(min(haplotype_1_position, key=lambda x:abs(x-i))):haplotype_1_position.index(min(haplotype_1_position, key=lambda x:abs(x-j)))]
         if sub_list:
             #snps_haplotype1_mean.append(statistics.mean(sub_list))
-            snps_haplotype1_mean.append(statistics.median(remove_outliers_iqr(np.array(sub_list))))
+            snps_haplotype1_mean.append(statistics.mean(remove_outliers_iqr(np.array(sub_list))))
         else:
             snps_haplotype1_mean.append(0)
 
@@ -278,7 +278,7 @@ def snps_frequencies_chrom_mean_phasesets(df_snps, ref_start_values, ref_end_val
         sub_list = haplotype_2_coverage[haplotype_2_position.index(min(haplotype_2_position, key=lambda x:abs(x-i))):haplotype_2_position.index(min(haplotype_2_position, key=lambda x:abs(x-j)))]
         if sub_list:
             #snps_haplotype2_mean.append(statistics.mean(sub_list))
-            snps_haplotype2_mean.append(statistics.median(remove_outliers_iqr(np.array(sub_list))))
+            snps_haplotype2_mean.append(statistics.mean(remove_outliers_iqr(np.array(sub_list))))
         else:
             snps_haplotype2_mean.append(0)
 
