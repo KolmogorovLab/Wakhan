@@ -699,7 +699,7 @@ def mask_df_states(haplotype_df, centers, integer_fractional_means):
 def write_copynumber_segments_csv(haplotype_df_, args, centers, integer_fractional_means, hp, filename, p_value):
 
     haplotype_df = haplotype_df_.copy()
-    uniques = sorted(haplotype_df['state'].unique())
+    #uniques = sorted(haplotype_df['state'].unique())
     #integer_fractional_means = sorted([i for i in range(0, len(uniques))])
     for i in range(len(integer_fractional_means)):
        haplotype_df['state'].mask(haplotype_df['state'] == centers[i], integer_fractional_means[i], inplace=True)

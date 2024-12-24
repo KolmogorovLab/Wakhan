@@ -160,11 +160,14 @@ def snps_frequencies_chrom_genes(df_snps_frequencies, args):
     if args.user_input_genes:
         with open(args.user_input_genes, 'r') as file:
             entries = file.readlines()
-        entries = [line.rstrip('\n') for line in entries]
-        if not entries[0] in ['chm13','grch38']:
-            ref = 'grch38' #default
+        if "\t" in entries[0]:
+            entries = [line.rstrip('\n').split('\t')[3] for line in entries]
         else:
-            ref = entries[0]
+            entries = [line.rstrip('\n') for line in entries]
+        if args.reference_name:#not entries[0] in ['chm13','grch38']:
+            ref = args.reference_name #default
+        else:
+            ref = 'grch38'
         import csv
         prefix, filename = os.path.split(args.cancer_genes)
         ref_name = prefix + '/' + ref + '_genes.tsv'
@@ -428,7 +431,7 @@ def add_breakpoints(args, phasesets_segments, breakpoints):
 
         for i, (start, end) in enumerate(zip(original_list_start, original_list_end)):
             for breakpoint in new_breakpoints:
-                if start <= breakpoint <= end and (not breakpoint == start and not breakpoint == end) and (breakpoint - start > args.bin_size*6):
+                if start <= breakpoint <= end and (not breakpoint == start and not breakpoint == end) and (breakpoint - start > args.bin_size * 7 and end - breakpoint > args.bin_size * 7):
                     bed.append([tail, chrom, start, breakpoint])
                     start = breakpoint + 1
             bed.append([tail, chrom, start, end])

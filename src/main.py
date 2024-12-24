@@ -19,7 +19,8 @@ from bam_processing import get_all_reads_parallel, update_coverage_hist, get_seg
 from utils import get_chromosomes_bins, write_segments_coverage, write_segments_coverage_dict, csv_df_chromosomes_sorter,\
     seperate_dfs_coverage, flatten_smooth, get_contigs_list, write_copynumber_segments_csv, integer_fractional_cluster_means, \
     adjust_diversified_segments, get_chromosomes_bins_bam, normal_genome_proportion, update_subclonal_means_states, adjust_first_copy_mean, \
-    merge_adjacent_regions_cn, merge_adjacent_regions_cn_unphased, parse_sv_vcf, weigted_means_ploidy, average_p_value_genome, collect_loh_centromere_regions, find_optimized_normal_peaks, update_genes_phase_corrected_coverage, weighted_means, extract_breakpoints_additional
+    merge_adjacent_regions_cn, merge_adjacent_regions_cn_unphased, parse_sv_vcf, weigted_means_ploidy, average_p_value_genome, collect_loh_centromere_regions, \
+    find_optimized_normal_peaks, update_genes_phase_corrected_coverage, weighted_means, extract_breakpoints_additional, write_df_csv
 from plots import coverage_plots_chromosomes, copy_number_plots_genome_details, copy_number_plots_genome, plots_genome_coverage, copy_number_plots_chromosomes, \
     copy_number_plots_genome_breakpoints, copy_number_plots_genome_breakpoints_subclonal, copy_number_plots_genome_subclonal, genes_copy_number_plots_genome, genes_plots_genome, heatmap_copy_number_plots_genome
 from vcf_processing import vcf_parse_to_csv_for_het_phased_snps_phasesets
@@ -50,6 +51,7 @@ def main():
     DEFAULT_CONTIGS = 'chr1-22' #('chr1-22' '1-22') ('chr1-22,chrX' '1-22,X')
     DEFAULT_PURITY = '0.5-1.0'
     DEFAULT_PLOIDY = '1.0-5.5'
+    DEFAULT_REF = 'grch38'
 
     parser = argparse.ArgumentParser \
         (description="Plot coverage and copy number profiles from a bam and phased VCF files")
@@ -77,7 +79,8 @@ def main():
 
     parser.add_argument("--centromere", dest="centromere", metavar="path", required=False, default='annotations/grch38.cen_coord.curated.bed', help="Path to centromere annotations BED file")
     parser.add_argument("--cancer-genes", dest="cancer_genes", metavar="path", required=False, default='annotations/COSMIC_cancer_genes.tsv', help="Path to default COSMIC Cancer Genes TSV file")
-    parser.add_argument("--user-input-genes", dest="user_input_genes", metavar="path", required=False, help="Path to user input genes names in *.txt file [each name in a single line, first entry in file should be either chm13 or grch38], these genes will be used in plots instead of default COSMIC cancer genes")
+    parser.add_argument("--user-input-genes", dest="user_input_genes", metavar="path", required=False, help="Path to user input genes names in *.bed file [each name in a single line (annotations/user_input_genes_example_1.bed), or tab delimated genes etries (annotations/user_input_genes_example_2.bed)], these genes will be used in plots instead of default COSMIC cancer genes")
+    parser.add_argument("--reference-name", dest="reference_name", required=False, default=DEFAULT_REF, help="Default reference name [grch38, chm13]")
 
     parser.add_argument("--breakpoints", dest="breakpoints", metavar="path", required=False, default=None, help="Path to breakpoints/SVs VCF file")
     parser.add_argument("--breakpoints-min-length", dest="breakpoints_min_length", default=BP_MIN_LENGTH, metavar="int", type=int, help="breakpoints minimum length to include [10k]")
@@ -331,6 +334,16 @@ def main():
         df_segs_hp2_updated = merge_adjacent_regions_cn_unphased(df_segs_hp2_updated, args)
         loh_regions = plot_snps_frequencies_without_phasing(args, csv_df_snps_mean, df_segs_hp1_updated, df_segs_hp2_updated, centers, integer_fractional_means, df_snps_in_csv)
         write_copynumber_segments_csv(df_segs_hp1_updated, args, centers, integer_fractional_means, None, '_copynumbers_segments.bed', None)
+        ###############coverage data save#################
+        # if not 'state' in df_hp1.columns:
+        #     states_coverage = []
+        #     coverage_only = df_hp1.coverage.values.tolist()
+        #     for i, (start, end) in enumerate(zip(df_hp1.start.values.tolist(), df_hp1.end.values.tolist())):
+        #         states_coverage.append(min(centers, key=lambda x: abs(x - coverage_only[i])))
+        #     df_hp1['state'] = states_coverage
+        #     df = df_hp1.copy()
+        # write_copynumber_segments_csv(df, args, centers, integer_fractional_means, None, '_coverage_segments.bed', None)
+        ##################################################
         copy_number_plots_genome_details(centers, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, x_axis, observed_hist, None)
         if args.breakpoints:
             copy_number_plots_genome_breakpoints(centers, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, None, loh_regions, df_snps_in_csv)
@@ -499,5 +512,3 @@ if __name__ == "__main__":
 
 #first copy adjustment
 #cpd inside centromeres regions
-
-#exlude centromere from ploidy

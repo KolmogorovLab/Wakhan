@@ -80,6 +80,12 @@ However, if `--breakpoints` option is not used, `--change-point-detection-for-cn
 
 User can input both `--ploidy-range` [default: 1.5-5.5 -> [min-max]] and `--purity-range` [default: 0.5-1.0 -> [min-max] to inform copy number model about normal contamination in tumor to estimate copy number states correctly.
 
+##### Genes/copy number annotations
+
+By default, Wakhan uses [COSMIC](https://cancer.sanger.ac.uk/cosmic) cancer genes to display corresponding copy number states in `<genome_name>_<ploidy>_<purity>_<confidence>_genes_genome.html` file. 
+User can also input path through param `--user-input-genes` to custom input genes/subset of genes bed file these genes will be used in plots instead of default COSMIC cancer genes.
+grch38 reference genes will be use as default, user can input alternate (i.e, chm13) `--reference-name` to change to T2T-CHM13 instead. 
+
 ##### Quick-run if coverage/pileup data is already available
 
 Wakhan produces reads coverage `coverage.csv` (bin-size based reads coverage) and phasesets reads coverage `coverage_ps.csv` data, phase-corrected coverage `phase_corrected_coverage.csv` (as well as tumor BAM pileup `pileup_SNPs.csv` in case Tumor/normal mode) and stores in directory `coverage_data` inside `--out-dir-plots` location.
