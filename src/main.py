@@ -20,7 +20,7 @@ from utils import get_chromosomes_bins, write_segments_coverage, write_segments_
     seperate_dfs_coverage, flatten_smooth, get_contigs_list, write_copynumber_segments_csv, integer_fractional_cluster_means, \
     adjust_diversified_segments, get_chromosomes_bins_bam, normal_genome_proportion, update_subclonal_means_states, adjust_first_copy_mean, \
     merge_adjacent_regions_cn, merge_adjacent_regions_cn_unphased, parse_sv_vcf, weigted_means_ploidy, average_p_value_genome, collect_loh_centromere_regions, \
-    find_optimized_normal_peaks, update_genes_phase_corrected_coverage, weighted_means, extract_breakpoints_additional, write_df_csv
+    find_optimized_normal_peaks, update_genes_phase_corrected_coverage, weighted_means, extract_breakpoints_additional, write_df_csv, adjust_bps_cn_segments_boundries
 from plots import coverage_plots_chromosomes, copy_number_plots_genome_details, copy_number_plots_genome, plots_genome_coverage, copy_number_plots_chromosomes, \
     copy_number_plots_genome_breakpoints, copy_number_plots_genome_breakpoints_subclonal, copy_number_plots_genome_subclonal, genes_copy_number_plots_genome, genes_plots_genome, heatmap_copy_number_plots_genome
 from vcf_processing import vcf_parse_to_csv_for_het_phased_snps_phasesets
@@ -398,7 +398,8 @@ def main():
                 logging.info('Generating coverage/copy numbers plots genome wide for solution with purity {0} and ploidy {1}'.format(args.tumor_purity, args.tumor_ploidy))
 
                 df_segs_hp1_updated, df_segs_hp2_updated = adjust_diversified_segments(cen_out, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, args)
-
+                df_segs_hp1_updated = adjust_bps_cn_segments_boundries(args, df_segs_hp1_updated)
+                df_segs_hp2_updated = adjust_bps_cn_segments_boundries(args, df_segs_hp2_updated)
                 loh_regions = collect_loh_centromere_regions(df_segs_hp1_updated, df_segs_hp2_updated, cen_out, integer_fractional_means, args)
 
                 #df_segs_hp1_updated = merge_adjacent_regions_cn(df_segs_hp1_updated, args)

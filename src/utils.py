@@ -691,6 +691,43 @@ def integers_values_adjusted(x, centers):
     return len(centers)-1 #round((len(centers) - 1) + ((x - centers[-1]) / ((centers[-1] + (centers[-1] - centers[-2])) - centers[-1])), 2)
 
 
+def adjust_bps_cn_segments_boundries(args, haplotype_df):
+    haplotype_df = haplotype_df.reset_index(drop=True)
+    chroms = get_contigs_list(args.contigs)
+    fileDir = os.path.dirname(__file__) #os.path.dirname(os.path.realpath('__file__'))
+    cen_coord = os.path.join(fileDir, args.centromere)
+    df_centm = csv_df_chromosomes_sorter(cen_coord, ['chr', 'start', 'end'])
+    df_centm['start'].mask(df_centm['start'] == 1, 0, inplace=True)
+    cent_starts = df_centm.start.values.tolist()
+    cent_ends = df_centm.end.values.tolist()
+    cent_chr = df_centm.chr.values.tolist()
+
+    if args.breakpoints:
+        _, _, _, bps_ids_all, bps, bps_bnd = sv_vcf_bps_cn_check(args.breakpoints, args)
+
+        for index, row in haplotype_df.iterrows():
+            bps_ids = []
+            starts = []
+            for bp in bps_ids_all:
+                if bp[0] == row['chromosome'] and int(bp[1]) >= int(row['start']) and int(bp[1]) <= int(row['end']):
+                    bps_ids.append(bp[2])
+                    if int(bp[1]) >= int(row['start']) - args.bin_size and int(bp[1]) <= int(row['end']) + args.bin_size:
+                        starts.append(int(bp[1]))
+            #bps_ids_global.append(bps_ids)
+            if len(starts):
+                cent_chr_index = cent_chr.index(row['chromosome'])
+                if not haplotype_df.loc[index, 'start'] - 1 == cent_starts[cent_chr_index] and not haplotype_df.loc[index, 'end'] == cent_ends[cent_chr_index]:
+                    haplotype_df.loc[index, 'end'] = min(starts, key=lambda x: abs(x - int(row['start']))) - 1
+        #haplotype_df['svs_breakpoints_ids'] = bps_ids_global
+
+        for index, row in haplotype_df.iterrows():
+            cent_chr_index = cent_chr.index(row['chromosome'])
+            if not haplotype_df.loc[index, 'start'] - 1 == cent_starts[cent_chr_index] and not haplotype_df.loc[index, 'end'] == cent_ends[cent_chr_index]:
+                if index < len(haplotype_df) and haplotype_df.loc[index, 'start'] > 0:
+                    haplotype_df.loc[index, 'start'] = haplotype_df.loc[index - 1, 'end'] + 1
+
+    return haplotype_df
+
 def mask_df_states(haplotype_df, centers, integer_fractional_means):
     for i in range(len(integer_fractional_means)):
         haplotype_df['state'].mask(haplotype_df['state'] == centers[i], integer_fractional_means[i], inplace=True)
@@ -721,7 +758,7 @@ def write_copynumber_segments_csv(haplotype_df_, args, centers, integer_fraction
             for bp in bps_ids_all:
                 if bp[0] == row['chr'] and int(bp[1]) >= int(row['start']) and int(bp[1]) <= int(row['end']):
                     bps_ids.append(bp[2])
-            bps_ids_global.append(bps_ids)
+            bps_ids_global.append(list(set(bps_ids)))
         haplotype_df['svs_breakpoints_ids'] = bps_ids_global
 
     if args.without_phasing:

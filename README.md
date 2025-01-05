@@ -81,7 +81,7 @@ User can input both `--ploidy-range` [default: 1.5-5.5 -> [min-max]] and `--puri
 ##### Genes/copy number annotations
 
 By default, Wakhan uses [COSMIC](https://cancer.sanger.ac.uk/cosmic) cancer genes to display corresponding copy number states in `<genome_name>_<ploidy>_<purity>_<confidence>_genes_genome.html` file. 
-User can also input path through param `--user-input-genes` to custom input genes/subset of genes bed file these genes will be used in plots instead of default COSMIC cancer genes.
+User can also input path through param `--user-input-genes` to custom input genes/subset of genes [examples in src\annotations\user_input_genes_example_<N>.bed] bed file these genes will be used in plots instead of default COSMIC cancer genes.
 grch38 reference genes will be use as default, user can input alternate (i.e, chm13) `--reference-name` to change to T2T-CHM13 instead. 
 
 ##### Quick-run if coverage/pileup data is already available
