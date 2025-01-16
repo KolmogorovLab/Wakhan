@@ -437,12 +437,13 @@ def write_df_csv(df, path):
     fp.write('#start: start address gene\n')
     fp.write('#end: end address of gene\n')
     fp.write('#gene: name of gene\n')
-    fp.write('#length: length of gene\n')
-    fp.write('#coverage_hp1: gene coverage value of HP-1\n')
+    fp.write('#actual_coverage_hp1: actual gene coverage value of HP-1\n')
+    fp.write('#actual_coverage_hp2: actual gene coverage value of HP-2\n')
+    fp.write('#adjusted_coverage_hp1: adjusted gene coverage value of HP-1\n')
+    fp.write('#adjusted_coverage_hp2: adjusted gene coverage value of HP-2\n')
     fp.write('#copynumber_state_hp1: gene copy number state of HP-1\n')
-    fp.write('#coverage_hp2: gene coverage value of HP-2\n')
     fp.write('#copynumber_state_hp2: gene copy number state of HP-2\n')
-    fp.write('#chr\tstart\tend\tgene_name\tlength\tcoverage_hp1\tcopynumber_state_hp1\tcoverage_hp2\tcopynumber_state_hp2\n')
+    fp.write('#chr\tstart\tend\tgene\tactual_coverage_hp1\tactual_coverage_hp2\tadjusted_coverage_hp1\tadjusted_coverage_hp2\thp1_state\thp2_state\n')
 
     df.to_csv(fp, sep='\t', index=False, header=False)
 
@@ -1822,8 +1823,8 @@ def genes_phase_correction(df_genes, df_segs_hp1, df_segs_hp2, args, centers, in
             gene_hp2_state[i] = integers_values_adjusted(genes_coverage_hp2[i], centers)
 
         df_genes_updated.append(pd.DataFrame(list(zip(df_gene.chr.values.tolist(), df_gene.start.values.tolist(), df_gene.end.values.tolist(), \
-                     df_gene.gene.values.tolist(), [round(l,2) for l in genes_coverage_hp1], gene_hp1_state, [round(l,2) for l in genes_coverage_hp2], gene_hp2_state)),
-            columns=['chr', 'start', 'end', 'gene', 'hp1', 'hp1_state', 'hp2', 'hp2_state']))
+                     df_gene.gene.values.tolist(), [round(l,2) for l in df_gene.hp1.values.tolist()], [round(l,2) for l in df_gene.hp2.values.tolist()], [round(l,2) for l in genes_coverage_hp1], [round(l,2) for l in genes_coverage_hp2], gene_hp1_state, gene_hp2_state)),
+            columns=['chr', 'start', 'end', 'gene', 'actual_coverage_hp1', 'actual_coverage_hp2', 'adjusted_coverage_hp1', 'adjusted_coverage_hp2', 'copynumber_hp1_state', 'copynumber_hp2_state']))
 
     return pd.concat(df_genes_updated)
 

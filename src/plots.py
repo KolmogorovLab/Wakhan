@@ -2839,8 +2839,8 @@ def genes_plots_genome(df_genes, centers, integer_fractional_centers, df_cnr_hp1
         else:
             df_genes_chrom_1 = df_genes_1[df_genes_1['chr'] == chrom]
             genestart_1.extend(df_genes_chrom_1['start'].values.tolist())
-            gene_cn_hp1.extend(df_genes_chrom_1['hp1_state'].values.tolist())
-            gene_cn_hp2.extend(df_genes_chrom_1['hp2_state'].values.tolist())
+            gene_cn_hp1.extend(df_genes_chrom_1['copynumber_hp1_state'].values.tolist())
+            gene_cn_hp2.extend(df_genes_chrom_1['copynumber_hp2_state'].values.tolist())
 
             df_genes_chrom_2 = df_genes_2[df_genes_2['chr'] == chrom]
             genestart_2.extend(df_genes_chrom_2['start'].values.tolist())
@@ -2931,12 +2931,12 @@ def genes_plots_genome(df_genes, centers, integer_fractional_centers, df_cnr_hp1
     cen_coord = os.path.join(fileDir, args.centromere)
     df_centm = csv_df_chromosomes_sorter(cen_coord, ['chr', 'start', 'end'])
 
-    fig.add_trace(go.Bar(x=df_genes_1['start'], y=[x for x in df_genes.hp1.values.tolist()], text=genename_1,
+    fig.add_trace(go.Bar(x=df_genes_1['start'], y=[x for x in df_genes.adjusted_coverage_hp1.values.tolist()], text=genename_1,
                    customdata=gene_cn_hp1,
                    hovertemplate=
                    '<br><b>Gene</b>: %{text}' +
                    '<br><b>CN</b>: %{customdata}<br>', name='HP-1', marker={'color': '#E3B448'}, width=2000000), row=1, col=1)
-    fig.add_bar(x=df_genes_1['start'], y=[(x) for x in df_genes.hp2.values.tolist()], text=genename_1,
+    fig.add_bar(x=df_genes_1['start'], y=[(x) for x in df_genes.adjusted_coverage_hp2.values.tolist()], text=genename_1,
                    customdata=gene_cn_hp2,
                    hovertemplate=
                    '<br><b>Gene</b>: %{text}' +
@@ -2951,8 +2951,8 @@ def genes_plots_genome(df_genes, centers, integer_fractional_centers, df_cnr_hp1
         genes_starts = df_gene.start.values.tolist()
         genes_ends = df_gene.end.values.tolist()
         genes_name = df_gene.gene.values.tolist()
-        genes_coverage_hp1 = df_gene.hp1.values.tolist()
-        genes_coverage_hp2 = df_gene.hp2.values.tolist()
+        genes_coverage_hp1 = df_gene.adjusted_coverage_hp1.values.tolist()
+        genes_coverage_hp2 = df_gene.adjusted_coverage_hp2.values.tolist()
 
         loh_starts = []
         if not loh_regions.empty:
