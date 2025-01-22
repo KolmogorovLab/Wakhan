@@ -739,8 +739,8 @@ def copy_number_plots_genome_breakpoints(centers, integer_fractional_centers, df
     df_genes_1_ = []
     df_genes_2_ = []
     fileDir = os.path.dirname(__file__) #os.path.dirname(os.path.realpath('__file__'))
-    cancer_genes = os.path.join(fileDir, args.cancer_genes)
-    df_genes = csv_df_chromosomes_sorter(cancer_genes, ['chr','start','end','gene'])
+    #cancer_genes = os.path.join(fileDir, args.cancer_genes)
+    df_genes = csv_df_chromosomes_sorter(args.cancer_genes, ['chr','start','end','gene'])
     genestart_1 = []
     genestart_2 = []
     last_len = 0
@@ -1143,8 +1143,8 @@ def copy_number_plots_genome(centers, integer_fractional_centers, df_cnr_hp1, df
     df_genes_1_ = []
     df_genes_2_ = []
     fileDir = os.path.dirname(__file__) #os.path.dirname(os.path.realpath('__file__'))
-    cancer_genes = os.path.join(fileDir, args.cancer_genes)
-    df_genes = csv_df_chromosomes_sorter(cancer_genes, ['chr','start','end','gene'])
+    #cancer_genes = os.path.join(fileDir, args.cancer_genes)
+    df_genes = csv_df_chromosomes_sorter(args.cancer_genes, ['chr','start','end','gene'])
     genestart_1 = []
     genestart_2 = []
     last_len = 0
@@ -1505,8 +1505,8 @@ def copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_c
     df_genes_1_ = []
     df_genes_2_ = []
     fileDir = os.path.dirname(__file__) #os.path.dirname(os.path.realpath('__file__'))
-    cancer_genes = os.path.join(fileDir, args.cancer_genes)
-    df_genes = csv_df_chromosomes_sorter(cancer_genes, ['chr','start','end','gene'])
+    #cancer_genes = os.path.join(fileDir, args.cancer_genes)
+    df_genes = csv_df_chromosomes_sorter(args.cancer_genes, ['chr','start','end','gene'])
     genestart_1 = []
     genestart_2 = []
     last_len = 0
@@ -2001,8 +2001,8 @@ def copy_number_plots_genome_subclonal(centers, integer_fractional_centers, df_c
     df_genes_1_ = []
     df_genes_2_ = []
     fileDir = os.path.dirname(__file__) #os.path.dirname(os.path.realpath('__file__'))
-    cancer_genes = os.path.join(fileDir, args.cancer_genes)
-    df_genes = csv_df_chromosomes_sorter(cancer_genes, ['chr','start','end','gene'])
+    #cancer_genes = os.path.join(fileDir, args.cancer_genes)
+    df_genes = csv_df_chromosomes_sorter(args.cancer_genes, ['chr','start','end','gene'])
     genestart_1 = []
     genestart_2 = []
     last_len = 0
