@@ -1157,22 +1157,23 @@ def change_point_detection_algo(bin_size, hp_data, ref_start_values, args, ref_s
             cpd_zeros_points.append(val[0])
             cpd_zeros_points.append(val[-1])
     ####################################################
-    data = np.array(hp_data, dtype='int')  # numpy.clip(data, a_min=0, a_max=1000)
-    algo = rpt.Pelt(model="rbf", jump=25).fit(data)
-    result = algo.predict(pen=10)
-    change_points = [i for i in result if i < len(data)]
-    ############################################
-    ov_indices = []
-    for i, val1 in enumerate(change_points):
-        for j, val2 in enumerate(tmp):
-            if len(val2) > 2:
-                if val2[-1] >= val1 >= val2[0]:
-                    ov_indices.append(i)
-    if ov_indices:
-        for index in sorted(list(set(ov_indices)), reverse=True):
-            del change_points[index]
-    ############################################
-    change_points = sorted(list(set(change_points + cpd_zeros_points + [len(hp_data) - 1])))
+    if not args.breakpoints:
+        data = np.array(hp_data, dtype='int')  # numpy.clip(data, a_min=0, a_max=1000)
+        algo = rpt.Pelt(model="rbf", jump=25).fit(data)
+        result = algo.predict(pen=10)
+        change_points = [i for i in result if i < len(data)]
+        ############################################
+        ov_indices = []
+        for i, val1 in enumerate(change_points):
+            for j, val2 in enumerate(tmp):
+                if len(val2) > 2:
+                    if val2[-1] >= val1 >= val2[0]:
+                        ov_indices.append(i)
+        if ov_indices:
+            for index in sorted(list(set(ov_indices)), reverse=True):
+                del change_points[index]
+        ############################################
+        change_points = sorted(list(set(change_points + cpd_zeros_points + [len(hp_data) - 1])))
    ############################################
     cent = [df_centm_chrom.start.values.tolist()[0], df_centm_chrom.end.values.tolist()[0]]
    ############################################
