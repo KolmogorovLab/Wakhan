@@ -1075,8 +1075,8 @@ def change_point_detection_means(args, df_chrom, ref_start_values, ref_start_val
         df_means_chr = []
         haplotype1_means = df_chrom.hp1.values.tolist()
         haplotype2_means = df_chrom.hp2.values.tolist()
-        snps_haplotype1_mean, snps_haplotype1_len, snps_haplotype1_pos = change_point_detection_algo(args.bin_size, haplotype1_means, ref_start_values, args, ref_start_values_1, df_centm_chrom)
-        snps_haplotype2_mean, snps_haplotype2_len, snps_haplotype2_pos = change_point_detection_algo(args.bin_size, haplotype2_means, ref_start_values, args, ref_start_values_1, df_centm_chrom)
+        snps_haplotype1_mean, snps_haplotype1_len, snps_haplotype1_pos = change_point_detection_algo(args.bin_size, df_chrom.hp1.values.tolist(), ref_start_values, args, ref_start_values_1, df_centm_chrom)
+        snps_haplotype2_mean, snps_haplotype2_len, snps_haplotype2_pos = change_point_detection_algo(args.bin_size, df_chrom.hp2.values.tolist(), ref_start_values, args, ref_start_values_1, df_centm_chrom)
 
         cent_index_hp1 = snps_haplotype1_pos.index([df_centm_chrom.start.values.tolist()[0], df_centm_chrom.end.values.tolist()[0]][0]) -1
         cent_index_hp2 = snps_haplotype2_pos.index([df_centm_chrom.start.values.tolist()[0], df_centm_chrom.end.values.tolist()[0]][0]) -1
@@ -1327,6 +1327,18 @@ def merge_adjacent_regions_cn(segarr, args):
         seg = segarr[segarr['chromosome'] == chrom]
         label_groups = seg['state'].ne(seg['state'].shift()).cumsum()
         df = (seg.groupby(label_groups).agg({'chromosome': 'first', 'start': 'min', 'end': 'max', 'depth': 'mean', 'state': 'first'}).reset_index(drop=True))
+        dfs.append(df)
+    out = pd.concat(dfs)
+    return out
+
+def merge_adjacent_regions_loh(segarr, args):
+    chroms = get_contigs_list(args.contigs)
+    dfs = []
+    for index, chrom in enumerate(chroms):
+        seg = segarr[segarr['chr'] == chrom]
+        seg['diff'] = seg['start'] - seg['end'].shift().fillna(seg['start'].iloc[0])
+        seg['group'] = (seg['diff'] != 1).cumsum()
+        df = (seg.groupby(seg['group']).agg({'chr': 'first', 'start': 'min', 'end': 'max'}).reset_index(drop=True))
         dfs.append(df)
     out = pd.concat(dfs)
     return out
@@ -1713,13 +1725,47 @@ def collect_loh_centromere_regions(df_segs_hp1_, df_segs_hp2_, centers, integer_
                         loh_region_starts.append(start)
                         loh_region_ends.append(end)
 
+            # sort
+            sort_function = lambda x: x[0]
+            sort_target = list(zip(loh_region_starts, loh_region_ends))
+            sort_target.sort(key=sort_function)
+            loh_region_starts = [a for a, b in sort_target]
+            loh_region_ends = [b for a, b in sort_target]
+
+            # remove overlapping segments
+            loh_region_starts, loh_region_ends = remove_overlapping_segments(loh_region_starts, loh_region_ends)
+
         if loh_region_starts:
             chrs_list.extend([chrom for ch in range(len(loh_region_starts))])
-            loh_regions_all.append(pd.DataFrame(list(zip(chrs_list, loh_region_starts, loh_region_ends)), columns=['chr', 'start', 'end']))
+            loh_regions_all.append(pd.DataFrame(list(zip(chrs_list, loh_region_starts, loh_region_ends)),
+                                                columns=['chr', 'start', 'end']))
+
     if loh_regions_all:
-        return pd.concat(loh_regions_all)
+        return merge_adjacent_regions_loh(pd.concat(loh_regions_all), args)
     else:
         return pd.DataFrame(columns=['chr', 'start', 'end'])
+
+def remove_overlapping_segments(starts, ends):
+
+  if len(starts) != len(ends):
+    raise ValueError("Starts and ends lists must have the same length.")
+
+  filtered_starts = []
+  filtered_ends = []
+  stack = []
+
+  for i in range(len(starts)):
+    start, end = starts[i], ends[i]
+
+    # If the stack is empty or the current segment starts after the previous segment ends,
+    # push it onto the stack
+    if not stack or stack[-1][1] < start:
+      stack.append((start, end))
+
+  # Extract filtered starts and ends from the stack
+  filtered_starts, filtered_ends = zip(*stack)
+
+  return list(filtered_starts), list(filtered_ends)
 
 def overlap_check(start, end, starts, ends):
   for i in range(len(starts)):
