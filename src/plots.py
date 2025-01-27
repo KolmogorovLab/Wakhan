@@ -7,6 +7,7 @@ import numpy as np
 import csv
 import os
 import math
+import shutil
 import statistics
 import itertools
 import logging
@@ -165,6 +166,11 @@ def coverage_plots_chromosomes(df, df_phasesets, args, thread_pool):
     df_means_chr_all_hp2 = []
 
     if args.phaseblock_flipping_disable and args.normal_phased_vcf:
+        if os.path.exists(args.out_dir_plots + '/coverage_data'):
+            shutil.rmtree(args.out_dir_plots + '/coverage_data')
+            os.mkdir(args.out_dir_plots + '/coverage_data')
+        else:
+            os.mkdir(args.out_dir_plots + '/coverage_data')
         get_snp_segments(args, args.target_bam[0], thread_pool)
         df_snps = csv_df_chromosomes_sorter(args.out_dir_plots+'/data/snps_frequencies.csv', ['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])
     #     #df_snps = df_snps.drop(df_snps[(df_snps.chr == "chrX") | (df_snps.chr == "chrY")].index)
