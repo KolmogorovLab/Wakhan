@@ -164,9 +164,9 @@ def coverage_plots_chromosomes(df, df_phasesets, args, thread_pool):
     df_means_chr_all_hp1 = []
     df_means_chr_all_hp2 = []
 
-    # if args.normal_phased_vcf:
-    #     get_snp_segments(args, args.target_bam[0], thread_pool)
-    #     df_snps = csv_df_chromosomes_sorter(args.out_dir_plots+'/data/snps_frequencies.csv', ['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])
+    if args.phaseblock_flipping_disable and args.normal_phased_vcf:
+        get_snp_segments(args, args.target_bam[0], thread_pool)
+        df_snps = csv_df_chromosomes_sorter(args.out_dir_plots+'/data/snps_frequencies.csv', ['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])
     #     #df_snps = df_snps.drop(df_snps[(df_snps.chr == "chrX") | (df_snps.chr == "chrY")].index)
     #     #df_snps = df_snps.drop(df_snps[(df_snps.chr == "chrY")].index)
     #     output_file_path_snps = vcf_parse_to_csv_for_snps(args.normal_phased_vcf, args)

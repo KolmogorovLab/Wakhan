@@ -1113,8 +1113,8 @@ def change_point_detection_means(args, df_chrom, ref_start_values, ref_start_val
             for i in range(len(snps_haplotype1_pos) - 1):
                 snps_pos_start.append(snps_haplotype1_pos[i] if snps_haplotype1_pos[i] < 1 else snps_haplotype1_pos[i] + 1)
                 snps_pos_end.append(snps_haplotype1_pos[i + 1])
-                if cent_index_hp1 == i:
-                    snps_haplotype1_mean[i] = 0
+                #if cent_index_hp1 == i:
+                #    snps_haplotype1_mean[i] = 0
             chr_list = [df_chrom['chr'].iloc[0] for ch in range(len(snps_haplotype1_mean))]
             df_means_chr.append(pd.DataFrame(list(zip(chr_list, snps_pos_start, snps_pos_end, snps_haplotype1_mean)),
                                         columns=['chromosome', 'start', 'end', 'state']))
@@ -1123,8 +1123,8 @@ def change_point_detection_means(args, df_chrom, ref_start_values, ref_start_val
             for i in range(len(snps_haplotype2_pos) - 1):
                 snps_pos_start.append(snps_haplotype2_pos[i] if snps_haplotype2_pos[i] < 1 else snps_haplotype2_pos[i] + 1)
                 snps_pos_end.append(snps_haplotype2_pos[i + 1])
-                if cent_index_hp2 == i:
-                    snps_haplotype2_mean[i] = 0
+                #if cent_index_hp2 == i:
+                #    snps_haplotype2_mean[i] = 0
             chr_list = [df_chrom['chr'].iloc[0] for ch in range(len(snps_haplotype2_mean))]
             df_means_chr.append(pd.DataFrame(list(zip(chr_list, snps_pos_start, snps_pos_end, snps_haplotype2_mean)),
                                              columns=['chromosome', 'start', 'end', 'state']))
@@ -1141,21 +1141,21 @@ def change_point_detection_means(args, df_chrom, ref_start_values, ref_start_val
 def change_point_detection_algo(bin_size, hp_data, ref_start_values, args, ref_start_values_1, df_centm_chrom):
     ############################################
     zeros_values = []
-    for i in range(len(hp_data)):
-        if hp_data[i] < 1:
-            zeros_values.append(i)
+    # for i in range(len(hp_data)):
+    #     if hp_data[i] < 1:
+    #         zeros_values.append(i)
 
     from itertools import groupby, count
     groups = groupby(zeros_values, key=lambda item, c=count(): item - next(c))
     tmp = [list(g) for k, g in groups]
 
     cpd_zeros_points = []
-    for i, val in enumerate(tmp):
-        if len(val) == 1:
-            hp_data[i] = statistics.mean(hp_data[val[0]:val[0] + 2])
-        else:
-            cpd_zeros_points.append(val[0])
-            cpd_zeros_points.append(val[-1])
+    # for i, val in enumerate(tmp):
+    #     if len(val) == 1:
+    #         hp_data[i] = statistics.mean(hp_data[val[0]:val[0] + 2])
+    #     else:
+    #         cpd_zeros_points.append(val[0])
+    #         cpd_zeros_points.append(val[-1])
     ####################################################
     if not args.breakpoints:
         data = np.array(hp_data, dtype='int')  # numpy.clip(data, a_min=0, a_max=1000)
