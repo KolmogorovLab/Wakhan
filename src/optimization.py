@@ -7,6 +7,9 @@ import scipy.signal
 #from matplotlib import pyplot as plt
 import random
 import numpy as np
+import logging
+
+logger = logging.getLogger()
 
 # parameters for modeling
 # N_GAUSS = 4
@@ -235,8 +238,8 @@ def peak_detection_optimization(args, input_segments, input_weights, tumor_cov):
     first_min = scipy.signal.argrelmin(corr)[0][0]
     corr_max = np.argmax(corr[first_min:]) + first_min
 
-    print("First minimum", first_min)
-    print("Max correlation peak", corr_max)
+    logger.info("First minimum %s", first_min)
+    logger.info("Max correlation peak %s", corr_max)
 
     #plt.plot(xx, corr, "r")
     #plt.savefig(args.out_dir_plots +'/'+ args.genome_name + '_'+ "correlation_peak.pdf", format="pdf", bbox_inches="tight")
@@ -246,13 +249,13 @@ def peak_detection_optimization(args, input_segments, input_weights, tumor_cov):
     valley_left, valley_right = corr_max // 4, corr_max * 3 // 4
     is_half_peak = corr[half_peak] > max(corr[valley_left], corr[valley_right])
     # print(half_peak, valley_left, valley_right)
-    print("Half peak:", is_half_peak)
+    logger.info("Half peak: %s", is_half_peak)
 
     if not is_half_peak:
         single_copy_cov = corr_max  + 0.012
     else:
         single_copy_cov = half_peak + 0.012
-    print("Estimated single copy coverage:", single_copy_cov)
+    logger.info("Estimated single copy coverage: %s", single_copy_cov)
 
     last_copy_state = int(max(observed) // single_copy_cov + 1)
     final_peaks = [i * single_copy_cov for i in range(0, last_copy_state + 1)]

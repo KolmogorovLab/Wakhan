@@ -1,5 +1,8 @@
 import numpy as np
 import pandas as pd
+import logging
+
+logger = logging.getLogger()
 
 from utils import get_contigs_list, df_chromosomes_sorter
 

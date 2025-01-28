@@ -6,8 +6,10 @@ import scipy.stats as stats
 import os
 import math
 import statistics
-import logging
 import ruptures as rpt
+import logging
+
+logger = logging.getLogger()
 
 from smoothing import smoothing
 #from hmm import call_copynumbers
@@ -1336,12 +1338,16 @@ def merge_adjacent_regions_loh(segarr, args):
     dfs = []
     for index, chrom in enumerate(chroms):
         seg = segarr[segarr['chr'] == chrom]
-        seg['diff'] = seg['start'] - seg['end'].shift().fillna(seg['start'].iloc[0])
-        seg['group'] = (seg['diff'] != 1).cumsum()
-        df = (seg.groupby(seg['group']).agg({'chr': 'first', 'start': 'min', 'end': 'max'}).reset_index(drop=True))
-        dfs.append(df)
-    out = pd.concat(dfs)
-    return out
+        if len(seg)>1:
+            seg['diff'] = seg['start'] - seg['end'].shift().fillna(seg['start'].iloc[0])
+            seg['group'] = (seg['diff'] != 1).cumsum()
+            df = (seg.groupby(seg['group']).agg({'chr': 'first', 'start': 'min', 'end': 'max'}).reset_index(drop=True))
+            dfs.append(df)
+    if len(dfs):
+        return pd.concat(dfs)
+    else:
+        return segarr
+
 
 def merge_adjacent_regions_cn_unphased(segarr, args):
     chroms = get_contigs_list(args.contigs)
@@ -1676,7 +1682,7 @@ def find_optimized_normal_peaks(args, data, n, spacing=1, limit=None):
         normals =  [i for i in list(ind)]
     else:
         normals = [0]
-        logging.info('No normal peak value detected under confidence [%.2f], so assuming only first estimated value', args.purity_range, args.ploidy_range, limit)
+        logger.info('No normal peak value detected under confidence [%.2f], so assuming only first estimated value', args.purity_range, args.ploidy_range, limit)
 
     return normals
 

@@ -2,6 +2,8 @@ import numpy as np
 import ruptures as rpt
 from random import randint
 import statistics
+import logging
+logger = logging.getLogger()
 
 def cpd_positions_means(haplotype1_means, haplotype2_means, arguments):
     snps_haplotype1_mean, snps_haplotype1_len, snps_haplotype1_pos = change_point_detection_algo(arguments['bin_size'],

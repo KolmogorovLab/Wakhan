@@ -10,6 +10,8 @@ import pandas as pd
 import numpy as np
 from collections import  defaultdict, Counter
 
+logger = logging.getLogger()
+
 from hapcorrect.src.utils import write_segments_coverage_snps, csv_df_chromosomes_sorter
 from hapcorrect.src.process_bam import process_bam_for_snps_freqs
 from hapcorrect.src.smoothing import smoothing
@@ -399,13 +401,13 @@ def vcf_parse_to_csv_for_snps(input_vcf, args):
     output_csv = basefile + '_snps.csv'
     output_csv = f"{os.path.join(args.out_dir_plots, 'data_phasing', output_csv)}"
 
-    # logging.info('bcftools -> Filtering out hetrozygous and phased SNPs and generating a new VCF')
+    # logger.info('bcftools -> Filtering out hetrozygous and phased SNPs and generating a new VCF')
     # # Filter out het, phased SNPs
     # cmd = ['bcftools', 'view', '--threads', '$(nproc)', input_vcf, '-Oz', '-o', output_vcf]
     # process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     # process.wait()
     af_field = af_field_selection(input_vcf)
-    logging.info('bcftools -> Query for phasesets and GT, DP, VAF feilds by creating a CSV file')
+    logger.info('bcftools -> Query for phasesets and GT, DP, VAF feilds by creating a CSV file')
     # bcftools query for phasesets and GT,DP,VAF
     query = '%CHROM\t%POS\t%QUAL\t[%GT]\t[%DP]\t[%'+af_field+']\n'
     cmd = ['bcftools', 'query', '-f', query, '-i', 'FILTER="PASS"', input_vcf, '-o', output_csv]  #
@@ -423,13 +425,13 @@ def vcf_parse_to_csv_for_het_phased_snps_phasesets(input_vcf, args):
     output_csv = basefile + '_phasesets.csv'
     output_csv = f"{os.path.join(args.out_dir_plots, 'data_phasing', output_csv)}"
 
-    logging.info('bcftools -> Filtering out hetrozygous and phased SNPs and generating a new VCF')
+    logger.info('bcftools -> Filtering out hetrozygous and phased SNPs and generating a new VCF')
     # Filter out het, phased SNPs
     cmd = ['bcftools', 'view', '--threads', '$(nproc)',  '--phased', '-g', 'het', '--types', 'snps', input_vcf, '-Oz', '-o', output_vcf]
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     process.wait()
 
-    logging.info('bcftools -> Query for phasesets and GT, DP, VAF feilds by creating a CSV file')
+    logger.info('bcftools -> Query for phasesets and GT, DP, VAF feilds by creating a CSV file')
     # bcftools query for phasesets and GT,DP,VAF
     cmd = ['bcftools', 'query', '-f',  '%CHROM\t%POS\t[%PS]\n', '-i PS>1', output_vcf, '-o', output_csv] #
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
@@ -448,13 +450,13 @@ def get_snp_frequencies_segments(args, target_bam, thread_pool):
     output_acgts = basefile + '_het_snps_freqs.csv'
     output_acgts = f"{os.path.join(args.out_dir_plots, 'data_phasing', output_acgts)}"
 
-    # logging.info('bcftools -> Filtering out hetrozygous and phased SNPs and generating a new VCF')
+    # logger.info('bcftools -> Filtering out hetrozygous and phased SNPs and generating a new VCF')
     # # Filter out het, phased SNPs
     # cmd = ['bcftools', 'view', '--threads', '$(nproc)',  '--phased', '-g', 'het', '--types', 'snps', args.normal_phased_vcf'], '-Oz', '-o', args.normal_phased_vcf']]
     # process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     # process.wait()
 
-    logging.info('bcftools -> Query for het SNPs and creating a %s CSV file', output_csv)
+    logger.info('bcftools -> Query for het SNPs and creating a %s CSV file', output_csv)
     # bcftools query for phasesets and GT,DP,VAF
     cmd = ['bcftools', 'query', '-i', 'GT="het"', '-f',  '%CHROM\t%POS\t%REF\t%ALT\t[%GT]\n', args.normal_phased_vcf, '-o', output_csv] #
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
@@ -467,11 +469,11 @@ def get_snp_frequencies_segments(args, target_bam, thread_pool):
     #output_csv = '/home/rezkuh/GenData/COLO829/COLO829_chr7_details.csv'
     #output_bed = '/home/rezkuh/GenData/COLO829/colo829_chr7.csv'
 
-    logging.info('SNPs frequency -> CSV to dataframe conversion')
+    logger.info('SNPs frequency -> CSV to dataframe conversion')
     dataframe_snps = csv_df_chromosomes_sorter(output_csv, ['chr', 'start', 'ref', 'alt', 'gt'])
     #dataframe_snps = pd.read_csv(output_csv, sep='\t', names=['chr', 'start', 'ref', 'alt', 'gt'])
 
-    logging.info('SNPs frequency -> Comuting het SNPs frequency from tumor BAM')
+    logger.info('SNPs frequency -> Comuting het SNPs frequency from tumor BAM')
 
     #output_pileups = bam_pileups_snps(output_bed, target_bam, args)
     if args.quick_start:
@@ -644,6 +646,6 @@ def get_phasingblocks(hb_vcf):
             id_list[chr_id].append(block_name)
     total_phased = sum(phased_lengths)
     _l50, n50 = _calc_nx(phased_lengths, total_phased, 0.50)
-    print(f"\tTotal phased length: {total_phased}")
-    print(f"\tPhase blocks N50: {n50}")
+    logger.info("Total phased length: %s", total_phased)
+    logger.info("Phase blocks N50: %s", n50)
     return (phased_lengths, haplotype_blocks)

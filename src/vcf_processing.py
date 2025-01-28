@@ -1,12 +1,14 @@
 import pathlib
 import subprocess
 import statistics
-import logging
 import os
 import gzip
 import pandas as pd
 from utils import write_segments_coverage_dict, csv_df_chromosomes_sorter, smoothing
 from bam_processing import process_bam_for_snps_freqs
+import logging
+
+logger = logging.getLogger()
 
 import csv
 import multiprocessing
@@ -508,13 +510,13 @@ def vcf_parse_to_csv_for_snps(input_vcf, args):
     output_csv = basefile + '_snps.csv'
     output_csv = f"{os.path.join(args.out_dir_plots, 'data', output_csv)}"
 
-    # logging.info('bcftools -> Filtering out hetrozygous and phased SNPs and generating a new VCF')
+    # logger.info('bcftools -> Filtering out hetrozygous and phased SNPs and generating a new VCF')
     # # Filter out het, phased SNPs
     # cmd = ['bcftools', 'view', '--threads', '$(nproc)', input_vcf, '-Oz', '-o', output_vcf]
     # process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     # process.wait()
     af_field = af_field_selection(input_vcf)
-    logging.info('bcftools -> Query for phasesets and GT, DP, VAF feilds by creating a CSV file')
+    logger.info('bcftools -> Query for phasesets and GT, DP, VAF feilds by creating a CSV file')
     # bcftools query for phasesets and GT,DP,VAF
     query = '%CHROM\t%POS\t%QUAL\t[%GT]\t[%DP]\t[%'+af_field+']\n'
     cmd = ['bcftools', 'query', '-f', query, '-i', 'FILTER="PASS"', input_vcf, '-o', output_csv]  #
@@ -533,13 +535,13 @@ def vcf_parse_to_csv_for_het_phased_snps(input_vcf, args):
     output_csv = basefile + '_bafs.csv'
     output_csv = f"{os.path.join(args.out_dir_plots, 'data', output_csv)}"
 
-    logging.info('bcftools -> Filtering out hetrozygous and phased SNPs and generating a new VCF')
+    logger.info('bcftools -> Filtering out hetrozygous and phased SNPs and generating a new VCF')
     # Filter out het, phased SNPs
     cmd = ['bcftools', 'view', '--threads', '$(nproc)',  '-g', 'het', '--types', 'snps', input_vcf, '-Oz', '-o', output_vcf]
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     process.wait()
 
-    logging.info('bcftools -> Query for phasesets and GT, DP, VAF feilds by creating a CSV file')
+    logger.info('bcftools -> Query for phasesets and GT, DP, VAF feilds by creating a CSV file')
     # bcftools query for phasesets and GT,DP,VAF
     cmd = ['bcftools', 'query', '-f',  '%CHROM\t%POS\t[%PS]\n', '-i PS>1', output_vcf, '-o', output_csv] #
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
@@ -556,13 +558,13 @@ def vcf_parse_to_csv_for_het_phased_snps_phasesets(input_vcf, args):
     output_csv = basefile + '_phasesets.csv'
     output_csv = f"{os.path.join(args.out_dir_plots, 'data', output_csv)}"
 
-    logging.info('bcftools -> Filtering out hetrozygous and phased SNPs and generating a new VCF')
+    logger.info('bcftools -> Filtering out hetrozygous and phased SNPs and generating a new VCF')
     # Filter out het, phased SNPs
     cmd = ['bcftools', 'view', '--threads', '$(nproc)',  '--phased', '-g', 'het', '--types', 'snps', input_vcf, '-Oz', '-o', output_vcf]
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     process.wait()
 
-    logging.info('bcftools -> Query for phasesets and GT, DP, VAF feilds by creating a CSV file')
+    logger.info('bcftools -> Query for phasesets and GT, DP, VAF feilds by creating a CSV file')
     # bcftools query for phasesets and GT,DP,VAF
     cmd = ['bcftools', 'query', '-f',  '%CHROM\t%POS\t[%PS]\n', '-i PS>1', output_vcf, '-o', output_csv] #
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
@@ -585,13 +587,13 @@ def get_snp_segments(args, target_bam, thread_pool):
     output_acgts = basefile + '_het_snps_freqs.csv'
     output_acgts = f"{os.path.join(args.out_dir_plots, 'data', output_acgts)}"
 
-    # logging.info('bcftools -> Filtering out hetrozygous and phased SNPs and generating a new VCF')
+    # logger.info('bcftools -> Filtering out hetrozygous and phased SNPs and generating a new VCF')
     # # Filter out het, phased SNPs
     # cmd = ['bcftools', 'view', '--threads', '$(nproc)',  '--phased', '-g', 'het', '--types', 'snps', args.phased_vcf'], '-Oz', '-o', args.phased_vcf']]
     # process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     # process.wait()
 
-    logging.info('bcftools -> Query for het SNPs and creating a %s CSV file', output_csv)
+    logger.info('bcftools -> Query for het SNPs and creating a %s CSV file', output_csv)
     # bcftools query for phasesets and GT,DP,VAF
     cmd = ['bcftools', 'query', '-i', 'GT="het"', '-f',  '%CHROM\t%POS\t%REF\t%ALT\t[%GT]\n', normal_vcf, '-o', output_csv] #
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
@@ -601,9 +603,9 @@ def get_snp_segments(args, target_bam, thread_pool):
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     process.wait()
 
-    logging.info('SNPs frequency -> CSV to dataframe conversion')
+    logger.info('SNPs frequency -> CSV to dataframe conversion')
     dataframe_snps = csv_df_chromosomes_sorter(output_csv, ['chr', 'start', 'ref', 'alt', 'gt'])
-    logging.info('SNPs frequency -> Comuting het SNPs frequency from tumor BAM')
+    logger.info('SNPs frequency -> Comuting het SNPs frequency from tumor BAM')
 
     if not args.phaseblock_flipping_disable and not args.quick_start:
         output_pileups = args.out_dir_plots + '/coverage_data/' +  'pileup_SNPs.csv'

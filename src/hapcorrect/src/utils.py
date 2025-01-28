@@ -5,6 +5,7 @@ import pandas as pd
 import pysam
 import os
 import logging
+logger = logging.getLogger()
 
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)

@@ -29,6 +29,29 @@ from phasing_correction import generate_phasesets_bins, fix_inter_cn_phase_switc
 from optimization import peak_detection_optimization
 from extras import sv_vcf_bps_cn_check
 
+logger = logging.getLogger()
+def _enable_logging(log_file, debug, overwrite):
+    """
+    Turns on logging, sets debug levels and assigns a log file
+    """
+    log_formatter = logging.Formatter("[%(asctime)s] %(name)s: %(levelname)s: "
+                                      "%(message)s", "%Y-%m-%d %H:%M:%S")
+    console_formatter = logging.Formatter("[%(asctime)s] %(levelname)s: "
+                                          "%(message)s", "%Y-%m-%d %H:%M:%S")
+    console_log = logging.StreamHandler()
+    console_log.setFormatter(console_formatter)
+    if not debug:
+        console_log.setLevel(logging.INFO)
+
+    if overwrite:
+        open(log_file, "w").close()
+    file_handler = logging.FileHandler(log_file, mode="a")
+    file_handler.setFormatter(log_formatter)
+
+    logger.setLevel(logging.INFO)
+    logger.addHandler(console_log)
+    logger.addHandler(file_handler)
+
 def main():
     # default tunable parameters
     MAX_READ_ERROR = 0.1
@@ -179,14 +202,22 @@ def main():
 
     args = parser.parse_args()
 
-    logging.basicConfig(level=logging.INFO)
+    if not os.path.isdir(args.out_dir_plots):
+        os.mkdir(args.out_dir_plots)
+
+    log_file = os.path.join(args.out_dir_plots, "wakhan.log")
+    _enable_logging(log_file, debug=False, overwrite=False)
+
+    #logger.info("Starting Wakhan " + _version())
+    logger.info("Cmd: %s", " ".join(sys.argv))
+    logger.info("Python version: " + sys.version)
 
     fileDir = os.path.dirname(__file__)
     cancer_genes = os.path.join(fileDir, args.cancer_genes)
     args.cancer_genes = cancer_genes
 
     if not args.change_point_detection_for_cna and not args.breakpoints:
-        logging.info('At least one parameter --breakpoints <SV VCF path> or --change-point-detection-for-cna should be used for copy number segmentation model')
+        logger.info('At least one parameter --breakpoints <SV VCF path> or --change-point-detection-for-cna should be used for copy number segmentation model')
         return 0
 
     #pbs = parse_sv_vcf(args.breakpoints)
@@ -198,7 +229,7 @@ def main():
     control_genomes = set(os.path.basename(b) for b in args.control_bam)
 
     if not shutil.which(SAMTOOLS_BIN):
-        print("samtools not found", file=sys.stderr)
+        logger.info("samtools not found")
         return 1
 
     # TODO: check that all bams have the same reference
@@ -207,8 +238,6 @@ def main():
     with pysam.AlignmentFile(first_bam, "rb") as a:
         ref_lengths = dict(zip(a.references, a.lengths))
 
-    if not os.path.isdir(args.out_dir_plots):
-        os.mkdir(args.out_dir_plots)
     if os.path.exists(args.out_dir_plots+'/data'):
         shutil.rmtree(args.out_dir_plots+'/data')
         os.mkdir(args.out_dir_plots+'/data')
@@ -223,13 +252,13 @@ def main():
         for bam_file in all_bams:
             genome_id = os.path.basename(bam_file)
             genome_ids.append(genome_id)
-            print("Parsing reads from", genome_id, file=sys.stderr)
+            logger.info("Parsing reads from %s", args.target_bam)
             segments_by_read_bam = get_all_reads_parallel(bam_file, thread_pool, ref_lengths,
                                                           args.min_mapping_quality, genome_id, MIN_SV_SIZE)
             segments_by_read.update(segments_by_read_bam)
-            print("Parsed {0} segments".format(len(segments_by_read_bam)), file=sys.stderr)
+            logger.info("Parsed %s segments", len(segments_by_read_bam))
 
-        logging.info('Computing coverage histogram')
+        logger.info('Computing coverage histogram')
         coverage_histograms = update_coverage_hist(genome_ids, ref_lengths, segments_by_read, args.min_mapping_quality, args.max_read_error, args)
         del segments_by_read
 
@@ -262,25 +291,25 @@ def main():
             csv_df_coverage = csv_df_chromosomes_sorter(args.quick_start_coverage_path + '/coverage.csv', ['chr', 'start', 'end', 'coverage'])
             csv_df_phasesets = csv_df_chromosomes_sorter(args.quick_start_coverage_path + '/coverage_ps.csv', ['chr', 'start', 'end', 'coverage'])
         else:
-            logging.info('Computing coverage for bins')
+            logger.info('Computing coverage for bins')
             segments = get_chromosomes_bins_bam(args.target_bam[0], args.bin_size, args)
             segments_coverage = get_segments_coverage(segments, coverage_histograms)
-            logging.info('Writing coverage for bins')
+            logger.info('Writing coverage for bins')
             write_segments_coverage_dict(segments_coverage, 'coverage.csv', args)
 
-            logging.info('Parsing phaseblocks information')
+            logger.info('Parsing phaseblocks information')
             if args.normal_phased_vcf:
                 output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(args.normal_phased_vcf, args)
             else:
                 output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(args.tumor_vcf, args)
             phasesets_segments = generate_phasesets_bins(args.target_bam[0], output_phasesets_file_path, args.bin_size, args) #TODO update for multiple bam files
-            logging.info('Computing coverage for phaseblocks')
+            logger.info('Computing coverage for phaseblocks')
             phasesets_coverage = get_segments_coverage(phasesets_segments, coverage_histograms)
-            logging.info('Writing coverage for phaseblocks')
+            logger.info('Writing coverage for phaseblocks')
             write_segments_coverage_dict(phasesets_coverage, 'coverage_ps.csv', args)
             del coverage_histograms
 
-            logging.info('Loading coverage (bins) and coverage (phaseblocks) files...')
+            logger.info('Loading coverage (bins) and coverage (phaseblocks) files...')
             csv_df_phasesets = csv_df_chromosomes_sorter(args.out_dir_plots+'/data/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
             csv_df_coverage = csv_df_chromosomes_sorter(args.out_dir_plots+'/data/coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
 
@@ -288,14 +317,14 @@ def main():
     #csv_df_coverage = csv_df_coverage.drop(csv_df_coverage[(csv_df_coverage.chr == "chrX") | (csv_df_coverage.chr == "chrY")].index)
     #csv_df_phasesets = csv_df_phasesets.drop(csv_df_phasesets[(csv_df_phasesets.chr == "chrX") | (csv_df_phasesets.chr == "chrY")].index)
 
-    logging.info('Generating coverage plots chromosomes-wise')
+    logger.info('Generating coverage plots chromosomes-wise')
     haplotype_1_values_updated, haplotype_2_values_updated, unphased, csv_df_snps_mean, snps_cpd_means, snps_cpd_points_weights, snps_cpd_means_df = \
         coverage_plots_chromosomes(csv_df_coverage, csv_df_phasesets, args, thread_pool)
 
     if args.without_phasing == False:
         df_hp1, df_hp2, df_unphased = seperate_dfs_coverage(args, csv_df_snps_mean, csv_df_snps_mean.hp1.tolist(), csv_df_snps_mean.hp2.tolist(), csv_df_snps_mean.hp3.tolist())
 
-    logging.info('Generating optimal clusters plots for bins')
+    logger.info('Generating optimal clusters plots for bins')
     if args.without_phasing:
         df_segs_hp1 = snps_cpd_means_df
         df_segs_hp2 = snps_cpd_means_df
@@ -313,21 +342,21 @@ def main():
             seg_min_weights.append(snps_cpd_points_weights[i])
     if len(seg_min) > 1:
         max_limit = int(weighted_means(seg_min, seg_min_weights))
-        logging.info('Max limit for normal optimization through 20Mb segments: %s', max_limit)
+        logger.info('Max limit for normal optimization through 20Mb segments: %s', max_limit)
     else:
         max_limit = int(weighted_means(snps_cpd_means, snps_cpd_points_weights))
-        logging.info('Max limit for normal optimization: %s', max_limit)
+        logger.info('Max limit for normal optimization: %s', max_limit)
 
     tumor_cov = statistics.mean([sum(x) for x in zip(haplotype_1_values_updated, haplotype_2_values_updated, unphased)])
-    logging.info('Tumor coverage: %s', tumor_cov)
+    logger.info('Tumor coverage: %s', tumor_cov)
     centers, subclonals, x_axis, observed_hist, single_copy_cov = peak_detection_optimization(args, snps_cpd_means, snps_cpd_points_weights, tumor_cov)
-    logging.info('Initial detected clusters means: %s', centers)
+    logger.info('Initial detected clusters means: %s', centers)
 
     #SNPs df from normal/tumor
     df_snps_in_csv = snps_df_loh(args, thread_pool, df_hp1)
 
     if args.without_phasing:
-        logging.info('Generating coverage/copy numbers plots genome wide')
+        logger.info('Generating coverage/copy numbers plots genome wide')
         integer_fractional_means = sorted([i for i in range(0, len(centers))])
         df_segs_hp1_updated, df_segs_hp2_updated = adjust_diversified_segments(centers, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, args)
         df_segs_hp1_updated = merge_adjacent_regions_cn_unphased(df_segs_hp1_updated, args)
@@ -384,7 +413,7 @@ def main():
             if (float(args.purity_range.split('-')[0])  <= tumor_purity <= float(args.purity_range.split('-')[1])) and (float(args.ploidy_range.split('-')[0])  <= overall_ploidy <= float(args.ploidy_range.split('-')[1])):
                 average_p_value.append(p_value)
                 data.append([overall_ploidy, tumor_purity, cen_out, p_value])
-                print("overall_ploidy: ", overall_ploidy, "tumor_purity:", tumor_purity, "average_p_value:", p_value, "for i:", normal_coverage, "centers: ", cen_out[0:4], "norm frac: ", normal_fraction)
+                logger.info("overall_ploidy: %s, tumor_purity: %s, average_p_value: %s, for i: %s,  centers: %s, norm frac: %s", overall_ploidy, tumor_purity, p_value, normal_coverage, cen_out[0:4], normal_fraction)
 
         if average_p_value:
             optimized_normal = find_optimized_normal_peaks(args, np.array(average_p_value), max_limit, spacing=3, limit=0.3)
@@ -392,10 +421,10 @@ def main():
                 args.tumor_ploidy = round(data[j][0], 2)
                 args.tumor_purity = round(data[j][1], 2)
                 cen_out = data[j][2]
-                logging.info('Normal optimized clusters means: %s', cen_out)
+                logger.info('Normal optimized clusters means: %s', cen_out)
                 integer_fractional_means = sorted([i for i in range(0, len(cen_out))])
                 p_value_confidence = round(data[j][3], 2)
-                logging.info('Generating coverage/copy numbers plots genome wide for solution with purity {0} and ploidy {1}'.format(args.tumor_purity, args.tumor_ploidy))
+                logger.info('Generating coverage/copy numbers plots genome wide for solution with purity {0} and ploidy {1}'.format(args.tumor_purity, args.tumor_ploidy))
 
                 df_segs_hp1_updated, df_segs_hp2_updated = adjust_diversified_segments(cen_out, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, args)
                 df_segs_hp1_updated = adjust_bps_cn_segments_boundries(args, df_segs_hp1_updated)
@@ -442,7 +471,7 @@ def main():
                     write_copynumber_segments_csv(df_segs_hp1_updated, args, cen_out, integer_fractional_means, 1, '_' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) +'_'+ str(p_value_confidence) + '_copynumbers_subclonal_segments_HP_1.bed', p_value_confidence)
                     write_copynumber_segments_csv(df_segs_hp2_updated, args, cen_out, integer_fractional_means, 1, '_' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) +'_'+ str(p_value_confidence) + '_copynumbers_subclonal_segments_HP_2.bed', p_value_confidence)
         else:
-            logging.info('No estimated purity [%s] and ploidy [%s] value detected inside given ranges or overall ploidy is less than 0.1', args.purity_range, args.ploidy_range)
+            logger.info('No estimated purity [%s] and ploidy [%s] value detected inside given ranges or overall ploidy is less than 0.1', args.purity_range, args.ploidy_range)
 
     #if average_p_value:
     #    #SNPs ratios and LOH and plots

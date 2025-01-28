@@ -13,6 +13,8 @@ import pandas as pd
 from multiprocessing import Pool
 from collections import defaultdict
 
+logger = logging.getLogger()
+
 from hapcorrect.src.process_bam import get_all_reads_parallel, update_coverage_hist, get_segments_coverage, haplotype_update_all_bins_parallel, get_snps_frequencies, tumor_bam_haplotag
 from hapcorrect.src.process_vcf import vcf_parse_to_csv_for_het_phased_snps_phasesets, get_snp_frequencies_segments, snps_frequencies_chrom_mean, get_snps_frquncies_coverage, vcf_parse_to_csv_for_snps, index_vcf, rephase_vcf, get_phasingblocks, snps_frequencies_chrom_mean_phasesets, get_vafs_from_normal_phased_vcf
 from hapcorrect.src.phase_correction import generate_phasesets_bins, phaseblock_flipping, phase_correction_centers, contiguous_phaseblocks, detect_centromeres, flip_phaseblocks_contigous, remove_overlaping_contiguous, switch_inter_phaseblocks_bins, flip_phaseblocks_unresolved, flip_phaseblocks_unresolved_ends
@@ -25,7 +27,12 @@ from hapcorrect.src.loh import detect_loh_centromere_regions, plot_snps
 
 MIN_SV_SIZE = 50
 def main_process(args, breakpoints_additional):
-    logging.basicConfig(level=logging.INFO)
+    log_file = os.path.join(args.out_dir_plots, "wakhan.log")
+    file_handler = logging.FileHandler(log_file)
+
+    # Add the file handler to the logger
+    logger.addHandler(file_handler)
+    logger.setLevel(logging.INFO)
 
     if args.control_bam is None:
         args.control_bam = []
@@ -61,19 +68,19 @@ def main_process(args, breakpoints_additional):
     for bam_file in all_bams:
         genome_id = os.path.basename(bam_file)
         genome_ids.append(genome_id)
-        print("Parsing reads from", genome_id, file=sys.stderr)
+        logger.info("Parsing reads from %s", args.target_bam[0])
         segments_by_read_bam = get_all_reads_parallel(bam_file, thread_pool, ref_lengths,
                                                       args.min_mapping_quality, genome_id, MIN_SV_SIZE)
         segments_by_read.update(segments_by_read_bam)
-        print("Parsed {0} segments".format(len(segments_by_read_bam)), file=sys.stderr)
+        logger.info("Parsed %s segments", len(segments_by_read_bam))
 
-    logging.info('Computing coverage histogram')
+    logger.info('Computing coverage histogram')
     coverage_histograms = update_coverage_hist(genome_ids, ref_lengths, segments_by_read, args.min_mapping_quality,
                                                args.max_read_error, args)
     del segments_by_read
 
     cancer_genes_df_all = []
-    logging.info('Computing coverage for genes')
+    logger.info('Computing coverage for genes')
     genes_segments = genes_segments_list(args.target_bam[0], args)
     genes_coverage = get_segments_coverage(genes_segments, coverage_histograms)
     cancer_genes_df_all = genes_segments_coverage(genes_coverage, args)
@@ -84,13 +91,13 @@ def main_process(args, breakpoints_additional):
         csv_df_phasesets = csv_df_chromosomes_sorter(args.quick_start_coverage_path + '/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
         csv_df_coverage = csv_df_chromosomes_sorter(args.quick_start_coverage_path + '/coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
     else:
-        logging.info('Computing coverage for bins')
+        logger.info('Computing coverage for bins')
         segments = get_chromosomes_bins(args.target_bam[0], args.bin_size, args)
         segments_coverage = get_segments_coverage(segments, coverage_histograms)
-        logging.info('Writing coverage for bins')
+        logger.info('Writing coverage for bins')
         write_segments_coverage(segments_coverage, 'coverage.csv', args)
 
-        logging.info('Parsing phaseblocks information')
+        logger.info('Parsing phaseblocks information')
         if args.normal_phased_vcf:
             output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(args.normal_phased_vcf, args)
         else:
@@ -98,13 +105,13 @@ def main_process(args, breakpoints_additional):
         phasesets_segments = generate_phasesets_bins(args.target_bam[0], output_phasesets_file_path, args.bin_size, args) #TODO update for multiple bam files
         #if args.breakpoints:
         #    phasesets_segments = add_breakpoints(args, phasesets_segments, breakpoints_additional)
-        logging.info('Computing coverage for phaseblocks')
+        logger.info('Computing coverage for phaseblocks')
         phasesets_coverage = get_segments_coverage(phasesets_segments, coverage_histograms)
 
-        logging.info('Writing coverage for phaseblocks')
+        logger.info('Writing coverage for phaseblocks')
         write_segments_coverage(phasesets_coverage, 'coverage_ps.csv', args)
 
-        logging.info('Loading coverage (bins) and coverage (phaseblocks) files...')
+        logger.info('Loading coverage (bins) and coverage (phaseblocks) files...')
         csv_df_phasesets = csv_df_chromosomes_sorter(args.out_dir_plots+'/coverage_data/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
         csv_df_coverage = csv_df_chromosomes_sorter(args.out_dir_plots+'/coverage_data/coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
 
@@ -148,7 +155,7 @@ def main_process(args, breakpoints_additional):
         if chrom in chroms: #and (chrom == '1' or chrom == '18'):# and (chrom == 'chr5' or chrom == 'chr16'):
             regions = get_chromosomes_regions(args)
 
-            logging.info('Loading coverage (bins) and coverage (phaseblocks) datasets for ' + chrom)
+            logger.info('Loading coverage (bins) and coverage (phaseblocks) datasets for ' + chrom)
             csv_df_phaseset = csv_df_phasesets[csv_df_phasesets['chr'] == chrom]
             haplotype_1_values_phasesets = csv_df_phaseset.hp1.values.tolist()
             haplotype_2_values_phasesets = csv_df_phaseset.hp2.values.tolist()
@@ -283,7 +290,7 @@ def main_process(args, breakpoints_additional):
 
     if args.normal_phased_vcf:
         get_phasingblocks(args.normal_phased_vcf)
-        logging.info('VCF edit for phase change segments')
+        logger.info('VCF edit for phase change segments')
         out_vcf = os.path.join(args.out_dir_plots, 'phasing_output', args.genome_name+'.rephased.vcf.gz')
         rephase_vcf(csv_df_phase_change_segments, csv_df_phasesets_segments, csv_df_loh_regions, args.normal_phased_vcf, out_vcf)
         index_vcf(out_vcf)
@@ -291,14 +298,14 @@ def main_process(args, breakpoints_additional):
 
     elif not args.normal_phased_vcf and args.tumor_vcf:
         get_phasingblocks(args.tumor_vcf)
-        logging.info('VCF edit for phase change segments')
+        logger.info('VCF edit for phase change segments')
         out_vcf = os.path.join(args.out_dir_plots, 'phasing_output', args.genome_name+'.rephased.vcf.gz')
         rephase_vcf(csv_df_phase_change_segments, csv_df_phasesets_segments, csv_df_loh_regions, args.tumor_vcf, out_vcf)
         index_vcf(out_vcf)
         get_phasingblocks(out_vcf)
 
     if args.rehaplotag_tumor_bam:
-        logging.info('Rehaplotagging tumor BAM')
+        logger.info('Rehaplotagging tumor BAM')
         tumor_bam_haplotag(args, out_vcf)
 
     if args.tumor_vcf:

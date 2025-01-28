@@ -1,5 +1,8 @@
 import numpy as np
 #import talib as ta
+import logging
+
+logger = logging.getLogger()
 
 #def talib_sma(array, period):
 #    return ta.MA(array, period)

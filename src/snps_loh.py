@@ -2,9 +2,11 @@ import statistics
 
 import plotly.graph_objects as go
 import os
-import logging
 import pandas as pd
 import numpy as np
+import logging
+
+logger = logging.getLogger()
 
 from vcf_processing import get_snps_frquncies, het_homo_snps_gts, vcf_parse_to_csv_for_het_phased_snps_phasesets, snps_mean, cpd_mean, get_snp_segments, get_snps_frquncies_coverage, vcf_parse_to_csv_for_snps, get_snps_counts, get_snps_counts_cn_regions, get_snps_frquncies_genome
 from utils import csv_df_chromosomes_sorter, get_vafs_from_tumor_phased_vcf
@@ -21,7 +23,7 @@ def plot_snps_ratios_genome(args, df_snps_in_csv, df_loh_regions):
     offset = 0
     for index, chrom in enumerate(chroms):
         if chrom in chroms:
-            logging.info('Collecting SNPs for chromosome ' + chrom)
+            logger.info('Collecting SNPs for chromosome ' + chrom)
             snps_het, snps_homo, snps_het_pos, snps_homo_pos = get_snps_frquncies(df_snps_in_csv, chrom)
             if snps_het or snps_homo:
                 if snps_homo_pos and snps_het_pos:
@@ -56,12 +58,14 @@ def snps_df_loh(args, thread_pool, df_coverage_data):
         df_snps_in_csv = csv_df_chromosomes_sorter(output_phasesets_file_path, ['chr', 'pos', 'qual', 'gt', 'dp', 'vaf'])
         df_snps_in_csv = get_vafs_from_tumor_phased_vcf(df_snps_in_csv, df_coverage, chroms, args)
     else:
-        get_snp_segments(args, args.target_bam[0], thread_pool)
-        if args.phaseblock_flipping_disable and args.quick_start:
+        if args.quick_start:
+            get_snp_segments(args, args.target_bam[0], thread_pool)
             df_snps_frequencies = csv_df_chromosomes_sorter(args.out_dir_plots+'/data/snps_frequencies.csv', ['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])
         else:
-            df_snps_frequencies = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/snps_frequencies.csv', ['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])
-        #df_snps_frequencies = df_snps_frequencies.drop(df_snps_frequencies[(df_snps_frequencies.chr == "chrY")].index)
+            if args.phaseblock_flipping_disable:
+                df_snps_frequencies = csv_df_chromosomes_sorter(args.out_dir_plots+'/data/snps_frequencies.csv', ['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])
+            else:
+                df_snps_frequencies = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/snps_frequencies.csv', ['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])
         df_snps_in_csv = get_vafs_from_normal_phased_vcf(df_snps_frequencies, df_coverage, chroms, args)
 
     return df_snps_in_csv
@@ -223,7 +227,7 @@ def plot_snps_frequencies(args, df, df_snps_in_csv):
 
 
 def plot_snps(chrom, index, df_snps_in_csv, html_graphs, args, df_chrom):
-    logging.info('SNPs frequencies plots generation for ' + chrom)
+    logger.info('SNPs frequencies plots generation for ' + chrom)
     fig = go.Figure()
 
     snps_het, snps_homo, snps_het_pos, snps_homo_pos = get_snps_frquncies(df_snps_in_csv, chrom)

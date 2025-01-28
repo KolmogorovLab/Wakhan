@@ -5,6 +5,8 @@ import pathlib
 import os
 import pandas
 from collections import defaultdict
+import logging
+logger = logging.getLogger()
 
 class ReadSegment(object):
     __slots__ = ("read_start", "read_end", "ref_start", "ref_end", "read_id", "ref_id",

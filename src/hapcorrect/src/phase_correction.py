@@ -5,6 +5,9 @@ import pandas as pd
 from hapcorrect.src.utils import csv_df_chromosomes_sorter, write_segments_coverage_snps, merge_regions, get_contigs_list
 from hapcorrect.src.process_vcf import squash_regions
 
+import logging
+logger = logging.getLogger()
+
 def generate_phasesets_bins(bam, path, bin_size, args):
     return get_phasesets_bins(bam, path, bin_size, args)
 

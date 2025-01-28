@@ -1,3 +1,6 @@
+import logging
+
+logger = logging.getLogger()
 
 def get_contigs_list(contigs):
     chroms_list_final = []

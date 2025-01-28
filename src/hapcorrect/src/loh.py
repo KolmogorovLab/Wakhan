@@ -3,6 +3,7 @@ import statistics
 import plotly.graph_objects as go
 import os
 import logging
+logger = logging.getLogger()
 
 from hapcorrect.src.process_vcf import get_snps_frquncies, het_homo_snps_gts, vcf_parse_to_csv_for_het_phased_snps_phasesets, cpd_mean, get_snps_frquncies_coverage, vcf_parse_to_csv_for_snps, get_snps_counts
 from hapcorrect.src.utils import csv_df_chromosomes_sorter, loh_regions_phasesets, detect_alter_loh_regions
@@ -40,7 +41,7 @@ def plot_snps(args, df_snps_in_csv):
     html_graphs.write("</body></html>")
 
 def plot_snps_freqs_ratios_counts(chrom, index, df_snps_in_csv, html_graphs, args):
-    logging.info('SNPs frequencies plots generation for ' + chrom)
+    logger.info('SNPs frequencies plots generation for ' + chrom)
     fig = go.Figure()
 
     snps_het, snps_homo, snps_het_pos, snps_homo_pos = get_snps_frquncies(df_snps_in_csv, chrom)

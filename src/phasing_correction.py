@@ -7,6 +7,9 @@ from collections import  defaultdict, Counter
 import pysam
 import bisect
 import pandas as pd
+import logging
+
+logger = logging.getLogger()
 
 from utils import get_contigs_list, remove_outliers_iqr
 def generate_phasesets_bins(bam, path, bin_size, args):

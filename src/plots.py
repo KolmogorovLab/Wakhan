@@ -12,6 +12,8 @@ import statistics
 import itertools
 import logging
 
+logger = logging.getLogger()
+
 #from cnvlib import cluster
 from phasing_correction import phaseblock_flipping, phase_correction_centers, contiguous_phaseblocks, detect_centromeres, flip_phaseblocks_contigous, remove_overlaping_contiguous, switch_inter_phaseblocks_bins
 from smoothing import smoothing
@@ -21,6 +23,7 @@ from utils import subclonal_values_adjusted, get_chromosomes_bins, csv_df_chromo
 from extras import get_contigs_list, sv_vcf_bps_cn_check
 
 pd.options.mode.chained_assignment = None
+
 def copy_number_plots_chromosomes(df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, args, loh_region_starts, loh_region_ends):
     filename = f"{os.path.join(args.out_dir_plots, 'COPY_NUMBERS.html')}"
     html_graphs = open(filename, 'w')
@@ -33,7 +36,7 @@ def copy_number_plots_chromosomes(df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_h
 
 def copy_number_plots_per_chromosome(centers, integer_fractional_means, ref_start_values, df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, args, chrom, html_graphs, loh_region_starts, loh_region_ends, p_value):
 
-    logging.info('Plots generation for ' + chrom)
+    logger.info('Plots generation for ' + chrom)
     fig = go.Figure()
 
     #df_cnr_hp1_chrom = df_cnr_hp1[df_cnr_hp1['chromosome'] == chrom]
@@ -55,7 +58,7 @@ def copy_number_plots_per_chromosome(centers, integer_fractional_means, ref_star
     haplotype_2_end_values_copyratios = df_segs_hp2_chrom.end.values.tolist()
 
     if not args.copynumbers_disable:
-        logging.info('copynumbers plots module')
+        logger.info('copynumbers plots module')
         OFFSET=0
         #haplotype_1_values_cnr = list(np.asarray(haplotype_1_values_cnr) + OFFSET)
         #haplotype_2_values_cnr = list(np.asarray(haplotype_2_values_cnr) - OFFSET)
@@ -195,7 +198,7 @@ def coverage_plots_chromosomes(df, df_phasesets, args, thread_pool):
 
     for index, chrom in enumerate(chroms):
         if chrom in chroms:# and (chrom == '1' or chrom == '18'):# and (chrom == 'chr5' or chrom == 'chr16'):
-            logging.info('Plots generation for ' + chrom)
+            logger.info('Plots generation for ' + chrom)
             fig = go.Figure()
 
             df_chrom = df[df['chr'] == chrom]
@@ -248,7 +251,7 @@ def coverage_plots_chromosomes(df, df_phasesets, args, thread_pool):
                 haplotype_2_values = adjust_extreme_outliers(haplotype_2_values)
             ################################################################################
             # if args.tumor_vcf']:
-            #     logging.info('hetrozygous phased snps frequencies coverage module')
+            #     logger.info('hetrozygous phased snps frequencies coverage module')
             #     ref_start_values_updated, snps_het_counts, snps_homo_counts, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends = get_snps_frquncies_coverage(df_snps_in_csv, chrom, ref_start_values, args.bin_size_snps'])
             #     if snps_het_counts or snps_homo_counts:
             #         if args.without_phasing']:
@@ -275,7 +278,7 @@ def coverage_plots_chromosomes(df, df_phasesets, args, thread_pool):
             #     plot_coverage_raw(args, chrom, html_graphs, ref_start_values, ref_end_values, haplotype_1_values, haplotype_2_values, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
             ################################################################################
             # if args.phaseblock_flipping_enable']:
-            #     logging.info('phaseblock flipping module')
+            #     logger.info('phaseblock flipping module')
             #     is_simple_heuristics = True
             #     if len(ref_start_values_phasesets) >= 1:
             #         is_simple_heuristics = False
@@ -298,7 +301,7 @@ def coverage_plots_chromosomes(df, df_phasesets, args, thread_pool):
             #
             ################################################################################
             if args.smoothing_enable:
-                logging.info('smoothing module')
+                logger.info('smoothing module')
                 if args.without_phasing:
                     values, values, unphased_reads_values = smoothing(values, values, values, conv_window_size=5)
                 else:
@@ -317,7 +320,7 @@ def coverage_plots_chromosomes(df, df_phasesets, args, thread_pool):
             #plots_add_markers_lines(fig)
             ################################################################################
             if args.phaseblocks_enable:
-                logging.info('phaseblocks plots module')
+                logger.info('phaseblocks plots module')
                 gaps_values = np.full(len(haplotype_1_values_phasesets), 'None')
                 haplotype_1_phaseblocks_values = list(itertools.chain.from_iterable(zip(haplotype_1_values_phasesets, haplotype_1_values_phasesets, gaps_values)))
                 haplotype_2_phaseblocks_values = list(itertools.chain.from_iterable(zip(haplotype_2_values_phasesets, haplotype_2_values_phasesets, gaps_values)))
@@ -424,7 +427,7 @@ def plot_coverage_raw(args, chrom, html_graphs, ref_start_values, ref_end_values
     #plots_add_markers_lines(fig)
 
     if args.phaseblocks_enable:
-        logging.info('phaseblocks plots module')
+        logger.info('phaseblocks plots module')
         gaps_values = np.full(len(haplotype_1_values_phasesets), 'None')
         haplotype_1_phaseblocks_values = list(itertools.chain.from_iterable(zip(haplotype_1_values_phasesets, haplotype_1_values_phasesets, gaps_values)))
         haplotype_2_phaseblocks_values = list(itertools.chain.from_iterable(zip(haplotype_2_values_phasesets, haplotype_2_values_phasesets, gaps_values)))
