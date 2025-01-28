@@ -5,10 +5,10 @@ import os
 import logging
 logger = logging.getLogger()
 
-from hapcorrect.src.process_vcf import get_snps_frquncies, het_homo_snps_gts, vcf_parse_to_csv_for_het_phased_snps_phasesets, cpd_mean, get_snps_frquncies_coverage, vcf_parse_to_csv_for_snps, get_snps_counts
-from hapcorrect.src.utils import csv_df_chromosomes_sorter, loh_regions_phasesets, detect_alter_loh_regions
-from hapcorrect.src.extras import get_contigs_list
-from hapcorrect.src.plots import add_scatter_trace_coverage, print_chromosome_html, plots_add_markers_lines, plots_layout_settings
+from src.hapcorrect.src.process_vcf import get_snps_frquncies, het_homo_snps_gts, vcf_parse_to_csv_for_het_phased_snps_phasesets, cpd_mean, get_snps_frquncies_coverage, vcf_parse_to_csv_for_snps, get_snps_counts
+from src.hapcorrect.src.utils import csv_df_chromosomes_sorter, loh_regions_phasesets, detect_alter_loh_regions
+from src.hapcorrect.src.extras import get_contigs_list
+from src.hapcorrect.src.plots import add_scatter_trace_coverage, print_chromosome_html, plots_add_markers_lines, plots_layout_settings
 
 def detect_loh_centromere_regions(chrom, args, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends, ref_start_values, ref_end_values, haplotype_1_values, haplotype_2_values, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets):
     hp = []

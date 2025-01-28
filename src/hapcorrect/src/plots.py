@@ -7,7 +7,7 @@ import itertools
 import logging
 logger = logging.getLogger()
 
-from hapcorrect.src.utils import get_contigs_list, get_chromosomes_regions
+from src.hapcorrect.src.utils import get_contigs_list, get_chromosomes_regions
 
 def plot_coverage_data(html_graphs, args, chrom, ref_start_values, ref_end_values, haplotype_1_values, haplotype_2_values, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, sufix):
     fig = go.Figure()

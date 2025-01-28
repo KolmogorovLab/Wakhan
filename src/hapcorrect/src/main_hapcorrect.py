@@ -15,15 +15,15 @@ from collections import defaultdict
 
 logger = logging.getLogger()
 
-from hapcorrect.src.process_bam import get_all_reads_parallel, update_coverage_hist, get_segments_coverage, haplotype_update_all_bins_parallel, get_snps_frequencies, tumor_bam_haplotag
-from hapcorrect.src.process_vcf import vcf_parse_to_csv_for_het_phased_snps_phasesets, get_snp_frequencies_segments, snps_frequencies_chrom_mean, get_snps_frquncies_coverage, vcf_parse_to_csv_for_snps, index_vcf, rephase_vcf, get_phasingblocks, snps_frequencies_chrom_mean_phasesets, get_vafs_from_normal_phased_vcf
-from hapcorrect.src.phase_correction import generate_phasesets_bins, phaseblock_flipping, phase_correction_centers, contiguous_phaseblocks, detect_centromeres, flip_phaseblocks_contigous, remove_overlaping_contiguous, switch_inter_phaseblocks_bins, flip_phaseblocks_unresolved, flip_phaseblocks_unresolved_ends
-from hapcorrect.src.utils import get_chromosomes_bins, write_segments_coverage, csv_df_chromosomes_sorter, get_snps_frquncies_coverage_from_bam, \
+from src.hapcorrect.src.process_bam import get_all_reads_parallel, update_coverage_hist, get_segments_coverage, haplotype_update_all_bins_parallel, get_snps_frequencies, tumor_bam_haplotag
+from src.hapcorrect.src.process_vcf import vcf_parse_to_csv_for_het_phased_snps_phasesets, get_snp_frequencies_segments, snps_frequencies_chrom_mean, get_snps_frquncies_coverage, vcf_parse_to_csv_for_snps, index_vcf, rephase_vcf, get_phasingblocks, snps_frequencies_chrom_mean_phasesets, get_vafs_from_normal_phased_vcf
+from src.hapcorrect.src.phase_correction import generate_phasesets_bins, phaseblock_flipping, phase_correction_centers, contiguous_phaseblocks, detect_centromeres, flip_phaseblocks_contigous, remove_overlaping_contiguous, switch_inter_phaseblocks_bins, flip_phaseblocks_unresolved, flip_phaseblocks_unresolved_ends
+from src.hapcorrect.src.utils import get_chromosomes_bins, write_segments_coverage, csv_df_chromosomes_sorter, get_snps_frquncies_coverage_from_bam, \
                     infer_missing_phaseblocks, df_chromosomes_sorter, is_phasesets_check_simple_heuristics, write_df_csv, loh_regions_events, snps_frequencies_chrom_genes, genes_segments_coverage, genes_segments_list, extend_snps_ratios_df, get_chromosomes_regions, add_breakpoints
-from hapcorrect.src.extras import get_contigs_list
-from hapcorrect.src.plots import plot_coverage_data, change_point_detection, plot_coverage_data_after_correction, loh_plots_genome
-from hapcorrect.src.cpd import cpd_positions_means
-from hapcorrect.src.loh import detect_loh_centromere_regions, plot_snps
+from src.hapcorrect.src.extras import get_contigs_list
+from src.hapcorrect.src.plots import plot_coverage_data, change_point_detection, plot_coverage_data_after_correction, loh_plots_genome
+from src.hapcorrect.src.cpd import cpd_positions_means
+from src.hapcorrect.src.loh import detect_loh_centromere_regions, plot_snps
 
 MIN_SV_SIZE = 50
 def main_process(args, breakpoints_additional):

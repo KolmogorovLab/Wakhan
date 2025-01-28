@@ -14,13 +14,12 @@ import logging
 
 logger = logging.getLogger()
 
-#from cnvlib import cluster
-from phasing_correction import phaseblock_flipping, phase_correction_centers, contiguous_phaseblocks, detect_centromeres, flip_phaseblocks_contigous, remove_overlaping_contiguous, switch_inter_phaseblocks_bins
-from smoothing import smoothing
-from vcf_processing import get_snps_frquncies_coverage, get_snps_frquncies, het_homo_snps_gts, vcf_parse_to_csv_for_het_phased_snps_phasesets, snps_mean, cpd_mean, get_snp_segments, vcf_parse_to_csv_for_snps, het_snps_means_df
-from utils import subclonal_values_adjusted, get_chromosomes_bins, csv_df_chromosomes_sorter, get_breakpoints, flatten, get_snps_frquncies_coverage_from_bam, detect_alter_loh_regions, is_phasesets_check_simple_heuristics, change_point_detection_means, \
+from src.phasing_correction import phaseblock_flipping, phase_correction_centers, contiguous_phaseblocks, detect_centromeres, flip_phaseblocks_contigous, remove_overlaping_contiguous, switch_inter_phaseblocks_bins
+from src.smoothing import smoothing
+from src.vcf_processing import get_snps_frquncies_coverage, get_snps_frquncies, het_homo_snps_gts, vcf_parse_to_csv_for_het_phased_snps_phasesets, snps_mean, cpd_mean, get_snp_segments, vcf_parse_to_csv_for_snps, het_snps_means_df
+from src.utils import subclonal_values_adjusted, get_chromosomes_bins, csv_df_chromosomes_sorter, get_breakpoints, flatten, get_snps_frquncies_coverage_from_bam, detect_alter_loh_regions, is_phasesets_check_simple_heuristics, change_point_detection_means, \
     loh_regions_phasesets, get_chromosomes_regions, adjust_extreme_outliers, genes_phase_correction, write_df_csv, bins_with_copynumber_states
-from extras import get_contigs_list, sv_vcf_bps_cn_check
+from src.extras import get_contigs_list, sv_vcf_bps_cn_check
 
 pd.options.mode.chained_assignment = None
 
@@ -793,7 +792,7 @@ def copy_number_plots_genome_breakpoints(centers, integer_fractional_centers, df
         last_len = 0
         coords_single = [j for i in [x[1:2] for x in coords_single] for j in i]
 
-        from breakpoints_arcs import get_all_breakpoints_data
+        from src.breakpoints_arcs import get_all_breakpoints_data
         arcs_data = get_all_breakpoints_data(coords, coords_chr, 75, args.breakpoints, args)
         arcs_data1 = get_all_breakpoints_data(coords, coords_chr, -75, args.breakpoints, args)
 
@@ -1622,7 +1621,7 @@ def copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_c
     indices = np.arange(0, len(df_cnr_hp1)*args.bin_size, args.bin_size, dtype=int)
 
     ###########################################################
-    from breakpoints_arcs import get_all_breakpoints_data
+    from src.breakpoints_arcs import get_all_breakpoints_data
 
     arcs_data = get_all_breakpoints_data(coords, coords_chr, 75, args.breakpoints, args)
     arcs_data1 = get_all_breakpoints_data(coords, coords_chr, -75, args.breakpoints, args)
@@ -3843,7 +3842,7 @@ def change_point_detection(hp_data, start, ends, ref_start_values_1, args, chrom
     change_points = sorted(list(set(change_points + cpd_zeros_points + cpd_peaks_points)))
     ############################################
     ############################################
-    from smoothing import smooth_triangle
+    from src.smoothing import smooth_triangle
     hp_data_new = []
 
     if len(hp_data[0:change_points[0]]) > 46:

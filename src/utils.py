@@ -11,9 +11,9 @@ import logging
 
 logger = logging.getLogger()
 
-from smoothing import smoothing
+from src.smoothing import smoothing
 #from hmm import call_copynumbers
-from extras import get_contigs_list, sv_vcf_bps_cn_check
+from src.extras import get_contigs_list, sv_vcf_bps_cn_check
 
 def get_chromosomes_bins_replica(bam_file, bin_size, args):
     bed=[]
@@ -1196,7 +1196,7 @@ def change_point_detection_algo(bin_size, hp_data, ref_start_values, args, ref_s
     change_points = [i for i in change_points if i < cent_cpds[0] or i > cent_cpds[1]]
     change_points = sorted(list(set(change_points + cent_cpds_updated + [len(hp_data) - 1])))
     ############################################
-    from smoothing import smooth_triangle
+    from src.smoothing import smooth_triangle
     hp_data_new = []
 
     if len(hp_data[0:change_points[0]]) > 46:

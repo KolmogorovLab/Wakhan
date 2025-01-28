@@ -4,11 +4,12 @@ import statistics
 import os
 import gzip
 import pandas as pd
-from utils import write_segments_coverage_dict, csv_df_chromosomes_sorter, smoothing
-from bam_processing import process_bam_for_snps_freqs
 import logging
 
 logger = logging.getLogger()
+
+from src.utils import write_segments_coverage_dict, csv_df_chromosomes_sorter, smoothing
+from src.bam_processing import process_bam_for_snps_freqs
 
 import csv
 import multiprocessing

@@ -1,0 +1,11 @@
+setuptools
+pysam
+pyfaidx
+numpy
+pandas
+plotly
+scikit-learn
+scipy
+ruptures
+vcf_parser
+kaleido

@@ -13,21 +13,22 @@ import numpy as np
 from multiprocessing import Pool
 from collections import defaultdict
 
-from hapcorrect.src.main_hapcorrect import main_process
+from src.hapcorrect.src.main_hapcorrect import main_process
+from src.__version__ import __version__
 
-from bam_processing import get_all_reads_parallel, update_coverage_hist, get_segments_coverage, haplotype_update_all_bins_parallel, get_snps_frequencies
-from utils import get_chromosomes_bins, write_segments_coverage, write_segments_coverage_dict, csv_df_chromosomes_sorter,\
+from src.bam_processing import get_all_reads_parallel, update_coverage_hist, get_segments_coverage, haplotype_update_all_bins_parallel, get_snps_frequencies
+from src.utils import get_chromosomes_bins, write_segments_coverage, write_segments_coverage_dict, csv_df_chromosomes_sorter,\
     seperate_dfs_coverage, flatten_smooth, get_contigs_list, write_copynumber_segments_csv, integer_fractional_cluster_means, \
     adjust_diversified_segments, get_chromosomes_bins_bam, normal_genome_proportion, update_subclonal_means_states, adjust_first_copy_mean, \
     merge_adjacent_regions_cn, merge_adjacent_regions_cn_unphased, parse_sv_vcf, weigted_means_ploidy, average_p_value_genome, collect_loh_centromere_regions, \
     find_optimized_normal_peaks, update_genes_phase_corrected_coverage, weighted_means, extract_breakpoints_additional, write_df_csv, adjust_bps_cn_segments_boundries
-from plots import coverage_plots_chromosomes, copy_number_plots_genome_details, copy_number_plots_genome, plots_genome_coverage, copy_number_plots_chromosomes, \
+from src.plots import coverage_plots_chromosomes, copy_number_plots_genome_details, copy_number_plots_genome, plots_genome_coverage, copy_number_plots_chromosomes, \
     copy_number_plots_genome_breakpoints, copy_number_plots_genome_breakpoints_subclonal, copy_number_plots_genome_subclonal, genes_copy_number_plots_genome, genes_plots_genome, heatmap_copy_number_plots_genome
-from vcf_processing import vcf_parse_to_csv_for_het_phased_snps_phasesets
-from snps_loh import plot_snps_frequencies_without_phasing, plot_snps_frequencies, plot_snps_ratios_genome, snps_df_loh, variation_plots, write_loh_regions
-from phasing_correction import generate_phasesets_bins, fix_inter_cn_phase_switch_errors, bins_correction_phaseblocks
-from optimization import peak_detection_optimization
-from extras import sv_vcf_bps_cn_check
+from src.vcf_processing import vcf_parse_to_csv_for_het_phased_snps_phasesets
+from src.snps_loh import plot_snps_frequencies_without_phasing, plot_snps_frequencies, plot_snps_ratios_genome, snps_df_loh, variation_plots, write_loh_regions
+from src.phasing_correction import generate_phasesets_bins, fix_inter_cn_phase_switch_errors, bins_correction_phaseblocks
+from src.optimization import peak_detection_optimization
+from src.extras import sv_vcf_bps_cn_check
 
 logger = logging.getLogger()
 def _enable_logging(log_file, debug, overwrite):
@@ -50,6 +51,8 @@ def _enable_logging(log_file, debug, overwrite):
     logger.addHandler(console_log)
     logger.addHandler(file_handler)
 
+def _version():
+    return __version__
 
 def main():
     # default tunable parameters
@@ -210,7 +213,7 @@ def main():
     # Disable propagation for this logger
     logger.propagate = False
 
-    #logger.info("Starting Wakhan " + _version())
+    logger.info("Starting Wakhan " + _version())
     logger.info("Cmd: %s", " ".join(sys.argv))
     logger.info("Python version: " + sys.version)
 
@@ -485,9 +488,6 @@ def main():
         shutil.rmtree(args.out_dir_plots+'/data_phasing')
 
     return 0
-
-if __name__ == "__main__":
-    main()
 
 #UCSC tumor/normal celllines
 #--quick-start True --quick-start-coverage-path /home/rezkuh/gits/data/ --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --out-dir-plots 1954  --normal-phased-vcf /home/rezkuh/gits/data/1954/1954BL.vcf.gz --copynumbers-enable True  --unphased-reads-coverage-enable True  --phaseblock-flipping-enable True --phaseblocks-enable True   --genome-name 1954  --cut-threshold 150

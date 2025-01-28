@@ -8,12 +8,12 @@ import logging
 
 logger = logging.getLogger()
 
-from vcf_processing import get_snps_frquncies, het_homo_snps_gts, vcf_parse_to_csv_for_het_phased_snps_phasesets, snps_mean, cpd_mean, get_snp_segments, get_snps_frquncies_coverage, vcf_parse_to_csv_for_snps, get_snps_counts, get_snps_counts_cn_regions, get_snps_frquncies_genome
-from utils import csv_df_chromosomes_sorter, get_vafs_from_tumor_phased_vcf
-from extras import get_contigs_list
-from plots import add_scatter_trace_coverage, print_chromosome_html, plots_add_markers_lines, plots_layout_settings,\
+from src.vcf_processing import get_snps_frquncies, het_homo_snps_gts, vcf_parse_to_csv_for_het_phased_snps_phasesets, snps_mean, cpd_mean, get_snp_segments, get_snps_frquncies_coverage, vcf_parse_to_csv_for_snps, get_snps_counts, get_snps_counts_cn_regions, get_snps_frquncies_genome
+from src.utils import csv_df_chromosomes_sorter, get_vafs_from_tumor_phased_vcf
+from src.extras import get_contigs_list
+from src.plots import add_scatter_trace_coverage, print_chromosome_html, plots_add_markers_lines, plots_layout_settings,\
 whole_genome_combined_df, copy_number_plots_per_chromosome, print_genome_pdf, add_annotation
-from utils import detect_alter_loh_regions, loh_regions_events, write_segments_coverage, write_header_comments, get_vafs_from_normal_phased_vcf, get_chromosomes_regions
+from src.utils import detect_alter_loh_regions, loh_regions_events, write_segments_coverage, write_header_comments, get_vafs_from_normal_phased_vcf, get_chromosomes_regions
 
 def plot_snps_ratios_genome(args, df_snps_in_csv, df_loh_regions):
     if not os.path.isdir(args.out_dir_plots + '/snps_loh_plots'):

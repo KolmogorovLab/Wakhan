@@ -1,24 +1,22 @@
 import os
 import statistics
 import numpy as np
-from utils import csv_df_chromosomes_sorter, write_segments_coverage_dict
-from vcf_processing import squash_regions
-from collections import  defaultdict, Counter
 import pysam
 import bisect
 import pandas as pd
 import logging
+from collections import  defaultdict, Counter
 
 logger = logging.getLogger()
-
-from utils import get_contigs_list, remove_outliers_iqr
+from src.vcf_processing import squash_regions
+from src.utils import get_contigs_list, remove_outliers_iqr, csv_df_chromosomes_sorter, write_segments_coverage_dict
 def generate_phasesets_bins(bam, path, bin_size, args):
     return get_phasesets_bins(bam, path, bin_size, args)
 def get_phasesets_bins(bam, phasesets, bin_size, args):
     indices, values = remove_overlapping_and_small_phasesets(phasesets, bin_size, args)
     head, tail = os.path.split(bam)
     bed = []
-    from utils import get_contigs_list
+
     chroms = get_contigs_list(args.contigs)
     for ind, chrom in enumerate(chroms) :
         for i in range(0, len(values[ind]), 2): #for i in range(len(values[ind])-1):

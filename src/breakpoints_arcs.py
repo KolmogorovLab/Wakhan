@@ -4,7 +4,7 @@ import logging
 
 logger = logging.getLogger()
 
-from utils import get_contigs_list, df_chromosomes_sorter
+from src.utils import get_contigs_list, df_chromosomes_sorter
 
 def get_all_breakpoints_data(edges, edges_chr, height, path, args):
     from vcf_parser import VCFParser
