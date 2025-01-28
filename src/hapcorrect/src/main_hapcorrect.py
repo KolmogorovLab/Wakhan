@@ -27,12 +27,12 @@ from hapcorrect.src.loh import detect_loh_centromere_regions, plot_snps
 
 MIN_SV_SIZE = 50
 def main_process(args, breakpoints_additional):
-    log_file = os.path.join(args.out_dir_plots, "wakhan.log")
-    file_handler = logging.FileHandler(log_file)
+    #log_file = os.path.join(args.out_dir_plots, "wakhan.log")
+    #file_handler = logging.FileHandler(log_file)
 
     # Add the file handler to the logger
-    logger.addHandler(file_handler)
-    logger.setLevel(logging.INFO)
+    #logger.addHandler(file_handler)
+    #logger.setLevel(logging.INFO)
 
     if args.control_bam is None:
         args.control_bam = []

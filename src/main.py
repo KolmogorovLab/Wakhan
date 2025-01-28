@@ -34,10 +34,8 @@ def _enable_logging(log_file, debug, overwrite):
     """
     Turns on logging, sets debug levels and assigns a log file
     """
-    log_formatter = logging.Formatter("[%(asctime)s] %(name)s: %(levelname)s: "
-                                      "%(message)s", "%Y-%m-%d %H:%M:%S")
-    console_formatter = logging.Formatter("[%(asctime)s] %(levelname)s: "
-                                          "%(message)s", "%Y-%m-%d %H:%M:%S")
+    log_formatter = logging.Formatter("[%(asctime)s] %(name)s: %(levelname)s: " "%(message)s", "%Y-%m-%d %H:%M:%S")
+    console_formatter = logging.Formatter("[%(asctime)s] %(levelname)s: " "%(message)s", "%Y-%m-%d %H:%M:%S")
     console_log = logging.StreamHandler()
     console_log.setFormatter(console_formatter)
     if not debug:
@@ -51,6 +49,7 @@ def _enable_logging(log_file, debug, overwrite):
     logger.setLevel(logging.INFO)
     logger.addHandler(console_log)
     logger.addHandler(file_handler)
+
 
 def main():
     # default tunable parameters
@@ -208,6 +207,9 @@ def main():
     log_file = os.path.join(args.out_dir_plots, "wakhan.log")
     _enable_logging(log_file, debug=False, overwrite=False)
 
+    # Disable propagation for this logger
+    logger.propagate = False
+
     #logger.info("Starting Wakhan " + _version())
     logger.info("Cmd: %s", " ".join(sys.argv))
     logger.info("Python version: " + sys.version)
@@ -217,7 +219,7 @@ def main():
     args.cancer_genes = cancer_genes
 
     if not args.change_point_detection_for_cna and not args.breakpoints:
-        logger.info('At least one parameter --breakpoints <SV VCF path> or --change-point-detection-for-cna should be used for copy number segmentation model')
+        logger.info('At least one parameter --breakpoints <SV VCF path> which is highly recommneded or --change-point-detection-for-cna should be used for copy number segmentation model')
         return 0
 
     #pbs = parse_sv_vcf(args.breakpoints)
