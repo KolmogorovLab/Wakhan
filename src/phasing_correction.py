@@ -31,7 +31,6 @@ def remove_overlapping_and_small_phasesets(phasesets, bin_size, args):
     dfs = csv_df_chromosomes_sorter(phasesets, ['chr', 'pos', 'ps'])
     values_all = []
     indices_all = []
-    from utils import get_contigs_list
     chroms = get_contigs_list(args.contigs)
     #
     for index, chrom in enumerate(chroms):
