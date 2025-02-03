@@ -1074,198 +1074,85 @@ def change_point_detection_means(args, df_chrom, ref_start_values, ref_start_val
 
         return snps_mean, snps_len, df_means_chr
     else:
-        df_means_chr = []
-        haplotype1_means = df_chrom.hp1.values.tolist()
-        haplotype2_means = df_chrom.hp2.values.tolist()
         snps_haplotype1_mean, snps_haplotype1_len, snps_haplotype1_pos = change_point_detection_algo(args.bin_size, df_chrom.hp1.values.tolist(), ref_start_values, args, ref_start_values_1, df_centm_chrom)
+        snps_pos_start = []
+        snps_pos_end = []
+        for i in range(len(snps_haplotype1_pos) - 1):
+            snps_pos_start.append(snps_haplotype1_pos[i] if snps_haplotype1_pos[i] < 1 else snps_haplotype1_pos[i] + 1)
+            snps_pos_end.append(snps_haplotype1_pos[i + 1])
+
+        chr_list = [df_chrom['chr'].iloc[0] for ch in range(len(snps_haplotype1_mean))]
+        df_means_chr.append(pd.DataFrame(list(zip(chr_list, snps_pos_start, snps_pos_end, snps_haplotype1_mean)),
+                                             columns=['chromosome', 'start', 'end', 'state']))
+
         snps_haplotype2_mean, snps_haplotype2_len, snps_haplotype2_pos = change_point_detection_algo(args.bin_size, df_chrom.hp2.values.tolist(), ref_start_values, args, ref_start_values_1, df_centm_chrom)
+        snps_pos_start = []
+        snps_pos_end = []
+        for i in range(len(snps_haplotype2_pos) - 1):
+            snps_pos_start.append(snps_haplotype2_pos[i] if snps_haplotype2_pos[i] < 1 else snps_haplotype2_pos[i] + 1)
+            snps_pos_end.append(snps_haplotype2_pos[i + 1])
 
-        cent_index_hp1 = snps_haplotype1_pos.index([df_centm_chrom.start.values.tolist()[0], df_centm_chrom.end.values.tolist()[0]][0]) -1
-        cent_index_hp2 = snps_haplotype2_pos.index([df_centm_chrom.start.values.tolist()[0], df_centm_chrom.end.values.tolist()[0]][0]) -1
-        #if not cent_index_hp1 == 0:
-
-        if args.breakpoints:
-            cent_index_hp1 = cent_index_hp1 + 1
-            cent_index_hp2 = cent_index_hp2 + 1
-            # snps_haplotype1_mean = []
-            # snps_haplotype2_mean = []
-            snps_haplotype1_len = []
-            snps_haplotype2_len = []
-            snps_pos = sorted(list(set(snps_haplotype1_pos + snps_haplotype2_pos)))
-            snps_pos_start = list(map(lambda x: x + 1 if x > 0 else x, snps_pos[:-1]))
-            snps_pos_end = list(map(lambda x: x if x > 0 else x, snps_pos[1:]))
-            for index, (start, end) in enumerate(zip(snps_pos_start, snps_pos_end)):
-                if cent_index_hp1 == index:
-                    snps_haplotype1_mean[index] = 0
-                    snps_haplotype2_mean[index] = 0
-                else:
-                    snps_haplotype1_mean[index] = statistics.median(remove_outliers_iqr(np.array(haplotype1_means[start//args.bin_size:end//args.bin_size])))
-                    snps_haplotype2_mean[index] = statistics.median(remove_outliers_iqr(np.array(haplotype2_means[start//args.bin_size:end//args.bin_size])))
-                snps_haplotype1_len.append(len(haplotype1_means[start//args.bin_size:end//args.bin_size]))
-                snps_haplotype2_len.append(len(haplotype2_means[start//args.bin_size:end//args.bin_size]))
-
-            chr_list = [df_chrom['chr'].iloc[0] for ch in range(len(snps_haplotype1_mean))]
-            df_means_chr.append(pd.DataFrame(list(zip(chr_list, snps_pos_start, snps_pos_end, snps_haplotype1_mean)),
-                                        columns=['chromosome', 'start', 'end', 'state']))
-            df_means_chr.append(pd.DataFrame(list(zip(chr_list, snps_pos_start, snps_pos_end, snps_haplotype2_mean)),
-                                             columns=['chromosome', 'start', 'end', 'state']))
-        else:
-            snps_pos_start = []
-            snps_pos_end = []
-            for i in range(len(snps_haplotype1_pos) - 1):
-                snps_pos_start.append(snps_haplotype1_pos[i] if snps_haplotype1_pos[i] < 1 else snps_haplotype1_pos[i] + 1)
-                snps_pos_end.append(snps_haplotype1_pos[i + 1])
-                #if cent_index_hp1 == i:
-                #    snps_haplotype1_mean[i] = 0
-            chr_list = [df_chrom['chr'].iloc[0] for ch in range(len(snps_haplotype1_mean))]
-            df_means_chr.append(pd.DataFrame(list(zip(chr_list, snps_pos_start, snps_pos_end, snps_haplotype1_mean)),
-                                        columns=['chromosome', 'start', 'end', 'state']))
-            snps_pos_start = []
-            snps_pos_end = []
-            for i in range(len(snps_haplotype2_pos) - 1):
-                snps_pos_start.append(snps_haplotype2_pos[i] if snps_haplotype2_pos[i] < 1 else snps_haplotype2_pos[i] + 1)
-                snps_pos_end.append(snps_haplotype2_pos[i + 1])
-                #if cent_index_hp2 == i:
-                #    snps_haplotype2_mean[i] = 0
-            chr_list = [df_chrom['chr'].iloc[0] for ch in range(len(snps_haplotype2_mean))]
-            df_means_chr.append(pd.DataFrame(list(zip(chr_list, snps_pos_start, snps_pos_end, snps_haplotype2_mean)),
-                                             columns=['chromosome', 'start', 'end', 'state']))
+        chr_list = [df_chrom['chr'].iloc[0] for ch in range(len(snps_haplotype2_mean))]
+        df_means_chr.append(pd.DataFrame(list(zip(chr_list, snps_pos_start, snps_pos_end, snps_haplotype2_mean)),
+                                         columns=['chromosome', 'start', 'end', 'state']))
 
         #remove cent segment
-        chroms = get_contigs_list(args.contigs)
-        if not df_chrom['chr'].iloc[0] == chroms[1]:
-            del snps_haplotype1_mean[cent_index_hp1]
-            del snps_haplotype2_mean[cent_index_hp2]
-            del snps_haplotype1_len[cent_index_hp1]
-            del snps_haplotype2_len[cent_index_hp2]
+        # chroms = get_contigs_list(args.contigs)
+        # if not df_chrom['chr'].iloc[0] == chroms[1]:
+        #     del snps_haplotype1_mean[cent_index_hp1]
+        #     del snps_haplotype2_mean[cent_index_hp2]
+        #     del snps_haplotype1_len[cent_index_hp1]
+        #     del snps_haplotype2_len[cent_index_hp2]
         return snps_haplotype1_mean + snps_haplotype2_mean, snps_haplotype1_len + snps_haplotype2_len, df_means_chr
 
-def change_point_detection_algo(bin_size, hp_data, ref_start_values, args, ref_start_values_1, df_centm_chrom):
-    ############################################
-    zeros_values = []
-    # for i in range(len(hp_data)):
-    #     if hp_data[i] < 1:
-    #         zeros_values.append(i)
+def remove_continuous_elements(lst):
+    if not lst:
+        return lst  # Return empty list if input is empty
 
-    from itertools import groupby, count
-    groups = groupby(zeros_values, key=lambda item, c=count(): item - next(c))
-    tmp = [list(g) for k, g in groups]
+    result = [lst[0]]  # Start with the first element
+    for i in range(1, len(lst)):
+        if lst[i] - lst[i - 1] != 1:  # Check if the difference is not 1
+            result.append(lst[i])  # Add to result if difference is not 1
+    return result
 
-    cpd_zeros_points = []
-    # for i, val in enumerate(tmp):
-    #     if len(val) == 1:
-    #         hp_data[i] = statistics.mean(hp_data[val[0]:val[0] + 2])
-    #     else:
-    #         cpd_zeros_points.append(val[0])
-    #         cpd_zeros_points.append(val[-1])
-    ####################################################
-    if not args.breakpoints:
-        data = np.array(hp_data, dtype='int')  # numpy.clip(data, a_min=0, a_max=1000)
-        algo = rpt.Pelt(model="rbf", jump=25).fit(data)
-        result = algo.predict(pen=10)
-        change_points = [i for i in result if i < len(data)]
-        ############################################
-        ov_indices = []
-        for i, val1 in enumerate(change_points):
-            for j, val2 in enumerate(tmp):
-                if len(val2) > 2:
-                    if val2[-1] >= val1 >= val2[0]:
-                        ov_indices.append(i)
-        if ov_indices:
-            for index in sorted(list(set(ov_indices)), reverse=True):
-                del change_points[index]
-        ############################################
-        change_points = sorted(list(set(change_points + cpd_zeros_points + [len(hp_data) - 1])))
-   ############################################
-    cent = [df_centm_chrom.start.values.tolist()[0], df_centm_chrom.end.values.tolist()[0]]
-   ############################################
-    cent_cpds = []
-    if args.breakpoints:
-        change_points = []
-        for i, val in enumerate(ref_start_values_1):
-            for j, val1 in enumerate(ref_start_values):
-                if val1 > val:
-                    change_points.append(j)
-                    break
-    for k, cen in enumerate(cent):
-        for l, cen1 in enumerate(ref_start_values):
-            if cen1 > cen:
-                cent_cpds.append(l)
-                break
-    cent_cpds_updated = [i for i in cent_cpds if i > 1]
-    change_points = [i for i in change_points if i < cent_cpds[0] or i > cent_cpds[1]]
-    change_points = sorted(list(set(change_points + cent_cpds_updated + [len(hp_data) - 1])))
-    ############################################
-    from src.smoothing import smooth_triangle
-    hp_data_new = []
+def change_point_detection_algo(bin_size, hp_data, ref_start_values, args, breakpoints_coordinates, df_centm_chrom):
+    cents = [df_centm_chrom.start.values.tolist()[0], df_centm_chrom.end.values.tolist()[0]]
+    if args.cpd_internal_segments or args.change_point_detection_for_cna:
+        sub_list_data = np.array(hp_data, dtype='int')
+        algo_sub_list = rpt.Pelt(model="rbf", jump=25).fit(sub_list_data)
+        result_cpd_points = algo_sub_list.predict(pen=10)
+        result_cpd_points = [i*bin_size for i in result_cpd_points]
+        breakpoints_coordinates = sorted(list(set(breakpoints_coordinates + result_cpd_points)))
 
-    if len(hp_data[0:change_points[0]]) > 46:
-        hp_data_new.extend(smooth_triangle(hp_data[0:change_points[0]], 15))
-    else:
-        hp_data_new.extend(hp_data[0:change_points[0]])
+    cent_indices = []
+    for i, bp in enumerate(breakpoints_coordinates):
+        if bp >= cents[0] and bp <= cents[1]:
+            cent_indices.append(i)
+    if cent_indices:
+        for index in sorted(list(set(cent_indices)), reverse=True):
+            del breakpoints_coordinates[index]
 
-    for p in range(1, len(change_points)):
-        if change_points[p] - change_points[p - 1] > 46:
-            hp_data_new.extend(smooth_triangle(hp_data[change_points[p - 1]:change_points[p]], 15))
-        else:
-            hp_data_new.extend(hp_data[change_points[p - 1]:change_points[p]])
+    change_points = sorted(list(set(breakpoints_coordinates + cents)))
+    change_points = remove_continuous_elements(change_points)
+    change_points = [i for i in change_points if i >= 2]
 
-    if len(hp_data[change_points[-1]:]) > 46:
-        hp_data_new.extend(smooth_triangle(hp_data[change_points[-1]:], 15))
-    else:
-        hp_data_new.extend(hp_data[change_points[-1]:])
-
-    strong_candidates = []
     snps_haplotype_mean = []
-    snps_haplotype_pos = []
     snps_haplotype_len = []
+    snps_haplotype_pos = []
     start = 0
     snps_haplotype_pos.append(0)
-
-    #snps_haplotype_pos = []
-    #change_points = sorted(set(add_intermediaries([0] + change_points, 40)))
     for index, point in enumerate(change_points):
-        sub_list = hp_data_new[start:point]
-        if sub_list:
-            median = statistics.median(sub_list)
-            # TODO make cent_cpds segments as 0
-            if (index == 0 and point == cent_cpds[0]):
-                snps_haplotype_mean.append(statistics.mean(remove_outliers_iqr(np.array(sub_list))))
-            elif point in [cent_cpds[0]] or (index == 0 and cent_cpds[0] == 1):
-               snps_haplotype_mean.append(0)
-            else:
-                snps_haplotype_mean.append(statistics.mean(remove_outliers_iqr(np.array(sub_list))))
+        if args.cpd_internal_segments and index == len(change_points)-1:
+            break
+        sub_list = hp_data[start//bin_size:point//bin_size]
+        if sub_list and not point == cents[1]:
+            snps_haplotype_mean.append(statistics.median(sub_list))
         else:
             snps_haplotype_mean.append(0)
+
         snps_haplotype_len.append(len(sub_list))
-        snps_haplotype_pos.append(point * bin_size)
+        snps_haplotype_pos.append(point)
         start = point
-        ###################################
-        if args.cpd_internal_segments:
-            start_sub = change_points[index-1]
-            if index > 0 and len(sub_list) > (1000000 // args.bin_size):
-                sub_list_data = np.array(sub_list, dtype='int')  # numpy.clip(data, a_min=0, a_max=1000)
-                algo_sub_list = rpt.Pelt(model="rbf", jump=15).fit(sub_list_data)
-                result_sub_list = algo_sub_list.predict(pen=5)
-                change_points_sub_list = [i for i in result_sub_list if i < len(sub_list_data)]
-                change_points_sub_list = [x+ change_points[index-1] for x in change_points_sub_list + [len(sub_list)+1]]
-
-                if len(change_points_sub_list) > 2:
-                    del snps_haplotype_mean[-1]
-                    del snps_haplotype_len[-1]
-                    del snps_haplotype_pos[-1]
-
-                    for index_sub, point_sub in enumerate(change_points_sub_list):
-                        sub_list_sub = hp_data_new[start_sub:point_sub]
-                        if sub_list_sub:
-                            snps_haplotype_mean.append(statistics.median(remove_outliers_iqr(np.array(sub_list))))
-                        else:
-                            snps_haplotype_mean.append(0)
-                        snps_haplotype_len.append(len(sub_list_sub))
-
-                        start_sub = point_sub
-                        snps_haplotype_pos.append(point_sub * bin_size)
-        ###################################
 
     return snps_haplotype_mean, snps_haplotype_len, snps_haplotype_pos
 
@@ -1277,6 +1164,7 @@ def remove_outliers_iqr(data, threshold=5):
     upper_bound = q3 + threshold * iqr
     outliers_removed = data[(data >= lower_bound) & (data <= upper_bound)]
     return outliers_removed
+
 def add_intermediaries(numbers, max_difference):
 
     if len(numbers) < 2:
@@ -1713,7 +1601,7 @@ def collect_loh_centromere_regions(df_segs_hp1_, df_segs_hp2_, centers, integer_
         hp2_start = df_segs_hp_2_chrom.start.values.tolist()
         hp2_end = df_segs_hp_2_chrom.end.values.tolist()
 
-        if args.breakpoints:
+        if args.breakpoints and not args.cpd_internal_segments:
             for index, (state1, state2, start, end) in enumerate(zip(hp1_state, hp2_state, hp1_start, hp1_end)):
                 #print(chrom, state1, state2, start, end)
                 if state1 == 0 or state2 == 0:# and end - start > 2000000:

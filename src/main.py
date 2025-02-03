@@ -405,8 +405,8 @@ def main():
             df_segs_hp1_updated, df_segs_hp2_updated = adjust_diversified_segments(cen_out, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, args)
             p_value = average_p_value_genome(args, cen_out, df_segs_hp1_updated, df_segs_hp2_updated, df_hp1, df_hp2)
 
-            #TODO remove centromeres
             overall_ploidy = weigted_means_ploidy(args, df_segs_hp1_updated, df_segs_hp2_updated, cen_out, sorted([i for i in range(0, len(cen_out))]))
+
             if overall_ploidy < 0.1:
                 continue
             tumor_purity = (tumor_cov / overall_ploidy) / (((normal_coverage * 2) / 2) + (tumor_cov / overall_ploidy))
@@ -415,6 +415,8 @@ def main():
                 average_p_value.append(p_value)
                 data.append([overall_ploidy, tumor_purity, cen_out, p_value])
                 continue
+
+            logger.info("overall_ploidy: %s, tumor_purity: %s, average_p_value: %s, for i: %s,  centers: %s, norm frac: %s", overall_ploidy, tumor_purity, p_value, normal_coverage, cen_out[0:4], normal_fraction)
             if (float(args.purity_range.split('-')[0])  <= tumor_purity <= float(args.purity_range.split('-')[1])) and (float(args.ploidy_range.split('-')[0])  <= overall_ploidy <= float(args.ploidy_range.split('-')[1])):
                 average_p_value.append(p_value)
                 data.append([overall_ploidy, tumor_purity, cen_out, p_value])
