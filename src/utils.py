@@ -1146,7 +1146,12 @@ def change_point_detection_algo(bin_size, hp_data, ref_start_values, args, break
             break
         sub_list = hp_data[start//bin_size:point//bin_size]
         if sub_list and not point == cents[1]:
-            snps_haplotype_mean.append(statistics.median(sub_list))
+            if args.normal_phased_vcf:
+                sub_list = [x for x in sub_list if x != 0]
+            if len(sub_list):
+                snps_haplotype_mean.append(statistics.median(sub_list))
+            else:
+                snps_haplotype_mean.append(0)
         else:
             snps_haplotype_mean.append(0)
 

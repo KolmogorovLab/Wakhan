@@ -540,6 +540,8 @@ def main():
 
 #--quick-start --quick-start-coverage-path /home/rezkuh/gits/data/rouf3 --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --cut-threshold 50  --normal-phased-vcf /home/rezkuh/gits/data/rouf3/rouf3BL.vcf.gz    --out-dir-plots rouf3 --genome-name rouf3 --copynumbers-subclonal-enable --loh-enable --purity-range 0.5-1.0 --ploidy-range 0.5-8 --phaseblocks-enable --breakpoints /home/rezkuh/gits/data/rouf3/severus_somatic.vcf --breakpoints-min-length 100
 
+#--quick-start --quick-start-coverage-path /home/rezkuh/gits/data/HG008_ONT_10k --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --cut-threshold 150  --normal-phased-vcf /home/rezkuh/gits/data/HG008/hic.phased.vcf.gz    --out-dir-plots /home/rezkuh/gits/backup/HG008_ONT_10k  --genome-name HG008_ONT_10k  --copynumbers-subclonal-enable --loh-enable  --phaseblocks-enable --breakpoints /home/rezkuh/gits/data/HG008_ONT_10k/severus_somatic.vcf --bin-size 10000
+
 #Wakhan TODOs
 
 #means/medians chr6 in guest sample
