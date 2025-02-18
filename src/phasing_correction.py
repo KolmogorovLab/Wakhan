@@ -13,11 +13,10 @@ from src.utils import get_contigs_list, remove_outliers_iqr, csv_df_chromosomes_
 def generate_phasesets_bins(bam, path, bin_size, args):
     return get_phasesets_bins(bam, path, bin_size, args)
 def get_phasesets_bins(bam, phasesets, bin_size, args):
-    indices, values = remove_overlapping_and_small_phasesets(phasesets, bin_size, args)
+    indices, values, chroms = remove_overlapping_and_small_phasesets(phasesets, bin_size, args)
     head, tail = os.path.split(bam)
     bed = []
 
-    chroms = get_contigs_list(args.contigs)
     for ind, chrom in enumerate(chroms) :
         for i in range(0, len(values[ind]), 2): #for i in range(len(values[ind])-1):
             start = values[ind][i]
@@ -29,9 +28,11 @@ def get_phasesets_bins(bam, phasesets, bin_size, args):
 def remove_overlapping_and_small_phasesets(phasesets, bin_size, args):
     #dfs = pd.read_csv(phasesets, sep='\t', names=['chr', 'pos', 'ps'])
     dfs = csv_df_chromosomes_sorter(phasesets, ['chr', 'pos', 'ps'])
+    input_chroms = dfs['chr'].unique().tolist()
     values_all = []
     indices_all = []
-    chroms = get_contigs_list(args.contigs)
+    chroms_contigs = get_contigs_list(args.contigs)
+    chroms = [chrm for chrm in chroms_contigs if chrm in input_chroms]
     #
     for index, chrom in enumerate(chroms):
         df = dfs[dfs['chr'] == chrom]
@@ -74,7 +75,7 @@ def remove_overlapping_and_small_phasesets(phasesets, bin_size, args):
                     index.append(init)
         indices_all.append(index)
         values_all.append(final)
-    return indices_all, values_all
+    return indices_all, values_all, chroms
 
 
 def closest(lst):

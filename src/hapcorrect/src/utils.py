@@ -119,12 +119,15 @@ def get_snps_frquncies_coverage_from_bam(df, chrom):
     return haplotype_1_position, haplotype_1_coverage, haplotype_2_position, haplotype_2_coverage
 
 def detect_alter_loh_regions(args, event, chrom, ref_ends, haplotype_1_values, haplotype_2_values, unphased_reads_values, starts, ends, switch_hps):
-    if ends and ends[-1] > ref_ends[-1]:
-        ends[-1] = ref_ends[-1]
-
     region_starts = []
     region_ends = []
     hp = []
+
+    if len(ref_ends) == 0:
+        return haplotype_1_values, haplotype_2_values, unphased_reads_values, region_starts, region_ends, hp
+    if ends and ends[-1] > ref_ends[-1]:
+        ends[-1] = ref_ends[-1]
+
     #print(starts)
     #print(ends)
     for i, (start,end) in enumerate(zip(starts,ends)):

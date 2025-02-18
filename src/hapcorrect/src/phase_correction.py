@@ -12,10 +12,9 @@ def generate_phasesets_bins(bam, path, bin_size, args):
     return get_phasesets_bins(bam, path, bin_size, args)
 
 def get_phasesets_bins(bam, phasesets, bin_size, args):
-    indices, values = remove_overlapping_and_small_phasesets(phasesets, bin_size, args)
+    indices, values, chroms = remove_overlapping_and_small_phasesets(phasesets, bin_size, args)
     head, tail = os.path.split(bam)
     bed = []
-    chroms = get_contigs_list(args.contigs)
     for ind, chrom in enumerate(chroms) :
         for i in range(0, len(values[ind]), 2): #for i in range(len(values[ind])-1):
             start = values[ind][i]
@@ -74,7 +73,7 @@ def remove_overlapping_and_small_phasesets(phasesets, bin_size, args):
                     index.append(init)
         indices_all.append(index)
         values_all.append(final)
-    return indices_all, values_all
+    return indices_all, values_all, chroms
 
 
 def closest(lst):

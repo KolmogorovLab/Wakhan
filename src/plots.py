@@ -330,8 +330,10 @@ def coverage_plots_chromosomes(df, df_phasesets, args, thread_pool):
             # if args.breakpoints_enable:
             #     breakpoints = get_breakpoints(chrom, args.breakpoints_file)
             #     add_scatter_trace_breakpoints(fig, breakpoints)
-
-            plots_layout_settings(fig, chrom, args, ref_end_values[-1:][0], args.cut_threshold)
+            regions = get_chromosomes_regions(args)
+            chroms = get_contigs_list(args.contigs)
+            chrom_index = chroms.index(chrom)
+            plots_layout_settings(fig, chrom, args, regions[chrom_index], args.cut_threshold)
             ################################################################################
             if args.pdf_enable:
                 print_chromosome_pdf(fig, chrom, args.out_dir_plots+'/coverage_plots')
@@ -434,8 +436,10 @@ def plot_coverage_raw(args, chrom, html_graphs, ref_start_values, ref_end_values
             itertools.chain.from_iterable(zip(ref_start_values_phasesets, ref_end_values_phasesets, gaps_values)))
 
         add_scatter_trace_phaseblocks(fig, phaseblocks_positions, haplotype_1_phaseblocks_values, haplotype_2_phaseblocks_values)
-
-    plots_layout_settings(fig, chrom, args, ref_end_values[-1:][0], args.cut_threshold)
+    regions = get_chromosomes_regions(args)
+    chroms = get_contigs_list(args.contigs)
+    chrom_index = chroms.index(chrom)
+    plots_layout_settings(fig, chrom, args, regions[chrom_index], args.cut_threshold)
 
     print_chromosome_html(fig, chrom + '_cov_raw', html_graphs, args.out_dir_plots + '/coverage_plots/')
     html_graphs.write(

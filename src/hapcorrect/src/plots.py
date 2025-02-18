@@ -33,8 +33,10 @@ def plot_coverage_data(html_graphs, args, chrom, ref_start_values, ref_end_value
 
         add_scatter_trace_phaseblocks(fig, phaseblocks_positions, haplotype_1_phaseblocks_values,
                                       haplotype_2_phaseblocks_values)
-
-    plots_layout_settings(fig, chrom, args, ref_end_values[-1:][0], args.cut_threshold)
+    regions = get_chromosomes_regions(args)
+    chroms = get_contigs_list(args.contigs)
+    chrom_index = chroms.index(chrom)
+    plots_layout_settings(fig, chrom, args, regions[chrom_index], args.cut_threshold)
 
     if args.pdf_enable:
         print_chromosome_pdf(fig, chrom, args.out_dir_plots+'/phasing_output')
@@ -74,8 +76,10 @@ def plot_coverage_data_after_correction(html_graphs, args, chrom, ref_start_valu
     if loh_region_starts:
         for k, (start_loh, end_loh) in enumerate(zip(loh_region_starts, loh_region_ends)):
             fig.add_vrect(x0=start_loh, x1=end_loh, fillcolor="lightgrey", opacity=0.5, layer="below", line_width=0, )
-
-    plots_layout_settings(fig, chrom, args, ref_end_values[-1:][0], args.cut_threshold)
+    regions = get_chromosomes_regions(args)
+    chroms = get_contigs_list(args.contigs)
+    chrom_index = chroms.index(chrom)
+    plots_layout_settings(fig, chrom, args, regions[chrom_index], args.cut_threshold)
 
     if args.pdf_enable:
         print_chromosome_pdf(fig, chrom, args.out_dir_plots+'/phasing_output')
