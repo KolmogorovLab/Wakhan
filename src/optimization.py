@@ -147,8 +147,6 @@ def parse_segments_cov_bins(filename):
 def peak_detection_optimization(args, input_segments, input_weights, tumor_cov):
 
     NUM_SAMPLES = 1000
-    print(input_segments)
-    print(input_weights)
 
     # observed = simulate(NUM_SAMPLES)
     # observed = parse_segments_cov(sys.argv[1])
@@ -260,7 +258,7 @@ def peak_detection_optimization(args, input_segments, input_weights, tumor_cov):
         single_copy_cov = corr_max  + 0.012
     else:
         single_copy_cov = half_peak + 0.012
-    #single_copy_cov = 28 + 0.012
+
     logger.info("Estimated single copy coverage: %s", single_copy_cov)
 
     last_copy_state = int(max(observed) // single_copy_cov + 1)

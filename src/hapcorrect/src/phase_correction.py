@@ -27,9 +27,11 @@ def get_phasesets_bins(bam, phasesets, bin_size, args):
 def remove_overlapping_and_small_phasesets(phasesets, bin_size, args):
     #dfs = pd.read_csv(phasesets, sep='\t', names=['chr', 'pos', 'ps'])
     dfs = csv_df_chromosomes_sorter(phasesets, ['chr', 'pos', 'ps'])
+    input_chroms = dfs['chr'].unique().tolist()
     values_all = []
     indices_all = []
-    chroms = get_contigs_list(args.contigs)
+    chroms_contigs = get_contigs_list(args.contigs)
+    chroms = [chrm for chrm in chroms_contigs if chrm in input_chroms]
     #
     for index, chrom in enumerate(chroms):
         df = dfs[dfs['chr'] == chrom]
