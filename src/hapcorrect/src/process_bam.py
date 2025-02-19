@@ -309,6 +309,10 @@ def tumor_bam_haplotag(args, out_vcf):
         raise ValueError('whatshap haplotag subprocess returned nonzero value: {}'.format(wh_1.returncode))
 
 def process_bam_for_snps_freqs(args, thread_pool):
+    if args.normal_phased_vcf:
+        vcf_input = args.normal_phased_vcf
+    else:
+        vcf_input = args.tumor_vcf
     basefile = pathlib.Path(args.target_bam[0]).stem
     output_bam = f"{os.path.join(args.out_dir_plots+'/data', basefile + '_reduced.bam')}"
 
@@ -331,14 +335,14 @@ def process_bam_for_snps_freqs(args, thread_pool):
     if st_2.returncode != 0:
         raise ValueError('samtools view for bam output subprocess returned nonzero value: {}'.format(st_2.returncode))
 
-    basefile = pathlib.Path(args.normal_phased_vcf).stem
+    basefile = pathlib.Path(vcf_input).stem
     output_csv = basefile + '_het_snps.csv'
     output_csv = f"{os.path.join(args.out_dir_plots+'/data', output_csv)}"
 
     output_vcf = basefile + '_het_phased_snps.vcf.gz'
     output_vcf = f"{os.path.join(args.out_dir_plots+'/data', output_vcf)}"
 
-    cmd = ['bcftools', 'view', '--threads', str(args.threads),  '--phased', '-g', 'het', '--types', 'snps', args.normal_phased_vcf, '-o', output_vcf]
+    cmd = ['bcftools', 'view', '--threads', str(args.threads),  '--phased', '-g', 'het', '--types', 'snps', vcf_input, '-o', output_vcf]
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     process.wait()
 

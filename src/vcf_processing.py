@@ -576,8 +576,11 @@ def vcf_parse_to_csv_for_het_phased_snps_phasesets(input_vcf, args):
 def get_snp_segments(args, target_bam, thread_pool):
     if not args.phaseblock_flipping_disable:
         normal_vcf = os.path.join(args.out_dir_plots, 'phasing_output', args.genome_name+'.rephased.vcf.gz')
-    else:
+    elif args.normal_phased_vcf:
         normal_vcf = args.normal_phased_vcf
+    else:
+        normal_vcf = args.tumor_vcf
+
     basefile = pathlib.Path(normal_vcf).stem
     output_csv = basefile + '_het_snps.csv'
     output_csv = f"{os.path.join(args.out_dir_plots, 'data', output_csv)}"

@@ -125,7 +125,6 @@ def main_process(args, breakpoints_additional):
     if args.normal_phased_vcf:
         get_snp_frequencies_segments(args, args.target_bam[0], thread_pool)
         df_snps_frequencies = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/snps_frequencies.csv', ['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])
-        #df_snps_frequencies = df_snps_frequencies.drop(df_snps_frequencies[(df_snps_frequencies.chr == "chrY")].index)
         df_snps_in_csv = get_vafs_from_normal_phased_vcf(df_snps_frequencies, chroms)
 
         output_phasesets_file_path = vcf_parse_to_csv_for_snps(args.normal_phased_vcf, args)
@@ -134,11 +133,13 @@ def main_process(args, breakpoints_additional):
         cancer_genes_df_all = snps_frequencies_chrom_genes(df_snps_frequencies, args)
 
     if args.tumor_vcf:
+        get_snp_frequencies_segments(args, args.target_bam[0], thread_pool)
+        df_snps_frequencies = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/snps_frequencies.csv', ['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])
+        df_snps_in_csv = get_vafs_from_normal_phased_vcf(df_snps_frequencies, chroms)
+
         output_phasesets_file_path = vcf_parse_to_csv_for_snps(args.tumor_vcf, args)
-        df_snps_in_csv = csv_df_chromosomes_sorter(output_phasesets_file_path, ['chr', 'pos', 'qual', 'gt', 'dp', 'vaf'])
-        # plot all SNPs frequencies, ratios and counts
-        #if args.enable_debug']:
-        #    plot_snps(args, df_snps_in_csv)
+        df_snps_in_csv_normal_loh = csv_df_chromosomes_sorter(output_phasesets_file_path, ['chr', 'pos', 'qual', 'gt', 'dp', 'vaf'])
+
 
     if not os.path.isdir(args.out_dir_plots + '/phasing_output'):
         os.mkdir(args.out_dir_plots + '/phasing_output')
@@ -176,8 +177,8 @@ def main_process(args, breakpoints_additional):
                 snps_haplotype1_mean, snps_haplotype2_mean  = snps_frequencies_chrom_mean(df_snps_frequencies, ref_start_values, chrom, args)
                 haplotype_1_values_phasesets, haplotype_2_values_phasesets = snps_frequencies_chrom_mean_phasesets(df_snps_frequencies, ref_start_values_phasesets, ref_end_values_phasesets, chrom, args)
             else:
-                snps_haplotype1_mean = haplotype_1_values
-                snps_haplotype2_mean = haplotype_2_values
+                snps_haplotype1_mean, snps_haplotype2_mean = snps_frequencies_chrom_mean(df_snps_frequencies, ref_start_values, chrom, args)
+                haplotype_1_values_phasesets, haplotype_2_values_phasesets = snps_frequencies_chrom_mean_phasesets(df_snps_frequencies, ref_start_values_phasesets, ref_end_values_phasesets, chrom, args)
 
             plot_coverage_data(html_graphs, args, chrom, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, "without_phase_correction")
             ##################################

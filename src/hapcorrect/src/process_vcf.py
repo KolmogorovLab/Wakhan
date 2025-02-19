@@ -440,7 +440,12 @@ def vcf_parse_to_csv_for_het_phased_snps_phasesets(input_vcf, args):
     return output_csv
 
 def get_snp_frequencies_segments(args, target_bam, thread_pool):
-    basefile = pathlib.Path(args.normal_phased_vcf).stem
+    if args.normal_phased_vcf:
+        vcf_input = args.normal_phased_vcf
+    else:
+        vcf_input = args.tumor_vcf
+
+    basefile = pathlib.Path(vcf_input).stem
     output_csv = basefile + '_het_snps.csv'
     output_csv = f"{os.path.join(args.out_dir_plots, 'data_phasing', output_csv)}"
 
@@ -458,11 +463,11 @@ def get_snp_frequencies_segments(args, target_bam, thread_pool):
 
     logger.info('bcftools -> Query for het SNPs and creating a %s CSV file', output_csv)
     # bcftools query for phasesets and GT,DP,VAF
-    cmd = ['bcftools', 'query', '-i', 'GT="het"', '-f',  '%CHROM\t%POS\t%REF\t%ALT\t[%GT]\n', args.normal_phased_vcf, '-o', output_csv] #
+    cmd = ['bcftools', 'query', '-i', 'GT="het"', '-f',  '%CHROM\t%POS\t%REF\t%ALT\t[%GT]\n', vcf_input, '-o', output_csv] #
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     process.wait()
 
-    cmd = ['bcftools', 'query', '-i', 'GT="het"', '-f',  '%CHROM\t%POS\n', args.normal_phased_vcf, '-o', output_bed] #
+    cmd = ['bcftools', 'query', '-i', 'GT="het"', '-f',  '%CHROM\t%POS\n', vcf_input, '-o', output_bed] #
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     process.wait()
 
