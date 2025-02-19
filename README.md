@@ -58,14 +58,14 @@ conda activate Wakhan
 
 ## Usage
 
-### Tumor-Normal Mode (requires normal phased VCF)
+### Tumor-Normal Mode (requires tumor BAM and normal phased VCF)
 ```
 python wakhan.py --threads <4> --reference <ref.fa>  --target-bam <data.tumor.bam>  --normal-phased-vcf <data.normal_phased.vcf.gz>  --genome-name <cellline/dataset name> --out-dir-plots <genome_abc_output> --breakpoints <severus-sv-VCF>
 ```
 
-### Tumor-only (requires tumor phased/haplotagged BAM and phased VCF)
+### Tumor-only (requires tumor BAM and tumor phased VCF)
 ```
-python wakhan.py --threads <4> --reference <ref.fa>  --target-bam <data.tumor_haplotagged.bam>  --tumor-vcf <data.tumor_phased.vcf.gz> --genome-name <cellline/dataset name> --out-dir-plots <genome_abc_output> --breakpoints <severus-sv-VCF>
+python wakhan.py --threads <4> --reference <ref.fa>  --target-bam <data.tumor.bam>  --tumor-vcf <data.tumor_phased.vcf.gz> --genome-name <cellline/dataset name> --out-dir-plots <genome_abc_output> --breakpoints <severus-sv-VCF>
 ```
 
 ##### Breakpoints/Structural variations or change point detection algo for copy number model
