@@ -387,8 +387,8 @@ def loh_plots_genome(df_snps_ratios, args, df_loh_regions):
         fig.add_vline(x=offset_chroms,  line_width=1, line_dash="solid", line_color="#D7DBDD")
         offset_chroms_1 += regions[index]
 
-        loh_starts = df_loh_region.start.values.tolist()
-        loh_ends  = df_loh_region.end.values.tolist()
+        #loh_starts = df_loh_region.start.values.tolist()
+        #loh_ends  = df_loh_region.end.values.tolist()
 
         # if len(loh_starts):
         #     for i in range(len(df_loh_region.start.values.tolist())):

@@ -279,7 +279,7 @@ def main_process(args, breakpoints_additional):
         write_df_csv(pd.concat(loh_regions_events_all), args.out_dir_plots+'/data_phasing/'+args.genome_name+'_loh_segments.csv')
         csv_df_loh_regions = csv_df_chromosomes_sorter(args.out_dir_plots + '/data_phasing/'+args.genome_name + '_loh_segments.csv', ['chr', 'start', 'end', 'hp'])
     else:
-        csv_df_loh_regions = []
+        csv_df_loh_regions = pd.DataFrame(columns=['chr', 'start', 'end', 'hp'])
     write_df_csv(pd.concat(start_values_phasesets_contiguous_all), args.out_dir_plots+'/data_phasing/'+args.genome_name+'_phasesets.csv')
     write_df_csv(pd.concat(df_updated_coverage), args.out_dir_plots+'/coverage_data/phase_corrected_coverage.csv')
 
