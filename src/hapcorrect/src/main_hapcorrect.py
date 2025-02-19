@@ -122,24 +122,14 @@ def main_process(args, breakpoints_additional):
 
         del coverage_histograms
 
-    if args.normal_phased_vcf:
-        get_snp_frequencies_segments(args, args.target_bam[0], thread_pool)
-        df_snps_frequencies = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/snps_frequencies.csv', ['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])
-        df_snps_in_csv = get_vafs_from_normal_phased_vcf(df_snps_frequencies, chroms)
+    get_snp_frequencies_segments(args, args.target_bam[0], thread_pool)
+    df_snps_frequencies = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/snps_frequencies.csv', ['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])
 
-        output_phasesets_file_path = vcf_parse_to_csv_for_snps(args.normal_phased_vcf, args)
-        df_snps_in_csv_normal_loh = csv_df_chromosomes_sorter(output_phasesets_file_path, ['chr', 'pos', 'qual', 'gt', 'dp', 'vaf'])
-
-        cancer_genes_df_all = snps_frequencies_chrom_genes(df_snps_frequencies, args)
+    cancer_genes_df_all = snps_frequencies_chrom_genes(df_snps_frequencies, args)
 
     if args.tumor_vcf:
-        get_snp_frequencies_segments(args, args.target_bam[0], thread_pool)
-        df_snps_frequencies = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/snps_frequencies.csv', ['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])
-        df_snps_in_csv = get_vafs_from_normal_phased_vcf(df_snps_frequencies, chroms)
-
         output_phasesets_file_path = vcf_parse_to_csv_for_snps(args.tumor_vcf, args)
-        df_snps_in_csv_normal_loh = csv_df_chromosomes_sorter(output_phasesets_file_path, ['chr', 'pos', 'qual', 'gt', 'dp', 'vaf'])
-
+        df_snps_in_csv_loh = csv_df_chromosomes_sorter(output_phasesets_file_path, ['chr', 'pos', 'qual', 'gt', 'dp', 'vaf'])
 
     if not os.path.isdir(args.out_dir_plots + '/phasing_output'):
         os.mkdir(args.out_dir_plots + '/phasing_output')
@@ -188,7 +178,7 @@ def main_process(args, breakpoints_additional):
             #   snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, _, _, _, _, loh_region_starts, loh_region_ends, hp = detect_loh_centromere_regions(chrom, args, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
 
             if args.tumor_vcf:
-                ref_start_values_updated, snps_het_counts, snps_homo_counts, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends = get_snps_frquncies_coverage(df_snps_in_csv, chrom, ref_start_values, args.bin_size, args.hets_ratio, args.hets_smooth_window, args)
+                ref_start_values_updated, snps_het_counts, snps_homo_counts, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends = get_snps_frquncies_coverage(df_snps_in_csv_loh, chrom, ref_start_values, args.bin_size, args.hets_ratio, args.hets_smooth_window, args)
                 df_snps_ratios_chrom = extend_snps_ratios_df(chrom, offset, ref_start_values_updated, snps_het_counts, snps_homo_counts)
                 df_snps_ratios.append(df_snps_ratios_chrom)
                 offset += regions[index]
