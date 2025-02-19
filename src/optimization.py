@@ -255,9 +255,9 @@ def peak_detection_optimization(args, input_segments, input_weights, tumor_cov):
     logger.info("Half peak: %s", is_half_peak)
 
     if not is_half_peak:
-        single_copy_cov = corr_max  + 0.012
+        single_copy_cov = corr_max  + 0.012 + 1
     else:
-        single_copy_cov = half_peak + 0.012
+        single_copy_cov = half_peak + 0.012 + 1
 
     logger.info("Estimated single copy coverage: %s", single_copy_cov)
 
