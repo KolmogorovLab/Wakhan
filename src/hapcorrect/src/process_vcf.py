@@ -137,7 +137,12 @@ def het_homo_snps_gts(snps_df_sorted, chrom, ref_start_values,
     return snps_df_haplotype1_vaf, snps_df_haplotype2_vaf, snps_df_haplotype1_pos, snps_df_haplotype2_pos
 
 def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, bin_size, hets_ratio, smooth_loh_conv_window, args): #TODO This module needs better implementation, currently slow
+
     snps_df = snps_df_sorted[snps_df_sorted['chr'] == chrom]
+    if snps_df.empty:
+        return [], [], [], [], [], [], []
+
+    ref_start_values = [i for i in range(1, ref_start_values[-1], bin_size)]
     if 'gt' in snps_df.columns:
         snps_df['gt'].astype(str)
 

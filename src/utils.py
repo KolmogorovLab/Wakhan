@@ -1282,8 +1282,8 @@ def normal_genome_proportion(p, l, C):
 
 def get_vafs_from_normal_phased_vcf(df_snps, df_coverages, chroms, args):
     df_final = []
-
     for index, chrom in enumerate(chroms):
+        logger.info('Generating BAFs for %s', chrom)
         df = df_snps[df_snps['chr'] == chrom]
         df_coverage = df_coverages[df_coverages['chr'] == chrom]
         starts_pos = df_coverage.start.values.tolist()
@@ -1314,6 +1314,7 @@ def get_vafs_from_tumor_phased_vcf(df_snps, df_coverages, chroms, args):
 
     for index, chrom in enumerate(chroms):
         df = df_snps[df_snps['chr'] == chrom]
+        logger.info('Generating BAFs for %s', chrom)
         df_coverage = df_coverages[df_coverages['chr'] == chrom]
         if df.empty or df_coverage.empty:
             continue

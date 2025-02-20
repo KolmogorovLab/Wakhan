@@ -55,17 +55,21 @@ def snps_df_loh(args, thread_pool, df_coverage_data):
     chroms = get_contigs_list(args.contigs)
     if args.tumor_vcf:
         output_phasesets_file_path = vcf_parse_to_csv_for_snps(args.tumor_vcf, args)
+        logger.info('Loading and sorting SNPs df')
         df_snps_in_csv = csv_df_chromosomes_sorter(output_phasesets_file_path, ['chr', 'pos', 'qual', 'gt', 'dp', 'vaf'])
+        logger.info('Getting BAFs based on VAF score')
         df_snps_in_csv = get_vafs_from_tumor_phased_vcf(df_snps_in_csv, df_coverage, chroms, args)
     else:
-        if args.quick_start:
-            get_snp_segments(args, args.target_bam[0], thread_pool)
+        #if args.quick_start:
+        #    get_snp_segments(args, args.target_bam[0], thread_pool)
+        #    df_snps_frequencies = csv_df_chromosomes_sorter(args.out_dir_plots+'/data/snps_frequencies.csv', ['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])
+        #else:
+        if args.phaseblock_flipping_disable:
+            logger.info('Loading and sorting SNPs df')
             df_snps_frequencies = csv_df_chromosomes_sorter(args.out_dir_plots+'/data/snps_frequencies.csv', ['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])
         else:
-            if args.phaseblock_flipping_disable:
-                df_snps_frequencies = csv_df_chromosomes_sorter(args.out_dir_plots+'/data/snps_frequencies.csv', ['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])
-            else:
-                df_snps_frequencies = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/snps_frequencies.csv', ['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])
+            logger.info('Loading and sorting SNPs df')
+            df_snps_frequencies = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/snps_frequencies.csv', ['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])
         df_snps_in_csv = get_vafs_from_normal_phased_vcf(df_snps_frequencies, df_coverage, chroms, args)
 
     return df_snps_in_csv
