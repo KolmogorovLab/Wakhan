@@ -27,12 +27,6 @@ from src.hapcorrect.src.loh import detect_loh_centromere_regions, plot_snps
 
 MIN_SV_SIZE = 50
 def main_process(args, breakpoints_additional):
-    #log_file = os.path.join(args.out_dir_plots, "wakhan.log")
-    #file_handler = logging.FileHandler(log_file)
-
-    # Add the file handler to the logger
-    #logger.addHandler(file_handler)
-    #logger.setLevel(logging.INFO)
 
     if args.control_bam is None:
         args.control_bam = []
@@ -173,7 +167,7 @@ def main_process(args, breakpoints_additional):
             #   snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, _, _, _, _, loh_region_starts, loh_region_ends, hp = detect_loh_centromere_regions(chrom, args, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
 
             if args.tumor_vcf:
-                ref_start_values_updated, snps_het_counts, snps_homo_counts, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends = get_snps_frquncies_coverage(df_snps_in_csv_loh, chrom, ref_start_values, args.bin_size, args.hets_ratio, args.hets_smooth_window, args)
+                ref_start_values_updated, snps_het_counts, snps_homo_counts, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends = get_snps_frquncies_coverage(df_snps_in_csv_loh, chrom, ref_start_values, args.bin_size_snps, args.hets_ratio, args.hets_smooth_window, args)
                 df_snps_ratios_chrom = extend_snps_ratios_df(chrom, offset, ref_start_values_updated, snps_het_counts, snps_homo_counts)
                 df_snps_ratios.append(df_snps_ratios_chrom)
                 offset += regions[index]
@@ -270,6 +264,8 @@ def main_process(args, breakpoints_additional):
 
     if not cancer_genes_df_all.empty:
         write_df_csv(cancer_genes_df_all, args.out_dir_plots + '/data_phasing/cancer_genes_coverage.csv')
+    else:
+        write_df_csv(pd.DataFrame(columns=['chr', 'start', 'end', 'gene', 'hp1', 'hp2']), args.out_dir_plots + '/data_phasing/cancer_genes_coverage.csv')
 
     csv_df_phase_change_segments = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/' + args.genome_name + '_phase_change_segments.csv', ['chr', 'start', 'end'])
     csv_df_phasesets_segments = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/' + args.genome_name + '_phasesets.csv', ['chr', 'start', 'end'])

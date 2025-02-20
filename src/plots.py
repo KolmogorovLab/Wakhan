@@ -2830,10 +2830,14 @@ def genes_plots_genome(df_genes, centers, integer_fractional_centers, df_cnr_hp1
 
     last_len = 0
     offset = 0
+    chrs = ['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','X','Y','M']
     for i, chrom in enumerate(chroms):
-        df_cnr_hp1_.append(df_cnr_hp1[df_cnr_hp1['chr'] == chrom])
-        new_len = len(df_cnr_hp1[df_cnr_hp1['chr'] == chrom])
-        if not chrom.startswith('chr'):
+        df_cnr_hp1_chrom = df_cnr_hp1[df_cnr_hp1['chr'] == chrom]
+        if df_cnr_hp1_chrom.empty:
+            continue
+        df_cnr_hp1_.append(df_cnr_hp1_chrom)
+        new_len = len(df_cnr_hp1_chrom)
+        if not chrom.startswith('chr') and chrom in chrs:
             df_genes_chrom_1 = df_genes_1[df_genes_1['chr'] == 'chr' + chrom]
             genestart_1.extend(df_genes_chrom_1['start'].values.tolist())
             gene_cn_hp1.extend(df_genes_chrom_1['hp1_state'].values.tolist())

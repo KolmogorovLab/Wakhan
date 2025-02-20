@@ -160,7 +160,7 @@ def snps_frequencies_chrom_genes(df_snps_frequencies, args):
     df_chroms = []
 
     df_genes_all = csv_df_chromosomes_sorter(args.cancer_genes, ['chr', 'start', 'end', 'gene'])
-
+    df_empty = pd.DataFrame(columns=['chr', 'start', 'end', 'gene', 'hp1', 'hp2'])
     if args.user_input_genes:
         with open(args.user_input_genes, 'r') as file:
             entries = file.readlines()
@@ -226,11 +226,16 @@ def snps_frequencies_chrom_genes(df_snps_frequencies, args):
                     snps_haplotype2_mean.append(0)
 
             #snps_mean = [round(i + j, 2) for i, j in zip(snps_haplotype1_mean, snps_haplotype2_mean)]
-
-            df_chroms.append(pd.DataFrame(list(zip(df_genes.chr.values.tolist(), df_genes.start.values.tolist(), df_genes.end.values.tolist(), \
+            if len(snps_haplotype1_mean) == 0:
+                df_chroms.append(df_empty)
+            else:
+                df_chroms.append(pd.DataFrame(list(zip(df_genes.chr.values.tolist(), df_genes.start.values.tolist(), df_genes.end.values.tolist(), \
                                          df_genes.gene.values.tolist(), snps_haplotype1_mean, snps_haplotype2_mean)),
                                  columns=['chr', 'start', 'end', 'gene', 'hp1', 'hp2']))
-    return pd.concat(df_chroms)
+    if len(df_chroms):
+        return pd.concat(df_chroms)
+    else:
+        return df_empty
 
 def genes_segments_list(bam, args):
     head, tail = os.path.split(bam)
@@ -393,6 +398,7 @@ def get_chromosomes_regions(args):
     return region
 
 def get_contigs_list(contigs):
+    chrs = ['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','X','Y','M']
     chroms_list_final = []
     chroms = contigs.split(',')
     for chrom in chroms:
@@ -403,7 +409,7 @@ def get_contigs_list(contigs):
         else:
             chroms_list_final.extend(chrom)
 
-    chroms_list_final = ['chr' + x if chroms[0].startswith('chr') else x for x in map(str, chroms_list_final)]
+    chroms_list_final = ['chr' + x if chroms[0].startswith('chr') and x in chrs else x for x in map(str, chroms_list_final)]
     return chroms_list_final
 
 def extend_snps_ratios_df(chrom, offset, ref_start_values_updated, snps_het_counts, snps_homo_counts):

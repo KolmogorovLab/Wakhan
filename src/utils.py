@@ -718,12 +718,16 @@ def adjust_bps_cn_segments_boundries(args, haplotype_df):
                         starts.append(int(bp[1]))
             #bps_ids_global.append(bps_ids)
             if len(starts):
+                if not row['chromosome'] in cent_chr:
+                    continue
                 cent_chr_index = cent_chr.index(row['chromosome'])
                 if not haplotype_df.loc[index, 'start'] - 1 == cent_starts[cent_chr_index] and not haplotype_df.loc[index, 'end'] == cent_ends[cent_chr_index]:
                     haplotype_df.loc[index, 'end'] = min(starts, key=lambda x: abs(x - int(row['start']))) - 1
         #haplotype_df['svs_breakpoints_ids'] = bps_ids_global
 
         for index, row in haplotype_df.iterrows():
+            if not row['chromosome'] in cent_chr:
+                continue
             cent_chr_index = cent_chr.index(row['chromosome'])
             if not haplotype_df.loc[index, 'start'] - 1 == cent_starts[cent_chr_index] and not haplotype_df.loc[index, 'end'] == cent_ends[cent_chr_index]:
                 if index < len(haplotype_df) and haplotype_df.loc[index, 'start'] > 0:
@@ -1116,7 +1120,10 @@ def remove_continuous_elements(lst):
     return result
 
 def change_point_detection_algo(bin_size, hp_data, ref_start_values, args, breakpoints_coordinates, df_centm_chrom):
-    cents = [df_centm_chrom.start.values.tolist()[0], df_centm_chrom.end.values.tolist()[0]]
+    if not df_centm_chrom.empty:
+        cents = [df_centm_chrom.start.values.tolist()[0], df_centm_chrom.end.values.tolist()[0]]
+    else:
+        cents = [0,0]
     if args.cpd_internal_segments or args.change_point_detection_for_cna:
         sub_list_data = np.array(hp_data, dtype='int')
         algo_sub_list = rpt.Pelt(model="rbf", jump=25).fit(sub_list_data)
@@ -1308,6 +1315,8 @@ def get_vafs_from_tumor_phased_vcf(df_snps, df_coverages, chroms, args):
     for index, chrom in enumerate(chroms):
         df = df_snps[df_snps['chr'] == chrom]
         df_coverage = df_coverages[df_coverages['chr'] == chrom]
+        if df.empty or df_coverage.empty:
+            continue
         starts_pos = df_coverage.start.values.tolist()
         vaf = []
         # df = dict(tuple(df_snps.groupby('hp')))
