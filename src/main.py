@@ -147,6 +147,8 @@ def main():
                         default=False, help="Disabling unphased reads coverage output in plots")
     parser.add_argument('--without-phasing', action="store_true", dest="without_phasing", required=False,
                         default=False, help="Enabling coverage and copynumbers without phasing in plots")
+    parser.add_argument('--consider-half-peak', action="store_true", dest="consider_half_peak", required=False,
+                        default=False, help="Consider half peak in first copy estimation and optimization")
 
     parser.add_argument('--phaseblock-flipping-disable', action="store_true",  dest="phaseblock_flipping_disable", required=False,
                         default=False, help="Disabling phaseblock flipping in coverage plots")

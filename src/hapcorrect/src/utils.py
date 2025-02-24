@@ -398,7 +398,7 @@ def get_chromosomes_regions(args):
     return region
 
 def get_contigs_list(contigs):
-    chrs = ['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','X','Y','M']
+    #chrs = ['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','X','Y','M']
     chroms_list_final = []
     chroms = contigs.split(',')
     for chrom in chroms:
@@ -409,7 +409,7 @@ def get_contigs_list(contigs):
         else:
             chroms_list_final.extend(chrom)
 
-    chroms_list_final = ['chr' + x if chroms[0].startswith('chr') and x in chrs else x for x in map(str, chroms_list_final)]
+    chroms_list_final = ['chr' + x if chroms[0].startswith('chr') else x for x in map(str, chroms_list_final)]
     return chroms_list_final
 
 def extend_snps_ratios_df(chrom, offset, ref_start_values_updated, snps_het_counts, snps_homo_counts):

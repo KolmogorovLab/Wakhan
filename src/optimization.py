@@ -254,6 +254,8 @@ def peak_detection_optimization(args, input_segments, input_weights, tumor_cov):
     # print(half_peak, valley_left, valley_right)
     logger.info("Half peak: %s", is_half_peak)
 
+    if args.consider_half_peak:
+        is_half_peak = True
     if not is_half_peak:
         single_copy_cov = corr_max  + 0.012 + 1
     else:
