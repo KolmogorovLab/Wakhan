@@ -140,19 +140,20 @@ def detect_alter_loh_regions(args, event, chrom, ref_ends, haplotype_1_values, h
 
     if not args.without_phasing and switch_hps:
         for j, (starts,ends) in enumerate(zip(region_starts, region_ends)):
-            #TODO Discuss with Ayse, alternate approach on what HP should be selected for each region
-            if mean_values(haplotype_1_values, starts//args.bin_size - 4, starts//args.bin_size - 1) > mean_values(haplotype_2_values, starts//args.bin_size - 4, starts//args.bin_size - 1):
-                for i in range(starts//args.bin_size,ends//args.bin_size):
+            if ends - starts > 2000000:
+                #TODO Discuss with Ayse, alternate approach on what HP should be selected for each region
+                if mean_values(haplotype_1_values, starts//args.bin_size - 4, starts//args.bin_size - 1) > mean_values(haplotype_2_values, starts//args.bin_size - 4, starts//args.bin_size - 1):
+                    for i in range(starts//args.bin_size,ends//args.bin_size):
                         haplotype_1_values[i] = haplotype_1_values[i] + haplotype_2_values[i] + unphased_reads_values[i]
                         haplotype_2_values[i] = 0
                         unphased_reads_values[i] = 0
-                hp.append(1)
-            else:
-                for i in range(starts // args.bin_size, ends // args.bin_size):
-                    haplotype_2_values[i] = haplotype_1_values[i] + haplotype_2_values[i] + unphased_reads_values[i]
-                    haplotype_1_values[i] = 0
-                    unphased_reads_values[i] = 0
-                hp.append(2)
+                    hp.append(1)
+            # else:
+            #     for i in range(starts // args.bin_size, ends // args.bin_size):
+            #         haplotype_2_values[i] = haplotype_1_values[i] + haplotype_2_values[i] + unphased_reads_values[i]
+            #         haplotype_1_values[i] = 0
+            #         unphased_reads_values[i] = 0
+            #     hp.append(2)
 
     return haplotype_1_values, haplotype_2_values, unphased_reads_values, region_starts, region_ends, hp
 

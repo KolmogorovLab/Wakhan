@@ -157,6 +157,8 @@ def main_process(args, breakpoints_additional):
             #ref_start_values_phasesets, ref_end_values_phasesets = add_breakpoints(ref_start_values_phasesets, ref_end_values_phasesets, breakpoints)
 
             snps_haplotype1_mean, snps_haplotype2_mean  = snps_frequencies_chrom_mean(df_snps_frequencies, ref_start_values, chrom, args)
+            if sum(haplotype_1_values) + sum(haplotype_2_values) < 1:
+                unphased_reads_values = [x - (y + z) for x, y, z in  zip(unphased_reads_values, snps_haplotype1_mean, snps_haplotype2_mean)]
             haplotype_1_values_phasesets, haplotype_2_values_phasesets = snps_frequencies_chrom_mean_phasesets(df_snps_frequencies, ref_start_values_phasesets, ref_end_values_phasesets, chrom, args)
 
             plot_coverage_data(html_graphs, args, chrom, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, "without_phase_correction")
@@ -255,7 +257,9 @@ def main_process(args, breakpoints_additional):
     html_graphs.write("</body></html>")
 
     if args.tumor_vcf and len(loh_regions_events_all):
-        write_df_csv(pd.concat(loh_regions_events_all), args.out_dir_plots+'/data_phasing/'+args.genome_name+'_loh_segments.csv')
+        loh_df_final = pd.concat(loh_regions_events_all)
+        loh_df_final_filtered = loh_df_final[loh_df_final['end'] - loh_df_final['start'] >= 2000000]
+        write_df_csv(loh_df_final_filtered, args.out_dir_plots+'/data_phasing/'+args.genome_name+'_loh_segments.csv')
         csv_df_loh_regions = csv_df_chromosomes_sorter(args.out_dir_plots + '/data_phasing/'+args.genome_name + '_loh_segments.csv', ['chr', 'start', 'end', 'hp'])
     else:
         csv_df_loh_regions = pd.DataFrame(columns=['chr', 'start', 'end', 'hp'])

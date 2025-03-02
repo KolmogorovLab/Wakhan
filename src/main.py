@@ -21,7 +21,7 @@ from src.utils import get_chromosomes_bins, write_segments_coverage, write_segme
     seperate_dfs_coverage, flatten_smooth, get_contigs_list, write_copynumber_segments_csv, integer_fractional_cluster_means, \
     adjust_diversified_segments, get_chromosomes_bins_bam, normal_genome_proportion, update_subclonal_means_states, adjust_first_copy_mean, \
     merge_adjacent_regions_cn, merge_adjacent_regions_cn_unphased, parse_sv_vcf, weigted_means_ploidy, average_p_value_genome, collect_loh_centromere_regions, \
-    find_optimized_normal_peaks, update_genes_phase_corrected_coverage, weighted_means, extract_breakpoints_additional, write_df_csv, adjust_bps_cn_segments_boundries
+    find_optimized_normal_peaks, update_genes_phase_corrected_coverage, weighted_means, extract_breakpoints_additional, write_df_csv, adjust_bps_cn_segments_boundries, dna_purity_to_cell_purity
 from src.plots import coverage_plots_chromosomes, copy_number_plots_genome_details, copy_number_plots_genome, plots_genome_coverage, copy_number_plots_chromosomes, \
     copy_number_plots_genome_breakpoints, copy_number_plots_genome_breakpoints_subclonal, copy_number_plots_genome_subclonal, genes_copy_number_plots_genome, genes_plots_genome, heatmap_copy_number_plots_genome
 from src.vcf_processing import vcf_parse_to_csv_for_het_phased_snps_phasesets
@@ -147,8 +147,8 @@ def main():
                         default=False, help="Disabling unphased reads coverage output in plots")
     parser.add_argument('--without-phasing', action="store_true", dest="without_phasing", required=False,
                         default=False, help="Enabling coverage and copynumbers without phasing in plots")
-    parser.add_argument('--consider-half-peak', action="store_true", dest="consider_half_peak", required=False,
-                        default=False, help="Consider half peak in first copy estimation and optimization")
+    parser.add_argument('--consider-wgd', action="store_true", dest="consider_wgd", required=False,
+                        default=False, help="Consider half peak in first copy estimation and optimization for WGD")
 
     parser.add_argument('--phaseblock-flipping-disable', action="store_true",  dest="phaseblock_flipping_disable", required=False,
                         default=False, help="Disabling phaseblock flipping in coverage plots")
@@ -341,18 +341,18 @@ def main():
         df_segs_hp1 = snps_cpd_means_df[0]
         df_segs_hp2 = snps_cpd_means_df[1]
 
-    seg_min = []
-    seg_min_weights = []
-    for i in range(len(snps_cpd_means)):
-        if snps_cpd_points_weights[i] * args.bin_size > 20000000:
-            seg_min.append(snps_cpd_means[i])
-            seg_min_weights.append(snps_cpd_points_weights[i])
-    if len(seg_min) > 1:
-        max_limit = int(weighted_means(seg_min, seg_min_weights))
-        logger.info('Max limit for normal optimization through 20Mb segments: %s', max_limit)
-    else:
-        max_limit = int(weighted_means(snps_cpd_means, snps_cpd_points_weights))
-        logger.info('Max limit for normal optimization: %s', max_limit)
+    # seg_min = []
+    # seg_min_weights = []
+    # for i in range(len(snps_cpd_means)):
+    #     if snps_cpd_points_weights[i] * args.bin_size > 20000000:
+    #         seg_min.append(snps_cpd_means[i])
+    #         seg_min_weights.append(snps_cpd_points_weights[i])
+    # if len(seg_min) > 1:
+    #     max_limit = int(weighted_means(seg_min, seg_min_weights))
+    #     logger.info('Max limit for normal optimization through 20Mb segments: %s', max_limit)
+    # else:
+    max_limit = int(weighted_means(snps_cpd_means, snps_cpd_points_weights))
+    logger.info('Max limit for normal optimization: %s', max_limit)
 
     tumor_cov = statistics.mean([sum(x) for x in zip(haplotype_1_values_updated, haplotype_2_values_updated, unphased)])
     logger.info('Tumor coverage: %s', tumor_cov)
@@ -411,7 +411,8 @@ def main():
 
             if overall_ploidy < 0.1:
                 continue
-            tumor_purity = (tumor_cov / overall_ploidy) / (((normal_coverage * 2) / 2) + (tumor_cov / overall_ploidy))
+            tumor_purity = (tumor_cov / overall_ploidy) / ((normal_coverage / 2) + (tumor_cov / overall_ploidy))
+            tumor_purity = dna_purity_to_cell_purity(tumor_purity, overall_ploidy)
             _, _, _, normal_fraction = normal_genome_proportion(tumor_purity, overall_ploidy, tumor_cov)
             if normal_coverage == 0:
                 average_p_value.append(p_value)
@@ -545,8 +546,5 @@ def main():
 #--quick-start --quick-start-coverage-path /home/rezkuh/gits/data/HG008_ONT_10k --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam --cut-threshold 150  --normal-phased-vcf /home/rezkuh/gits/data/HG008/hic.phased.vcf.gz    --out-dir-plots /home/rezkuh/gits/backup/HG008_ONT_10k  --genome-name HG008_ONT_10k  --copynumbers-subclonal-enable --loh-enable  --phaseblocks-enable --breakpoints /home/rezkuh/gits/data/HG008_ONT_10k/severus_somatic.vcf --bin-size 10000
 
 #Wakhan TODOs
-
-#means/medians chr6 in guest sample
-
-#first copy adjustment
-#cpd inside centromeres regions
+#--quick-start --quick-start-coverage-path /home/rezkuh/gits/data/1437/80pct.60x --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam  --out-dir-plots 1437_80pct.60x_unphased_bam  --normal-phased-vcf /home/rezkuh/gits/data/1437/80pct.60x/BL1437.ONT.30x.longphase.vcf.gz  --phaseblocks-enable  --genome-name 1437_80pct_60x  --cut-threshold 100  --breakpoints /home/rezkuh/gits/data/1437/80pct.60x/80pct.60x_severus_somatic.vcf --contigs chr1-22 --copynumbers-subclonal-enable --loh-enable  --purity-range 0.5-1.0 --ploidy-range 1-4
+#--quick-start --quick-start-coverage-path /home/rezkuh/gits/data/1437/80pct.60x_to --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam  --out-dir-plots 1437_80pct.60x_to_unphased_bam  --tumor-vcf /home/rezkuh/gits/data/1437/80pct.60x_to/80pct.60x_longphase.vcf.gz  --phaseblocks-enable  --genome-name 1437_80pct_60x  --cut-threshold 100  --breakpoints /home/rezkuh/gits/data/1437/80pct.60x_to/80pct.60x_severus_somatic.vcf --contigs chr1-22 --copynumbers-subclonal-enable --loh-enable  --purity-range 0.5-1.0 --ploidy-range 1-4

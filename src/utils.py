@@ -1100,6 +1100,32 @@ def change_point_detection_means(args, df_chrom, ref_start_values, ref_start_val
         df_means_chr.append(pd.DataFrame(list(zip(chr_list, snps_pos_start, snps_pos_end, snps_haplotype2_mean)),
                                          columns=['chromosome', 'start', 'end', 'state']))
 
+        # cent and loh indices
+        fileDir = os.path.dirname(__file__)  # os.path.dirname(os.path.realpath('__file__'))
+        cen_coord = os.path.join(fileDir, args.centromere)
+        df_centm = csv_df_chromosomes_sorter(cen_coord, ['chr', 'start', 'end'])
+        df_centm['start'].mask(df_centm['start'] == 1, 0, inplace=True)
+
+        indices_cent_hp1 = update_state_with_loh_overlap(df_means_chr[0], df_centm)
+        indices_cent_hp2 = update_state_with_loh_overlap(df_means_chr[1], df_centm)
+        if args.tumor_vcf:
+            df_loh = csv_df_chromosomes_sorter(args.out_dir_plots + '/data_phasing/' + args.genome_name + '_loh_segments.csv', ['chr', 'start', 'end', 'hp'])
+            indices_loh_hp1 = update_state_with_loh_overlap(df_means_chr[0], df_loh)
+            indices_loh_hp2 = update_state_with_loh_overlap(df_means_chr[1], df_loh)
+
+            # remove cent/loh segment
+            snps_haplotype1_mean = remove_indices(snps_haplotype1_mean, list(set(indices_cent_hp1 + indices_loh_hp1)))
+            snps_haplotype1_len = remove_indices(snps_haplotype1_len, list(set(indices_cent_hp1 + indices_loh_hp1)))
+
+            snps_haplotype2_mean = remove_indices(snps_haplotype2_mean, list(set(indices_cent_hp2 + indices_loh_hp2)))
+            snps_haplotype2_len = remove_indices(snps_haplotype2_len, list(set(indices_cent_hp2 + indices_loh_hp2)))
+        else:
+            snps_haplotype1_mean = remove_indices(snps_haplotype1_mean, indices_cent_hp1)
+            snps_haplotype1_len = remove_indices(snps_haplotype1_len, indices_cent_hp1)
+
+            snps_haplotype2_mean = remove_indices(snps_haplotype2_mean, indices_cent_hp2)
+            snps_haplotype2_len = remove_indices(snps_haplotype2_len, indices_cent_hp2)
+
         #remove cent segment
         # chroms = get_contigs_list(args.contigs)
         # if not df_chrom['chr'].iloc[0] == chroms[1]:
@@ -1108,6 +1134,37 @@ def change_point_detection_means(args, df_chrom, ref_start_values, ref_start_val
         #     del snps_haplotype1_len[cent_index_hp1]
         #     del snps_haplotype2_len[cent_index_hp2]
         return snps_haplotype1_mean + snps_haplotype2_mean, snps_haplotype1_len + snps_haplotype2_len, df_means_chr
+
+def remove_indices(original_list, indices_to_remove):
+    indices_to_remove = sorted(set(indices_to_remove), reverse=True)
+    for index in indices_to_remove:
+        if index < len(original_list):
+            original_list.pop(index)
+    return original_list
+
+def update_state_with_loh_overlap(chrom_df, loh_df):
+    # Create a mask for rows where state is 0
+    mask = chrom_df['state'] == 0
+
+    # Create a subset and reset index to track original indices
+    chrom_subset = chrom_df[mask].reset_index()
+
+    # Merge with loh_df on chromosome and chr
+    merged = pd.merge(
+        chrom_subset,
+        loh_df,
+        left_on='chromosome',
+        right_on='chr',
+        suffixes=('_chrom', '_loh')
+    )
+
+    # Calculate overlap condition
+    merged['overlap'] = (merged['start_chrom'] < merged['end_loh']) & (merged['end_chrom'] > merged['start_loh'])
+
+    # Get the original indices of rows that have at least one overlap
+    overlapping_indices = merged[merged['overlap']]['index'].unique()
+
+    return overlapping_indices
 
 def remove_continuous_elements(lst):
     if not lst:
@@ -1434,13 +1491,27 @@ def weighted_means(vals, weights):
     for tup in vals_n_weights:
         weighted_vals.append(round(tup[0] * tup[1] / sum(weights), 3))
     return sum(weighted_vals)
-def average_p_value_genome(args, centers, df_segs_hp1, df_segs_hp2, df_hp1, df_hp2):
+def average_p_value_genome(args, centers, df_segs_hp1_, df_segs_hp2_, df_hp1, df_hp2):
+    df_segs_hp1 = df_segs_hp1_.copy()
+    df_segs_hp2 = df_segs_hp2_.copy()
+
     chroms = get_contigs_list(args.contigs)
     hp_1_values = []
     hp_2_values = []
     for i in range(len(centers)):
         hp_1_values.append([])
         hp_2_values.append([])
+
+    if args.tumor_vcf:
+        df_loh = csv_df_chromosomes_sorter(args.out_dir_plots + '/data_phasing/' + args.genome_name + '_loh_segments.csv', ['chr', 'start', 'end', 'hp'])
+        indices_loh_hp1 = update_state_with_loh_overlap(df_segs_hp1, df_loh)
+        indices_loh_hp2 = update_state_with_loh_overlap(df_segs_hp2, df_loh)
+
+        df_segs_hp1 = df_segs_hp1.drop(indices_loh_hp1)
+        df_segs_hp1 = df_segs_hp1.reset_index(drop=True)
+
+        df_segs_hp2 = df_segs_hp2.drop(indices_loh_hp2)
+        df_segs_hp2 = df_segs_hp2.reset_index(drop=True)
 
     for index, chrom in enumerate(chroms):
         df_segs_hp_1_updated = df_segs_hp1[df_segs_hp1['chromosome'] == chrom]
@@ -1471,13 +1542,12 @@ def average_p_value_genome(args, centers, df_segs_hp1, df_segs_hp2, df_hp1, df_h
     sample_mean = []
     sample_stdev = []
     for i in range(len(centers)):
-        if hp_1_values[i] + hp_2_values[i]:
-            sample_mean.append(statistics.mean(remove_outliers_iqr(np.array(hp_1_values[i] + hp_2_values[i]))))
+        if len(hp_1_values[i] + hp_2_values[i]): #and not args.tumor_vcf:
+            sample_mean.append(statistics.median(remove_outliers_iqr(np.array(hp_1_values[i] + hp_2_values[i]))))
             sample_stdev.append(15)#statistics.stdev(remove_outliers_iqr(np.array(hp_1_values[i] + hp_2_values[i]))))
         else:
             sample_mean.append(centers[i])
             sample_stdev.append(5)
-
 
     p_value_median = []
     df_segs_hp_1_updated_p_score = []
@@ -1506,8 +1576,12 @@ def average_p_value_genome(args, centers, df_segs_hp1, df_segs_hp2, df_hp1, df_h
         df_hp_2_val = df_hp_2.hp2.values.tolist()
 
         for i, (start,end) in enumerate(zip(df_segs_hp_1_updated_start, df_segs_hp_1_updated_end)):
-            if end - start * args.bin_size > 5000000:
-                seg_mean = statistics.median(remove_outliers_iqr(np.array(df_hp_1_val[start//args.bin_size:end//args.bin_size])))
+            if end - start * args.bin_size > 2000000:
+                bins = [x for x in df_hp_1_val[start // args.bin_size:end // args.bin_size] if x != 0]
+                if bins:
+                    seg_mean = statistics.median(bins)
+                else:
+                    seg_mean = statistics.median(df_hp_1_val[start // args.bin_size:end // args.bin_size])
                 sample_mean_init = min(sample_mean, key=lambda x: abs(x - seg_mean))
                 index =  sample_mean.index(sample_mean_init)
                 z_score =  (seg_mean - sample_mean_init) / 10 #statistics.stdev(remove_outliers_iqr(np.array(df_hp_1_val[start//args.bin_size:end//args.bin_size])))
@@ -1517,8 +1591,12 @@ def average_p_value_genome(args, centers, df_segs_hp1, df_segs_hp2, df_hp1, df_h
                     df_segs_hp_1_updated_weight.append(end-start)
 
         for i, (start,end) in enumerate(zip(df_segs_hp_2_updated_start, df_segs_hp_2_updated_end)):
-            if end-start * args.bin_size > 5000000:
-                seg_mean = statistics.median(remove_outliers_iqr(np.array(df_hp_2_val[start//args.bin_size:end//args.bin_size])))
+            if end-start * args.bin_size > 2000000:
+                bins = [x for x in df_hp_2_val[start // args.bin_size:end // args.bin_size] if x != 0]
+                if bins:
+                    seg_mean = statistics.median(bins)
+                else:
+                    seg_mean = statistics.median(df_hp_2_val[start // args.bin_size:end // args.bin_size])
                 sample_mean_init = min(sample_mean, key=lambda x: abs(x - seg_mean))
                 index =  sample_mean.index(sample_mean_init)
                 z_score =  (seg_mean - sample_mean_init) / 10 #statistics.stdev(remove_outliers_iqr(np.array(df_hp_2_val[start//args.bin_size:end//args.bin_size])))
@@ -1585,7 +1663,7 @@ def find_optimized_normal_peaks(args, data, n, spacing=1, limit=None):
         normals =  [i for i in list(ind)]
     else:
         normals = [0]
-        logger.info('No normal peak value detected under confidence [%.2f], so assuming only first estimated value', args.purity_range, args.ploidy_range, limit)
+        logger.info('No normal peak value detected under confidence [%s] in purity: %s and ploidy: %s, so assuming only first estimated value', limit, args.purity_range, args.ploidy_range)
 
     return normals
 
@@ -1803,3 +1881,24 @@ def extract_breakpoints_additional(args):
         #     ref_start_values_1 = df_var_bins_chr_1.start.values.tolist()
     else:
         return None
+
+def dna_purity_to_cell_purity(alpha, rho):
+    """
+    Converts DNA purity to cell purity considering tumor ploidy.
+
+    Parameters:
+    alpha (float): DNA purity (proportion between 0 and 1).
+    rho (float): Tumor cell ploidy (must be positive).
+
+    Returns:
+    float: Cell purity (proportion of tumor cells).
+
+    Raises:
+    ValueError: If alpha is not in [0,1] or rho is not positive.
+    """
+    if not (0 <= alpha <= 1):
+        raise ValueError("alpha must be between 0 and 1.")
+    if rho <= 0:
+        raise ValueError("rho must be positive.")
+    denominator = rho + 2 * alpha - alpha * rho
+    return (2 * alpha) / denominator
