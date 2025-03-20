@@ -1703,17 +1703,17 @@ def collect_loh_centromere_regions(df_segs_hp1_, df_segs_hp2_, centers, integer_
         if args.breakpoints and not args.cpd_internal_segments:
             for index, (state1, state2, start, end) in enumerate(zip(hp1_state, hp2_state, hp1_start, hp1_end)):
                 #print(chrom, state1, state2, start, end)
-                if state1 == 0 or state2 == 0:# and end - start > 2000000:
+                if state1 == 0 or state2 == 0 and end - start > 2000000:
                     loh_region_starts.append(start)
                     loh_region_ends.append(end)
         else:
             for index, (state1, start, end) in enumerate(zip(hp1_state, hp1_start, hp1_end)):
-                if state1 == 0:# and end - start > 2000000:
+                if state1 == 0 and end - start > 2000000:
                     loh_region_starts.append(start)
                     loh_region_ends.append(end)
 
             for index, (state2, start, end) in enumerate(zip(hp2_state, hp2_start, hp2_end)):
-                if state2 == 0:# and end - start > 2000000:
+                if state2 == 0 and end - start > 2000000:
                     if not start in loh_region_starts and not end in loh_region_ends:
                         loh_region_starts.append(start)
                         loh_region_ends.append(end)
