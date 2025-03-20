@@ -137,12 +137,17 @@ def plot_snps_frequencies_without_phasing(args, df, df_segs_hp1_w, df_segs_hp2_w
     return pd.concat(loh_regions_all)
 
 
-def variation_plots(args, df, df_segs_hp1_w, df_segs_hp2_w, centers, integer_fractional_means, df_snps_in_csv, df_loh_regions, p_value):
+def variation_plots(args, df, df_segs_hp1_w, df_segs_hp2_w, centers, integer_fractional_means, df_snps_in_csv, df_loh_regions, p_value, is_half):
 
-    if not os.path.isdir(args.out_dir_plots + '/' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value) + '/variation_plots'):
-        os.makedirs(args.out_dir_plots +'/'+ str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value) + '/variation_plots')
+    if is_half:
+        if not os.path.isdir(args.out_dir_plots + '/wgd/' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value) + '/variation_plots'):
+            os.makedirs(args.out_dir_plots +'/wgd/'+ str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value) + '/variation_plots')
+        filename = f"{os.path.join(args.out_dir_plots, 'wgd', str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value), 'variation_plots/CN_VARIATION_INDEX.html')}"
+    else:
+        if not os.path.isdir(args.out_dir_plots + '/' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value) + '/variation_plots'):
+            os.makedirs(args.out_dir_plots +'/'+ str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value) + '/variation_plots')
+        filename = f"{os.path.join(args.out_dir_plots, str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value), 'variation_plots/CN_VARIATION_INDEX.html')}"
 
-    filename = f"{os.path.join(args.out_dir_plots, str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value), 'variation_plots/CN_VARIATION_INDEX.html')}"
     html_graphs = open(filename, 'w')
     html_graphs.write("<html><head></head><body>" + "\n")
 
@@ -171,7 +176,7 @@ def variation_plots(args, df, df_segs_hp1_w, df_segs_hp2_w, centers, integer_fra
                 hp3 = df_chrom.hp3.values.tolist()
                 df_snps_freqs_chr = whole_genome_combined_df(args, chrom, chr, ref_start_values, ref_end_values, hp1, hp2, hp3)
 
-            copy_number_plots_per_chromosome(centers, integer_fractional_means, ref_start_values, hp1, df_segs_hp1_, hp2, df_segs_hp2_, args, chrom, html_graphs, df_loh_region.start.values.tolist(), df_loh_region.end.values.tolist(), p_value)
+            copy_number_plots_per_chromosome(centers, integer_fractional_means, ref_start_values, hp1, df_segs_hp1_, hp2, df_segs_hp2_, args, chrom, html_graphs, df_loh_region.start.values.tolist(), df_loh_region.end.values.tolist(), p_value, is_half)
 
     html_graphs.write("</body></html>")
 
@@ -304,8 +309,11 @@ def write_snps_counts_per_cn_region(df, args):
 
     df.to_csv(fp, sep='\t', index=False, mode='a', header=False)
 
-def write_loh_regions(df, path, args, p_value_confidence):
-    fp = open(args.out_dir_plots + '/' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) +'_'+ str(p_value_confidence) + '/bed_output/' + path, 'a')
+def write_loh_regions(df, path, args, p_value_confidence, is_half):
+    if is_half:
+        fp = open(args.out_dir_plots + '/wgd/' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value_confidence) + '/bed_output/' + path, 'a')
+    else:
+        fp = open(args.out_dir_plots + '/' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) +'_'+ str(p_value_confidence) + '/bed_output/' + path, 'a')
     fp.write('#chr: chromosome number\n')
     fp.write('#start: start address for loh segment\n')
     fp.write('#end: end address for loh segment\n')

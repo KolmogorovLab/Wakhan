@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
-import sys
 import scipy.stats
 import scipy.optimize
 import scipy.signal
-#from matplotlib import pyplot as plt
 import random
 import numpy as np
 import logging
+import plotly.graph_objects as go
+import plotly
 
 logger = logging.getLogger()
 
@@ -236,7 +236,7 @@ def peak_detection_optimization(args, input_segments, input_weights, tumor_cov):
     # Autocorrelation method
     corr = scipy.signal.correlate(observed_hist, observed_hist, mode="full")
     corr = corr[corr.size // 2:]  # autocorrelation, only positive shift, so getting right half of the array
-    corr = convolve_sma(corr, 2)
+    #corr = convolve_sma(corr, 2)
 
     first_min = scipy.signal.argrelmin(corr)[0][0]
     corr_max = np.argmax(corr[first_min:]) + first_min
@@ -257,16 +257,30 @@ def peak_detection_optimization(args, input_segments, input_weights, tumor_cov):
     if args.consider_wgd:
         is_half_peak = True
 
-    if not is_half_peak:
-        single_copy_cov = corr_max  + 0.012 + 1
-    else:
-        single_copy_cov = half_peak + 0.012 + 1
+    single_copy_cov = corr_max + 0.012
+    final_peaks_half = 0
+    single_copy_cov_half = 0
+    if is_half_peak:
+        single_copy_cov_half = half_peak + 0.012
 
     logger.info("Estimated single copy coverage: %s", single_copy_cov)
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=list(range(len(corr))), y=corr, mode='lines', name='correlation peaks'))
+    if is_half_peak:
+        fig.add_shape(type="line", x0=half_peak, x1=half_peak, y0=0, y1=corr[half_peak], line=dict(color="yellow", width=2))
+        fig.add_shape(type="line", x0=corr_max, x1=corr_max, y0=0, y1=corr[corr_max], line=dict(color="red", width=2))
+    else:
+        fig.add_shape(type="line", x0=corr_max, x1=corr_max, y0=0, y1=corr[corr_max], line=dict(color="red", width=2))
+    plotly.offline.plot(fig, filename=args.out_dir_plots + '/' + args.genome_name +'_optimized_peak.html', auto_open=False)
 
     last_copy_state = int(max(observed) // single_copy_cov + 1)
     final_peaks = [i * single_copy_cov for i in range(0, last_copy_state + 1)]
 
+    if is_half_peak:
+        last_copy_state_half = int(max(observed) // single_copy_cov_half + 1)
+        final_peaks_half = [i * single_copy_cov_half for i in range(0, last_copy_state_half + 1)]
+
     final_peaks_subclonal = [single_copy_cov//2] + [i * single_copy_cov+(single_copy_cov//2) for i in range(1, last_copy_state)]
 
-    return final_peaks, final_peaks_subclonal, np.arange(0, 500), observed_hist, single_copy_cov
+    return final_peaks, is_half_peak, final_peaks_half, final_peaks_subclonal, np.arange(0, 500), observed_hist, single_copy_cov, single_copy_cov_half

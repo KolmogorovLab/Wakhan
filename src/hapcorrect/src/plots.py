@@ -23,6 +23,19 @@ def plot_coverage_data(html_graphs, args, chrom, ref_start_values, ref_end_value
     plots_add_markers_lines(fig)
 
     if args.phaseblocks_enable:
+        # if sufix == "without_phase_correction":
+        #     chrs = [chrom for ch in range(len(ref_start_values))]
+        #     data_bins = {'chr': chrs, 'start': ref_start_values, 'end': ref_end_values}
+        #     df_bins = pd.DataFrame(data_bins)
+        #     chrs = [chrom for ch in range(len(ref_start_values_phasesets))]
+        #     data_ps = {'chr': chrs, 'start': ref_start_values_phasesets, 'end': ref_end_values_phasesets}
+        #     df_ps = pd.DataFrame(data_ps)
+        #     ps_bins_proportion = calculate_overlap_proportion(df_bins, df_ps)
+        #
+        #     add_scatter_trace_coverage(fig, ref_start_values, ps_bins_proportion, name='ps/bins proportion',
+        #                                text=ref_start_values,
+        #                                yaxis=None, opacity=0.7, color='black')
+
         gaps_values = np.full(len(haplotype_1_values_phasesets), 'None')
         haplotype_1_phaseblocks_values = list(
             itertools.chain.from_iterable(zip(haplotype_1_values_phasesets, haplotype_1_values_phasesets, gaps_values)))
@@ -127,6 +140,41 @@ def plots_add_markers_lines(fig):
         mode="markers",
         showlegend=True
     )
+
+import pandas as pd
+
+def calculate_overlap_proportion(df1, df2):
+    """
+    Calculates the proportion of overlap for each segment in df1 with segments in df2.
+
+    Args:
+        df1: DataFrame with 'chr', 'start', 'end' columns.
+        df2: DataFrame with 'chr', 'start', 'end' columns.
+
+    Returns:
+        A list of overlap proportions for each row in df1.
+    """
+
+    overlap_proportions = []
+
+    for _, row1 in df1.iterrows():
+        chr1, start1, end1 = row1['chr'], row1['start'], row1['end']
+        segment_length1 = end1 - start1
+        total_overlap = 0
+
+        for _, row2 in df2[df2['chr'] == chr1].iterrows(): #iterate only on same chromosomes.
+            chr2, start2, end2 = row2['chr'], row2['start'], row2['end']
+
+            overlap_start = max(start1, start2)
+            overlap_end = min(end1, end2)
+
+            if overlap_start < overlap_end:
+                total_overlap += overlap_end - overlap_start
+
+        overlap_proportion = (total_overlap / segment_length1) * 100 if segment_length1 > 0 else 0
+        overlap_proportions.append(overlap_proportion)
+
+    return overlap_proportions
 
 def add_scatter_trace_coverage(fig, x, y, name, text, yaxis, opacity, color, visibility=True, mul_cols=False, row=2, baf=None):
     if any(value < 0 for value in y):

@@ -4,6 +4,7 @@ import pandas as pd
 import pysam
 import scipy.stats as stats
 import os
+import shutil
 import math
 import statistics
 import ruptures as rpt
@@ -740,7 +741,7 @@ def mask_df_states(haplotype_df, centers, integer_fractional_means):
         haplotype_df['state'].mask(haplotype_df['state'] == centers[i], integer_fractional_means[i], inplace=True)
 
     return haplotype_df
-def write_copynumber_segments_csv(haplotype_df_, args, centers, integer_fractional_means, hp, filename, p_value):
+def write_copynumber_segments_csv(haplotype_df_, args, centers, integer_fractional_means, hp, filename, p_value, is_half):
 
     haplotype_df = haplotype_df_.copy()
     #uniques = sorted(haplotype_df['state'].unique())
@@ -795,9 +796,14 @@ def write_copynumber_segments_csv(haplotype_df_, args, centers, integer_fraction
 
         haplotype_df.to_csv(fp, sep='\t', index=False, mode='a', header=False)
     else:
-        if not os.path.isdir(args.out_dir_plots + '/' + str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_'+ str(p_value) +'/bed_output'):
-            os.makedirs(args.out_dir_plots + '/' + str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_'+ str(p_value) +'/bed_output')
-        fp = open(args.out_dir_plots +'/'+ str(args.tumor_ploidy) + '_'+ str(args.tumor_purity)  +'_'+ str(p_value) +'/bed_output/' + args.genome_name + filename, 'a')
+        if is_half:
+            if not os.path.isdir(args.out_dir_plots + '/wgd/' + str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_'+ str(p_value) +'/bed_output'):
+                os.makedirs(args.out_dir_plots + '/wgd/' + str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_'+ str(p_value) +'/bed_output')
+            fp = open(args.out_dir_plots +'/wgd/'+ str(args.tumor_ploidy) + '_'+ str(args.tumor_purity)  +'_'+ str(p_value) +'/bed_output/' + args.genome_name + filename, 'a')
+        else:
+            if not os.path.isdir(args.out_dir_plots + '/' + str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_'+ str(p_value) +'/bed_output'):
+                os.makedirs(args.out_dir_plots + '/' + str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_'+ str(p_value) +'/bed_output')
+            fp = open(args.out_dir_plots +'/'+ str(args.tumor_ploidy) + '_'+ str(args.tumor_purity)  +'_'+ str(p_value) +'/bed_output/' + args.genome_name + filename, 'a')
         fp.write('#chr: chromosome number\n')
         fp.write('#start: start address for CN segment\n')
         fp.write('#end: end address for CN segment\n')
@@ -1108,7 +1114,7 @@ def change_point_detection_means(args, df_chrom, ref_start_values, ref_start_val
 
         indices_cent_hp1 = update_state_with_loh_overlap(df_means_chr[0], df_centm)
         indices_cent_hp2 = update_state_with_loh_overlap(df_means_chr[1], df_centm)
-        if args.tumor_vcf:
+        if args.tumor_vcf and os.path.exists(args.out_dir_plots + '/data_phasing/' + args.genome_name + '_loh_segments.csv'):
             df_loh = csv_df_chromosomes_sorter(args.out_dir_plots + '/data_phasing/' + args.genome_name + '_loh_segments.csv', ['chr', 'start', 'end', 'hp'])
             indices_loh_hp1 = update_state_with_loh_overlap(df_means_chr[0], df_loh)
             indices_loh_hp2 = update_state_with_loh_overlap(df_means_chr[1], df_loh)
@@ -1502,7 +1508,7 @@ def average_p_value_genome(args, centers, df_segs_hp1_, df_segs_hp2_, df_hp1, df
         hp_1_values.append([])
         hp_2_values.append([])
 
-    if args.tumor_vcf:
+    if args.tumor_vcf and os.path.exists(args.out_dir_plots + '/data_phasing/' + args.genome_name + '_loh_segments.csv'):
         df_loh = csv_df_chromosomes_sorter(args.out_dir_plots + '/data_phasing/' + args.genome_name + '_loh_segments.csv', ['chr', 'start', 'end', 'hp'])
         indices_loh_hp1 = update_state_with_loh_overlap(df_segs_hp1, df_loh)
         indices_loh_hp2 = update_state_with_loh_overlap(df_segs_hp2, df_loh)
@@ -1862,12 +1868,15 @@ def genes_phase_correction(df_genes, df_segs_hp1, df_segs_hp2, args, centers, in
 
     return pd.concat(df_genes_updated)
 
-def update_genes_phase_corrected_coverage(args, df_segs_hp1, df_segs_hp2, p_value, centers, integer_fractional_centers):
+def update_genes_phase_corrected_coverage(args, df_segs_hp1, df_segs_hp2, p_value, centers, integer_fractional_centers, is_half):
 
     df_genes = csv_df_chromosomes_sorter(args.out_dir_plots + '/data_phasing/cancer_genes_coverage.csv', ['chr','start','end','gene', 'hp1', 'hp2'])
     #write_df_csv(df_genes, args.out_dir_plots + '/' + str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_'+ str(p_value) +'/bed_output/' + 'cancer_genes_coverage.csv')
     df_genes = genes_phase_correction(df_genes, df_segs_hp1, df_segs_hp2, args, centers, integer_fractional_centers)
-    write_df_csv(df_genes, args.out_dir_plots + '/' + str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_'+ str(p_value) +'/bed_output/' + 'genes_copynumber_states.bed')
+    if is_half:
+        write_df_csv(df_genes, args.out_dir_plots + '/wgd/' + str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_'+ str(p_value) +'/bed_output/' + 'genes_copynumber_states.bed')
+    else:
+        write_df_csv(df_genes, args.out_dir_plots + '/' + str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_'+ str(p_value) +'/bed_output/' + 'genes_copynumber_states.bed')
 
     return df_genes
 
@@ -1902,3 +1911,52 @@ def dna_purity_to_cell_purity(alpha, rho):
         raise ValueError("rho must be positive.")
     denominator = rho + 2 * alpha - alpha * rho
     return (2 * alpha) / denominator
+
+def move_folder(source, destination):
+    """Moves a folder from the source path to the destination path.
+
+    Args:
+        source: The path of the folder to be moved.
+        destination: The path where the folder should be moved.
+    """
+    try:
+        shutil.move(source, destination)
+        logger.info(f"Folder '{source}' moved successfully to '{destination}'")
+    except FileNotFoundError:
+        logger.info(f"Error: Folder '{source}' not found.")
+    except FileExistsError:
+         logger.info(f"Error: A file or directory with the name '{os.path.basename(source)}' already exists in '{destination}'.")
+    except Exception as e:
+        logger.info(f"An error occurred: {e}")
+
+def is_100pct_purity_solution_exist(folder_path):
+    """
+    Searches a folder for subfolders, parses their names for underscores,
+    and returns the name of the subfolder where the value after the underscore
+    and before the next underscore is "1.0".
+
+    Args:
+        folder_path (str): The path to the folder to search.
+
+    Returns:
+        str: The name of the subfolder that matches the criteria, or None if no match is found.
+    """
+    for subfolder_name in os.listdir(folder_path):
+        if os.path.isdir(os.path.join(folder_path, subfolder_name)):
+            parts = subfolder_name.split('_')
+            if len(parts) > 1 and parts[1] == "1.0":
+                return subfolder_name
+    return None
+
+def move_100pct_purity_sol(args):
+    is_100pct_purity_solution = is_100pct_purity_solution_exist(args.out_dir_plots)
+    if is_100pct_purity_solution:
+        if os.path.exists(args.out_dir_plots + '/100pct_purity_solution'):
+            shutil.rmtree(args.out_dir_plots + '/100pct_purity_solution')
+            os.mkdir(args.out_dir_plots + '/100pct_purity_solution')
+        else:
+            os.mkdir(args.out_dir_plots + '/100pct_purity_solution')
+        if os.path.exists(args.out_dir_plots + '/100pct_purity_solution'):
+            move_folder(args.out_dir_plots +'/'+is_100pct_purity_solution, args.out_dir_plots + '/100pct_purity_solution')
+        else:
+            logger.info(f"Error: Source folder '{args.out_dir_plots + '/100pct_purity_solution'}' does not exist.")

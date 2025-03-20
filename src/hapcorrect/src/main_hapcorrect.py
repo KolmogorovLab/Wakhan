@@ -153,12 +153,12 @@ def main_process(args, breakpoints_additional):
             haplotype_2_values = csv_df_coverage_chrom.hp2.values.tolist()
             ref_start_values = csv_df_coverage_chrom.start.values.tolist()
             ref_end_values = csv_df_coverage_chrom.end.values.tolist()
-
+            unphased_reads_values = [x + y + z for x, y, z in  zip(unphased_reads_values, haplotype_1_values, haplotype_2_values)]
             #ref_start_values_phasesets, ref_end_values_phasesets = add_breakpoints(ref_start_values_phasesets, ref_end_values_phasesets, breakpoints)
 
             snps_haplotype1_mean, snps_haplotype2_mean  = snps_frequencies_chrom_mean(df_snps_frequencies, ref_start_values, chrom, args)
-            if sum(haplotype_1_values) + sum(haplotype_2_values) < 1:
-                unphased_reads_values = [x - (y + z) for x, y, z in  zip(unphased_reads_values, snps_haplotype1_mean, snps_haplotype2_mean)]
+            #if sum(haplotype_1_values) + sum(haplotype_2_values) < 1:
+            unphased_reads_values = [x - (y + z) for x, y, z in  zip(unphased_reads_values, snps_haplotype1_mean, snps_haplotype2_mean)]
             haplotype_1_values_phasesets, haplotype_2_values_phasesets = snps_frequencies_chrom_mean_phasesets(df_snps_frequencies, ref_start_values_phasesets, ref_end_values_phasesets, chrom, args)
 
             plot_coverage_data(html_graphs, args, chrom, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, "without_phase_correction")

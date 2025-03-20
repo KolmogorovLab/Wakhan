@@ -148,12 +148,12 @@ def detect_alter_loh_regions(args, event, chrom, ref_ends, haplotype_1_values, h
                         haplotype_2_values[i] = 0
                         unphased_reads_values[i] = 0
                     hp.append(1)
-            # else:
-            #     for i in range(starts // args.bin_size, ends // args.bin_size):
-            #         haplotype_2_values[i] = haplotype_1_values[i] + haplotype_2_values[i] + unphased_reads_values[i]
-            #         haplotype_1_values[i] = 0
-            #         unphased_reads_values[i] = 0
-            #     hp.append(2)
+                else:
+                    for i in range(starts // args.bin_size, ends // args.bin_size):
+                        haplotype_2_values[i] = haplotype_1_values[i] + haplotype_2_values[i] + unphased_reads_values[i]
+                        haplotype_1_values[i] = 0
+                        unphased_reads_values[i] = 0
+                    hp.append(2)
 
     return haplotype_1_values, haplotype_2_values, unphased_reads_values, region_starts, region_ends, hp
 

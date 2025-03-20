@@ -406,16 +406,18 @@ def vcf_parse_to_csv_for_snps(input_vcf, args):
     output_csv = basefile + '_snps.csv'
     output_csv = f"{os.path.join(args.out_dir_plots, 'data_phasing', output_csv)}"
 
-    # logger.info('bcftools -> Filtering out hetrozygous and phased SNPs and generating a new VCF')
-    # # Filter out het, phased SNPs
-    # cmd = ['bcftools', 'view', '--threads', '$(nproc)', input_vcf, '-Oz', '-o', output_vcf]
-    # process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    # process.wait()
+    logger.info('bcftools -> Filtering out hetrozygous and phased SNPs and generating a new VCF')
+    # Filter out het, phased SNPs
+    #cmd = ['bcftools', 'view', '--threads', '$(nproc)',  '--phased', '-g', 'het', '--types', 'snps', input_vcf, '-Oz', '-o', output_vcf]
+    cmd = ['bcftools', 'view', '--threads', '$(nproc)',  '--phased', '--types', 'snps', input_vcf, '-Oz', '-o', output_vcf]
+    process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+    process.wait()
+
     af_field = af_field_selection(input_vcf)
     logger.info('bcftools -> Query for phasesets and GT, DP, VAF feilds by creating a CSV file')
     # bcftools query for phasesets and GT,DP,VAF
     query = '%CHROM\t%POS\t%QUAL\t[%GT]\t[%DP]\t[%'+af_field+']\n'
-    cmd = ['bcftools', 'query', '-f', query, '-i', 'FILTER="PASS"', input_vcf, '-o', output_csv]  #
+    cmd = ['bcftools', 'query', '-f', query, '-i', 'FILTER="PASS"', output_vcf, '-o', output_csv]  #
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     process.wait()
 
