@@ -746,12 +746,13 @@ def write_copynumber_segments_csv(haplotype_df_, args, centers, integer_fraction
     haplotype_df = haplotype_df_.copy()
     #uniques = sorted(haplotype_df['state'].unique())
     #integer_fractional_means = sorted([i for i in range(0, len(uniques))])
-    for i in range(len(integer_fractional_means)):
-       haplotype_df['state'].mask(haplotype_df['state'] == centers[i], integer_fractional_means[i], inplace=True)
+    if not "subclonal" in filename:
+        for i in range(len(integer_fractional_means)):
+            haplotype_df['state'].mask(haplotype_df['state'] == centers[i], integer_fractional_means[i], inplace=True)
     #haplotype_df = mask_df_states(haplotype_df_copy, centers, integer_fractional_means)
 
     if 'p_value' in haplotype_df.columns:
-        haplotype_df['if_subclonal'] = ['Y' if element < args.confidence_subclonal_score and  not state == 0  else 'N' for (element,state) in zip(haplotype_df.p_value.values.tolist(), haplotype_df.state.values.tolist())]
+        haplotype_df['if_subclonal'] = ['Y' if element < args.confidence_subclonal_score and not state == 0  else 'N' for (element,state) in zip(haplotype_df.p_value.values.tolist(), haplotype_df.state.values.tolist())]
         haplotype_df['state'] =  [subclonal_values_adjusted(element, centers) if sub == 'Y' else integers_values_adjusted(element, centers) for (element, sub) in zip(haplotype_df.state.values.tolist(), haplotype_df.if_subclonal.values.tolist())]
         haplotype_df = haplotype_df.rename(columns={'chromosome': 'chr', 'start': 'start', 'end': 'end', 'depth': 'coverage', 'state': 'copynumber_state', 'p_value': 'confidence', 'if_subclonal': 'if_subclonal'})
     else:
@@ -883,7 +884,7 @@ def update_subclonal_means_states(centers, subclonals, df_segs_hp1_updated, df_s
     chroms = get_contigs_list(args.contigs)
     updated_df_segs_hp_1 = []
     updated_df_segs_hp_2 = []
-
+    centers[0] = int(centers[0])
     hp_1_values = []
     hp_2_values = []
     for i in range(len(centers)):
@@ -1182,6 +1183,30 @@ def remove_continuous_elements(lst):
             result.append(lst[i])  # Add to result if difference is not 1
     return result
 
+def parallel_regions_in_cpd(signal):
+    # Define parameters
+    n_jobs = 8  # Number of parallel jobs
+    model = "rbf"  # Change point model
+    penalty = 10  # Penalty parameter for segmentation
+    jump = 25
+
+    # Function to detect change points in a given segment
+    def detect_changes(segment, start_idx):
+        algo = rpt.Pelt(model=model, jump=jump).fit(segment)
+        result = algo.predict(pen=penalty)
+        return [idx + start_idx for idx in result[:-1]]  # Exclude the last index
+
+    # Split data into chunks for parallel processing
+    chunk_size = len(signal) // n_jobs
+    segments = [(signal[i * chunk_size:(i + 1) * chunk_size], i * chunk_size) for i in range(n_jobs)]
+    from joblib import Parallel, delayed
+    # Run parallel change point detection
+    results = Parallel(n_jobs=n_jobs)(delayed(detect_changes)(seg, start) for seg, start in segments)
+
+    # Merge and sort change point indices
+    merged_indices = sorted(set([idx for sublist in results for idx in sublist]))
+
+    return merged_indices
 def change_point_detection_algo(bin_size, hp_data, ref_start_values, args, breakpoints_coordinates, df_centm_chrom):
     if not df_centm_chrom.empty:
         cents = [df_centm_chrom.start.values.tolist()[0], df_centm_chrom.end.values.tolist()[0]]
@@ -1189,10 +1214,9 @@ def change_point_detection_algo(bin_size, hp_data, ref_start_values, args, break
         cents = [0,0]
     if args.cpd_internal_segments or args.change_point_detection_for_cna:
         sub_list_data = np.array(hp_data, dtype='int')
-        algo_sub_list = rpt.Pelt(model="rbf", jump=25).fit(sub_list_data)
-        result_cpd_points = algo_sub_list.predict(pen=10)
+        result_cpd_points = parallel_regions_in_cpd(sub_list_data)
         result_cpd_points = [i*bin_size for i in result_cpd_points]
-        breakpoints_coordinates = sorted(list(set(breakpoints_coordinates + result_cpd_points)))
+        breakpoints_coordinates = sorted(list(set([0] + breakpoints_coordinates + result_cpd_points + [ref_start_values[-1]//args.bin_size])))
 
     cent_indices = []
     for i, bp in enumerate(breakpoints_coordinates):
@@ -1212,11 +1236,11 @@ def change_point_detection_algo(bin_size, hp_data, ref_start_values, args, break
     start = 0
     snps_haplotype_pos.append(0)
     for index, point in enumerate(change_points):
-        if args.cpd_internal_segments and index == len(change_points)-1:
+        if args.cpd_internal_segments and index == len(change_points):
             break
         sub_list = hp_data[start//bin_size:point//bin_size]
         if sub_list and not point == cents[1]:
-            if args.normal_phased_vcf:
+            if args.normal_phased_vcf or args.tumor_vcf:
                 sub_list = [x for x in sub_list if x != 0]
             if len(sub_list):
                 snps_haplotype_mean.append(statistics.median(sub_list))

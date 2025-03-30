@@ -12,6 +12,7 @@ import numpy as np
 
 from multiprocessing import Pool
 from collections import defaultdict
+from scipy.signal import find_peaks
 
 from src.hapcorrect.src.main_hapcorrect import main_process
 from src.__version__ import __version__
@@ -23,7 +24,7 @@ from src.utils import get_chromosomes_bins, write_segments_coverage, write_segme
     merge_adjacent_regions_cn, merge_adjacent_regions_cn_unphased, parse_sv_vcf, weigted_means_ploidy, average_p_value_genome, collect_loh_centromere_regions, \
     find_optimized_normal_peaks, update_genes_phase_corrected_coverage, weighted_means, extract_breakpoints_additional, write_df_csv, adjust_bps_cn_segments_boundries, dna_purity_to_cell_purity, move_100pct_purity_sol
 from src.plots import coverage_plots_chromosomes, copy_number_plots_genome_details, copy_number_plots_genome, plots_genome_coverage, copy_number_plots_chromosomes, \
-    copy_number_plots_genome_breakpoints, copy_number_plots_genome_breakpoints_subclonal, copy_number_plots_genome_subclonal, genes_copy_number_plots_genome, genes_plots_genome, heatmap_copy_number_plots_genome, plot_ploidy_purity_p_values, copy_number_plots_genome_breakpoints_cytobands
+    copy_number_plots_genome_breakpoints, copy_number_plots_genome_breakpoints_subclonal, copy_number_plots_genome_subclonal, genes_copy_number_plots_genome, genes_plots_genome, heatmap_copy_number_plots_genome, plot_ploidy_purity_p_values
 from src.vcf_processing import vcf_parse_to_csv_for_het_phased_snps_phasesets
 from src.snps_loh import plot_snps_frequencies_without_phasing, plot_snps_frequencies, plot_snps_ratios_genome, snps_df_loh, variation_plots, write_loh_regions
 from src.phasing_correction import generate_phasesets_bins, fix_inter_cn_phase_switch_errors, bins_correction_phaseblocks
@@ -54,12 +55,28 @@ def _enable_logging(log_file, debug, overwrite):
 def _version():
     return __version__
 
-def find_peaks(lst):
+def find_peaks_indices(lst):
     peaks = []
     for i in range(1, len(lst) - 1):
         if lst[i] > lst[i-1] and lst[i] > lst[i+1]:
             peaks.append(i)
     return peaks
+
+def merge_peaks(list1, list2, list3, min_distance=3):
+    merged = sorted(set(list1 + list2 + list3))  # Merge and sort unique indices
+    filtered = [merged[0]]  # Start with the first index
+
+    # Keep only indices that are at least `min_distance` apart
+    for idx in merged[1:]:
+        if idx - filtered[-1] >= min_distance:
+            filtered.append(idx)
+
+    return filtered
+
+def find_peaks_with_min_distance(signal, min_distance=2):
+    peaks, _ = find_peaks(signal, distance=min_distance)
+    return peaks.tolist()
+
 def copy_numbers_assignment_haplotypes(args, tumor_cov, max_limit, single_copy_cov, centers, subclonals, df_hp1, df_hp2, df_segs_hp1, df_segs_hp2, snps_cpd_means_df, csv_df_snps_mean, df_snps_in_csv, df_unphased, x_axis, observed_hist, is_half):
     data = []
     average_p_value = []
@@ -81,7 +98,7 @@ def copy_numbers_assignment_haplotypes(args, tumor_cov, max_limit, single_copy_c
             tumor_purity = cellular_tumor_purity
         # tumor_purity = dna_purity_to_cell_purity(tumor_purity, overall_ploidy)
         _, _, _, normal_fraction = normal_genome_proportion(tumor_purity, overall_ploidy, tumor_cov)
-        if normal_coverage == 0:
+        if normal_coverage == 0 and p_value > 0:
             average_p_value.append(p_value)
             data.append([overall_ploidy, tumor_purity, cen_out, p_value])
             logger.info("overall_ploidy: %s, dna_tumor_purity: %s, cell_tumor_purity: %s, average_p_value: %s, for i: %s,  centers: %s, norm frac: %s",
@@ -100,7 +117,10 @@ def copy_numbers_assignment_haplotypes(args, tumor_cov, max_limit, single_copy_c
     plot_ploidy_purity_p_values(args, [data[n][0] for n in range(len(data))], [data[n][1] for n in range(len(data))], [data[n][3] for n in range(len(data))])
 
     if average_p_value:
-        optimized_normal = find_optimized_normal_peaks(args, np.array(average_p_value), max_limit, spacing=3, limit=0.3) #find_peaks(average_p_value)
+        optimized_normal_1 = find_optimized_normal_peaks(args, np.array(average_p_value), max_limit, spacing=3, limit=0.3) #find_peaks(average_p_value)
+        #optimized_normal_2  = find_peaks_with_min_distance(np.array(average_p_value))
+        optimized_normal_3  = find_peaks_indices(average_p_value)
+        optimized_normal = merge_peaks(optimized_normal_1, optimized_normal_1, optimized_normal_3)
         for j in optimized_normal:
             args.tumor_ploidy = round(data[j][0], 2)
             args.tumor_purity = round(data[j][1], 2)
@@ -130,8 +150,6 @@ def copy_numbers_assignment_haplotypes(args, tumor_cov, max_limit, single_copy_c
 
             if args.breakpoints:
                 copy_number_plots_genome_breakpoints(cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, p_value_confidence, loh_regions, df_snps_in_csv, is_half)
-                #copy_number_plots_genome_breakpoints_cytobands(cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, p_value_confidence, loh_regions, df_snps_in_csv, is_half)
-
             else:
                 copy_number_plots_genome(cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, p_value_confidence, loh_regions, df_snps_in_csv, is_half)
             variation_plots(args, csv_df_snps_mean, df_segs_hp1_updated, df_segs_hp2_updated, cen_out, integer_fractional_means, df_snps_in_csv, loh_regions, p_value_confidence, is_half)
@@ -167,15 +185,14 @@ def main():
     MIN_MAPQ = 10
     MIN_SV_SIZE = 50
     BIN_SIZE = 50000
-    BIN_SIZE_SNPS = 50000
+    BIN_SIZE_SNPS = 200000
     MAX_CUT_THRESHOLD = 100
     MIN_ALIGNED_LENGTH = 5000
     MAX_CUT_THRESHOLD_SNPS_COUNTS = 50
-    HETS_RATIO_LOH = 0.25
+    HETS_RATIO_LOH = 0.15
     HETS_SMOOTH_WINDOW = 45
     HETS_LOH_SEG_SIZE = 2000000
     BP_MIN_LENGTH = 10000
-
 
     SAMTOOLS_BIN = "samtools"
     BCFTOOLS_BIN = "bcftools"
@@ -212,7 +229,7 @@ def main():
     parser.add_argument("--centromere", dest="centromere", metavar="path", required=False, default='annotations/grch38.cen_coord.curated.bed', help="Path to centromere annotations BED file")
     parser.add_argument("--cancer-genes", dest="cancer_genes", metavar="path", required=False, default='annotations/COSMIC_cancer_genes.tsv', help="Path to default COSMIC Cancer Genes TSV file")
     parser.add_argument("--user-input-genes", dest="user_input_genes", metavar="path", required=False, help="Path to user input genes names in *.bed file [each name in a single line (annotations/user_input_genes_example_1.bed), or tab delimated genes etries (annotations/user_input_genes_example_2.bed)], these genes will be used in plots instead of default COSMIC cancer genes")
-    parser.add_argument("--reference-name", dest="reference_name", required=False, default=DEFAULT_REF, help="Default reference name [grch38, chm13]")
+    parser.add_argument("--reference-name", dest="reference_name", required=False, default=DEFAULT_REF, help="Default reference name: grch38 [grch38, chm13]")
 
     parser.add_argument("--breakpoints", dest="breakpoints", metavar="path", required=False, default=None, help="Path to breakpoints/SVs VCF file")
     parser.add_argument("--breakpoints-min-length", dest="breakpoints_min_length", default=BP_MIN_LENGTH, metavar="int", type=int, help="breakpoints minimum length to include [10k]")

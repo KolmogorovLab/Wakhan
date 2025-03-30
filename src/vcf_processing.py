@@ -50,14 +50,15 @@ def get_snps_counts(snps_df_sorted, chrom, ref_start_values, bin_size):  # TODO 
         snps_df_vaf = [eval(i) for i in snps_df.vaf.str.split(',').str[0].values.tolist()]
     else:
         snps_df_vaf = snps_df.vaf.values.tolist()
+    snps_df_gt = snps_df['gt'].tolist()
 
     snps_df_pos = snps_df.pos.values.tolist()
     snps_het = []
     snps_homo = []
     snps_het_pos = []
     snps_homo_pos = []
-    for index, vaf in enumerate(snps_df_vaf):
-        if vaf > 0.75 or vaf < 0.25:
+    for index, (gt,vaf) in enumerate(zip(snps_df_gt,snps_df_vaf)):
+        if gt == '1/1' or  gt == '1|1':
             snps_homo.append(vaf)
             snps_homo_pos.append(snps_df_pos[index])
         else:
@@ -89,14 +90,15 @@ def get_snps_counts_cn_regions(snps_df_sorted, chrom, ref_start_values, ref_end_
         snps_df_vaf = [eval(i) for i in snps_df.vaf.str.split(',').str[0].values.tolist()]
     else:
         snps_df_vaf = snps_df.vaf.values.tolist()
+    snps_df_gt = snps_df['gt'].tolist()
 
     snps_df_pos = snps_df.pos.values.tolist()
     snps_het = []
     snps_homo = []
     snps_het_pos = []
     snps_homo_pos = []
-    for index, vaf in enumerate(snps_df_vaf):
-        if vaf > 0.75 or vaf < 0.25:
+    for index, (gt,vaf) in enumerate(zip(snps_df_gt,snps_df_vaf)):
+        if gt == '1/1' or  gt == '1|1':
             snps_homo.append(vaf)
             snps_homo_pos.append(snps_df_pos[index])
         else:
@@ -125,14 +127,15 @@ def get_snps_frquncies(snps_df_sorted, chrom):  # TODO This module needs better 
         snps_df_vaf = [eval(i) for i in snps_df.vaf.str.split(',').str[0].values.tolist()]
     else:
         snps_df_vaf = snps_df.vaf.values.tolist()
+    snps_df_gt = snps_df['gt'].tolist()
 
     snps_df_pos = snps_df.pos.values.tolist()
     snps_het = []
     snps_homo = []
     snps_het_pos = []
     snps_homo_pos = []
-    for index, vaf in enumerate(snps_df_vaf):
-        if vaf > 0.75 or vaf < 0.25:
+    for index, (gt,vaf) in enumerate(zip(snps_df_gt,snps_df_vaf)):
+        if gt == '1/1' or  gt == '1|1':
             snps_homo.append(vaf)
             snps_homo_pos.append(snps_df_pos[index])
         else:
@@ -150,14 +153,15 @@ def get_snps_frquncies_genome(snps_df):  # TODO This module needs better impleme
         snps_df_vaf = [eval(i) for i in snps_df.vaf.str.split(',').str[0].values.tolist()]
     else:
         snps_df_vaf = snps_df.vaf.values.tolist()
+    snps_df_gt = snps_df['gt'].tolist()
 
     snps_df_pos = snps_df.pos.values.tolist()
     snps_het = []
     snps_homo = []
     snps_het_pos = []
     snps_homo_pos = []
-    for index, vaf in enumerate(snps_df_vaf):
-        if vaf > 0.75 or vaf < 0.25:
+    for index, (gt,vaf) in enumerate(zip(snps_df_gt,snps_df_vaf)):
+        if gt == '1/1' or  gt == '1|1':
             snps_homo.append(vaf)
             snps_homo_pos.append(snps_df_pos[index])
         else:
@@ -308,14 +312,15 @@ def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, args): 
         snps_df_vaf = [eval(i) for i in snps_df.vaf.str.split(',').str[0].values.tolist()]
     else:
         snps_df_vaf = snps_df.vaf.values.tolist()
+    snps_df_gt = snps_df['gt'].tolist()
 
     snps_df_pos = snps_df.pos.values.tolist()
     snps_het = []
     snps_homo = []
     snps_het_pos = []
     snps_homo_pos = []
-    for index, vaf in enumerate(snps_df_vaf):
-        if vaf > 0.75 or vaf < 0.25:
+    for index, (gt,vaf) in enumerate(zip(snps_df_gt,snps_df_vaf)):
+        if gt == '1/1' or  gt == '1|1':
         #if vaf > 0.9 or vaf < 0.1:
             snps_homo.append(vaf)
             snps_homo_pos.append(snps_df_pos[index])
@@ -536,15 +541,15 @@ def vcf_parse_to_csv_for_het_phased_snps(input_vcf, args):
     output_csv = basefile + '_bafs.csv'
     output_csv = f"{os.path.join(args.out_dir_plots, 'data', output_csv)}"
 
-    logger.info('bcftools -> Filtering out hetrozygous and phased SNPs and generating a new VCF')
-    # Filter out het, phased SNPs
-    cmd = ['bcftools', 'view', '--threads', '$(nproc)',  '-g', 'het', '--types', 'snps', input_vcf, '-Oz', '-o', output_vcf]
-    process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    process.wait()
+    # logger.info('bcftools -> Filtering out hetrozygous and phased SNPs and generating a new VCF')
+    # # Filter out het, phased SNPs
+    # cmd = ['bcftools', 'view', '--threads', '$(nproc)',  '-g', 'het', '--types', 'snps', input_vcf, '-Oz', '-o', output_vcf]
+    # process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+    # process.wait()
 
     logger.info('bcftools -> Query for phasesets and GT, DP, VAF feilds by creating a CSV file')
     # bcftools query for phasesets and GT,DP,VAF
-    cmd = ['bcftools', 'query', '-f',  '%CHROM\t%POS\t[%PS]\n', '-i PS>1', output_vcf, '-o', output_csv] #
+    cmd = ['bcftools', 'query', '-f',  '%CHROM\t%POS\t[%PS]\n', '-i PS>1', input_vcf, '-o', output_csv] #
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     process.wait()
 
@@ -559,11 +564,11 @@ def vcf_parse_to_csv_for_het_phased_snps_phasesets(input_vcf, args):
     output_csv = basefile + '_phasesets.csv'
     output_csv = f"{os.path.join(args.out_dir_plots, 'data', output_csv)}"
 
-    logger.info('bcftools -> Filtering out hetrozygous and phased SNPs and generating a new VCF')
-    # Filter out het, phased SNPs
-    cmd = ['bcftools', 'view', '--threads', '$(nproc)',  '--phased', '-g', 'het', '--types', 'snps', input_vcf, '-Oz', '-o', output_vcf]
-    process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    process.wait()
+    # logger.info('bcftools -> Filtering out hetrozygous and phased SNPs and generating a new VCF')
+    # # Filter out het, phased SNPs
+    # cmd = ['bcftools', 'view', '--threads', '$(nproc)',  '--phased', '-g', 'het', '--types', 'snps', input_vcf, '-Oz', '-o', output_vcf]
+    # process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+    # process.wait()
 
     logger.info('bcftools -> Query for phasesets and GT, DP, VAF feilds by creating a CSV file')
     # bcftools query for phasesets and GT,DP,VAF
