@@ -1070,11 +1070,11 @@ def integer_fractional_cluster_means(args, df_segs_hp1, df_segs_hp2, centers):
     return integer_fractional_lables
 
 
-def change_point_detection_means(args, df_chrom, ref_start_values, ref_start_values_1, df_centm_chrom):
+def change_point_detection_means(args, df_chrom, ref_start_values, ref_start_values_1, df_centm_chrom, df_loh_chrom):
     df_means_chr = []
     if args.without_phasing:
         means = df_chrom.coverage.values.tolist()
-        snps_mean, snps_len, snps_pos = change_point_detection_algo(args.bin_size, means, ref_start_values, args, ref_start_values_1, df_centm_chrom)
+        snps_mean, snps_len, snps_pos = change_point_detection_algo(args.bin_size, means, ref_start_values, args, ref_start_values_1, df_centm_chrom, df_loh_chrom)
         snps_pos_start = []
         snps_pos_end = []
         for i in range(len(snps_pos)-1):
@@ -1085,7 +1085,7 @@ def change_point_detection_means(args, df_chrom, ref_start_values, ref_start_val
 
         return snps_mean, snps_len, df_means_chr
     else:
-        snps_haplotype1_mean, snps_haplotype1_len, snps_haplotype1_pos = change_point_detection_algo(args.bin_size, df_chrom.hp1.values.tolist(), ref_start_values, args, ref_start_values_1, df_centm_chrom)
+        snps_haplotype1_mean, snps_haplotype1_len, snps_haplotype1_pos = change_point_detection_algo(args.bin_size, df_chrom.hp1.values.tolist(), ref_start_values, args, ref_start_values_1, df_centm_chrom, df_loh_chrom)
         snps_pos_start = []
         snps_pos_end = []
         for i in range(len(snps_haplotype1_pos) - 1):
@@ -1096,7 +1096,7 @@ def change_point_detection_means(args, df_chrom, ref_start_values, ref_start_val
         df_means_chr.append(pd.DataFrame(list(zip(chr_list, snps_pos_start, snps_pos_end, snps_haplotype1_mean)),
                                              columns=['chromosome', 'start', 'end', 'state']))
 
-        snps_haplotype2_mean, snps_haplotype2_len, snps_haplotype2_pos = change_point_detection_algo(args.bin_size, df_chrom.hp2.values.tolist(), ref_start_values, args, ref_start_values_1, df_centm_chrom)
+        snps_haplotype2_mean, snps_haplotype2_len, snps_haplotype2_pos = change_point_detection_algo(args.bin_size, df_chrom.hp2.values.tolist(), ref_start_values, args, ref_start_values_1, df_centm_chrom, df_loh_chrom)
         snps_pos_start = []
         snps_pos_end = []
         for i in range(len(snps_haplotype2_pos) - 1):
@@ -1121,11 +1121,11 @@ def change_point_detection_means(args, df_chrom, ref_start_values, ref_start_val
             indices_loh_hp2 = update_state_with_loh_overlap(df_means_chr[1], df_loh)
 
             # remove cent/loh segment
-            snps_haplotype1_mean = remove_indices(snps_haplotype1_mean, list(set(indices_cent_hp1 + indices_loh_hp1)))
-            snps_haplotype1_len = remove_indices(snps_haplotype1_len, list(set(indices_cent_hp1 + indices_loh_hp1)))
+            snps_haplotype1_mean = remove_indices(snps_haplotype1_mean, list(set(indices_cent_hp1[0] + indices_loh_hp1)))
+            snps_haplotype1_len = remove_indices(snps_haplotype1_len, list(set(indices_cent_hp1[0] + indices_loh_hp1)))
 
-            snps_haplotype2_mean = remove_indices(snps_haplotype2_mean, list(set(indices_cent_hp2 + indices_loh_hp2)))
-            snps_haplotype2_len = remove_indices(snps_haplotype2_len, list(set(indices_cent_hp2 + indices_loh_hp2)))
+            snps_haplotype2_mean = remove_indices(snps_haplotype2_mean, list(set(indices_cent_hp2[0] + indices_loh_hp2)))
+            snps_haplotype2_len = remove_indices(snps_haplotype2_len, list(set(indices_cent_hp2[0] + indices_loh_hp2)))
         else:
             snps_haplotype1_mean = remove_indices(snps_haplotype1_mean, indices_cent_hp1)
             snps_haplotype1_len = remove_indices(snps_haplotype1_len, indices_cent_hp1)
@@ -1207,7 +1207,7 @@ def parallel_regions_in_cpd(signal):
     merged_indices = sorted(set([idx for sublist in results for idx in sublist]))
 
     return merged_indices
-def change_point_detection_algo(bin_size, hp_data, ref_start_values, args, breakpoints_coordinates, df_centm_chrom):
+def change_point_detection_algo(bin_size, hp_data, ref_start_values, args, breakpoints_coordinates, df_centm_chrom, df_loh_chrom):
     if not df_centm_chrom.empty:
         cents = [df_centm_chrom.start.values.tolist()[0], df_centm_chrom.end.values.tolist()[0]]
     else:
@@ -1226,7 +1226,14 @@ def change_point_detection_algo(bin_size, hp_data, ref_start_values, args, break
         for index in sorted(list(set(cent_indices)), reverse=True):
             del breakpoints_coordinates[index]
 
-    change_points = sorted(list(set(breakpoints_coordinates + cents)))
+    if args.tumor_vcf:
+        if not df_loh_chrom.empty:
+            loh = df_loh_chrom['start'].tolist() + df_loh_chrom['end'].tolist() #[df_loh_chrom.start.values.tolist()[0], df_loh_chrom.end.values.tolist()[0]]
+        else:
+            loh = [0, 0]
+        change_points = sorted(list(set(breakpoints_coordinates + cents + loh)))
+    else:
+        change_points = sorted(list(set(breakpoints_coordinates + cents)))
     change_points = remove_continuous_elements(change_points)
     change_points = [i for i in change_points if i >= 2]
 
@@ -1606,7 +1613,7 @@ def average_p_value_genome(args, centers, df_segs_hp1_, df_segs_hp2_, df_hp1, df
         df_hp_2_val = df_hp_2.hp2.values.tolist()
 
         for i, (start,end) in enumerate(zip(df_segs_hp_1_updated_start, df_segs_hp_1_updated_end)):
-            if end - start * args.bin_size > 2000000:
+            if end - start * args.bin_size > 1000000:
                 bins = [x for x in df_hp_1_val[start // args.bin_size:end // args.bin_size] if x != 0]
                 if bins:
                     seg_mean = statistics.median(bins)
@@ -1621,7 +1628,7 @@ def average_p_value_genome(args, centers, df_segs_hp1_, df_segs_hp2_, df_hp1, df
                     df_segs_hp_1_updated_weight.append(end-start)
 
         for i, (start,end) in enumerate(zip(df_segs_hp_2_updated_start, df_segs_hp_2_updated_end)):
-            if end-start * args.bin_size > 2000000:
+            if end-start * args.bin_size > 1000000:
                 bins = [x for x in df_hp_2_val[start // args.bin_size:end // args.bin_size] if x != 0]
                 if bins:
                     seg_mean = statistics.median(bins)
@@ -1984,3 +1991,38 @@ def move_100pct_purity_sol(args):
             move_folder(args.out_dir_plots +'/'+is_100pct_purity_solution, args.out_dir_plots + '/100pct_purity_solution')
         else:
             logger.info(f"Error: Source folder '{args.out_dir_plots + '/100pct_purity_solution'}' does not exist.")
+
+def find_p_values_peaks(p_values):
+    def remove_consecutive_duplicates(data):
+        if not data:
+            return []
+
+        result = [data[0]]
+        for i in range(1, len(data)):
+            if data[i] != data[i - 1]:
+                result.append(data[i])
+        return result
+
+    def remove_consecutive_diff_1(data):
+        if not data:
+            return []
+
+        result = [data[0]]  # Start with the first element
+        for i in range(1, len(data)):
+            # Only add to result if the difference with the last added value is not 1
+            if abs(data[i] - result[-1]) != 1:
+                result.append(data[i])
+        return result
+
+    def find_peaks(data):
+        val = []
+        for i in range(1, len(data) - 1):
+            if data[i] > data[i - 1] and data[i] > data[i + 1]:
+                val.append(data[i])
+        return val
+
+    data = remove_consecutive_duplicates(p_values)
+    indices = [i for i, val in enumerate(p_values) if val in find_peaks(data)]
+    indices = remove_consecutive_diff_1(indices)
+
+    return indices

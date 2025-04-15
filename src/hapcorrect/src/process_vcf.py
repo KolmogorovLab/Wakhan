@@ -314,6 +314,8 @@ def snps_frequencies_chrom_mean(df_snps, ref_start_values, chrom, args):
     snps_haplotype1_mean=[]
     total=0
     for index, i in enumerate(ref_start_values):
+        # if chrom == 'chr14' and i == 106260001:
+        #     print('here')
         len_cov= len(df[(df.pos >= i) & (df.pos < i + args.bin_size)])
         if len_cov ==0:
             snps_haplotype1_mean.append(0)
@@ -563,20 +565,83 @@ def chunks(lst, n):
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
 
+from collections import Counter
+
+def parse_pileup_line(line):
+    chrom, pos, ref, depth, bases, qual = line.strip().split("\t")[:6]
+    pos = int(pos)
+    depth = int(depth)
+
+    # Remove symbols that are not base letters
+    i = 0
+    clean_bases = ""
+    while i < len(bases):
+        c = bases[i]
+        if c == '^':  # start of a read segment, skip the next character (mapping quality)
+            i += 2
+        elif c == '$':  # end of a read segment
+            i += 1
+        elif c in '+-':  # insertion or deletion
+            i += 1
+            indel_len = ''
+            while i < len(bases) and bases[i].isdigit():
+                indel_len += bases[i]
+                i += 1
+            i += int(indel_len)  # skip indel bases
+        else:
+            clean_bases += c
+            i += 1
+
+    # Normalize bases (case-insensitive) and convert to ACGT
+    base_map = {'.': ref.upper(), ',': ref.upper(), 'A': 'A', 'a': 'A',
+                'C': 'C', 'c': 'C', 'G': 'G', 'g': 'G', 'T': 'T', 't': 'T'}
+
+    converted = [base_map.get(b, 'N') for b in clean_bases if base_map.get(b, 'N') in 'ACGT']
+    base_counts = Counter(converted)
+    return {
+        'chrom': chrom,
+        'pos': pos,
+        #'ref': ref,
+        #'depth': depth,
+        'A': base_counts['A'],
+        'C': base_counts['C'],
+        'G': base_counts['G'],
+        'T': base_counts['T']
+    }
+
 def compute_acgt_frequency(pileup, snps_frequency, args): #https://www.biostars.org/p/95700/
-    with open(pileup, 'r') as f:
-        input_data = f.readlines()
-    base_counts = []
-    positions = []
-    for line in input_data:
-        elements = line.strip().split('\t')
-        positions.append((elements[0], int(elements[1]), elements[2], elements[4]))
-    with multiprocessing.Pool(processes=args.threads) as pool:
-        base_counts = list(pool.imap(count_bases, chunks(positions, 1000)))
-    base_counts = [item for sublist in base_counts for item in sublist]
-    with open(snps_frequency, 'w') as f:
-        writer = csv.writer(f)
-        writer.writerows(base_counts)
+    with open(pileup) as infile, open(snps_frequency, "w", newline='') as outfile:
+        writer = csv.DictWriter(outfile, fieldnames=["chrom", "pos", "A", "C", "G", "T"])
+        #writer.writeheader()
+        for line in infile:
+            row = parse_pileup_line(line)
+            writer.writerow(row)
+
+    ##############################################################
+    # with open(pileup, 'r') as f:
+    #     input_data = f.readlines()
+    # base_counts = []
+    # positions = []
+    # for line in input_data:
+    #     elements = line.strip().split('\t')
+    #     positions.append((elements[0], int(elements[1]), elements[2], elements[4]))
+    # with multiprocessing.Pool(processes=args.threads) as pool:
+    #     base_counts = list(pool.imap(count_bases, chunks(positions, 1000)))
+    # base_counts = [item for sublist in base_counts for item in sublist]
+    # with open(snps_frequency, 'w') as f:
+    #     writer = csv.writer(f)
+    #     writer.writerows(base_counts)
+    ###################################################################
+    # cmd = ['sequenza-utils', 'pileup2acgt', '-p', pileup,  '-o', "pileup2acgt.tsv"]
+    # process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+    # process.wait()
+    #
+    # # Read the TSV file
+    # df = pd.read_csv("pileup2acgt.tsv", sep="\t", header=None, skiprows=1) #names=['chr',	'n_base',	'ref_base',	'read.depth',	'A',	'C',	'G',	'T',	'strand'])
+    # # Select only columns 0, 1, 4, 5, 6, 7
+    # df_filtered = df.iloc[:, [0, 1, 4, 5, 6, 7]]
+    # # Save as a CSV file (comma-separated)
+    # df_filtered.to_csv(snps_frequency, index=False, header=False)
 
 def rephase_vcf(df, id_df, loh_df, vcf_in, out_vcf):
     chr_list = list(set(df['chr']))

@@ -22,7 +22,7 @@ from src.utils import get_chromosomes_bins, write_segments_coverage, write_segme
     seperate_dfs_coverage, flatten_smooth, get_contigs_list, write_copynumber_segments_csv, integer_fractional_cluster_means, \
     adjust_diversified_segments, get_chromosomes_bins_bam, normal_genome_proportion, update_subclonal_means_states, adjust_first_copy_mean, \
     merge_adjacent_regions_cn, merge_adjacent_regions_cn_unphased, parse_sv_vcf, weigted_means_ploidy, average_p_value_genome, collect_loh_centromere_regions, \
-    find_optimized_normal_peaks, update_genes_phase_corrected_coverage, weighted_means, extract_breakpoints_additional, write_df_csv, adjust_bps_cn_segments_boundries, dna_purity_to_cell_purity, move_100pct_purity_sol
+    find_optimized_normal_peaks, update_genes_phase_corrected_coverage, weighted_means, extract_breakpoints_additional, write_df_csv, adjust_bps_cn_segments_boundries, dna_purity_to_cell_purity, move_100pct_purity_sol, find_p_values_peaks
 from src.plots import coverage_plots_chromosomes, copy_number_plots_genome_details, copy_number_plots_genome, plots_genome_coverage, copy_number_plots_chromosomes, \
     copy_number_plots_genome_breakpoints, copy_number_plots_genome_breakpoints_subclonal, copy_number_plots_genome_subclonal, genes_copy_number_plots_genome, genes_plots_genome, heatmap_copy_number_plots_genome, plot_ploidy_purity_p_values
 from src.vcf_processing import vcf_parse_to_csv_for_het_phased_snps_phasesets
@@ -55,24 +55,6 @@ def _enable_logging(log_file, debug, overwrite):
 def _version():
     return __version__
 
-def find_peaks_indices(lst):
-    peaks = []
-    for i in range(1, len(lst) - 1):
-        if lst[i] > lst[i-1] and lst[i] > lst[i+1]:
-            peaks.append(i)
-    return peaks
-
-def merge_peaks(list1, list2, list3, min_distance=3):
-    merged = sorted(set(list1 + list2 + list3))  # Merge and sort unique indices
-    filtered = [merged[0]]  # Start with the first index
-
-    # Keep only indices that are at least `min_distance` apart
-    for idx in merged[1:]:
-        if idx - filtered[-1] >= min_distance:
-            filtered.append(idx)
-
-    return filtered
-
 def find_peaks_with_min_distance(signal, min_distance=2):
     peaks, _ = find_peaks(signal, distance=min_distance)
     return peaks.tolist()
@@ -89,8 +71,9 @@ def copy_numbers_assignment_haplotypes(args, tumor_cov, max_limit, single_copy_c
 
         if overall_ploidy < 0.1:
             continue
-        dna_tumor_purity = tumor_cov / (tumor_cov + normal_coverage)
-        cellular_tumor_purity = (tumor_cov / overall_ploidy) / ((normal_coverage / 2) + (tumor_cov / overall_ploidy))
+        normal_coverage = normal_coverage * 2 #make it diploid
+        dna_tumor_purity = (tumor_cov - normal_coverage) / tumor_cov
+        cellular_tumor_purity = ((tumor_cov - normal_coverage) / overall_ploidy) / ((normal_coverage / 2) + ((tumor_cov - normal_coverage) / overall_ploidy))
 
         if args.dna_purity:
             tumor_purity = dna_tumor_purity
@@ -100,14 +83,14 @@ def copy_numbers_assignment_haplotypes(args, tumor_cov, max_limit, single_copy_c
         _, _, _, normal_fraction = normal_genome_proportion(tumor_purity, overall_ploidy, tumor_cov)
         if normal_coverage == 0 and p_value > 0:
             average_p_value.append(p_value)
-            data.append([overall_ploidy, tumor_purity, cen_out, p_value])
+            data.append([overall_ploidy, tumor_purity, cen_out, p_value, dna_tumor_purity])
             logger.info("overall_ploidy: %s, dna_tumor_purity: %s, cell_tumor_purity: %s, average_p_value: %s, for i: %s,  centers: %s, norm frac: %s",
                 overall_ploidy, dna_tumor_purity, cellular_tumor_purity, p_value, normal_coverage, cen_out[0:4], normal_fraction)
             continue
 
         if (float(args.purity_range.split('-')[0]) <= tumor_purity <= float(args.purity_range.split('-')[1])) and (float(args.ploidy_range.split('-')[0]) <= overall_ploidy <= float(args.ploidy_range.split('-')[1])):
             average_p_value.append(p_value)
-            data.append([overall_ploidy, tumor_purity, cen_out, p_value])
+            data.append([overall_ploidy, tumor_purity, cen_out, p_value, dna_tumor_purity])
             logger.info("overall_ploidy: %s, dna_tumor_purity: %s, cell_tumor_purity: %s, average_p_value: %s, for i: %s,  centers: %s, norm frac: %s",
                 overall_ploidy, dna_tumor_purity, cellular_tumor_purity, p_value, normal_coverage, cen_out[0:4], normal_fraction)
 
@@ -117,18 +100,16 @@ def copy_numbers_assignment_haplotypes(args, tumor_cov, max_limit, single_copy_c
     plot_ploidy_purity_p_values(args, [data[n][0] for n in range(len(data))], [data[n][1] for n in range(len(data))], [data[n][3] for n in range(len(data))])
 
     if average_p_value:
-        optimized_normal_1 = find_optimized_normal_peaks(args, np.array(average_p_value), max_limit, spacing=3, limit=0.3) #find_peaks(average_p_value)
-        #optimized_normal_2  = find_peaks_with_min_distance(np.array(average_p_value))
-        optimized_normal_3  = find_peaks_indices(average_p_value)
-        optimized_normal = merge_peaks(optimized_normal_1, optimized_normal_1, optimized_normal_3)
+        optimized_normal = find_p_values_peaks(average_p_value)
         for j in optimized_normal:
             args.tumor_ploidy = round(data[j][0], 2)
             args.tumor_purity = round(data[j][1], 2)
+            dna_tumor_fraction = round(data[j][1], 4)
             cen_out = data[j][2]
             logger.info('Normal optimized clusters means: %s', cen_out)
             integer_fractional_means = sorted([i for i in range(0, len(cen_out))])
             p_value_confidence = round(data[j][3], 2)
-            logger.info('Generating coverage/copy numbers plots genome wide for solution with purity {0} and ploidy {1}'.format(args.tumor_purity, args.tumor_ploidy))
+            logger.info('Generating coverage/copy numbers plots genome wide for solution with tumor cellular fraction {0}, ploidy {1} and tumor dna fraction {2}'.format(args.tumor_purity, args.tumor_ploidy, dna_tumor_fraction))
 
             df_segs_hp1_updated, df_segs_hp2_updated = adjust_diversified_segments(cen_out, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, args)
             df_segs_hp1_updated = adjust_bps_cn_segments_boundries(args, df_segs_hp1_updated)
@@ -157,7 +138,7 @@ def copy_numbers_assignment_haplotypes(args, tumor_cov, max_limit, single_copy_c
                 df_genes = update_genes_phase_corrected_coverage(args, df_segs_hp1_updated, df_segs_hp2_updated, p_value_confidence, cen_out, integer_fractional_means, is_half)
                 genes_plots_genome(df_genes, cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, p_value_confidence, loh_regions, df_snps_in_csv, is_half)
                 # genes_copy_number_plots_genome(df_genes, cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, p_value_confidence, loh_regions, df_snps_in_csv)
-                heatmap_copy_number_plots_genome(df_genes, cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, p_value_confidence, loh_regions, df_snps_in_csv, is_half)
+                #heatmap_copy_number_plots_genome(df_genes, cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, p_value_confidence, loh_regions, df_snps_in_csv, is_half)
 
             if args.copynumbers_subclonal_enable:
                 df_segs_hp1_updated, df_segs_hp2_updated = adjust_diversified_segments(cen_out, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, args)
@@ -184,7 +165,7 @@ def main():
     MAX_READ_ERROR = 0.1
     MIN_MAPQ = 10
     MIN_SV_SIZE = 50
-    BIN_SIZE = 50000
+    BIN_SIZE = 10000
     BIN_SIZE_SNPS = 200000
     MAX_CUT_THRESHOLD = 100
     MIN_ALIGNED_LENGTH = 5000
@@ -234,12 +215,12 @@ def main():
     parser.add_argument("--breakpoints", dest="breakpoints", metavar="path", required=False, default=None, help="Path to breakpoints/SVs VCF file")
     parser.add_argument("--breakpoints-min-length", dest="breakpoints_min_length", default=BP_MIN_LENGTH, metavar="int", type=int, help="breakpoints minimum length to include [10k]")
 
+    parser.add_argument("--histogram-coverage", dest="histogram_coverage", action="store_true", required=False, help="use histogram coverage instead of SNPs pileup")
+
     parser.add_argument("--cpd-internal-segments", dest="cpd_internal_segments", action="store_true", required=False, help="change point detection algo for more precise segments after breakpoint/cpd segments")
     parser.add_argument("--change-point-detection-for-cna", dest="change_point_detection_for_cna", action="store_true", required=False, help="use change point detection algo for more cna segmentation instead of breakpoints")
 
-    parser.add_argument("--genome-name", dest="genome_name",
-                        required=True, default=None,
-                        help="Genome sample/cell line name to be displayed on plots")
+    parser.add_argument("--genome-name", dest="genome_name", required=True, default=None, help="Genome sample/cell line name to be displayed on plots")
     parser.add_argument("--contigs", dest="contigs", required=False, default=DEFAULT_CONTIGS, help="List of contigs (choromosomes) to be included in the plots [e.g., chr1-22,X,Y]")
 
     parser.add_argument("--bin-size", "--bin_size", dest="bin_size",
@@ -377,7 +358,7 @@ def main():
 
     thread_pool = Pool(args.threads)
 
-    if args.phaseblock_flipping_disable:
+    if args.phaseblock_flipping_disable and args.histogram_coverage:
         segments_by_read = defaultdict(list)
         genome_ids = []
         for bam_file in all_bams:
@@ -395,6 +376,9 @@ def main():
 
     breakpoints_additional = extract_breakpoints_additional(args)
     if not args.phaseblock_flipping_disable:
+       #if args.quick_start and os.path.exists(args.quick_start_coverage_path + '/phase_corrected_coverage.csv') and os.path.exists(args.quick_start_coverage_path + '/coverage_ps.csv') and os.path.exists(args.quick_start_coverage_path + '/coverage.csv'):
+       #    logger.info('Using existing phase corrected coverage data')
+       #else:
        main_process(args, breakpoints_additional) #hapcorrect
        if args.quick_start:
            if args.without_phasing:
@@ -406,7 +390,7 @@ def main():
                csv_df_phasesets = csv_df_chromosomes_sorter(args.quick_start_coverage_path + '/coverage_ps.csv', ['chr', 'start', 'end', 'coverage'])
            else:
                csv_df_phasesets = csv_df_chromosomes_sorter(args.quick_start_coverage_path + '/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
-               csv_df_coverage = csv_df_chromosomes_sorter(args.out_dir_plots+'/coverage_data/phase_corrected_coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
+               csv_df_coverage = csv_df_chromosomes_sorter(args.quick_start_coverage_path+'/phase_corrected_coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
        else:
            csv_df_phasesets = csv_df_chromosomes_sorter(args.out_dir_plots+'/coverage_data/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
            csv_df_coverage = csv_df_chromosomes_sorter(args.out_dir_plots+'/coverage_data/phase_corrected_coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
@@ -421,7 +405,7 @@ def main():
 
             csv_df_coverage = csv_df_chromosomes_sorter(args.quick_start_coverage_path + '/coverage.csv', ['chr', 'start', 'end', 'coverage'])
             csv_df_phasesets = csv_df_chromosomes_sorter(args.quick_start_coverage_path + '/coverage_ps.csv', ['chr', 'start', 'end', 'coverage'])
-        else:
+        elif args.histogram_coverage:
             logger.info('Computing coverage for bins')
             segments = get_chromosomes_bins_bam(args.target_bam[0], args.bin_size, args)
             segments_coverage = get_segments_coverage(segments, coverage_histograms)
@@ -478,7 +462,10 @@ def main():
     max_limit = int(weighted_means(snps_cpd_means, snps_cpd_points_weights))
     logger.info('Max limit for normal optimization: %s', max_limit)
 
-    tumor_cov = statistics.mean([sum(x) for x in zip(haplotype_1_values_updated, haplotype_2_values_updated, unphased)])
+    if args.histogram_coverage:
+        tumor_cov = statistics.mean([sum(x) for x in zip(haplotype_1_values_updated, haplotype_2_values_updated, unphased)])
+    else:
+        tumor_cov = statistics.mean([sum(x) for x in zip(haplotype_1_values_updated, haplotype_2_values_updated)])
     logger.info('Tumor coverage: %s', tumor_cov)
     centers, is_half_peak, centers_half, subclonals, x_axis, observed_hist, single_copy_cov, single_copy_cov_half = peak_detection_optimization(args, snps_cpd_means, snps_cpd_points_weights, tumor_cov)
     logger.info('Initial detected clusters means: %s', centers)
@@ -596,3 +583,5 @@ def main():
 #--quick-start --quick-start-coverage-path /home/rezkuh/gits/data/1437/80pct.60x --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam  --out-dir-plots 1437_80pct.60x_unphased_bam  --normal-phased-vcf /home/rezkuh/gits/data/1437/80pct.60x/BL1437.ONT.30x.longphase.vcf.gz  --phaseblocks-enable  --genome-name 1437_80pct_60x  --cut-threshold 100  --breakpoints /home/rezkuh/gits/data/1437/80pct.60x/80pct.60x_severus_somatic.vcf --contigs chr1-22 --copynumbers-subclonal-enable --loh-enable  --purity-range 0.5-1.0 --ploidy-range 1-4
 #--quick-start --quick-start-coverage-path /home/rezkuh/gits/data/1437/80pct.60x_to --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam  --out-dir-plots 1437_80pct.60x_to_unphased_bam  --tumor-vcf /home/rezkuh/gits/data/1437/80pct.60x_to/80pct.60x_longphase.vcf.gz  --phaseblocks-enable  --genome-name 1437_80pct_60x  --cut-threshold 100  --breakpoints /home/rezkuh/gits/data/1437/80pct.60x_to/80pct.60x_severus_somatic.vcf --contigs chr1-22 --copynumbers-subclonal-enable --loh-enable  --purity-range 0.5-1.0 --ploidy-range 1-4
 #--quick-start --quick-start-coverage-path /home/rezkuh/gits/data/1954/60pct.20x_to --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam  --out-dir-plots 1954_60pct.20x_to  --tumor-vcf /home/rezkuh/gits/data/1954/60pct.20x_to/longphase.vcf.gz  --phaseblocks-enable  --genome-name 60pct.20x_to  --cut-threshold 100  --breakpoints /home/rezkuh/gits/data/1954/60pct.20x_to/severus_somatic.vcf --contigs chr1-22 --copynumbers-subclonal-enable --loh-enable --bin-size-snps 100000
+
+#--quick-start --quick-start-coverage-path /home/rezkuh/gits/data/BT474_err --threads 1 --reference /home/rezkuh/GenData/reference/GRCh38_no_alt_analysis_set.fasta  --target-bam /home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7:78318498-78486891_haplotagged.bam  --out-dir-plots BT474_err  --tumor-vcf /home/rezkuh/gits/data/BT474_err/longphase.vcf.gz  --phaseblocks-enable  --genome-name BT474_err  --cut-threshold 100  --breakpoints /home/rezkuh/gits/data/BT474_err/severus_somatic.vcf --contigs chr1-22 --copynumbers-subclonal-enable --loh-enable --bin-size-snps 100000 --bin-size 10000  --hets-ratio 0.25 --ploidy-range 1-6 --cpd-internal-segments
