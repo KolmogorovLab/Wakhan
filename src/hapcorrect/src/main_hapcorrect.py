@@ -275,8 +275,8 @@ def main_process(args, breakpoints_additional):
     if args.tumor_vcf and len(loh_regions_events_all):
         loh_df_final = pd.concat(loh_regions_events_all)
         loh_df_final_filtered = loh_df_final[loh_df_final['end'] - loh_df_final['start'] >= 2000000]
-        write_df_csv(loh_df_final_filtered, args.out_dir_plots+'/data_phasing/'+args.genome_name+'_loh_segments.csv')
-        csv_df_loh_regions = csv_df_chromosomes_sorter(args.out_dir_plots + '/data_phasing/'+args.genome_name + '_loh_segments.csv', ['chr', 'start', 'end', 'hp'])
+        write_df_csv(loh_df_final_filtered, args.out_dir_plots+'/coverage_data/'+args.genome_name+'_loh_segments.csv')
+        csv_df_loh_regions = csv_df_chromosomes_sorter(args.out_dir_plots + '/coverage_data/'+args.genome_name + '_loh_segments.csv', ['chr', 'start', 'end', 'hp'])
     else:
         csv_df_loh_regions = pd.DataFrame(columns=['chr', 'start', 'end', 'hp'])
     write_df_csv(pd.concat(start_values_phasesets_contiguous_all), args.out_dir_plots+'/data_phasing/'+args.genome_name+'_phasesets.csv')
@@ -285,9 +285,9 @@ def main_process(args, breakpoints_additional):
         write_df_csv(pd.concat(df_coverage), args.out_dir_plots + '/coverage_data/coverage.csv')
         write_df_csv(pd.concat(df_phasesets), args.out_dir_plots + '/coverage_data/coverage_ps.csv')
     if not cancer_genes_df_all.empty:
-        write_df_csv(cancer_genes_df_all, args.out_dir_plots + '/data_phasing/cancer_genes_coverage.csv')
+        write_df_csv(cancer_genes_df_all, args.out_dir_plots + '/coverage_data/cancer_genes_coverage.csv')
     else:
-        write_df_csv(pd.DataFrame(columns=['chr', 'start', 'end', 'gene', 'hp1', 'hp2']), args.out_dir_plots + '/data_phasing/cancer_genes_coverage.csv')
+        write_df_csv(pd.DataFrame(columns=['chr', 'start', 'end', 'gene', 'hp1', 'hp2']), args.out_dir_plots + '/coverage_data/cancer_genes_coverage.csv')
 
     if os.path.isfile(args.out_dir_plots+'/data_phasing/' + args.genome_name + '_phase_change_segments.csv'):
         csv_df_phase_change_segments = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/' + args.genome_name + '_phase_change_segments.csv', ['chr', 'start', 'end'])

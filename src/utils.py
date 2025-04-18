@@ -1115,8 +1115,8 @@ def change_point_detection_means(args, df_chrom, ref_start_values, ref_start_val
 
         indices_cent_hp1 = update_state_with_loh_overlap(df_means_chr[0], df_centm)
         indices_cent_hp2 = update_state_with_loh_overlap(df_means_chr[1], df_centm)
-        if args.tumor_vcf and os.path.exists(args.out_dir_plots + '/data_phasing/' + args.genome_name + '_loh_segments.csv'):
-            df_loh = csv_df_chromosomes_sorter(args.out_dir_plots + '/data_phasing/' + args.genome_name + '_loh_segments.csv', ['chr', 'start', 'end', 'hp'])
+        if args.tumor_vcf and os.path.exists(args.out_dir_plots + '/coverage_data/' + args.genome_name + '_loh_segments.csv'):
+            df_loh = csv_df_chromosomes_sorter(args.out_dir_plots + '/coverage_data/' + args.genome_name + '_loh_segments.csv', ['chr', 'start', 'end', 'hp'])
             indices_loh_hp1 = update_state_with_loh_overlap(df_means_chr[0], df_loh)
             indices_loh_hp2 = update_state_with_loh_overlap(df_means_chr[1], df_loh)
 
@@ -1481,53 +1481,78 @@ def parse_sv_vcf(path):
     df = pd.DataFrame(bp_junctions[1:], columns = ['chr', 'pos', 'chr1', 'pos1'])
     return df.drop_duplicates()
 
+
 def weigted_means_ploidy(args, df_hp_1, df_hp_2, centers, integer_fractional_means):
     df_1 = df_hp_1.copy()
     df_2 = df_hp_2.copy()
 
-    fileDir = os.path.dirname(__file__) #os.path.dirname(os.path.realpath('__file__'))
+    fileDir = os.path.dirname(__file__)  # os.path.dirname(os.path.realpath('__file__'))
     cen_coord = os.path.join(fileDir, args.centromere)
     df_centm = csv_df_chromosomes_sorter(cen_coord, ['chr', 'start', 'end'])
     df_centm['start'].mask(df_centm['start'] == 1, 0, inplace=True)
-
-    cent_indices = []
-    for index, row in df_1.iterrows():
-        for index_cent, row_cent in df_centm.iterrows():
-            if row['chromosome'] == row_cent['chr'] and (((row['start'] - 1) == row_cent['start'] or (row['start']) == row_cent['start']) and row_cent['end'] == row_cent['end']):
-                cent_indices.append(index)
-    df_1 = df_1.drop(cent_indices)
-
-    cent_indices = []
-    for index, row in df_2.iterrows():
-        for index_cent, row_cent in df_centm.iterrows():
-            if row['chromosome'] == row_cent['chr'] and (((row['start'] - 1) == row_cent['start'] or (row['start']) == row_cent['start']) and row_cent['end'] == row_cent['end']):
-                cent_indices.append(index)
-    df_2 = df_2.drop(cent_indices)
 
     for i in range(len(integer_fractional_means)):
         df_1['state'].mask(df_1['state'] == centers[i], integer_fractional_means[i], inplace=True)
 
     vals = df_1.state.values.tolist()
-    weights = [i-j for i,j in zip(df_1.end.values.tolist(), df_1.start.values.tolist())]
+    weights = [i - j for i, j in zip(df_1.end.values.tolist(), df_1.start.values.tolist())]
 
-    ploidy_hp1 = weighted_means(vals, weights)
+    df = pd.DataFrame({'chromosome': df_1.chromosome.values.tolist(), 'start': df_1.start.values.tolist(),
+                       'end': df_1.end.values.tolist(), 'weights': weights, 'state': vals})
+    df.to_csv(args.out_dir_plots + '/data/hp1_weights.tsv', sep='\t', index=False)
 
     for i in range(len(integer_fractional_means)):
         df_2['state'].mask(df_2['state'] == centers[i], integer_fractional_means[i], inplace=True)
 
     vals = df_2.state.values.tolist()
-    weights = [i-j for i,j in zip(df_2.end.values.tolist(), df_2.start.values.tolist())]
+    weights = [i - j for i, j in zip(df_2.end.values.tolist(), df_2.start.values.tolist())]
 
-    ploidy_hp2 = weighted_means(vals, weights)
+    df = pd.DataFrame({'chromosome': df_2.chromosome.values.tolist(), 'start': df_2.start.values.tolist(),
+                       'end': df_2.end.values.tolist(), 'weights': weights, 'state': vals})
+    df.to_csv(args.out_dir_plots + '/data/hp2_weights.tsv', sep='\t', index=False)
+    #########################
+    df_1 = pd.read_csv(args.out_dir_plots + '/data/hp1_weights.tsv', sep='\t')
+    cent_indices = []
+    for index, row in df_1.iterrows():
+        for index_cent, row_cent in df_centm.iterrows():
+            if row['chromosome'] == row_cent['chr'] and (
+                    ((row['start'] - 1) == row_cent['start'] or (row['start']) == row_cent['start']) and row_cent['end'] == row_cent['end']):
+                cent_indices.append(index)
 
-    return ploidy_hp1 + ploidy_hp2
+    df_1 = df_1.drop(cent_indices)
+
+    vals = df_1.state.values.tolist()
+    weights = [i - j for i, j in zip(df_1.end.values.tolist(), df_1.start.values.tolist())]
+
+    hp_1 = weighted_means(vals, weights)
+    ########################
+    df_2 = pd.read_csv(args.out_dir_plots + '/data/hp2_weights.tsv', sep='\t')
+    cent_indices = []
+    for index, row in df_2.iterrows():
+        for index_cent, row_cent in df_centm.iterrows():
+            if row['chromosome'] == row_cent['chr'] and (
+                    ((row['start'] - 1) == row_cent['start'] or (row['start']) == row_cent['start']) and row_cent['end'] == row_cent['end']):
+                cent_indices.append(index)
+
+    df_2 = df_2.drop(cent_indices)
+
+    vals = df_2.state.values.tolist()
+    weights = [i - j for i, j in zip(df_2.end.values.tolist(), df_2.start.values.tolist())]
+
+    hp_2 = weighted_means(vals, weights)
+
+    return hp_1 + hp_2
 
 def weighted_means(vals, weights):
+    if not len(vals) == len(weights) or sum(weights) == 0:
+        return 0
     weighted_vals = []
     vals_n_weights = [(vals[i], weights[i]) for i in range(0, len(weights))]
     for tup in vals_n_weights:
-        weighted_vals.append(round(tup[0] * tup[1] / sum(weights), 3))
-    return sum(weighted_vals)
+        weighted_vals.append(round(tup[0] * tup[1], 3))
+    return sum(weighted_vals)/sum(weights)
+
+
 def average_p_value_genome(args, centers, df_segs_hp1_, df_segs_hp2_, df_hp1, df_hp2):
     df_segs_hp1 = df_segs_hp1_.copy()
     df_segs_hp2 = df_segs_hp2_.copy()
@@ -1539,8 +1564,8 @@ def average_p_value_genome(args, centers, df_segs_hp1_, df_segs_hp2_, df_hp1, df
         hp_1_values.append([])
         hp_2_values.append([])
 
-    if args.tumor_vcf and os.path.exists(args.out_dir_plots + '/data_phasing/' + args.genome_name + '_loh_segments.csv'):
-        df_loh = csv_df_chromosomes_sorter(args.out_dir_plots + '/data_phasing/' + args.genome_name + '_loh_segments.csv', ['chr', 'start', 'end', 'hp'])
+    if args.tumor_vcf and os.path.exists(args.out_dir_plots + '/coverage_data/' + args.genome_name + '_loh_segments.csv'):
+        df_loh = csv_df_chromosomes_sorter(args.out_dir_plots + '/coverage_data/' + args.genome_name + '_loh_segments.csv', ['chr', 'start', 'end', 'hp'])
         indices_loh_hp1 = update_state_with_loh_overlap(df_segs_hp1, df_loh)
         indices_loh_hp2 = update_state_with_loh_overlap(df_segs_hp2, df_loh)
 
@@ -1901,7 +1926,7 @@ def genes_phase_correction(df_genes, df_segs_hp1, df_segs_hp2, args, centers, in
 
 def update_genes_phase_corrected_coverage(args, df_segs_hp1, df_segs_hp2, p_value, centers, integer_fractional_centers, is_half):
 
-    df_genes = csv_df_chromosomes_sorter(args.out_dir_plots + '/data_phasing/cancer_genes_coverage.csv', ['chr','start','end','gene', 'hp1', 'hp2'])
+    df_genes = csv_df_chromosomes_sorter(args.out_dir_plots + '/coverage_data/cancer_genes_coverage.csv', ['chr','start','end','gene', 'hp1', 'hp2'])
     #write_df_csv(df_genes, args.out_dir_plots + '/' + str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_'+ str(p_value) +'/bed_output/' + 'cancer_genes_coverage.csv')
     df_genes = genes_phase_correction(df_genes, df_segs_hp1, df_segs_hp2, args, centers, integer_fractional_centers)
     if is_half:
@@ -2023,6 +2048,8 @@ def find_p_values_peaks(p_values):
 
     data = remove_consecutive_duplicates(p_values)
     indices = [i for i, val in enumerate(p_values) if val in find_peaks(data)]
+    if p_values[0] > p_values[1]:
+        indices = [0] + indices
     indices = remove_consecutive_diff_1(indices)
 
     return indices

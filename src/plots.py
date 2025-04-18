@@ -194,8 +194,8 @@ def coverage_plots_chromosomes(df, df_phasesets, args, thread_pool):
     df_centm = csv_df_chromosomes_sorter(cen_coord, ['chr', 'start', 'end'])
     df_centm['start'].mask(df_centm['start'] == 1, 0, inplace=True)
 
-    if args.tumor_vcf and os.path.exists(args.out_dir_plots + '/data_phasing/' + args.genome_name + '_loh_segments.csv'):
-        df_loh = csv_df_chromosomes_sorter(args.out_dir_plots + '/data_phasing/' + args.genome_name + '_loh_segments.csv', ['chr', 'start', 'end', 'hp'])
+    if args.tumor_vcf and os.path.exists(args.out_dir_plots + '/coverage_data/' + args.genome_name + '_loh_segments.csv'):
+        df_loh = csv_df_chromosomes_sorter(args.out_dir_plots + '/coverage_data/' + args.genome_name + '_loh_segments.csv', ['chr', 'start', 'end', 'hp'])
     else:
         df_loh = pd.DataFrame(columns=['chr', 'start', 'end', 'hp'])
 
@@ -365,8 +365,8 @@ def coverage_plots_chromosomes(df, df_phasesets, args, thread_pool):
                 df_segs_hp2 = df_means_chr
                 haplotype_1_segs_dfs.append(df_segs_hp1)
                 haplotype_2_segs_dfs.append(df_segs_hp2)
-                if args.enable_debug:
-                    change_point_detection(values, ref_start_values, ref_end_values, args, chrom, html_graphs, 1, color='#6A5ACD')
+                #if args.enable_debug:
+                #    change_point_detection(values, ref_start_values, ref_end_values, args, chrom, html_graphs, 1, color='#6A5ACD')
             else:
                 df_snps_freqs_chr = whole_genome_combined_df(args, chrom, chr, ref_start_values, ref_end_values, haplotype_1_values, haplotype_2_values, unphased_reads_values)
 
@@ -381,9 +381,9 @@ def coverage_plots_chromosomes(df, df_phasesets, args, thread_pool):
 
                 #TODO For debug - histo_clusters and cpds
                 #add_histo_clusters_plot(df_cnr_hp1.log2.values.tolist(), df_cnr_hp2.log2.values.tolist(), states, centers, stdev, args, chrom, html_graphs)
-                if args.enable_debug:
-                    change_point_detection(haplotype_1_values, ref_start_values, ref_end_values, ref_start_values_1, args, chrom, html_graphs, 1, color='#6A5ACD')
-                    change_point_detection(haplotype_2_values, ref_start_values, ref_end_values, ref_start_values_1, args, chrom, html_graphs, 2, color='#2E8B57')
+                #if args.enable_debug:
+                #    change_point_detection(haplotype_1_values, ref_start_values, ref_end_values, ref_start_values_1, args, chrom, html_graphs, 1, color='#6A5ACD')
+                #    change_point_detection(haplotype_2_values, ref_start_values, ref_end_values, ref_start_values_1, args, chrom, html_graphs, 2, color='#2E8B57')
                 #if args.enable_debug:
                 #    copy_number_plots_per_chromosome(centers, centers, ref_start_values, haplotype_1_values, df_segs_hp1, haplotype_2_values, df_segs_hp2, args, chrom, html_graphs, loh_region_starts, loh_region_ends)
 

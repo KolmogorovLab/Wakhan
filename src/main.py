@@ -137,6 +137,7 @@ def copy_numbers_assignment_haplotypes(args, tumor_cov, max_limit, single_copy_c
             if not args.phaseblock_flipping_disable:
                 df_genes = update_genes_phase_corrected_coverage(args, df_segs_hp1_updated, df_segs_hp2_updated, p_value_confidence, cen_out, integer_fractional_means, is_half)
                 genes_plots_genome(df_genes, cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, p_value_confidence, loh_regions, df_snps_in_csv, is_half)
+
                 # genes_copy_number_plots_genome(df_genes, cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, p_value_confidence, loh_regions, df_snps_in_csv)
                 #heatmap_copy_number_plots_genome(df_genes, cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, p_value_confidence, loh_regions, df_snps_in_csv, is_half)
 
@@ -165,7 +166,7 @@ def main():
     MAX_READ_ERROR = 0.1
     MIN_MAPQ = 10
     MIN_SV_SIZE = 50
-    BIN_SIZE = 10000
+    BIN_SIZE = 50000
     BIN_SIZE_SNPS = 200000
     MAX_CUT_THRESHOLD = 100
     MIN_ALIGNED_LENGTH = 5000
@@ -179,7 +180,7 @@ def main():
     BCFTOOLS_BIN = "bcftools"
 
     DEFAULT_CONTIGS = 'chr1-22' #('chr1-22' '1-22') ('chr1-22,chrX' '1-22,X')
-    DEFAULT_PURITY = '0.5-1.0'
+    DEFAULT_PURITY = '0.25-1.0'
     DEFAULT_PLOIDY = '1.0-5.5'
     DEFAULT_REF = 'grch38'
 
@@ -376,10 +377,10 @@ def main():
 
     breakpoints_additional = extract_breakpoints_additional(args)
     if not args.phaseblock_flipping_disable:
-       #if args.quick_start and os.path.exists(args.quick_start_coverage_path + '/phase_corrected_coverage.csv') and os.path.exists(args.quick_start_coverage_path + '/coverage_ps.csv') and os.path.exists(args.quick_start_coverage_path + '/coverage.csv'):
-       #    logger.info('Using existing phase corrected coverage data')
-       #else:
-       main_process(args, breakpoints_additional) #hapcorrect
+       if args.enable_debug or (args.quick_start and os.path.exists(args.quick_start_coverage_path + '/phase_corrected_coverage.csv') and os.path.exists(args.quick_start_coverage_path + '/coverage_ps.csv') and os.path.exists(args.quick_start_coverage_path + '/coverage.csv')):
+            logger.info('Using existing phase corrected coverage data')
+       else:
+           main_process(args, breakpoints_additional) #hapcorrect
        if args.quick_start:
            if args.without_phasing:
                df = pd.read_csv(args.quick_start_coverage_path + '/coverage_hps.csv', sep='\t', names=['chr', 'start', 'end', 'hp1', 'hp2', 'unphased'])
@@ -471,7 +472,12 @@ def main():
     logger.info('Initial detected clusters means: %s', centers)
 
     #SNPs df from normal/tumor
-    df_snps_in_csv = snps_df_loh(args, thread_pool, df_hp1)
+    if args.enable_debug or args.quick_start:
+        #df_snps_in_csv = pd.DataFrame(columns=['chr', 'pos', 'vaf'])
+        df_snps_in_csv = csv_df_chromosomes_sorter(args.quick_start_coverage_path + '/baf.csv', ['chr', 'pos', 'vaf'])
+    else:
+        df_snps_in_csv = snps_df_loh(args, thread_pool, df_hp1)
+        df_snps_in_csv.to_csv(args.out_dir_plots + '/coverage_data/'+'baf.csv', index=False)
 
     if args.without_phasing:
         logger.info('Generating coverage/copy numbers plots genome wide')
