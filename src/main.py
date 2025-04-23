@@ -179,7 +179,7 @@ def main():
     SAMTOOLS_BIN = "samtools"
     BCFTOOLS_BIN = "bcftools"
 
-    DEFAULT_CONTIGS = 'chr1-22' #('chr1-22' '1-22') ('chr1-22,chrX' '1-22,X')
+    DEFAULT_CONTIGS = 'chr1-22,chrX' #('chr1-22' '1-22') ('chr1-22,chrX' '1-22,X')
     DEFAULT_PURITY = '0.25-1.0'
     DEFAULT_PLOIDY = '1.0-5.5'
     DEFAULT_REF = 'grch38'
@@ -222,7 +222,7 @@ def main():
     parser.add_argument("--change-point-detection-for-cna", dest="change_point_detection_for_cna", action="store_true", required=False, help="use change point detection algo for more cna segmentation instead of breakpoints")
 
     parser.add_argument("--genome-name", dest="genome_name", required=True, default=None, help="Genome sample/cell line name to be displayed on plots")
-    parser.add_argument("--contigs", dest="contigs", required=False, default=DEFAULT_CONTIGS, help="List of contigs (choromosomes) to be included in the plots [e.g., chr1-22,X,Y]")
+    parser.add_argument("--contigs", dest="contigs", required=False, default=DEFAULT_CONTIGS, help="List of contigs (choromosomes) to be included in the plots, default chr1-22,chrX [e.g., chr1-22,X,Y]")
 
     parser.add_argument("--bin-size", "--bin_size", dest="bin_size",
                         default=BIN_SIZE, metavar="int", type=int, help="coverage (readdepth) bin size [50k]")
@@ -235,7 +235,7 @@ def main():
     parser.add_argument("--hets-loh-seg-size", "--hets_loh_seg_size", dest="hets_loh_seg_size",
                         default=HETS_LOH_SEG_SIZE, metavar="int", type=int, help="LOH detection minimum segment size where Het SNPs ratio is dropped [2M]")
     parser.add_argument('--loh-enable', action="store_true",  dest="loh_enable", required=False,
-                        default=False, help="Enabling LOH regions in CN plots")
+                        default=True, help="Enabling LOH regions in CN plots")
 
     parser.add_argument("--cut-threshold", "--cut_threshold", dest="cut_threshold",
                         default=MAX_CUT_THRESHOLD, metavar="int", type=int, help="Maximum cut threshold for coverage (readdepth) [100]")
@@ -266,7 +266,7 @@ def main():
     parser.add_argument('--copynumbers-disable', action="store_true", dest="copynumbers_disable", required=False,
                         default=False, help="Disabling copy number in coverage plots")
     parser.add_argument('--copynumbers-subclonal-enable', action="store_true", dest="copynumbers_subclonal_enable", required=False,
-                        default=False, help="Enabling subclonal copy number in coverage plots")
+                        default=True, help="Enabling subclonal copy number in coverage plots")
 
     parser.add_argument('--enable-debug', action="store_true", dest="enable_debug", required=False,
                         default=False, help="Enabling debug")

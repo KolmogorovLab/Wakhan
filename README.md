@@ -123,15 +123,15 @@ Few cell lines arbitrary phase-switch correction and copy number estimation outp
 
 * `--cpd-internal-segments` For change point detection algo on internal segments after breakpoint/cpd algo for more precise segmentation.
 
-* `--copynumbers-subclonal-enable` Enabling subclonal/fractional copy number states in plots
+* `--copynumbers-subclonal-enable` Enabling subclonal/fractional copy number states in plots  [default: enabled]
 
-* `--loh-enable` Enabling LOH regions display in CN plots
+* `--loh-enable` Enabling LOH regions display in CN plots [default: enabled]
 
 * `--phaseblock-flipping-disable` disabling phaseblock flipping if traget tumor BAM doesn't need phase-correction (default: enabled)
 
 * `--phaseblocks-enable` enabling phaseblocks display in coverage plots
 
-* `--contigs` List of contigs (chromosomes, default: chr1-22) to be included in the plots [e.g., chr1-22,X,Y]
+* `--contigs` List of contigs (chromosomes, default: chr1-22,chrX) to be included in the plots [e.g., chr1-22,chrX,chrY]
 
 * `--cut-threshold` Maximum cut threshold for coverage (readdepth) plots [default: 100]
 
@@ -152,7 +152,7 @@ Here is a sample copy number/breakpoints output plot without phasing.
 Based on best confidence scores, tumor purity and ploidy values are calculated and copy number analysis is performed. 
 Each subfolder in output directory represents best <`ploidy`>_<`purity`>_<`confidence`> values.
 
-* `<genome-name>_genome_copynumber.html` Genome-wide copy number plots with coverage information on same axis
+* `<genome-name>_genome_copynumber_details.html` Genome-wide copy number plots with coverage information on same axis
 * `<genome-name>_copynumber_breakpoints.html` Genome-wide copy number plots with coverage information on opposite axis, additionally breakpoints and genes annotations 
 * `<genome-name>_copynumber_breakpoints_subclonal.html` Genome-wide subclonal/fractional copy number plots with coverage information on opposite axis, additionally breakpoints and genes annotations (`--copynumbers-subclonal-enable`)
 * `bed_output` It contains copy numbers segments in bed format
@@ -160,7 +160,7 @@ Each subfolder in output directory represents best <`ploidy`>_<`purity`>_<`confi
 
 Following are coverage and SNPs/LOH plots and bed directories in output folder, independent of CNA analysis
 
-* `snps_loh_plots` SNPs and SNPs ratios plots with LOH representation in chromosomes-scale and genome-wide
+* `snps_loh_plots` SNPs and SNPs ratios plots with LOH representation in chromosomes-scale and genome-wide (in tumor-only mode)
 * `<genome-name>_genome_loh.html` Genome-wide LOH plot
 * `bed_output` It contains LOH segments in bed format
 * `coverage_plots` Haplotype specific coverage plots for chromosomes with option for unphased coverage
