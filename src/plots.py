@@ -194,8 +194,12 @@ def coverage_plots_chromosomes(df, df_phasesets, args, thread_pool):
     df_centm = csv_df_chromosomes_sorter(cen_coord, ['chr', 'start', 'end'])
     df_centm['start'].mask(df_centm['start'] == 1, 0, inplace=True)
 
-    if args.tumor_vcf and os.path.exists(args.out_dir_plots + '/coverage_data/' + args.genome_name + '_loh_segments.csv'):
-        df_loh = csv_df_chromosomes_sorter(args.out_dir_plots + '/coverage_data/' + args.genome_name + '_loh_segments.csv', ['chr', 'start', 'end', 'hp'])
+    if args.quick_start:
+        loh_path = args.quick_start_coverage_path + '/'
+    else:
+        loh_path = args.out_dir_plots + '/coverage_data/'
+    if args.tumor_vcf and os.path.exists(loh_path + args.genome_name + '_loh_segments.csv'):
+        df_loh = csv_df_chromosomes_sorter(loh_path + args.genome_name + '_loh_segments.csv', ['chr', 'start', 'end', 'hp'])
     else:
         df_loh = pd.DataFrame(columns=['chr', 'start', 'end', 'hp'])
 

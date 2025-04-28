@@ -112,8 +112,8 @@ def copy_numbers_assignment_haplotypes(args, tumor_cov, max_limit, single_copy_c
             logger.info('Generating coverage/copy numbers plots genome wide for solution with tumor cellular fraction {0}, ploidy {1} and tumor dna fraction {2}'.format(args.tumor_purity, args.tumor_ploidy, dna_tumor_fraction))
 
             df_segs_hp1_updated, df_segs_hp2_updated = adjust_diversified_segments(cen_out, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, args)
-            df_segs_hp1_updated = adjust_bps_cn_segments_boundries(args, df_segs_hp1_updated)
-            df_segs_hp2_updated = adjust_bps_cn_segments_boundries(args, df_segs_hp2_updated)
+            #df_segs_hp1_updated = adjust_bps_cn_segments_boundries(args, df_segs_hp1_updated)
+            #df_segs_hp2_updated = adjust_bps_cn_segments_boundries(args, df_segs_hp2_updated)
             loh_regions = collect_loh_centromere_regions(df_segs_hp1_updated, df_segs_hp2_updated, cen_out, integer_fractional_means, args)
 
             # df_segs_hp1_updated = merge_adjacent_regions_cn(df_segs_hp1_updated, args)

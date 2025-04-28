@@ -1115,8 +1115,12 @@ def change_point_detection_means(args, df_chrom, ref_start_values, ref_start_val
 
         indices_cent_hp1 = update_state_with_loh_overlap(df_means_chr[0], df_centm)
         indices_cent_hp2 = update_state_with_loh_overlap(df_means_chr[1], df_centm)
-        if args.tumor_vcf and os.path.exists(args.out_dir_plots + '/coverage_data/' + args.genome_name + '_loh_segments.csv'):
-            df_loh = csv_df_chromosomes_sorter(args.out_dir_plots + '/coverage_data/' + args.genome_name + '_loh_segments.csv', ['chr', 'start', 'end', 'hp'])
+        if args.quick_start:
+            loh_path = args.quick_start_coverage_path + '/'
+        else:
+            loh_path = args.out_dir_plots + '/coverage_data/'
+        if args.tumor_vcf and os.path.exists(loh_path + args.genome_name + '_loh_segments.csv'):
+            df_loh = csv_df_chromosomes_sorter(loh_path + args.genome_name + '_loh_segments.csv', ['chr', 'start', 'end', 'hp'])
             indices_loh_hp1 = update_state_with_loh_overlap(df_means_chr[0], df_loh)
             indices_loh_hp2 = update_state_with_loh_overlap(df_means_chr[1], df_loh)
 
@@ -1207,7 +1211,22 @@ def parallel_regions_in_cpd(signal):
     merged_indices = sorted(set([idx for sublist in results for idx in sublist]))
 
     return merged_indices
+
+def remove_more_than_one_bp_in_a_single_bin(bin_size, ref_start_values, breakpoints_coordinates):
+    updated_breakpoints_coordinates = []
+    for index,val in enumerate(ref_start_values):
+        all_values = []
+        for index_bp, bp in enumerate(breakpoints_coordinates):
+            if bp >= val and bp <= val+bin_size:
+                all_values.append(bp)
+        if len(all_values)>1:
+            updated_breakpoints_coordinates = updated_breakpoints_coordinates + [all_values[0]]
+        elif len(all_values) == 1:
+            updated_breakpoints_coordinates = updated_breakpoints_coordinates + all_values
+    return updated_breakpoints_coordinates
+
 def change_point_detection_algo(bin_size, hp_data, ref_start_values, args, breakpoints_coordinates, df_centm_chrom, df_loh_chrom):
+    breakpoints_coordinates = remove_more_than_one_bp_in_a_single_bin(bin_size, ref_start_values, breakpoints_coordinates)
     if not df_centm_chrom.empty:
         cents = [df_centm_chrom.start.values.tolist()[0], df_centm_chrom.end.values.tolist()[0]]
     else:
@@ -1564,8 +1583,12 @@ def average_p_value_genome(args, centers, df_segs_hp1_, df_segs_hp2_, df_hp1, df
         hp_1_values.append([])
         hp_2_values.append([])
 
-    if args.tumor_vcf and os.path.exists(args.out_dir_plots + '/coverage_data/' + args.genome_name + '_loh_segments.csv'):
-        df_loh = csv_df_chromosomes_sorter(args.out_dir_plots + '/coverage_data/' + args.genome_name + '_loh_segments.csv', ['chr', 'start', 'end', 'hp'])
+    if args.quick_start:
+        loh_path = args.quick_start_coverage_path + '/'
+    else:
+        loh_path = args.out_dir_plots + '/coverage_data/'
+    if args.tumor_vcf and os.path.exists(loh_path + args.genome_name + '_loh_segments.csv'):
+        df_loh = csv_df_chromosomes_sorter(loh_path + args.genome_name + '_loh_segments.csv', ['chr', 'start', 'end', 'hp'])
         indices_loh_hp1 = update_state_with_loh_overlap(df_segs_hp1, df_loh)
         indices_loh_hp2 = update_state_with_loh_overlap(df_segs_hp2, df_loh)
 
@@ -1648,7 +1671,7 @@ def average_p_value_genome(args, centers, df_segs_hp1_, df_segs_hp2_, df_hp1, df
                 index =  sample_mean.index(sample_mean_init)
                 z_score =  (seg_mean - sample_mean_init) / 10 #statistics.stdev(remove_outliers_iqr(np.array(df_hp_1_val[start//args.bin_size:end//args.bin_size])))
                 p_value = stats.norm.sf(abs(z_score)) * 2
-                if p_value >= 0:
+                if p_value > 0:
                     df_segs_hp_1_updated_p_score.append(round(p_value, 7))
                     df_segs_hp_1_updated_weight.append(end-start)
 
@@ -1663,7 +1686,7 @@ def average_p_value_genome(args, centers, df_segs_hp1_, df_segs_hp2_, df_hp1, df
                 index =  sample_mean.index(sample_mean_init)
                 z_score =  (seg_mean - sample_mean_init) / 10 #statistics.stdev(remove_outliers_iqr(np.array(df_hp_2_val[start//args.bin_size:end//args.bin_size])))
                 p_value = stats.norm.sf(abs(z_score)) * 2
-                if p_value >= 0:
+                if p_value > 0:
                     df_segs_hp_2_updated_p_score.append(round(p_value, 7))
                     df_segs_hp_2_updated_weight.append(end-start)
 
