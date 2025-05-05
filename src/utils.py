@@ -1583,20 +1583,20 @@ def average_p_value_genome(args, centers, df_segs_hp1_, df_segs_hp2_, df_hp1, df
         hp_1_values.append([])
         hp_2_values.append([])
 
-    if args.quick_start:
-        loh_path = args.quick_start_coverage_path + '/'
-    else:
-        loh_path = args.out_dir_plots + '/coverage_data/'
-    if args.tumor_vcf and os.path.exists(loh_path + args.genome_name + '_loh_segments.csv'):
-        df_loh = csv_df_chromosomes_sorter(loh_path + args.genome_name + '_loh_segments.csv', ['chr', 'start', 'end', 'hp'])
-        indices_loh_hp1 = update_state_with_loh_overlap(df_segs_hp1, df_loh)
-        indices_loh_hp2 = update_state_with_loh_overlap(df_segs_hp2, df_loh)
-
-        df_segs_hp1 = df_segs_hp1.drop(indices_loh_hp1)
-        df_segs_hp1 = df_segs_hp1.reset_index(drop=True)
-
-        df_segs_hp2 = df_segs_hp2.drop(indices_loh_hp2)
-        df_segs_hp2 = df_segs_hp2.reset_index(drop=True)
+    # if args.quick_start:
+    #     loh_path = args.quick_start_coverage_path + '/'
+    # else:
+    #     loh_path = args.out_dir_plots + '/coverage_data/'
+    # if args.tumor_vcf and os.path.exists(loh_path + args.genome_name + '_loh_segments.csv'):
+    #     df_loh = csv_df_chromosomes_sorter(loh_path + args.genome_name + '_loh_segments.csv', ['chr', 'start', 'end', 'hp'])
+    #     indices_loh_hp1 = update_state_with_loh_overlap(df_segs_hp1, df_loh)
+    #     indices_loh_hp2 = update_state_with_loh_overlap(df_segs_hp2, df_loh)
+    # 
+    #     df_segs_hp1 = df_segs_hp1.drop(indices_loh_hp1)
+    #     df_segs_hp1 = df_segs_hp1.reset_index(drop=True)
+    #
+    #     df_segs_hp2 = df_segs_hp2.drop(indices_loh_hp2)
+    #     df_segs_hp2 = df_segs_hp2.reset_index(drop=True)
 
     for index, chrom in enumerate(chroms):
         df_segs_hp_1_updated = df_segs_hp1[df_segs_hp1['chromosome'] == chrom]
