@@ -165,94 +165,98 @@ def peak_detection_optimization(args, input_segments, input_weights, tumor_cov):
     hist_scale = NUM_SAMPLES / 50
     observed_hist = np.histogram(observed, weights=weights, bins=hist_bins)[0]
     observed_hist = observed_hist / hist_scale
+    if args.first_copy == 0:
+        xx = range(*HIST_RANGE)
+        #plt.bar(xx, observed_hist, color="blue")
 
-    xx = range(*HIST_RANGE)
-    #plt.bar(xx, observed_hist, color="blue")
+        # peak peaking (independent from optimization approach)
+        peaks = scipy.signal.find_peaks_cwt(observed_hist, range(1, 5)).tolist()
+        #print("Peaks", peaks)
+        peaks =  merge_similar_elements([peaks[0]] + peaks, 3)
+        #print("Peaks", peaks)
 
-    # peak peaking (independent from optimization approach)
-    peaks = scipy.signal.find_peaks_cwt(observed_hist, range(1, 5)).tolist()
-    #print("Peaks", peaks)
-    peaks =  merge_similar_elements([peaks[0]] + peaks, 3)
-    #print("Peaks", peaks)
+        # https://stackoverflow.com/questions/25571260/scipy-signal-find-peaks-cwt-not-finding-the-peaks-accurately
+        from scipy.ndimage.filters import gaussian_filter1d
+        from scipy import signal
+        # dataFiltered = gaussian_filter1d(observed_hist, sigma=5)
+        # tMax = signal.argrelmax(dataFiltered)[0].tolist()
+        # print('tMax:', tMax)
 
-    # https://stackoverflow.com/questions/25571260/scipy-signal-find-peaks-cwt-not-finding-the-peaks-accurately
-    from scipy.ndimage.filters import gaussian_filter1d
-    from scipy import signal
-    # dataFiltered = gaussian_filter1d(observed_hist, sigma=5)
-    # tMax = signal.argrelmax(dataFiltered)[0].tolist()
-    # print('tMax:', tMax)
+        pair_distance = [peaks[i] - peaks[i - 1] for i in range(1, len(peaks))]
+        est_gauss_dist = np.median(pair_distance)
+        #print("Estimated peak distance", est_gauss_dist)
+        est_offset = peaks[0]
+        #print("Estimated offset", est_offset)
+        est_sigma = 3
 
-    pair_distance = [peaks[i] - peaks[i - 1] for i in range(1, len(peaks))]
-    est_gauss_dist = np.median(pair_distance)
-    #print("Estimated peak distance", est_gauss_dist)
-    est_offset = peaks[0]
-    #print("Estimated offset", est_offset)
-    est_sigma = 3
+        # if peaks[-1] > tMax[-1] + est_gauss_dist:
+        #     tMax = tMax + [peaks[-1]]
+        # if tMax[0] > peaks[0] + est_gauss_dist:
+        #     tMax = [peaks[0]] + tMax
+        # print('tMax:', tMax)
+        #
+        # add_extra = []
+        # for i in range(len(tMax) - 1):
+        #     if tMax[i + 1] - tMax[i] > est_gauss_dist * 2:
+        #         add_extra.append((tMax[i] + tMax[i + 1]) / 2)
+        #
+        # for i, inner in enumerate(add_extra):
+        #     tMax.append(inner)
+        # peaks_ = sorted(tMax)
+        # print('tMax:', peaks_)
 
-    # if peaks[-1] > tMax[-1] + est_gauss_dist:
-    #     tMax = tMax + [peaks[-1]]
-    # if tMax[0] > peaks[0] + est_gauss_dist:
-    #     tMax = [peaks[0]] + tMax
-    # print('tMax:', tMax)
-    #
-    # add_extra = []
-    # for i in range(len(tMax) - 1):
-    #     if tMax[i + 1] - tMax[i] > est_gauss_dist * 2:
-    #         add_extra.append((tMax[i] + tMax[i + 1]) / 2)
-    #
-    # for i, inner in enumerate(add_extra):
-    #     tMax.append(inner)
-    # peaks_ = sorted(tMax)
-    # print('tMax:', peaks_)
+        # numerical optimization
+        #fr = fit_optimization(observed_hist, len(peaks), est_offset, est_gauss_dist, est_sigma)
+        #distr_test = model_distribution(fr.x[0], fr.x[1], fr.x[2], fr.x[3:])
+        #yy = [distr_test(x) for x in xx]
 
-    # numerical optimization
-    #fr = fit_optimization(observed_hist, len(peaks), est_offset, est_gauss_dist, est_sigma)
-    #distr_test = model_distribution(fr.x[0], fr.x[1], fr.x[2], fr.x[3:])
-    #yy = [distr_test(x) for x in xx]
+        # peaks = scipy.signal.find_peaks_cwt(yy, range(1, 5)).tolist()
+        # if est_offset > est_gauss_dist//2:
+        #     peaks = [est_offset-est_offset] + peaks
 
-    # peaks = scipy.signal.find_peaks_cwt(yy, range(1, 5)).tolist()
-    # if est_offset > est_gauss_dist//2:
-    #     peaks = [est_offset-est_offset] + peaks
+        #plt.plot(xx, yy, "r")
+        #plt.savefig("test.pdf", format="pdf", bbox_inches="tight")
 
-    #plt.plot(xx, yy, "r")
-    #plt.savefig("test.pdf", format="pdf", bbox_inches="tight")
+        if est_offset > 3:#est_offset > est_gauss_dist//2:
+            final_peaks = [0] + [peaks[0]] + [i * est_gauss_dist for i in range(1, len(peaks) + 13)]
+        else:
+            final_peaks = [peaks[0]] + [i*est_gauss_dist for i in range(1, len(peaks) + 13)]
 
-    if est_offset > 3:#est_offset > est_gauss_dist//2:
-        final_peaks = [0] + [peaks[0]] + [i * est_gauss_dist for i in range(1, len(peaks) + 13)]
+
+        # if est_offset > 3:
+        #     final_peaks = [0] + peaks + [i * est_gauss_dist for i in range(len(peaks), len(peaks) + 3)]
+        # else:
+        #     final_peaks = peaks + [i * est_gauss_dist for i in range(len(peaks), len(peaks) + 3)]
+
+        #peaks = scipy.signal.find_peaks_cwt(yy, range(1, 5)).tolist()
+        #print("optimized peaks", peaks)
+        def convolve_sma(x, N):
+            return np.convolve(x, np.ones((N,)) / N)[(N - 1):]
+
+        # Autocorrelation method
+        corr = scipy.signal.correlate(observed_hist, observed_hist, mode="full")
+        corr = corr[corr.size // 2:]  # autocorrelation, only positive shift, so getting right half of the array
+        #corr = convolve_sma(corr, 2)
+
+        first_min = scipy.signal.argrelmin(corr)[0][0]
+        corr_max = np.argmax(corr[first_min:]) + first_min
+
+        logger.info("First minimum %s", first_min)
+        logger.info("Max correlation peak %s", corr_max)
+
+        #plt.plot(xx, corr, "r")
+        #plt.savefig(args.out_dir_plots +'/'+ args.genome_name + '_'+ "correlation_peak.pdf", format="pdf", bbox_inches="tight")
+
+        # testing if 1/2 of the highest peak is also a peak. compare it with 1/4 and 3/4 (which should be valleys)
+        half_peak = corr_max // 2  #change to 1 if dodn't want to consider neraset as half peak
+        valley_left, valley_right = corr_max // 4, corr_max * 3 // 4
+        is_half_peak = corr[half_peak] > max(corr[valley_left], corr[valley_right])
+        # print(half_peak, valley_left, valley_right)
+        logger.info("Half peak: %s", is_half_peak)
     else:
-        final_peaks = [peaks[0]] + [i*est_gauss_dist for i in range(1, len(peaks) + 13)]
-
-
-    # if est_offset > 3:
-    #     final_peaks = [0] + peaks + [i * est_gauss_dist for i in range(len(peaks), len(peaks) + 3)]
-    # else:
-    #     final_peaks = peaks + [i * est_gauss_dist for i in range(len(peaks), len(peaks) + 3)]
-
-    #peaks = scipy.signal.find_peaks_cwt(yy, range(1, 5)).tolist()
-    #print("optimized peaks", peaks)
-    def convolve_sma(x, N):
-        return np.convolve(x, np.ones((N,)) / N)[(N - 1):]
-
-    # Autocorrelation method
-    corr = scipy.signal.correlate(observed_hist, observed_hist, mode="full")
-    corr = corr[corr.size // 2:]  # autocorrelation, only positive shift, so getting right half of the array
-    #corr = convolve_sma(corr, 2)
-
-    first_min = scipy.signal.argrelmin(corr)[0][0]
-    corr_max = np.argmax(corr[first_min:]) + first_min
-
-    logger.info("First minimum %s", first_min)
-    logger.info("Max correlation peak %s", corr_max)
-
-    #plt.plot(xx, corr, "r")
-    #plt.savefig(args.out_dir_plots +'/'+ args.genome_name + '_'+ "correlation_peak.pdf", format="pdf", bbox_inches="tight")
-
-    # testing if 1/2 of the highest peak is also a peak. compare it with 1/4 and 3/4 (which should be valleys)
-    half_peak = corr_max // 2  #change to 1 if dodn't want to consider neraset as half peak
-    valley_left, valley_right = corr_max // 4, corr_max * 3 // 4
-    is_half_peak = corr[half_peak] > max(corr[valley_left], corr[valley_right])
-    # print(half_peak, valley_left, valley_right)
-    logger.info("Half peak: %s", is_half_peak)
+        corr = observed_hist
+        is_half_peak = False
+        corr_max = args.first_copy
 
     if args.consider_wgd:
         is_half_peak = True

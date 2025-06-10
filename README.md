@@ -143,7 +143,7 @@ Few cell lines arbitrary phase-switch correction and copy number estimation outp
 
 Wakhan can also be used in case phasing is not good in input tumor or analysis is being performed without considering phasing:
 
-* `--without-phasing` enable it if CNA analysis is being performed without phasing in conjunction with `--phaseblock-flipping-disable` with all other required parameters as mentioned in example command
+* `--without-phasing` enable it if CNA analysis is being performed without phasing in conjunction with `--phaseblock-flipping-disable` and `--histogram-coverage` with all other required parameters as mentioned in example command
 
 Here is a sample copy number/breakpoints output plot without phasing.
 <img width="1373" alt="plots_example" src="examples/images/C15.png">

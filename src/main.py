@@ -295,6 +295,8 @@ def main():
     parser.add_argument("--tumor-ploidy", dest="tumor_ploidy", default=0.0, metavar="float", type=float, help="user input tumor ploidy")
     parser.add_argument("--confidence-subclonal-score", dest="confidence_subclonal_score", default=0.6, metavar="float", type=float, help="user input p-value to detect if a segment is subclonal/off to integer copynumber")
 
+    parser.add_argument("--first-copy", dest="first_copy", default=0, metavar="int", type=int, help="simulation only first copy")
+
     parser.add_argument("-t", "--threads", dest="threads",
                         default=1, metavar="int", type=int, help="number of parallel threads [8]")
     parser.add_argument('--quick-start', action="store_true", dest="quick_start", required=False,
@@ -407,12 +409,16 @@ def main():
             csv_df_coverage = csv_df_chromosomes_sorter(args.quick_start_coverage_path + '/coverage.csv', ['chr', 'start', 'end', 'coverage'])
             csv_df_phasesets = csv_df_chromosomes_sorter(args.quick_start_coverage_path + '/coverage_ps.csv', ['chr', 'start', 'end', 'coverage'])
         elif args.histogram_coverage:
+            if os.path.exists(args.out_dir_plots + '/coverage_data'):
+                shutil.rmtree(args.out_dir_plots + '/coverage_data')
+                os.mkdir(args.out_dir_plots + '/coverage_data')
+            else:
+                os.mkdir(args.out_dir_plots + '/coverage_data')
             logger.info('Computing coverage for bins')
             segments = get_chromosomes_bins_bam(args.target_bam[0], args.bin_size, args)
             segments_coverage = get_segments_coverage(segments, coverage_histograms)
             logger.info('Writing coverage for bins')
             write_segments_coverage_dict(segments_coverage, 'coverage.csv', args)
-
             logger.info('Parsing phaseblocks information')
             if args.normal_phased_vcf:
                 output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(args.normal_phased_vcf, args)
@@ -424,10 +430,17 @@ def main():
             logger.info('Writing coverage for phaseblocks')
             write_segments_coverage_dict(phasesets_coverage, 'coverage_ps.csv', args)
             del coverage_histograms
-
             logger.info('Loading coverage (bins) and coverage (phaseblocks) files...')
-            csv_df_phasesets = csv_df_chromosomes_sorter(args.out_dir_plots+'/data/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
-            csv_df_coverage = csv_df_chromosomes_sorter(args.out_dir_plots+'/data/coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
+            if args.without_phasing:
+                df = pd.read_csv(args.out_dir_plots+'/coverage_data/coverage.csv', sep='\t', names=['chr', 'start', 'end', 'hp1', 'hp2', 'unphased'])
+                df['unphased'] = df['hp1'] + df['hp2'] + df['unphased']
+                df.to_csv(args.out_dir_plots+'/coverage_data/coverage.csv', sep='\t', columns=['chr', 'start', 'end', 'unphased'], index=False, header=False)
+
+                csv_df_coverage = csv_df_chromosomes_sorter(args.out_dir_plots+'/coverage_data/coverage.csv', ['chr', 'start', 'end', 'coverage'])
+                csv_df_phasesets = pd.DataFrame(columns=['chr', 'start', 'end', 'coverage'])#csv_df_chromosomes_sorter(args.out_dir_plots+'/coverage_data/coverage_ps.csv', ['chr', 'start', 'end', 'coverage'])
+            else:
+                csv_df_phasesets = csv_df_chromosomes_sorter(args.out_dir_plots+'/coverage_data/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
+                csv_df_coverage = csv_df_chromosomes_sorter(args.out_dir_plots+'/coverage_data/coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
 
     #TODO add chrX,chrY support later on
     #csv_df_coverage = csv_df_coverage.drop(csv_df_coverage[(csv_df_coverage.chr == "chrX") | (csv_df_coverage.chr == "chrY")].index)
@@ -473,9 +486,10 @@ def main():
 
     #SNPs df from normal/tumor
     if args.enable_debug or args.quick_start:
-        #df_snps_in_csv = pd.DataFrame(columns=['chr', 'pos', 'vaf'])
         df_snps_in_csv = csv_df_chromosomes_sorter(args.quick_start_coverage_path + '/baf.csv', ['chr', 'pos', 'vaf'])
     else:
+        # TODO remove it, temp for debug
+        #df_snps_in_csv = pd.DataFrame(columns=['chr', 'pos', 'vaf'])
         df_snps_in_csv = snps_df_loh(args, thread_pool, df_hp1)
         df_snps_in_csv.to_csv(args.out_dir_plots + '/coverage_data/'+'baf.csv', index=False)
 
@@ -485,7 +499,12 @@ def main():
         df_segs_hp1_updated, df_segs_hp2_updated = adjust_diversified_segments(centers, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, args)
         df_segs_hp1_updated = merge_adjacent_regions_cn_unphased(df_segs_hp1_updated, args)
         df_segs_hp2_updated = merge_adjacent_regions_cn_unphased(df_segs_hp2_updated, args)
-        loh_regions = plot_snps_frequencies_without_phasing(args, csv_df_snps_mean, df_segs_hp1_updated, df_segs_hp2_updated, centers, integer_fractional_means, df_snps_in_csv)
+        if args.quick_start:
+            loh_regions = pd.DataFrame(columns=['chr', 'start', 'end'])
+        else:
+            #TODO remove it, temp for debug
+            #loh_regions = pd.DataFrame(columns=['chr', 'start', 'end'])
+            loh_regions = plot_snps_frequencies_without_phasing(args, csv_df_snps_mean, df_segs_hp1_updated, df_segs_hp2_updated, centers, integer_fractional_means)
         write_copynumber_segments_csv(df_segs_hp1_updated, args, centers, integer_fractional_means, None, '_copynumbers_segments.bed', None, False)
         ###############coverage data save#################
         # if not 'state' in df_hp1.columns:

@@ -74,7 +74,14 @@ def snps_df_loh(args, thread_pool, df_coverage_data):
 
     return df_snps_in_csv
 
-def plot_snps_frequencies_without_phasing(args, df, df_segs_hp1_w, df_segs_hp2_w, centers, integer_fractional_means, df_snps_in_csv):
+def plot_snps_frequencies_without_phasing(args, df, df_segs_hp1_w, df_segs_hp2_w, centers, integer_fractional_means):
+    if args.tumor_vcf:
+        output_phasesets_file_path = vcf_parse_to_csv_for_snps(args.tumor_vcf, args)
+    else:
+        output_phasesets_file_path = vcf_parse_to_csv_for_snps(args.normal_phased_vcf, args)
+    logger.info('Loading and sorting SNPs df')
+    df_snps_in_csv = csv_df_chromosomes_sorter(output_phasesets_file_path, ['chr', 'pos', 'qual', 'gt', 'dp', 'vaf'])
+
     if not os.path.isdir(args.out_dir_plots + '/snps_loh_plots'):
         os.makedirs(args.out_dir_plots + '/snps_loh_plots')
 

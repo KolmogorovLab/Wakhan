@@ -170,7 +170,7 @@ def coverage_plots_chromosomes(df, df_phasesets, args, thread_pool):
     df_means_chr_all_hp1 = []
     df_means_chr_all_hp2 = []
 
-    if args.phaseblock_flipping_disable and args.normal_phased_vcf:
+    if args.phaseblock_flipping_disable and args.normal_phased_vcf and not args.without_phasing:
         if os.path.exists(args.out_dir_plots + '/coverage_data'):
             shutil.rmtree(args.out_dir_plots + '/coverage_data')
             os.mkdir(args.out_dir_plots + '/coverage_data')
@@ -252,7 +252,7 @@ def coverage_plots_chromosomes(df, df_phasesets, args, thread_pool):
             else:
                 ref_start_values_1 = []
             ################################################################################
-            if args.normal_phased_vcf and not args.tumor_vcf and args.phaseblock_flipping_disable:
+            if args.normal_phased_vcf and not args.tumor_vcf and args.phaseblock_flipping_disable and not args.without_phasing:
                 haplotype_1_values, haplotype_2_values = snps_mean(df_snps, ref_start_values, ref_end_values, chrom, args)
             #     # debug var_bins
             #     if args.variable_size_bins:
