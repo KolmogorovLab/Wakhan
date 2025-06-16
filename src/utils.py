@@ -741,9 +741,10 @@ def mask_df_states(haplotype_df, centers, integer_fractional_means):
         haplotype_df['state'].mask(haplotype_df['state'] == centers[i], integer_fractional_means[i], inplace=True)
 
     return haplotype_df
-def write_copynumber_segments_csv(haplotype_df_, args, centers, integer_fractional_means, hp, filename, p_value, is_half):
+def write_copynumber_segments_csv(df_hp1, df_hp2, haplotype_df_, args, centers, integer_fractional_means, hp, filename, p_value, is_half):
 
     haplotype_df = haplotype_df_.copy()
+
     #uniques = sorted(haplotype_df['state'].unique())
     #integer_fractional_means = sorted([i for i in range(0, len(uniques))])
     if not "subclonal" in filename:
@@ -756,7 +757,12 @@ def write_copynumber_segments_csv(haplotype_df_, args, centers, integer_fraction
         haplotype_df['state'] =  [subclonal_values_adjusted(element, centers) if sub == 'Y' else integers_values_adjusted(element, centers) for (element, sub) in zip(haplotype_df.state.values.tolist(), haplotype_df.if_subclonal.values.tolist())]
         haplotype_df = haplotype_df.rename(columns={'chromosome': 'chr', 'start': 'start', 'end': 'end', 'depth': 'coverage', 'state': 'copynumber_state', 'p_value': 'confidence', 'if_subclonal': 'if_subclonal'})
     else:
-        haplotype_df = haplotype_df.rename(columns={'chromosome': 'chr', 'start': 'start', 'end': 'end', 'depth':'coverage', 'state':'copynumber_state'})
+        if hp == 1:
+            haplotype_df,_ = add_confidence_score_cn_segemnts(centers, haplotype_df, haplotype_df, df_hp1, df_hp2, args)
+        else:
+            _,haplotype_df = add_confidence_score_cn_segemnts(centers, haplotype_df, haplotype_df, df_hp1, df_hp2, args)
+
+        haplotype_df = haplotype_df.rename(columns={'chromosome': 'chr', 'start': 'start', 'end': 'end', 'depth':'coverage', 'state':'copynumber_state', 'confidence_value': 'confidence'})
 
     haplotype_df['coverage'] = haplotype_df['coverage'].apply(lambda x: round(x, 2))
     if args.breakpoints:
@@ -780,15 +786,22 @@ def write_copynumber_segments_csv(haplotype_df_, args, centers, integer_fraction
 
         if 'confidence' in haplotype_df.columns:
             fp.write('#confidence: confidence score\n')
-            fp.write('#if_subclonal: if entry is subclonal [Y/N]\n')
+            if "subclonal" in filename:
+                fp.write('#if_subclonal: if entry is subclonal [Y/N]\n')
         if args.breakpoints:
             fp.write('#svs_breakpoints_ids: corresponding structural variations (breakpoints) IDs from VCF file\n')
 
         if 'confidence' in haplotype_df.columns:
             if args.breakpoints:
-                fp.write('#chr\tstart\tend\tcoverage\tcopynumber_state\tconfidence\tif_subclonal\tsvs_breakpoints_ids\n')
+                if "subclonal" in filename:
+                    fp.write('#chr\tstart\tend\tcoverage\tcopynumber_state\tconfidence\tif_subclonal\tsvs_breakpoints_ids\n')
+                else:
+                    fp.write('#chr\tstart\tend\tcoverage\tcopynumber_state\tconfidence\tsvs_breakpoints_ids\n')
             else:
-                fp.write('#chr\tstart\tend\tcoverage\tcopynumber_state\tconfidence\tif_subclonal\n')
+                if "subclonal" in filename:
+                    fp.write('#chr\tstart\tend\tcoverage\tcopynumber_state\tconfidence\tif_subclonal\n')
+                else:
+                    fp.write('#chr\tstart\tend\tcoverage\tcopynumber_state\tconfidence\n')
         else:
             if args.breakpoints:
                 fp.write('#chr\tstart\tend\tcoverage\tcopynumber_state\tsvs_breakpoints_ids\n')
@@ -813,16 +826,23 @@ def write_copynumber_segments_csv(haplotype_df_, args, centers, integer_fraction
 
         if 'confidence' in haplotype_df.columns:
             fp.write('#confidence: confidence score\n')
-            fp.write('#if_subclonal: if entry is subclonal [Y/N]\n')
+            if "subclonal" in filename:
+                fp.write('#if_subclonal: if entry is subclonal [Y/N]\n')
 
         if args.breakpoints:
             fp.write('#svs_breakpoints_ids: corresponding structural variations (breakpoints) IDs from VCF file\n')
 
         if 'confidence' in haplotype_df.columns:
             if args.breakpoints:
-                fp.write('#chr\tstart\tend\tcoverage\tcopynumber_state\tconfidence\tif_subclonal\tsvs_breakpoints_ids\n')
+                if "subclonal" in filename:
+                    fp.write('#chr\tstart\tend\tcoverage\tcopynumber_state\tconfidence\tif_subclonal\tsvs_breakpoints_ids\n')
+                else:
+                    fp.write('#chr\tstart\tend\tcoverage\tcopynumber_state\tconfidence\tsvs_breakpoints_ids\n')
             else:
-                fp.write('#chr\tstart\tend\tcoverage\tcopynumber_state\tconfidence\tif_subclonal\n')
+                if "subclonal" in filename:
+                    fp.write('#chr\tstart\tend\tcoverage\tcopynumber_state\tconfidence\tif_subclonal\n')
+                else:
+                    fp.write('#chr\tstart\tend\tcoverage\tcopynumber_state\tconfidence\n')
         else:
             if args.breakpoints:
                 fp.write('#chr\tstart\tend\tcoverage\tcopynumber_state\tsvs_breakpoints_ids\n')
@@ -1350,7 +1370,7 @@ def merge_adjacent_regions_cn(segarr, args):
     for index, chrom in enumerate(chroms):
         seg = segarr[segarr['chromosome'] == chrom]
         label_groups = seg['state'].ne(seg['state'].shift()).cumsum()
-        df = (seg.groupby(label_groups).agg({'chromosome': 'first', 'start': 'min', 'end': 'max', 'depth': 'mean', 'state': 'first'}).reset_index(drop=True))
+        df = (seg.groupby(label_groups).agg({'chromosome': 'first', 'start': 'min', 'end': 'max', 'depth': 'median', 'state': 'first'}).reset_index(drop=True))
         dfs.append(df)
     out = pd.concat(dfs)
     return out
@@ -2085,3 +2105,153 @@ def find_p_values_peaks(p_values):
     indices = remove_consecutive_diff_1(indices)
 
     return indices
+
+def add_confidence_score_cn_segemnts(centers, df_segs_hp1_updated, df_segs_hp2_updated, df_hp1, df_hp2, args):
+    chroms = get_contigs_list(args.contigs)
+    updated_df_segs_hp_1 = []
+    updated_df_segs_hp_2 = []
+    #centers[0] = int(centers[0])
+    hp_1_values = []
+    hp_2_values = []
+    for i in range(len(centers)):
+        hp_1_values.append([])
+        hp_2_values.append([])
+
+    for index, chrom in enumerate(chroms):
+        df_segs_hp_1_updated = df_segs_hp1_updated[df_segs_hp1_updated['chromosome'] == chrom]
+        df_segs_hp_2_updated = df_segs_hp2_updated[df_segs_hp2_updated['chromosome'] == chrom]
+        df_hp_1 = df_hp1[df_hp1['chr'] == chrom]
+        df_hp_2 = df_hp2[df_hp2['chr'] == chrom]
+
+        df_segs_hp_1_updated_start = df_segs_hp_1_updated.start.values.tolist()
+        df_segs_hp_2_updated_start = df_segs_hp_2_updated.start.values.tolist()
+        df_segs_hp_1_updated_end = df_segs_hp_1_updated.end.values.tolist()
+        df_segs_hp_2_updated_end = df_segs_hp_2_updated.end.values.tolist()
+        df_segs_hp_1_updated_state = df_segs_hp_1_updated.state.values.tolist()
+        df_segs_hp_2_updated_state = df_segs_hp_2_updated.state.values.tolist()
+
+        if args.without_phasing:
+            df_hp_1_val = df_hp_1.coverage.values.tolist()
+            df_hp_2_val = df_hp_2.coverage.values.tolist()
+        else:
+            df_hp_1_val = df_hp_1.hp1.values.tolist()
+            df_hp_2_val = df_hp_2.hp2.values.tolist()
+
+
+        for j, (start, end) in enumerate(zip(df_segs_hp_1_updated_start, df_segs_hp_1_updated_end)):
+            for i in range(len(centers)):
+                if df_segs_hp_1_updated_state[j] == centers[i]:
+                    hp_1_values[i].extend(df_hp_1_val[start // args.bin_size:end // args.bin_size])
+
+        for j, (start, end) in enumerate(zip(df_segs_hp_2_updated_start, df_segs_hp_2_updated_end)):
+            for i in range(len(centers)):
+                if df_segs_hp_2_updated_state[j] == centers[i]:
+                    hp_2_values[i].extend(df_hp_2_val[start // args.bin_size:end // args.bin_size])
+    sample_mean = []
+    sample_stdev = []
+    for i in range(len(centers)):
+        if len(hp_1_values[i] + hp_2_values[i]) >=2:
+            sample_mean.append(statistics.mean(remove_outliers_iqr(np.array(hp_1_values[i] + hp_2_values[i]))))
+            sample_stdev.append(statistics.stdev(remove_outliers_iqr(np.array(hp_1_values[i] + hp_2_values[i]))))
+        else:
+            sample_mean.append(centers[i])
+            sample_stdev.append(5)
+
+    #sample_mean = centers
+
+    for index, chrom in enumerate(chroms):
+        df_segs_hp_1_updated = df_segs_hp1_updated[df_segs_hp1_updated['chromosome'] == chrom]
+        df_segs_hp_2_updated = df_segs_hp2_updated[df_segs_hp2_updated['chromosome'] == chrom]
+        df_hp_1 = df_hp1[df_hp1['chr'] == chrom]
+        df_hp_2 = df_hp2[df_hp2['chr'] == chrom]
+
+        df_segs_hp_1_updated_start = df_segs_hp_1_updated.start.values.tolist()
+        df_segs_hp_2_updated_start = df_segs_hp_2_updated.start.values.tolist()
+        df_segs_hp_1_updated_end = df_segs_hp_1_updated.end.values.tolist()
+        df_segs_hp_2_updated_end = df_segs_hp_2_updated.end.values.tolist()
+        df_segs_hp_1_updated_state = df_segs_hp_1_updated.state.values.tolist()
+        df_segs_hp_2_updated_state = df_segs_hp_2_updated.state.values.tolist()
+        df_segs_hp_1_updated_depth = []#df_segs_hp_1_updated.depth.values.tolist()
+        df_segs_hp_2_updated_depth = []#df_segs_hp_2_updated.depth.values.tolist()
+
+        if args.without_phasing:
+            df_hp_1_val = df_hp_1.coverage.values.tolist()
+            df_hp_2_val = df_hp_2.coverage.values.tolist()
+        else:
+            df_hp_1_val = df_hp_1.hp1.values.tolist()
+            df_hp_2_val = df_hp_2.hp2.values.tolist()
+
+        df_segs_hp_1_updated_p_score = []
+        df_segs_hp_2_updated_p_score = []
+
+        df_segs_hp_1_updated_subclonal_check = []
+        df_segs_hp_2_updated_subclonal_check = []
+
+        for i, (start,end) in enumerate(zip(df_segs_hp_1_updated_start, df_segs_hp_1_updated_end)):
+            if len(df_hp_1_val[start//args.bin_size:end//args.bin_size]) > 0:
+                seg_mean = statistics.median(remove_outliers_iqr(np.array(df_hp_1_val[start//args.bin_size:end//args.bin_size])))
+            else:
+                seg_mean = 0 #statistics.mean(df_hp_1_val[start // args.bin_size:end // args.bin_size])
+            sample_mean_init = min(sample_mean, key=lambda x: abs(x - seg_mean))
+            index =  sample_mean.index(sample_mean_init)
+            z_score =  (seg_mean - sample_mean_init) / 10 #sample_stdev[index]
+            p_value = stats.norm.sf(abs(z_score)) * 2
+            df_segs_hp_1_updated_p_score.append(round(p_value, 7))
+
+
+        for i, (start,end) in enumerate(zip(df_segs_hp_2_updated_start, df_segs_hp_2_updated_end)):
+            if len(df_hp_2_val[start//args.bin_size:end//args.bin_size]) > 0:
+                seg_mean = statistics.median(remove_outliers_iqr(np.array(df_hp_2_val[start//args.bin_size:end//args.bin_size])))
+            else:
+                seg_mean = 0 #statistics.mean(df_hp_2_val[start//args.bin_size:end//args.bin_size])
+            sample_mean_init = min(sample_mean, key=lambda x: abs(x - seg_mean))
+            index =  sample_mean.index(sample_mean_init)
+            z_score =  (seg_mean - sample_mean_init) / 10 #sample_stdev[index]
+            p_value = stats.norm.sf(abs(z_score)) * 2
+            df_segs_hp_2_updated_p_score.append(round(p_value, 7))
+
+        updated_df_segs_hp_1.append(pd.DataFrame(list(zip(df_segs_hp_1_updated.chromosome.values.tolist(), df_segs_hp_1_updated.start.values.tolist(),
+                                  df_segs_hp_1_updated.end.values.tolist(), [round(i, 2) for i in df_segs_hp_1_updated.depth.values.tolist()], df_segs_hp_1_updated.state.values.tolist(), df_segs_hp_1_updated_p_score)),
+                         columns=['chromosome', 'start', 'end', 'depth', 'state', 'confidence_value']))
+        updated_df_segs_hp_2.append(pd.DataFrame(list(zip(df_segs_hp_2_updated.chromosome.values.tolist(), df_segs_hp_2_updated.start.values.tolist(),
+                                  df_segs_hp_2_updated.end.values.tolist(), [round(i, 2) for i in df_segs_hp_2_updated.depth.values.tolist()], df_segs_hp_2_updated.state.values.tolist(), df_segs_hp_2_updated_p_score)),
+                         columns=['chromosome', 'start', 'end', 'depth', 'state', 'confidence_value']))
+
+    df_segs_hp1 = pd.concat(updated_df_segs_hp_1)
+    df_segs_hp2 = pd.concat(updated_df_segs_hp_2)
+    #df_segs_hp1.loc[df_segs_hp1['state'] < centers[0], 'state'] = centers[0]
+    #df_segs_hp2.loc[df_segs_hp2['state'] < centers[0], 'state'] = centers[0]
+
+    return df_segs_hp1, df_segs_hp2
+
+def centromere_regions_blacklist(args, df_segs_hp1_):
+    df_segs_hp1 = df_segs_hp1_.copy()
+
+    updated_hp1_segs = []
+    updated_hp2_segs = []
+
+    fileDir = os.path.dirname(__file__)  # os.path.dirname(os.path.realpath('__file__'))
+    cen_coord = os.path.join(fileDir, args.centromere)
+    df_centm = csv_df_chromosomes_sorter(cen_coord, ['chr', 'start', 'end'])
+    df_centm['start'].mask(df_centm['start'] == 1, 0, inplace=True)
+
+    chroms = get_contigs_list(args.contigs)
+
+    for index, chrom in enumerate(chroms):
+        df_centm_chrom = df_centm[df_centm['chr'] == chrom]
+        if not df_centm_chrom.empty:
+            cents = [df_centm_chrom.start.values.tolist()[0], df_centm_chrom.end.values.tolist()[0]]
+        else:
+            cents = [0, 0]
+        indices = []
+        df_segs_hp_1_chrom = df_segs_hp1[df_segs_hp1['chromosome'] == chrom]
+        for (idx, s1) in df_segs_hp_1_chrom.iterrows():
+            if (df_segs_hp_1_chrom.loc[idx, 'start'] == cents[0] or df_segs_hp_1_chrom.loc[idx, 'start'] == cents[0]+1) and df_segs_hp_1_chrom.loc[idx, 'end'] == cents[1]:# or df_segs_hp_1_chrom.loc[idx+1, 'start'] == cents[0] and df_segs_hp_1_chrom.loc[idx+1, 'end'] == cents[1]:
+                indices.append(idx)
+        df_segs_hp_1_chrom = df_segs_hp_1_chrom.drop(indices).reset_index(drop=True)
+        updated_hp1_segs.append(df_segs_hp_1_chrom)
+
+
+    segs_hp1 = pd.concat(updated_hp1_segs)
+
+    return segs_hp1

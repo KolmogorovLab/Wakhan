@@ -170,7 +170,7 @@ def coverage_plots_chromosomes(df, df_phasesets, args, thread_pool):
     df_means_chr_all_hp1 = []
     df_means_chr_all_hp2 = []
 
-    if args.phaseblock_flipping_disable and args.normal_phased_vcf and not args.without_phasing:
+    if args.phaseblock_flipping_disable and not args.without_phasing:
         if os.path.exists(args.out_dir_plots + '/coverage_data'):
             shutil.rmtree(args.out_dir_plots + '/coverage_data')
             os.mkdir(args.out_dir_plots + '/coverage_data')
@@ -252,7 +252,7 @@ def coverage_plots_chromosomes(df, df_phasesets, args, thread_pool):
             else:
                 ref_start_values_1 = []
             ################################################################################
-            if args.normal_phased_vcf and not args.tumor_vcf and args.phaseblock_flipping_disable and not args.without_phasing:
+            if args.phaseblock_flipping_disable and not args.without_phasing:
                 haplotype_1_values, haplotype_2_values = snps_mean(df_snps, ref_start_values, ref_end_values, chrom, args)
             #     # debug var_bins
             #     if args.variable_size_bins:
@@ -655,7 +655,7 @@ def copy_number_plots_genome_details(centers, integer_fractional_centers, df_cnr
             OFFSET = args.cut_threshold/150
             colors = ['firebrick', 'steelblue']
         haplotype_1_copyratios_values = [x if x == 'None' else x  for x in haplotype_1_copyratios_values]
-        haplotype_2_copyratios_values = [x if x == 'None' else x + 0.75  for x in haplotype_2_copyratios_values]
+        haplotype_2_copyratios_values = [x if x == 'None' else x  for x in haplotype_2_copyratios_values]
         name = "Copynumbers"
 
         add_scatter_trace_copyratios(args, fig, colors, name, haplotype_1_copyratios_positions,
@@ -1446,11 +1446,19 @@ def copy_number_plots_genome_breakpoints(centers, integer_fractional_centers, df
         else:
             OFFSET = args.cut_threshold/150
             colors = ['firebrick', 'steelblue']
-        haplotype_1_copyratios_values = [x if x == 'None' else x  for x in haplotype_1_copyratios_values]
-        haplotype_2_copyratios_values = [x if x == 'None' else -(x) for x in haplotype_2_copyratios_values]
+
+        search_list = centers
+        haplotype_1_copyratios_values = [-3300.0 if element not in search_list else element for element in haplotype_1_copyratios_values]
+        haplotype_1_copyratios_values = [x if x == 'None' else x for x in haplotype_1_copyratios_values]
+
+        haplotype_2_copyratios_values = [-3300.0 if element not in search_list else element for element in haplotype_2_copyratios_values]
+        haplotype_2_copyratios_values = [x if x == 'None' else -x for x in haplotype_2_copyratios_values]
+
+        #haplotype_1_copyratios_values = [x if x == 'None' else x  for x in haplotype_1_copyratios_values]
+        #haplotype_2_copyratios_values = [x if x == 'None' else -(x) for x in haplotype_2_copyratios_values]
         name = "Copynumbers"
 
-        add_scatter_trace_copyratios(args, fig, colors, name, haplotype_1_copyratios_positions, haplotype_2_copyratios_positions, haplotype_1_copyratios_values, haplotype_2_copyratios_values, df_segs_hp1, df_segs_hp2, mul_cols=True)
+        add_scatter_trace_copyratios(args, fig, colors, name, haplotype_1_copyratios_positions, haplotype_2_copyratios_positions, haplotype_1_copyratios_values, haplotype_2_copyratios_values, df_segs_hp1, df_segs_hp2, mul_cols=True, centers=centers)
 
     centers_rev = [-x for x in centers]
     centers_rev.reverse()
@@ -4478,7 +4486,15 @@ def add_scatter_trace_copyratios(args, fig, colors, name, haplotype_1_copyratios
     hp1_chr_info = [j for i in  [[x,y, None] for (x,y) in zip(haplotype_1_copyratios_positions_start, haplotype_1_copyratios_positions_end)] for j in i]
     hp2_chr_info = [j for i in  [[x,y, None] for (x,y) in zip(haplotype_2_copyratios_positions_start, haplotype_2_copyratios_positions_end)] for j in i]
 
-    if 'p_value' in df_segs_hp1.columns:
+    if 'confidence_value' in df_segs_hp1.columns:
+        haplotype_1_copyratios_positions_p_values = [j for i in  [[x,y, None] for (x,y) in zip(df_segs_hp1.confidence_value.values.tolist(), df_segs_hp1.confidence_value.values.tolist())] for j in i]
+        haplotype_2_copyratios_positions_p_values = [j for i in  [[x,y, None] for (x,y) in zip(df_segs_hp2.confidence_value.values.tolist(), df_segs_hp2.confidence_value.values.tolist())] for j in i]
+        haplotype_1_copyratios_positions_cn_values = [subclonal_values_adjusted(x, centers) for x in haplotype_1_copyratios_values] #[j for i in  [[x,y, None] for (x,y) in zip(df_segs_hp1.state.values.tolist(), df_segs_hp1.state.values.tolist())] for j in i]
+        haplotype_2_copyratios_positions_cn_values = [subclonal_values_adjusted(x, centers) for x in haplotype_2_copyratios_values] #[j for i in  [[x,y, None] for (x,y) in zip(df_segs_hp2.state.values.tolist(), df_segs_hp2.state.values.tolist())] for j in i]
+        df_cn_sub_info_1 = pd.DataFrame(list(zip(haplotype_1_copyratios_positions_p_values, haplotype_1_copyratios_positions_cn_values)), columns=['p_1', 'cn_1'])
+        df_cn_sub_info_2 = pd.DataFrame(list(zip(haplotype_2_copyratios_positions_p_values, haplotype_2_copyratios_positions_cn_values)), columns=['p_2', 'cn_2'])
+        ht = '<br><b>Position</b>: %{text}' + '<br><b>CN</b>: %{customdata[1]}' + '<br><b>confidence</b>: %{customdata[0]}<br>'
+    elif 'p_value' in df_segs_hp1.columns:
         haplotype_1_copyratios_positions_p_values = [j for i in  [[x,y, None] for (x,y) in zip(df_segs_hp1.p_value.values.tolist(), df_segs_hp1.p_value.values.tolist())] for j in i]
         haplotype_2_copyratios_positions_p_values = [j for i in  [[x,y, None] for (x,y) in zip(df_segs_hp2.p_value.values.tolist(), df_segs_hp2.p_value.values.tolist())] for j in i]
         haplotype_1_copyratios_positions_cn_values = [subclonal_values_adjusted(x, centers) for x in haplotype_1_copyratios_values] #[j for i in  [[subclonal_values_adjusted(x, centers), subclonal_values_adjusted(y, centers), None] for (x,y) in zip(haplotype_1_copyratios_values, haplotype_1_copyratios_values)] for j in i]
