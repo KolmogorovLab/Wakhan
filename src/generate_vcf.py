@@ -65,8 +65,8 @@ class vcf_sample(object):
 
     def __init__(self, GT, CN1, CN2, CN1Q, CN2Q, CN1COV, CN2COV):
         self.GT = None
-        self.CN1 = CN1, #math.ceil(CN1),
-        self.CN2 = CN2, #math.ceil(CN2),
+        self.CN1 = round(CN1, 2)
+        self.CN2 = round(CN2, 2)
         self.CN1Q = CN1Q
         self.CN2Q = CN2Q
         self.CN1COV = CN1COV
@@ -81,15 +81,15 @@ class vcf_sample(object):
         #     GT = '1/2'
         # else:
         #     GT = '0/0'
-        if (math.ceil(self.CN1) == 1 and not math.ceil(self.CN2) == 1) or (math.ceil(self.CN2) == 1 and not math.ceil(self.CN1) == 1):
+        if (round(self.CN1) == 1 and not round(self.CN2) == 1) or (round(self.CN2) == 1 and not round(self.CN1) == 1):
             GT = '0/1'
-        elif (math.ceil(self.CN1) > 1 and math.ceil(self.CN2) > 1) or (math.ceil(self.CN1) == 0 and math.ceil(self.CN2) == 0):
+        elif (round(self.CN1) > 1 and round(self.CN2) > 1) or (round(self.CN1) == 0 and round(self.CN2) == 0):
             GT = '1/1'
-        elif math.ceil(self.CN1) == 1 and math.ceil(self.CN2) == 1:
+        elif round(self.CN1) == 1 and round(self.CN2) == 1:
             GT = '0/0'
-        elif (math.ceil(self.CN1) == 0 and math.ceil(self.CN2) > 1) or (math.ceil(self.CN2) == 0 and math.ceil(self.CN1) > 1):
+        elif (round(self.CN1) == 0 and round(self.CN2) > 1) or (round(self.CN2) == 0 and round(self.CN1) > 1):
             GT = '1/2'
-        #print(math.ceil(self.CN1), math.ceil(self.CN2))
+        #print(round(self.CN1), round(self.CN2))
         self.GT = GT
 
     def sample(self):
@@ -99,7 +99,7 @@ class vcf_sample(object):
 def db_2_vcf(df):
     vcf_list = []
     for index, seg in df.iterrows():
-        if math.ceil(seg['state']) == 1 and math.ceil(seg['state_2']) == 1:
+        if round(seg['state']) == 1 and round(seg['state_2']) == 1:
             continue
         chrom = seg['chr']
         pos= seg['start']
@@ -109,11 +109,11 @@ def db_2_vcf(df):
         qual = 1000 #TODO
         Filter = 'PASS'
 
-        if (math.ceil(seg['state']) == 0 and math.ceil(seg['state_2']) > 1) or (math.ceil(seg['state_2']) == 0 and math.ceil(seg['state']) > 1):
+        if (round(seg['state']) == 0 and round(seg['state_2']) > 1) or (round(seg['state_2']) == 0 and round(seg['state']) > 1):
             cn_type = 'CNLOH'
-        elif (math.ceil(seg['state']) > 1 and math.ceil(seg['state_2']) > 0) or (math.ceil(seg['state']) > 0 and math.ceil(seg['state_2']) > 1):
+        elif (round(seg['state']) > 1 and round(seg['state_2']) > 0) or (round(seg['state']) > 0 and round(seg['state_2']) > 1):
             cn_type = 'GAIN'
-        elif math.ceil(seg['state']) == 1 and math.ceil(seg['state_2']) == 1:
+        elif round(seg['state']) == 1 and round(seg['state_2']) == 1:
             cn_type = 'REF'
         else:
             cn_type = 'LOSS'
