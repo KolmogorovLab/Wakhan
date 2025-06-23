@@ -116,8 +116,10 @@ def copy_numbers_assignment_haplotypes(args, tumor_cov, max_limit, single_copy_c
             df_segs_hp1_updated, df_segs_hp2_updated = adjust_diversified_segments(cen_out, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, args)
             loh_regions = collect_loh_centromere_regions(df_segs_hp1_updated, df_segs_hp2_updated, cen_out, integer_fractional_means, args)
 
-            df_segs_hp1_updated = merge_adjacent_regions_cn(df_segs_hp1_updated, args)
-            df_segs_hp2_updated = merge_adjacent_regions_cn(df_segs_hp2_updated, args)
+            #df_segs_hp1_updated = merge_adjacent_regions_cn(df_segs_hp1_updated, args)
+            #df_segs_hp2_updated = merge_adjacent_regions_cn(df_segs_hp2_updated, args)
+
+            #df_segs_hp1_updated = merge_bps_regions_cn(df_segs_hp1_updated, args)
 
             write_copynumber_segments_csv(df_hp1, df_hp2, df_segs_hp1_updated, args, cen_out, integer_fractional_means, 1, '_' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value_confidence) + '_copynumbers_segments_HP_1.bed', p_value_confidence, is_half)
             write_copynumber_segments_csv(df_hp1, df_hp2, df_segs_hp2_updated, args, cen_out, integer_fractional_means, 2, '_' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value_confidence) + '_copynumbers_segments_HP_2.bed', p_value_confidence, is_half)

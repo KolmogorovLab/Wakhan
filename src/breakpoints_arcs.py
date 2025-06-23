@@ -49,7 +49,7 @@ def get_all_breakpoints_data(edges, edges_chr, height, path, args):
     widths = []
     edges_chr = [edges_chr[i] + (edges_chr[i + 1] if i + 1 < n else []) for i in range(0, n, 2)]
     #BNDs and INVs
-    for i, (a,b,c,d,e,f) in enumerate(edges_chr):
+    for i, (a,b,c,hp,d,e,f,_) in enumerate(edges_chr):
         #sort coordinates
         data_df = {'chr': [a, d], 'start': [b, e]}
         df = pd.DataFrame(data_df)
@@ -66,22 +66,22 @@ def get_all_breakpoints_data(edges, edges_chr, height, path, args):
 
         if [a,b] in bp_junctions_inv:
             colors.append('#2830DE')
-            hover_info.append('INV - ' + a + ':' + str(b) + '-' + d + ':' + str(e))
+            hover_info.append('HP='+str(hp)+ '- ' + 'INV - ' + a + ':' + str(b) + '-' + d + ':' + str(e))
         elif [a,b] in bp_junctions_dup:
             colors.append('#178117')
-            hover_info.append('DUP - ' + a + ':' + str(b) + '-' + d + ':' + str(e))
+            hover_info.append('HP='+str(hp)+ '- ' + 'DUP - ' + a + ':' + str(b) + '-' + d + ':' + str(e))
         elif [a,b] in bp_junctions_sbnd:
             colors.append('#7f8c8d')
-            hover_info.append('sBND - ' + a + ':' + str(b) + '-' + d + ':' + str(e))
+            hover_info.append('HP='+str(hp)+ '- ' + 'sBND - ' + a + ':' + str(b) + '-' + d + ':' + str(e))
         elif [a,b] in bp_junctions_ins:
             colors.append('#e0cf03')
-            hover_info.append('INS - ' + a + ':' + str(b) + '-' + d + ':' + str(e))
+            hover_info.append('HP='+str(hp)+ '- ' + 'INS - ' + a + ':' + str(b) + '-' + d + ':' + str(e))
         elif [a,b] in bp_junctions_del:
             colors.append('#CF0759')
-            hover_info.append('DEL - ' + a + ':' + str(b) + '-' + d + ':' + str(e))
+            hover_info.append('HP='+str(hp)+ '- ' + 'DEL - ' + a + ':' + str(b) + '-' + d + ':' + str(e))
         else:
             colors.append('#737373')
-            hover_info.append('BND - ' + a + ':' + str(b) + '-' + d + ':' + str(e))
+            hover_info.append('HP='+str(hp)+ '- ' + 'BND - ' + a + ':' + str(b) + '-' + d + ':' + str(e))
 
     #edges = [[0, 1000000], [0, 100000000], [0, 190000000], [358000001, 234000000], [68754445, 345000000], [6577777, 462000000]]
     #edges = [[358000001, 234000000]]

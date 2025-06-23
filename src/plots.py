@@ -186,6 +186,7 @@ def coverage_plots_chromosomes(df, df_phasesets, args, thread_pool):
     # snps_het_df = csv_df_chromosomes_sorter(output_file_path_snps, ['chr', 'pos', 'qual', 'gt', 'dp', 'vaf'])
 
     if args.breakpoints:
+        _, _, _, breakpoints_segemnts, bps, bps_bnd = sv_vcf_bps_cn_check(args.breakpoints, args)
         df_var_bins, df_var_bins_1 = get_chromosomes_bins(args.target_bam[0], args.bin_size, args)
 
     chroms = get_contigs_list(args.contigs)
@@ -251,6 +252,7 @@ def coverage_plots_chromosomes(df, df_phasesets, args, thread_pool):
                 ref_end_values_1 = df_var_bins_chr_1.end.values.tolist()
             else:
                 ref_start_values_1 = []
+                breakpoints_segemnts = []
             ################################################################################
             if args.phaseblock_flipping_disable and not args.without_phasing:
                 haplotype_1_values, haplotype_2_values = snps_mean(df_snps, ref_start_values, ref_end_values, chrom, args)
@@ -359,7 +361,7 @@ def coverage_plots_chromosomes(df, df_phasesets, args, thread_pool):
             if args.without_phasing:
                 df_snps_freqs_chr = whole_genome_combined_df(args, chrom, chr, ref_start_values, ref_end_values, values, values, values)
                 # change point detection
-                snps_cpd_means, snps_cpd_lens, df_means_chr = change_point_detection_means(args, df_snps_freqs_chr, ref_start_values, ref_start_values_1, df_centm_chrom, df_loh_chrom)
+                snps_cpd_means, snps_cpd_lens, df_means_chr = change_point_detection_means(args, chrom, breakpoints_segemnts, df_snps_freqs_chr, ref_start_values, ref_start_values_1, df_centm_chrom, df_loh_chrom)
                 #df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, states, centers, stdev = apply_copynumbers(df_snps_freqs_chr, values, values, args, snps_cpd_means, [])
                 snps_cpd_points.extend(snps_cpd_means)
                 snps_cpd_points_weights.extend(snps_cpd_lens)
@@ -375,7 +377,7 @@ def coverage_plots_chromosomes(df, df_phasesets, args, thread_pool):
                 df_snps_freqs_chr = whole_genome_combined_df(args, chrom, chr, ref_start_values, ref_end_values, haplotype_1_values, haplotype_2_values, unphased_reads_values)
 
                 #change point detection
-                snps_cpd_means, snps_cpd_lens, df_means_chr = change_point_detection_means(args, df_snps_freqs_chr, ref_start_values, ref_start_values_1, df_centm_chrom, df_loh_chrom)
+                snps_cpd_means, snps_cpd_lens, df_means_chr = change_point_detection_means(args, chrom, breakpoints_segemnts, df_snps_freqs_chr, ref_start_values, ref_start_values_1, df_centm_chrom, df_loh_chrom)
                 #df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, states, centers, stdev = apply_copynumbers(df_snps_freqs_chr, haplotype_1_values, haplotype_2_values, args, snps_cpd_means, [])
                 snps_cpd_points.extend(snps_cpd_means)
                 snps_cpd_points_weights.extend(snps_cpd_lens)

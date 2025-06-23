@@ -1090,11 +1090,11 @@ def integer_fractional_cluster_means(args, df_segs_hp1, df_segs_hp2, centers):
     return integer_fractional_lables
 
 
-def change_point_detection_means(args, df_chrom, ref_start_values, ref_start_values_1, df_centm_chrom, df_loh_chrom):
+def change_point_detection_means(args, chrom, bps_ids_all, df_chrom, ref_start_values, all_breakpoints, df_centm_chrom, df_loh_chrom):
     df_means_chr = []
     if args.without_phasing:
         means = df_chrom.coverage.values.tolist()
-        snps_haplotype1_mean, snps_len, snps_haplotype1_pos = change_point_detection_algo(args.bin_size, means, ref_start_values, args, ref_start_values_1, df_centm_chrom, df_loh_chrom)
+        snps_haplotype1_mean, snps_len, snps_haplotype1_pos = change_point_detection_algo(args.bin_size, means, ref_start_values, args, all_breakpoints, df_centm_chrom, df_loh_chrom)
         snps_pos_start = []
         snps_pos_end = []
         for i in range(len(snps_haplotype1_pos) - 1):
@@ -1107,7 +1107,42 @@ def change_point_detection_means(args, df_chrom, ref_start_values, ref_start_val
 
         return snps_haplotype1_mean, snps_len, df_means_chr
     else:
-        snps_haplotype1_mean, snps_haplotype1_len, snps_haplotype1_pos = change_point_detection_algo(args.bin_size, df_chrom.hp1.values.tolist(), ref_start_values, args, ref_start_values_1, df_centm_chrom, df_loh_chrom)
+        edges_chr = [bps_ids_all[i] + (bps_ids_all[i + 1] if i + 1 < len(bps_ids_all) else []) for i in range(0, len(bps_ids_all), 2)]
+        hp_1_breakpoints = []
+        hp_2_breakpoints = []
+        for j, bp in enumerate(all_breakpoints):
+            for i, (a, b, c, hp1, d, e, f, hp2) in enumerate(edges_chr):
+                if chrom == a or chrom == d:
+                    if (bp == b and hp1 == 0) or (bp == e and hp1 == 0):
+                        hp_1_breakpoints.append(bp)
+                        hp_2_breakpoints.append(bp)
+                        break
+                    elif (bp == b and hp1.split('|')[0] == '1'):
+                        hp_1_breakpoints.append(bp)
+                        break
+                    elif (bp == b and hp1.split('|')[0] == '2'):
+                        hp_2_breakpoints.append(bp)
+                        break
+                    elif (bp == e and hp1.split('|')[1] == '1'):
+                        hp_1_breakpoints.append(bp)
+                        break
+                    elif (bp == e and hp1.split('|')[1] == '2'):
+                        hp_2_breakpoints.append(bp)
+                        break
+                    elif (bp == b and hp1.split('|')[0] == '0'):
+                        hp_1_breakpoints.append(bp)
+                        hp_2_breakpoints.append(bp)
+                        break
+                    elif (bp == e and hp1.split('|')[1] == '0'):
+                        hp_1_breakpoints.append(bp)
+                        hp_2_breakpoints.append(bp)
+                        break
+
+        print(all_breakpoints)
+        print(sorted(list(set(hp_1_breakpoints))))
+        print(sorted(list(set(hp_2_breakpoints))))
+
+        snps_haplotype1_mean, snps_haplotype1_len, snps_haplotype1_pos = change_point_detection_algo(args.bin_size, df_chrom.hp1.values.tolist(), ref_start_values, args, sorted(list(set(hp_1_breakpoints))), df_centm_chrom, df_loh_chrom)
         snps_pos_start = []
         snps_pos_end = []
         for i in range(len(snps_haplotype1_pos) - 1):
@@ -1118,7 +1153,7 @@ def change_point_detection_means(args, df_chrom, ref_start_values, ref_start_val
         df_means_chr.append(pd.DataFrame(list(zip(chr_list, snps_pos_start, snps_pos_end, snps_haplotype1_mean)),
                                              columns=['chromosome', 'start', 'end', 'state']))
 
-        snps_haplotype2_mean, snps_haplotype2_len, snps_haplotype2_pos = change_point_detection_algo(args.bin_size, df_chrom.hp2.values.tolist(), ref_start_values, args, ref_start_values_1, df_centm_chrom, df_loh_chrom)
+        snps_haplotype2_mean, snps_haplotype2_len, snps_haplotype2_pos = change_point_detection_algo(args.bin_size, df_chrom.hp2.values.tolist(), ref_start_values, args, sorted(list(set(hp_2_breakpoints))), df_centm_chrom, df_loh_chrom)
         snps_pos_start = []
         snps_pos_end = []
         for i in range(len(snps_haplotype2_pos) - 1):
@@ -2255,3 +2290,23 @@ def centromere_regions_blacklist(args, df_segs_hp1_):
     segs_hp1 = pd.concat(updated_hp1_segs)
 
     return segs_hp1
+
+# def merge_bps_regions_cn(df_segs, args):
+#     chroms = get_contigs_list(args.contigs)
+#     _, _, _, bps_ids_all, bps, bps_bnd = sv_vcf_bps_cn_check(args.breakpoints, args)
+#     dfs = []
+#     n = len(bps_ids_all)
+#     edges_chr = [bps_ids_all[i] + (bps_ids_all[i + 1] if i + 1 < n else []) for i in range(0, n, 2)]
+#
+#     for index, chrom in enumerate(chroms):
+#         df_seg = df_segs[df_segs['chromosome'] == chrom]
+#         for (idx, s1) in df_seg.iterrows():
+#             for i, (a,b,c,_,d,e,f,_) in enumerate(edges_chr):#for bp in bps_ids_all:
+#                 if bp[0] == s1['chr'] and int(bp[1]) >= int(s1['start']) and int(bp[1]) <= int(s1['end']):
+#                     df_seg.loc[idx, 'depth'] = df_seg.loc[idx, 'depth']
+#                     df_seg.loc[idx, 'state'] = df_seg.loc[idx, 'depth']
+#
+#         dfs.append(df_seg)
+#     df_segs_updated = pd.concat(dfs)
+#
+#     return df_segs_updated

@@ -69,21 +69,21 @@ def sv_vcf_bps_cn_check(path, args):
                 continue
             hp = 0
             if 'HP' in variant['info_dict']:
-                hp = int(variant['info_dict']['HP'][0])
+                hp = variant['info_dict']['HP'][0]
 
             # sample_list[variant['ID']] = bps_sample(variant['CHROM'], int(variant['POS']), hp, variant['CHROM'], int(variant['POS'])+1, hp, False)
             # sample_list[variant['ID']] = bps_sample(chr2_id, chr2_end, hp, chr2_id, chr2_end+1, hp, False)
             bp_junctions_bnd.append([variant['CHROM'], int(variant['POS'])])
             bp_junctions_bnd.append([variant['CHROM'], int(variant['POS'])+int(variant['info_dict']['SVLEN'][0])])
-            sample_list[variant['ID']] = bps_sample(variant['CHROM'], int(variant['POS']), variant['ID'], variant['CHROM'], int(variant['POS'])+int(variant['info_dict']['SVLEN'][0]), variant['ID'], False)
+            sample_list[variant['ID']] = bps_sample(variant['CHROM'], int(variant['POS']), variant['ID'], variant['CHROM'], int(variant['POS'])+int(variant['info_dict']['SVLEN'][0]), hp, False)
 
         elif variant['info_dict']['SVTYPE'][0] == 'sBND' or 'sBND' in variant['ID']:
             hp = 0
             if 'HP' in variant['info_dict']:
-                hp = int(variant['info_dict']['HP'][0])
+                hp = variant['info_dict']['HP'][0]
             bp_junctions_bnd.append([variant['CHROM'], int(variant['POS'])])
             bp_junctions_bnd.append([variant['CHROM'], int(variant['POS']) + 1])
-            sample_list[variant['ID']] = bps_sample(variant['CHROM'], int(variant['POS']), variant['ID'], variant['CHROM'], int(variant['POS']) + 1, variant['ID'], False)
+            sample_list[variant['ID']] = bps_sample(variant['CHROM'], int(variant['POS']), variant['ID'], variant['CHROM'], int(variant['POS']) + 1, hp, False)
 
         elif variant['info_dict']['SVTYPE'][0] == 'BND':
             s = variant['ALT']
@@ -97,11 +97,11 @@ def sv_vcf_bps_cn_check(path, args):
                 continue
             hp = 0
             if 'HP' in variant['info_dict']:
-                hp = int(variant['info_dict']['HP'][0])
+                hp = variant['info_dict']['HP'][0]
 
             bp_junctions_bnd.append([variant['CHROM'], int(variant['POS'])])
             bp_junctions_bnd.append([chr2_id, chr2_end])
-            sample_list[variant['ID']] = bps_sample(variant['CHROM'], int(variant['POS']), variant['ID'], chr2_id, chr2_end, variant['ID'], False)
+            sample_list[variant['ID']] = bps_sample(variant['CHROM'], int(variant['POS']), variant['ID'], chr2_id, chr2_end, hp, False)
 
     bp_junctions = sorted(bp_junctions[1:], key=lambda x: (x[0], x[1]))
     bp_junctions_bnd = sorted(bp_junctions_bnd[1:], key=lambda x: (x[0], x[1]))
@@ -109,8 +109,8 @@ def sv_vcf_bps_cn_check(path, args):
     for j, dict in enumerate(sample_list.items()):
         if dict[1].bp_1_id == dict[1].bp_2_id and dict[1].bp_1_pos == dict[1].bp_2_pos:
             continue
-        bp_junctions_chr.append([dict[1].bp_1_id, dict[1].bp_1_pos, dict[1].bp_1_hp])
-        bp_junctions_chr.append([dict[1].bp_2_id, dict[1].bp_2_pos, dict[1].bp_2_hp])
+        bp_junctions_chr.append([dict[1].bp_1_id, dict[1].bp_1_pos, dict[1].bp_1_hp, dict[1].bp_2_hp])
+        bp_junctions_chr.append([dict[1].bp_2_id, dict[1].bp_2_pos, dict[1].bp_1_hp, dict[1].bp_2_hp])
 
     for j, dict in enumerate(sample_list.items()):
         if dict[1].bp_1_id == dict[1].bp_2_id and dict[1].bp_1_pos == dict[1].bp_2_pos:

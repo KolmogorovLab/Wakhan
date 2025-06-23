@@ -44,27 +44,19 @@ class vcf_format(object):
     def id_data(self):
         return f"wakhan:{self.cn_type}:{self.chrom}:{self.pos}-{self.sv_len+self.pos}" #wakhan:CNLOH:chr1:818023-16526823
     def info(self):
-        return f"SVTYPE={self.sv_type};SVLEN={self.svlen()};END={self.sv_len+self.pos}{self.bps_segments()}"
+        return f"SVTYPE={self.sv_type};{self.svlen()};END={self.sv_len+self.pos}{self.bps_segments()}"
 
-    def alt_data(self):
-        if self.cn_type == 'LOSS':
-            event_type = '<DEL>'
-        elif self.cn_type == 'GAIN':
-            event_type = '<DUP>'
-        elif self.cn_type == 'REF':
-            event_type = '.'
-        else:
-            event_type = '<DEL>,<DUP>'
-        return event_type
+
     def to_vcf(self):
-        return f"{self.chrom}\t{self.pos}\t{self.id_data()}\tN\t{self.alt_data()}\t{self.qual}\t{self.Filter}\t{self.info()}\tGT:CN1:CN2:CNQ1:CNQ2:COV1:COV2\t{self.sample}\n"
+        return f"{self.chrom}\t{self.pos}\t{self.id_data()}\tN\t{self.alt}\t{self.qual}\t{self.Filter}\t{self.info()}\tGT:TCN:CN1:CN2:CNQ1:CNQ2:COV1:COV2\t{self.sample}\n"
 
 #GT:CN1:CN2:CN1Q:CN2Q
 class vcf_sample(object):
-    __slots__ = ('GT', 'CN1', 'CN2', 'CN1Q', 'CN2Q', 'CN1COV', 'CN2COV')
+    __slots__ = ('GT', 'TCN', 'CN1', 'CN2', 'CN1Q', 'CN2Q', 'CN1COV', 'CN2COV')
 
-    def __init__(self, GT, CN1, CN2, CN1Q, CN2Q, CN1COV, CN2COV):
+    def __init__(self, GT, TCN, CN1, CN2, CN1Q, CN2Q, CN1COV, CN2COV):
         self.GT = None
+        self.TCN = round(CN1, 2) + round(CN2, 2)
         self.CN1 = round(CN1, 2)
         self.CN2 = round(CN2, 2)
         self.CN1Q = CN1Q
@@ -94,7 +86,7 @@ class vcf_sample(object):
 
     def sample(self):
         self.call_genotype()
-        return f"{self.GT}:{self.CN1}:{self.CN2}:{self.CN1Q}:{self.CN2Q}:{self.CN1COV}:{self.CN2COV}"
+        return f"{self.GT}:{self.TCN}:{self.CN1}:{self.CN2}:{self.CN1Q}:{self.CN2Q}:{self.CN1COV}:{self.CN2COV}"
 
 def db_2_vcf(df):
     vcf_list = []
@@ -118,9 +110,21 @@ def db_2_vcf(df):
         else:
             cn_type = 'LOSS'
 
-        alt = ''
+        if cn_type == 'LOSS':
+            alt_type = '<DEL>'
+        elif cn_type == 'GAIN':
+            alt_type = '<DUP>'
+        elif cn_type == 'REF':
+            alt_type = '.'
+        else:
+            if round(seg['state']) == 0 and round(seg['state_2']) > 1:
+                alt_type = '<DEL>,<DUP>'
+            else:
+                alt_type = '<DUP>,<DEL>'
+
+        alt = alt_type
         bps = seg['bps']
-        sample = vcf_sample('', seg['state'], seg['state_2'], seg['p_value'], seg['p_value_2'], seg['depth'], seg['depth_2']).sample()
+        sample = vcf_sample('', '', seg['state'], seg['state_2'], seg['p_value'], seg['p_value_2'], seg['depth'], seg['depth_2']).sample()
         vcf_list.append(
             vcf_format(chrom, pos, ID, alt, sv_type, bps, sv_len, qual, Filter, cn_type, sample))
     return vcf_list
@@ -149,9 +153,11 @@ def write_vcf_header(ref_lengths, outfile, sample_list, type):
 
     #GT:CN1:CN2:CN1Q:CN2Q:COV1:COV2
     outfile.write("##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">\n")
+    outfile.write('##FORMAT=<ID=TCN,Number=1,Type=Float,Description="Estimated total copy numbers of segment">\n')
+
     if type == 'integers':
-        outfile.write('##FORMAT=<ID=CN1,Number=1,Type=Integer,Description="Estimated haplotype-1 segment copy number">\n')
-        outfile.write('##FORMAT=<ID=CN2,Number=1,Type=Integer,Description="Estimated haplotype-2 segment copy number">\n')
+        outfile.write('##FORMAT=<ID=CN1,Number=1,Type=Float,Description="Estimated haplotype-1 segment copy number">\n')
+        outfile.write('##FORMAT=<ID=CN2,Number=1,Type=Float,Description="Estimated haplotype-2 segment copy number">\n')
     else:
         outfile.write('##FORMAT=<ID=CN1,Number=1,Type=Float,Description="Estimated subclonal haplotype-1 segment copy number">\n')
         outfile.write('##FORMAT=<ID=CN2,Number=1,Type=Float,Description="Estimated subclonal haplotype-2 segment copy number">\n')
