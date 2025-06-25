@@ -145,6 +145,11 @@ Wakhan can also be used in case phasing is not good in input tumor or analysis i
 
 * `--without-phasing` enable it if CNA analysis is being performed without phasing in conjunction with `--phaseblock-flipping-disable` and `--histogram-coverage` with all other required parameters as mentioned in example command
 
+A sample command-line for running unphased mode (Mouse WGS data) could be:
+```
+python wakhan.py --threads <> --reference <mouse_ref>  --target-bam <tumor_bam>  --cut-threshold 75  --normal-phased-vcf <phased_normal.vcf.gz> --out-dir-plots <mouse_output> --genome-name mouse --copynumbers-subclonal-enable --loh-enable --breakpoints <severus_somatic.vcf> --contigs <chr1-19,chrX> --without-phasing --phaseblock-flipping-disable --histogram-coverage  --centromere <annotations/mouse_chr.bed> --cpd-internal-segments  --hets-ratio 0.4  --hets-smooth-window 10
+```
+
 Here is a sample copy number/breakpoints output plot without phasing.
 <img width="1373" alt="plots_example" src="examples/images/C15.png">
 

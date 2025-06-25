@@ -66,7 +66,7 @@ def find_peaks_with_min_distance(signal, min_distance=2):
 def copy_numbers_assignment_haplotypes(args, tumor_cov, max_limit, single_copy_cov, centers, subclonals, df_hp1, df_hp2, df_segs_hp1, df_segs_hp2, snps_cpd_means_df, csv_df_snps_mean, df_snps_in_csv, df_unphased, x_axis, observed_hist, is_half):
     data = []
     average_p_value = []
-    #max_limit = 3/2 #debug
+    max_limit = 3/2 #debug
     for normal_coverage in np.arange(0, max_limit, 0.1):
         cen_out = [normal_coverage] + [normal_coverage + (i * single_copy_cov) for i in range(1, len(centers))]
         df_segs_hp1_updated, df_segs_hp2_updated = adjust_diversified_segments(cen_out, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, args)
@@ -140,9 +140,9 @@ def copy_numbers_assignment_haplotypes(args, tumor_cov, max_limit, single_copy_c
             df_segs_hp2_updated = df_segs_hp2_updated.drop('confidence_value', axis=1)
             variation_plots(args, csv_df_snps_mean, df_segs_hp1_updated, df_segs_hp2_updated, cen_out, integer_fractional_means, df_snps_in_csv, loh_regions, p_value_confidence, is_half)
             #debug uncomment
-            if not args.phaseblock_flipping_disable:
-                df_genes = update_genes_phase_corrected_coverage(args, df_segs_hp1_updated, df_segs_hp2_updated, p_value_confidence, cen_out, integer_fractional_means, is_half)
-                genes_plots_genome(df_genes, cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, p_value_confidence, loh_regions, df_snps_in_csv, is_half)
+            #if not args.phaseblock_flipping_disable:
+            #    df_genes = update_genes_phase_corrected_coverage(args, df_segs_hp1_updated, df_segs_hp2_updated, p_value_confidence, cen_out, integer_fractional_means, is_half)
+            #    genes_plots_genome(df_genes, cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, p_value_confidence, loh_regions, df_snps_in_csv, is_half)
 
                 # genes_copy_number_plots_genome(df_genes, cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, p_value_confidence, loh_regions, df_snps_in_csv)
                 #heatmap_copy_number_plots_genome(df_genes, cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, p_value_confidence, loh_regions, df_snps_in_csv, is_half)
@@ -408,9 +408,9 @@ def main():
             csv_df_coverage = csv_df_chromosomes_sorter(args.quick_start_coverage_path + '/coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
             csv_df_phasesets = csv_df_chromosomes_sorter(args.quick_start_coverage_path + '/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
         elif args.quick_start and args.without_phasing:
-            df = pd.read_csv(args.quick_start_coverage_path + '/coverage_hps.csv', sep='\t', names=['chr', 'start', 'end', 'hp1', 'hp2', 'unphased'])
-            df['unphased'] = df['hp1'] + df['hp2'] + df['unphased']
-            df.to_csv(args.quick_start_coverage_path + '/coverage.csv', sep='\t', columns=['chr', 'start', 'end', 'unphased'], index=False, header=False)
+            #df = pd.read_csv(args.quick_start_coverage_path + '/coverage_hps.csv', sep='\t', names=['chr', 'start', 'end', 'hp1', 'hp2', 'unphased'])
+            #df['unphased'] = df['hp1'] + df['hp2'] + df['unphased']
+            #df.to_csv(args.quick_start_coverage_path + '/coverage.csv', sep='\t', columns=['chr', 'start', 'end', 'unphased'], index=False, header=False)
 
             csv_df_coverage = csv_df_chromosomes_sorter(args.quick_start_coverage_path + '/coverage.csv', ['chr', 'start', 'end', 'coverage'])
             csv_df_phasesets = csv_df_chromosomes_sorter(args.quick_start_coverage_path + '/coverage_ps.csv', ['chr', 'start', 'end', 'coverage'])
@@ -492,12 +492,12 @@ def main():
 
     #SNPs df from normal/tumor
     if args.enable_debug or args.quick_start:
-        df_snps_in_csv = csv_df_chromosomes_sorter(args.quick_start_coverage_path + '/baf.csv', ['chr', 'pos', 'vaf'])
+        df_snps_in_csv = csv_df_chromosomes_sorter(args.quick_start_coverage_path + '/baf.csv', ['chr', 'pos', 'vaf'], ',')
     else:
         # TODO remove it, temp for debug
         #df_snps_in_csv = pd.DataFrame(columns=['chr', 'pos', 'vaf'])
         df_snps_in_csv = snps_df_loh(args, thread_pool, df_hp1)
-        df_snps_in_csv.to_csv(args.out_dir_plots + '/coverage_data/'+'baf.csv', index=False)
+        df_snps_in_csv.to_csv(args.out_dir_plots + '/coverage_data/'+'baf.csv', index=False, header=None)
 
     if args.without_phasing:
         logger.info('Generating coverage/copy numbers plots genome wide')
@@ -511,7 +511,8 @@ def main():
             #TODO remove it, temp for debug
             #loh_regions = pd.DataFrame(columns=['chr', 'start', 'end'])
             loh_regions = plot_snps_frequencies_without_phasing(args, csv_df_snps_mean, df_segs_hp1_updated, df_segs_hp2_updated, centers, integer_fractional_means)
-        write_copynumber_segments_csv(df_segs_hp1_updated, args, centers, integer_fractional_means, None, '_copynumbers_segments.bed', None, False)
+        write_copynumber_segments_csv(df_hp1, df_hp1, df_segs_hp1_updated, args, centers, integer_fractional_means, None, '_copynumbers_segments.bed', None, False)
+
         ###############coverage data save#################
         # if not 'state' in df_hp1.columns:
         #     states_coverage = []
@@ -531,9 +532,9 @@ def main():
         if args.copynumbers_subclonal_enable:
             df_segs_hp1_updated, df_segs_hp2_updated = adjust_diversified_segments(centers, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, args)
             df_segs_hp1_updated, df_segs_hp2_updated = update_subclonal_means_states(centers, subclonals, df_segs_hp1_updated, df_segs_hp2_updated, df_hp1, df_hp2, args)
-            df_segs_hp1_updated = merge_adjacent_regions_cn(df_segs_hp1_updated, args)
-            df_segs_hp2_updated = merge_adjacent_regions_cn(df_segs_hp2_updated, args)
-            write_copynumber_segments_csv(df_segs_hp1_updated, args, centers, integer_fractional_means, None, '_copynumbers_subclonal_segments.bed', None, False)
+            #df_segs_hp1_updated = merge_adjacent_regions_cn(df_segs_hp1_updated, args)
+            #df_segs_hp2_updated = merge_adjacent_regions_cn(df_segs_hp2_updated, args)
+            write_copynumber_segments_csv(df_hp1, df_hp1, df_segs_hp1_updated, args, centers, integer_fractional_means, None, '_copynumbers_subclonal_segments.bed', None, False)
             cen_out = [int(i) for i in centers]
             if args.breakpoints:
                 copy_number_plots_genome_breakpoints_subclonal(cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, None, loh_regions, df_snps_in_csv, False)

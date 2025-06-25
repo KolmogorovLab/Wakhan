@@ -53,8 +53,11 @@ def plot_snps_ratios_genome(args, df_snps_in_csv, df_loh_regions):
 def snps_df_loh(args, thread_pool, df_coverage_data):
     df_coverage = df_coverage_data.copy()
     chroms = get_contigs_list(args.contigs)
-    if args.tumor_vcf:
-        output_phasesets_file_path = vcf_parse_to_csv_for_snps(args.tumor_vcf, args)
+    if args.tumor_vcf or args.without_phasing:
+        if args.tumor_vcf:
+            output_phasesets_file_path = vcf_parse_to_csv_for_snps(args.tumor_vcf, args)
+        else:
+            output_phasesets_file_path = vcf_parse_to_csv_for_snps(args.normal_phased_vcf, args)
         logger.info('Loading and sorting SNPs df')
         df_snps_in_csv = csv_df_chromosomes_sorter(output_phasesets_file_path, ['chr', 'pos', 'qual', 'gt', 'dp', 'vaf'])
         logger.info('Getting BAFs based on VAF score')
@@ -131,7 +134,7 @@ def plot_snps_frequencies_without_phasing(args, df, df_segs_hp1_w, df_segs_hp2_w
             loh_regions_all.append(pd.DataFrame(list(zip(chrs_list, loh_region_starts, loh_region_ends)), columns=['chr', 'start', 'end']))
 
             if args.without_phasing:
-                copy_number_plots_per_chromosome(centers, integer_fractional_means, ref_start_values, hp1, df_segs_hp1_, hp2, df_segs_hp2_, args, chrom, html_graphs, loh_region_starts, loh_region_ends, None)
+                copy_number_plots_per_chromosome(centers, integer_fractional_means, ref_start_values, hp1, df_segs_hp1_, hp2, df_segs_hp2_, args, chrom, html_graphs, loh_region_starts, loh_region_ends, None, False)
 
     write_snps_counts_per_cn_region(pd.concat(df_snps_counts_per_cn_region_all), args)
     write_header_comments('chr\tstart\tend\n', '#chr: chromosome number\n#start: start address for LOH region\n#end: end address for LOH region\n', args.genome_name + '_loh_segments.bed', args)
@@ -277,7 +280,8 @@ def plot_snps(chrom, index, df_snps_in_csv, html_graphs, args, df_chrom):
                                    opacity=0.7, color='#3A6B35')
 
         plots_add_markers_lines(fig)
-        plots_layout_settings(fig, chrom, args, snps_homo_pos[-1:][0], 0)
+        regions = get_chromosomes_regions(args)
+        plots_layout_settings(fig, chrom, args, regions[index], 0)
         fig.update_layout(yaxis_title="<b>SNPs Frequencies</b> (ratios)",)
 
         plot_snps_counts(chrom, index, ref_start_values, df_snps_in_csv, html_graphs, args, df_chrom)

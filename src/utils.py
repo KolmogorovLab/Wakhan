@@ -451,7 +451,7 @@ def write_df_csv(df, path):
     df.to_csv(fp, sep='\t', index=False, header=False)
 
 def csv_df_chromosomes_sorter(path, names, sept='\t'):
-    dataframe = pd.read_csv(path, sep=sept, names=names)
+    dataframe = pd.read_csv(path, sep=sept, names=names, header=None)
     dataframe['chr'] = dataframe['chr'].astype(str)
     #if not dataframe['chr'].iloc[0].startswith('chr'):
     #    dataframe['chr'] = 'chr' + dataframe['chr'].astype(str)
