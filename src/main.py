@@ -66,7 +66,7 @@ def find_peaks_with_min_distance(signal, min_distance=2):
 def copy_numbers_assignment_haplotypes(args, tumor_cov, max_limit, single_copy_cov, centers, subclonals, df_hp1, df_hp2, df_segs_hp1, df_segs_hp2, snps_cpd_means_df, csv_df_snps_mean, df_snps_in_csv, df_unphased, x_axis, observed_hist, is_half):
     data = []
     average_p_value = []
-    max_limit = 3/2 #debug
+    #max_limit = 3/2 #debug
     for normal_coverage in np.arange(0, max_limit, 0.1):
         cen_out = [normal_coverage] + [normal_coverage + (i * single_copy_cov) for i in range(1, len(centers))]
         df_segs_hp1_updated, df_segs_hp2_updated = adjust_diversified_segments(cen_out, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, args)
@@ -140,9 +140,9 @@ def copy_numbers_assignment_haplotypes(args, tumor_cov, max_limit, single_copy_c
             df_segs_hp2_updated = df_segs_hp2_updated.drop('confidence_value', axis=1)
             variation_plots(args, csv_df_snps_mean, df_segs_hp1_updated, df_segs_hp2_updated, cen_out, integer_fractional_means, df_snps_in_csv, loh_regions, p_value_confidence, is_half)
             #debug uncomment
-            #if not args.phaseblock_flipping_disable:
-            #    df_genes = update_genes_phase_corrected_coverage(args, df_segs_hp1_updated, df_segs_hp2_updated, p_value_confidence, cen_out, integer_fractional_means, is_half)
-            #    genes_plots_genome(df_genes, cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, p_value_confidence, loh_regions, df_snps_in_csv, is_half)
+            if not args.phaseblock_flipping_disable:
+                df_genes = update_genes_phase_corrected_coverage(args, df_segs_hp1_updated, df_segs_hp2_updated, p_value_confidence, cen_out, integer_fractional_means, is_half)
+                genes_plots_genome(df_genes, cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, p_value_confidence, loh_regions, df_snps_in_csv, is_half)
 
                 # genes_copy_number_plots_genome(df_genes, cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, p_value_confidence, loh_regions, df_snps_in_csv)
                 #heatmap_copy_number_plots_genome(df_genes, cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, p_value_confidence, loh_regions, df_snps_in_csv, is_half)
