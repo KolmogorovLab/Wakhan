@@ -1138,10 +1138,6 @@ def change_point_detection_means(args, chrom, bps_ids_all, df_chrom, ref_start_v
                         hp_2_breakpoints.append(bp)
                         break
 
-        print(all_breakpoints)
-        print(sorted(list(set(hp_1_breakpoints))))
-        print(sorted(list(set(hp_2_breakpoints))))
-
         snps_haplotype1_mean, snps_haplotype1_len, snps_haplotype1_pos = change_point_detection_algo(args.bin_size, df_chrom.hp1.values.tolist(), ref_start_values, args, sorted(list(set(hp_1_breakpoints))), df_centm_chrom, df_loh_chrom)
         snps_pos_start = []
         snps_pos_end = []

@@ -67,8 +67,8 @@ def sv_vcf_bps_cn_check(path, args):
         if variant['info_dict']['SVTYPE'][0] == 'INV' or variant['info_dict']['SVTYPE'][0] == 'DUP' or ((variant['info_dict']['SVTYPE'][0] == 'INS' or variant['info_dict']['SVTYPE'][0] == 'DEL') and int(variant['info_dict']['SVLEN'][0]) > args.breakpoints_min_length):
             if not variant['CHROM'] in chroms:
                 continue
-            hp = 0
-            if 'HP' in variant['info_dict']:
+            hp = '0|0'
+            if 'HP' in variant['info_dict'] and '|' in variant['info_dict']['HP'][0]:
                 hp = variant['info_dict']['HP'][0]
 
             # sample_list[variant['ID']] = bps_sample(variant['CHROM'], int(variant['POS']), hp, variant['CHROM'], int(variant['POS'])+1, hp, False)
@@ -78,8 +78,8 @@ def sv_vcf_bps_cn_check(path, args):
             sample_list[variant['ID']] = bps_sample(variant['CHROM'], int(variant['POS']), variant['ID'], variant['CHROM'], int(variant['POS'])+int(variant['info_dict']['SVLEN'][0]), hp, False)
 
         elif variant['info_dict']['SVTYPE'][0] == 'sBND' or 'sBND' in variant['ID']:
-            hp = 0
-            if 'HP' in variant['info_dict']:
+            hp = '0|0'
+            if 'HP' in variant['info_dict'] and '|' in variant['info_dict']['HP'][0]:
                 hp = variant['info_dict']['HP'][0]
             bp_junctions_bnd.append([variant['CHROM'], int(variant['POS'])])
             bp_junctions_bnd.append([variant['CHROM'], int(variant['POS']) + 1])
@@ -95,8 +95,8 @@ def sv_vcf_bps_cn_check(path, args):
 
             if not variant['CHROM'] in chroms or not chr2_id in chroms:
                 continue
-            hp = 0
-            if 'HP' in variant['info_dict']:
+            hp = '0|0'
+            if 'HP' in variant['info_dict'] and '|' in variant['info_dict']['HP'][0]:
                 hp = variant['info_dict']['HP'][0]
 
             bp_junctions_bnd.append([variant['CHROM'], int(variant['POS'])])
