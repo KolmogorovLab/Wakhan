@@ -52,8 +52,14 @@ advantage of the copy numbers differences between the haplotypes. Wakhan estimat
 ```
 git clone https://github.com/KolmogorovLab/Wakhan.git
 cd Wakhan/
-conda env create -f environment.yml -n Wakhan
-conda activate Wakhan
+conda env create -f environment.yml -n wakhan
+conda activate wakhan
+```
+
+## Conda recipe installation 
+```
+conda create -n wakhan_env wakhan
+conda activate wakhan_env
 ```
 
 ##### Breakpoints/Structural variations or change point detection algo for copy number model
@@ -98,29 +104,75 @@ ___
 Severus also produces phased breakpoints/structural variations after rephasing tumor (tumor-only mode) or normal (tumor/normal pair mode) phased VCF which can be used in Wakhan by setting `--use-sv-haplotypes` param. 
 This option enables to segment copy numbers boundaries in only one appropriate haplotype.
 
-## 2. Long-Read Somatic Variant Calling pipeline mode
+## 2. Phased SVs/Breakpoints pipeline mode
 
-We have developed Nextflow based [Long-Read Somatic Variant Calling](https://github.com/KolmogorovLab/longread_somatic_nf) pipeline.
+To use phased SVs/breakpoints Wakhan works in two steps, in first step it uses `hapcorrect()` module for phase-correction and generates rephased VCF, which is used to haplotag BAMs through Whatshap,
+then Severus uses haplotagged BAMs to generate phased SVs. In second step, Wakhan takes this resultant Severus phased SVs VCF and runs `cna()` module with `--use-sv-haplotypes` param.
+
+For this purpose, we have developed Nextflow based [Long-Read Somatic Variant Calling](https://github.com/KolmogorovLab/longread_somatic_nf) pipeline.
 This pipeline (`Wakhan - hapcorrect` -> `Whatshap - haplotagging` -> `Severus - sv/breakpoints` -> `Wakhan - cna`) can generate Severus phased SVs/breakpoints, which could be used in Wakhan by setting `--use-sv-haplotypes` param. 
+
+Alternatively, user can use following commands to mimic this workflow:
 
 [//]: # (For Wakhan CNA profiling using Severus phased SVs/breakpoints, this pipeline contains following commands which could be run in this order: )
 
-[//]: # ()
-[//]: # ()
-[//]: # (### Tumor-Normal Mode)
+#### Tumor-Normal Mode
 
-[//]: # (```)
+```
+#Wakhan hapcorrect()
+python wakhan.py hapcorrect --threads 16 --reference  ${REF_FASTA}  --target-bam ${BAM_T}  --normal-phased-vcf ${VCF}  --genome-name ${SAMPLE_T}
 
-[//]: # ()
-[//]: # (```)
+VCF='<genome_abc_output>/phasing_output/rephased.vcf.gz'
 
-[//]: # (### Tumor-only)
+#Index for rephased VCF
+tabix ${VCF}
 
-[//]: # (```)
+#Haplotag Normal with rephased VCF
+whatshap haplotag --reference ${REF_FASTA} ${VCF} ${BAM_N} -o ${SAMPLE_N}.haplotagged.bam --ignore-read-groups --tag-supplementary --skip-missing-contigs --output-threads=4
 
-[//]: # ()
-[//]: # (```)
+#Haplotag Tumor with rephased VCF
+whatshap haplotag --reference ${REF_FASTA} ${VCF} ${BAM_T} -o ${SAMPLE_T}.haplotagged.bam --ignore-read-groups --tag-supplementary --skip-missing-contigs --output-threads=4
 
+#Index for Normal haplotagged BAM 
+samtools index ${SAMPLE_N}.haplotagged.bam
+#Index for Tumor haplotagged BAM 
+samtools index ${SAMPLE_T}.haplotagged.bam
+
+#Severus tumor-normal mode
+severus --target-bam ${SAMPLE_T}.haplotagged.bam --control-bam ${SAMPLE_N}.haplotagged.bam --out-dir severus_out \
+    -t 16 --phasing-vcf ${VCF} --vntr-bed ./vntrs/human_GRCh38_no_alt_analysis_set.trf.bed
+
+#Wakhan cna() tumor-normal mode
+python wakhan.py cna --threads 16 --reference  ${REF_FASTA}  --target-bam ${BAM_T}  --normal-phased-vcf ${VCF}  --genome-name ${SAMPLE_T} \
+    --breakpoints severus_out/severus_somatic.vcf --use-sv-haplotypes
+```
+
+#### Tumor-only
+
+```
+#Wakhan hapcorrect()
+python wakhan.py hapcorrect --threads 16 --reference  ${REF_FASTA}  --target-bam ${BAM_T}  --tumor-phased-vcf ${VCF}  --genome-name ${SAMPLE_T} --out-dir-plots ${SAMPLE_T}
+
+VCF='<genome_abc_output>/phasing_output/rephased.vcf.gz'
+
+#Index for rephased VCF
+tabix ${VCF}
+
+#Haplotag Tumor with rephased VCF
+whatshap haplotag --reference ${REF_FASTA} ${VCF} ${BAM_T} -o ${SAMPLE_T}.haplotagged.bam --ignore-read-groups --tag-supplementary --skip-missing-contigs --output-threads=4
+
+#Index for Tumor haplotagged BAM 
+samtools index  ${SAMPLE_T}.haplotagged.bam
+
+#Severus tumor-only mode
+severus --target-bam ${SAMPLE_T}.haplotagged.bam --out-dir severus_out -t 16 --phasing-vcf ${VCF} \
+    --vntr-bed ./vntrs/human_GRCh38_no_alt_analysis_set.trf.bed --PON ./pon/PoN_1000G_hg38.tsv.gz
+
+#Wakhan cna() tumor-only mode
+python wakhan.py cna --threads 16 --reference  ${REF_FASTA}  --target-bam ${BAM_T}  --tumor-phased-vcf ${VCF}  --genome-name ${SAMPLE_T} \
+    --breakpoints severus_out/severus_somatic.vcf --use-sv-haplotypes
+```
+___
 
 ## 3. Unphased mode 
 Wakhan can also be used in case phasing is not good in input tumor or analysis is being performed without considering phasing:
@@ -132,9 +184,10 @@ A sample command-line for running unphased mode (Mouse WGS data) could be:
 python wakhan.py --threads <> --reference <mouse_ref>  --target-bam <tumor_bam>  --cut-threshold 75  --normal-phased-vcf <phased_normal.vcf.gz> --out-dir-plots <mouse_output> --genome-name mouse --copynumbers-subclonal-enable --loh-enable --breakpoints <severus_somatic.vcf> --contigs <chr1-19,chrX> --without-phasing --phaseblock-flipping-disable --histogram-coverage  --centromere <annotations/mouse_chr.bed> --cpd-internal-segments  --hets-ratio 0.4  --hets-smooth-window 10
 ```
 
-Here is a sample copy number/breakpoints output plot without phasing.
+Here is a sample copy number/breakpoints output plot without phasing for a mouse subline dataset.
 <img width="1373" alt="plots_example" src="examples/images/C15.png">
 
+___
 
 ##### Quick-run if coverage/pileup data is already available
 
@@ -223,10 +276,14 @@ Wakhan requires tumor BAM and normal phased VCF (in case tumor-normal mode) or t
 Following [Clair3](https://github.com/HKU-BAL/Clair3) command with [longphase](https://github.com/twolinin/longphase) as phasing tool is recommended for generating required phased VCF.
 
 #### For normal/tumor pair (generating normal phased-vcf):
+```
 BAM= Path to normal BAM
+```
 #### For tumor-only (generating tumor phased-vcf):
+```
 BAM= Path to tumor BAM
-
+```
+Running Clair3 on BAM:
 ```
 #For ONT data
 clair3 --bam_fn=${BAM} --ref_fn=${REF_FASTA} --threads=${THREADS} --platform=ont --model_path=</clair3_models/r1041_e82_400bps_sup_v420/> --output=${OUTPUT_DIR} --enable_phasing --longphase_for_phasing
