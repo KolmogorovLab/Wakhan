@@ -118,6 +118,7 @@ def get_snps_counts_cn_regions(snps_df_sorted, chrom, ref_start_values, ref_end_
         snps_homo_counts.append(len(l2))
 
     return snps_het_counts, snps_homo_counts, ref_start_values, ref_end_values
+
 def get_snps_frquncies(snps_df_sorted, chrom):  # TODO This module needs better implementation, currently slow
     snps_df = snps_df_sorted[snps_df_sorted['chr'] == chrom]
     if 'gt' in snps_df.columns:
@@ -584,7 +585,7 @@ def get_snp_segments(args, target_bam, thread_pool):
     elif args.normal_phased_vcf:
         normal_vcf = args.normal_phased_vcf
     else:
-        normal_vcf = args.tumor_vcf
+        normal_vcf = args.tumor_phased_vcf
 
     basefile = pathlib.Path(normal_vcf).stem
     output_csv = basefile + '_het_snps.csv'

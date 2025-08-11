@@ -1,8 +1,8 @@
 # Wakhan
 
 A tool to analyze haplotype-specific chromosome-scale somatic copy number aberrations and aneuploidy using long reads (Oxford Nanopore, PacBio). 
-Wakhan takes long-read alignment and phased heterozygous variants as input, and first uses extends the phased blocks, taking
-advantage of the CNA differences between the haplotypes. Wakhan then generates inetractive haplotype-specific coverage plots.    
+Wakhan takes long-read alignment and phased heterozygous variants as input, and first extends the phased blocks and corrects phase-switch errors using [hapcorrect](https://github.com/KolmogorovLab/Wakhan/tree/main/src/hapcorrect) module, taking
+advantage of the copy numbers differences between the haplotypes. Wakhan estimates purity and ploidy of the sample and generates inetractive haplotype-specific copy number and coverage plots.    
 
 #### Breakpoints/SVs based segmentation and Copy numbers estimation:
 <img width="1373" alt="plots_example" src="examples/images/1437.png">
@@ -56,22 +56,57 @@ conda env create -f environment.yml -n Wakhan
 conda activate Wakhan
 ```
 
-## Usage
+# Usage
+
+Wakhan can be run as a standalone [phase-correction](https://github.com/KolmogorovLab/Wakhan/tree/main/src/hapcorrect) and copy number profiling tool using below [1] tumor-only and tumor/normal pair commands.
+In case phased SVs/breakpoints, Long-Read Somatic Variant Calling pipeline mode [2] is recommended.
+
+##### Breakpoints/Structural variations or change point detection algo for copy number model
+
+Wakhan accepts [Severus](https://github.com/KolmogorovLab/Severus) structural variants VCF as breakpoints with param `--breakpoints` inputs to detect copy number changes and this option is highly recommended. 
+However, if `--breakpoints` option is not used, `--change-point-detection-for-cna` should be used instead to use change point detection algorithm [ruptures](https://centre-borelli.github.io/ruptures-docs/) alternatively.
+
+## 1. Standalone mode
+
+Please refer to [prerequisite](https://github.com/KolmogorovLab/Wakhan/tree/main?tab=readme-ov-file#prerequisite) section to generate required phased VCF and breakpoints VCF.
 
 ### Tumor-Normal Mode (requires tumor BAM and normal phased VCF)
 ```
-python wakhan.py --threads <4> --reference <ref.fa>  --target-bam <data.tumor.bam>  --normal-phased-vcf <data.normal_phased.vcf.gz>  --genome-name <cellline/dataset name> --out-dir-plots <genome_abc_output> --breakpoints <severus-sv-VCF>
+python wakhan.py --threads <24> --reference <ref.fa>  --target-bam <tumor.bam>  --normal-phased-vcf <normal_phased.vcf.gz>  --genome-name <cellline/dataset name> --out-dir-plots <genome_abc_output> --breakpoints <severus-sv-VCF>
 ```
 
 ### Tumor-only (requires tumor BAM and tumor phased VCF)
 ```
-python wakhan.py --threads <4> --reference <ref.fa>  --target-bam <data.tumor.bam>  --tumor-vcf <data.tumor_phased.vcf.gz> --genome-name <cellline/dataset name> --out-dir-plots <genome_abc_output> --breakpoints <severus-sv-VCF>
+python wakhan.py --threads <24> --reference <ref.fa>  --target-bam <tumor.bam>  --tumor-phased-vcf <tumor_phased.vcf.gz> --genome-name <cellline/dataset name> --out-dir-plots <genome_abc_output> --breakpoints <severus-sv-VCF>
 ```
 
-##### Breakpoints/Structural variations or change point detection algo for copy number model
+##### Phased breakpoints/structural variations
 
-Wakhan accepts [Severus](https://github.com/KolmogorovLab/Severus) or any other structural variant caller VCF as breakpoints with param `--breakpoints` inputs to detect copy number changes and this option is highly recommended. 
-However, if `--breakpoints` option is not used, `--change-point-detection-for-cna` should be used instead to use change point detection algorithm [ruptures](https://centre-borelli.github.io/ruptures-docs/) alternatively.
+Severus also produces phased breakpoints/structural variations after rephasing tumor (tumor-only mode) or normal (tumor/normal pair mode) phased VCF which can be used in Wakhan by setting `--use-sv-haplotypes` param. 
+This option enables to segment copy numbers boundaries in only one appropriate haplotype.
+
+## 2. Long-Read Somatic Variant Calling pipeline mode
+
+We have developed Nextflow based [Long-Read Somatic Variant Calling](https://github.com/KolmogorovLab/longread_somatic_nf) pipeline.
+This pipeline (`Wakhan - hapcorrect` -> `Whatshap - haplotagging` -> `Severus - sv/breakpoints` -> `Wakhan - cna`) can generate Severus phased SVs/breakpoints, which could be used in Wakhan by setting `--use-sv-haplotypes` param. 
+
+[//]: # (For Wakhan CNA profiling using Severus phased SVs/breakpoints, this pipeline contains following commands which could be run in this order: )
+
+[//]: # ()
+[//]: # ()
+[//]: # (### Tumor-Normal Mode)
+
+[//]: # (```)
+
+[//]: # ()
+[//]: # (```)
+
+[//]: # (### Tumor-only)
+
+[//]: # (```)
+
+[//]: # ()
+[//]: # (```)
 
 ##### Tumor-Normal mixture and purity/ploidy estimation
 
@@ -111,9 +146,9 @@ Few cell lines arbitrary phase-switch correction and copy number estimation outp
 
 * `--genome-name` genome cellline/sample name to be displayed on plots
 
-* `--normal-phased-vcf` normal phased VCF file to generate het SNPs frequncies pileup for tumor BAM (if tumor-only mode, use phased `--tumor-vcf` instead)
+* `--normal-phased-vcf` normal phased VCF file (tumor/normal pair mode) to generate het SNPs frequncies pileup for tumor BAM (if tumor-only mode, use phased `--tumor-phased-vcf` instead)
 
-* `--tumor-vcf` phased VCF is required in tumor-only mode
+* `--tumor-phased-vcf` phased VCF is required in tumor-only mode
 
 
 ## Optional parameters
@@ -121,15 +156,17 @@ Few cell lines arbitrary phase-switch correction and copy number estimation outp
 
 * `--breakpoints-min-length` To adjust breakpoints min length to be included in copy number analysis [default: 10000]
 
+* `--use-sv-haplotypes` To use phased Severus SV/breakpoints [default: disabled]
+
 * `--cpd-internal-segments` For change point detection algo on internal segments after breakpoint/cpd algo for more precise segmentation.
 
 * `--copynumbers-subclonal-enable` Enabling subclonal/fractional copy number states in plots  [default: enabled]
 
 * `--loh-enable` Enabling LOH regions display in CN plots [default: enabled]
 
-* `--phaseblock-flipping-disable` disabling phaseblock flipping if traget tumor BAM doesn't need phase-correction (default: enabled)
+* `--phaseblock-flipping-disable` Disabling phaseblock flipping if traget tumor BAM doesn't need phase-correction (default: enabled)
 
-* `--phaseblocks-enable` enabling phaseblocks display in coverage plots
+* `--phaseblocks-enable` Enabling phaseblocks display in coverage plots
 
 * `--contigs` List of contigs (chromosomes, default: chr1-22,chrX) to be included in the plots [e.g., chr1-22,chrX,chrY]
 
@@ -143,7 +180,7 @@ Few cell lines arbitrary phase-switch correction and copy number estimation outp
 
 Wakhan can also be used in case phasing is not good in input tumor or analysis is being performed without considering phasing:
 
-* `--without-phasing` enable it if CNA analysis is being performed without phasing in conjunction with `--phaseblock-flipping-disable` and `--histogram-coverage` with all other required parameters as mentioned in example command
+* `--without-phasing` Enable it if CNA analysis is being performed without phasing in conjunction with `--phaseblock-flipping-disable` and `--histogram-coverage` with all other required parameters as mentioned in example command
 
 A sample command-line for running unphased mode (Mouse WGS data) could be:
 ```
@@ -154,48 +191,41 @@ Here is a sample copy number/breakpoints output plot without phasing.
 <img width="1373" alt="plots_example" src="examples/images/C15.png">
 
 ## Output produced
-Based on best confidence scores, tumor purity and ploidy values are calculated and copy number analysis is performed. 
-Each subfolder in output directory represents best <`ploidy`>_<`purity`>_<`confidence`> values.
+Based on best confidence scores, tumor purity and ploidy values are calculated and solution(s) are ranked accordingly with output as `solution_<N>` symlink directories. 
+Each sub-folder in output directory represents best <`ploidy`>_<`purity`>_<`confidence`> values.
 
 * `<genome-name>_genome_copynumber_details.html` Genome-wide copy number plots with coverage information on same axis
 * `<genome-name>_copynumber_breakpoints.html` Genome-wide copy number plots with coverage information on opposite axis, additionally breakpoints and genes annotations 
 * `<genome-name>_copynumber_breakpoints_subclonal.html` Genome-wide subclonal/fractional copy number plots with coverage information on opposite axis, additionally breakpoints and genes annotations (`--copynumbers-subclonal-enable`)
 * `bed_output` It contains copy numbers segments in bed format
+* `vcf_output` It contains copy numbers segments in VCF format
 * `variation_plots` Copy number chromosomes-scale plots with segmentation, coverage and LOH
 
 Following are coverage and SNPs/LOH plots and bed directories in output folder, independent of CNA analysis
 
 * `snps_loh_plots` SNPs and SNPs ratios plots with LOH representation in chromosomes-scale and genome-wide (in tumor-only mode)
-* `<genome-name>_genome_loh.html` Genome-wide LOH plot
-* `bed_output` It contains LOH segments in bed format
+* `<genome-name>_genome_loh.html` Genome-wide LOH plot (in tumor-only mode)
 * `coverage_plots` Haplotype specific coverage plots for chromosomes with option for unphased coverage
-* `phasing_output` Phase-switch error correction plots and phase corrected VCF file (*rephased.vcf.gz)
+* `coverage_data` Haplotype specific phase-corrected coverage data including SNPs pileup
+* `phasing_output` Phase-switch error correction plots and phase corrected VCF file (rephased.vcf.gz)
 
 
 ## Prerequisite
-This tool requires haplotagged tumor BAM and phased VCF in case tumor-only mode and normal phased VCF in case tumor-normal mode. This can be done through any phasing tools like Margin, Whatshap and Longphase. 
-Following commands could be helpful for phasing VCFs and haplotagging BAMs.
+1. Wakhan requires tumor BAM and normal phased VCF (in case tumor-normal mode) or tumor phased VCF (in case tumor-only mode).
+Following [Clair3](https://github.com/HKU-BAL/Clair3) command with [longphase](https://github.com/twolinin/longphase) as phasing tool is recommended for generating required phased VCF.
 
-#### For normal/tumor pair:
-```
-# ClairS phase and haplotag both normal and tumor samples
-singularity run clairs_latest.sif /opt/bin/run_clairs --threads 56 --phase_tumor True --use_whatshap_for_final_output_haplotagging --use_whatshap_for_final_output_phasing --tumor_bam_fn normal.bam --normal_bam_fn tumor.bam --ref ref.fasta --output_dir clairS --platform ont_r10
-```
-or
-```
-# Phase normal sample
-pepper_margin_deepvariant call_variant -b normal.bam -f ref.fasta -o pepper/output -t 56 --ont_r9_guppy5_sup -p pepper --phased_output
+#### For normal/tumor pair (generating normal phased-vcf):
+BAM= <path to normal BAM>
+#### For tumor-only (generating tumor phased-vcf):
+BAM= <path to tumor BAM>
 
-# Haplotag tumor sample with normal phased VCF (phased.vcf.gz) output from previous step
-whatshap haplotag --ignore-read-groups phased.vcf.gz tumor.bam  --reference ref.fasta -o tumor_whatshap_haplotagged.bam
 ```
-#### For tumor only:
+#For ONT data
+clair3 --bam_fn=${BAM} --ref_fn=${REF_FASTA} --threads=${THREADS} --platform=ont --model_path=</clair3_models/r1041_e82_400bps_sup_v420/> --output=${OUTPUT_DIR} --enable_phasing --longphase_for_phasing
+
+#For PacBio data
+clair3 --bam_fn=${BAM} --ref_fn=${REF_FASTA} --threads=${THREADS} --platform=hifi --model_path=</clair3_models/hifi/> --output=${OUTPUT_DIR} --enable_phasing --longphase_for_phasing
 ```
-# Phase and haplotag tumor sample
-singularity run clair3_latest.sif /opt/bin/run_clair3.sh --use_whatshap_for_final_output_haplotagging --use_whatshap_for_final_output_phasing --bam_fn=tumor.bam --ref_fn=ref.fasta --threads=56 --platform=ont --model_path=r941_prom_sup_g5014 --output=clair3 --enable_phasing
-```
-or
-```
-# Phase and haplotag tumor sample
-pepper_margin_deepvariant call_variant -b tumor.bam -f ref.fasta -o pepper/output -t 56 --ont_r9_guppy5_sup -p pepper --phased_output
-```
+
+2. We also recommend to use structural variants (breakpoints), please refer to [Severus](https://github.com/KolmogorovLab/Severus).
+

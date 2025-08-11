@@ -1111,7 +1111,7 @@ def change_point_detection_means(args, chrom, bps_ids_all, df_chrom, ref_start_v
         hp_1_breakpoints = []
         hp_2_breakpoints = []
         for j, bp in enumerate(all_breakpoints):
-            for i, (a, b, c, hp1, d, e, f, hp2) in enumerate(edges_chr):
+            for i, (a, b, c, hp1, dv, d, e, f, hp2, dv) in enumerate(edges_chr):
                 if chrom == a or chrom == d:
                     if (bp == b and hp1 == 0) or (bp == e and hp1 == 0):
                         hp_1_breakpoints.append(bp)
@@ -1172,7 +1172,7 @@ def change_point_detection_means(args, chrom, bps_ids_all, df_chrom, ref_start_v
             loh_path = args.quick_start_coverage_path + '/'
         else:
             loh_path = args.out_dir_plots + '/coverage_data/'
-        if args.tumor_vcf and os.path.exists(loh_path + args.genome_name + '_loh_segments.csv'):
+        if args.tumor_phased_vcf and os.path.exists(loh_path + args.genome_name + '_loh_segments.csv'):
             df_loh = csv_df_chromosomes_sorter(loh_path + args.genome_name + '_loh_segments.csv', ['chr', 'start', 'end', 'hp'])
             indices_loh_hp1 = update_state_with_loh_overlap(df_means_chr[0], df_loh)
             indices_loh_hp2 = update_state_with_loh_overlap(df_means_chr[1], df_loh)
@@ -1305,14 +1305,18 @@ def change_point_detection_algo(bin_size, hp_data, ref_start_values, args, break
         for index in sorted(list(set(cent_indices)), reverse=True):
             del breakpoints_coordinates[index]
 
-    if args.tumor_vcf:
+    if args.tumor_phased_vcf:
         if not df_loh_chrom.empty:
-            loh = df_loh_chrom['start'].tolist() + df_loh_chrom['end'].tolist() #[df_loh_chrom.start.values.tolist()[0], df_loh_chrom.end.values.tolist()[0]]
+            if args.first_copy_breakpoints_filter > 0:
+                loh = [0, 0]
+            else:
+                loh = df_loh_chrom['start'].tolist() + df_loh_chrom['end'].tolist()
         else:
             loh = [0, 0]
         change_points = sorted(list(set(breakpoints_coordinates + cents + loh + [ref_start_values[-1]])))
     else:
         change_points = sorted(list(set(breakpoints_coordinates + cents + [ref_start_values[-1]])))
+
     change_points = remove_continuous_elements(change_points)
     change_points = [i for i in change_points if i >= 2]
 
@@ -1326,7 +1330,7 @@ def change_point_detection_algo(bin_size, hp_data, ref_start_values, args, break
             break
         sub_list = hp_data[start//bin_size:point//bin_size]
         if sub_list and not point == cents[1]:
-            if args.normal_phased_vcf or args.tumor_vcf:
+            if args.normal_phased_vcf or args.tumor_phased_vcf:
                 sub_list = [x for x in sub_list if x != 0]
             if len(sub_list):
                 snps_haplotype_mean.append(statistics.median(sub_list))
@@ -1385,7 +1389,6 @@ def adjust_diversified_segments(centers, snps_cpd_means_df, df_segs_hp1, df_segs
 
         updated_df_segs_hp1.append(pd.DataFrame(list(zip(df_chrom_segs_hp1.chromosome.values.tolist(), df_chrom_segs_hp1.start.values.tolist(),
                 df_chrom_segs_hp1.end.values.tolist(),  df_chrom_segs_hp1.state.values.tolist(), haplotype_1_values_copyrnumbers)), columns=['chromosome', 'start', 'end', 'depth', 'state']))
-
 
         for i, (start, end) in enumerate(zip(haplotype_2_start_values_copyrnumbers, haplotype_2_end_values_copyrnumbers)):
             haplotype_2_values_copyrnumbers[i] = min(centers, key=lambda x: abs(x - haplotype_2_values_copyrnumbers[i]))
@@ -1647,7 +1650,7 @@ def average_p_value_genome(args, centers, df_segs_hp1_, df_segs_hp2_, df_hp1, df
     #     loh_path = args.quick_start_coverage_path + '/'
     # else:
     #     loh_path = args.out_dir_plots + '/coverage_data/'
-    # if args.tumor_vcf and os.path.exists(loh_path + args.genome_name + '_loh_segments.csv'):
+    # if args.tumor_phased_vcf and os.path.exists(loh_path + args.genome_name + '_loh_segments.csv'):
     #     df_loh = csv_df_chromosomes_sorter(loh_path + args.genome_name + '_loh_segments.csv', ['chr', 'start', 'end', 'hp'])
     #     indices_loh_hp1 = update_state_with_loh_overlap(df_segs_hp1, df_loh)
     #     indices_loh_hp2 = update_state_with_loh_overlap(df_segs_hp2, df_loh)
@@ -1687,7 +1690,7 @@ def average_p_value_genome(args, centers, df_segs_hp1_, df_segs_hp2_, df_hp1, df
     sample_mean = []
     sample_stdev = []
     for i in range(len(centers)):
-        if len(hp_1_values[i] + hp_2_values[i]): #and not args.tumor_vcf:
+        if len(hp_1_values[i] + hp_2_values[i]): #and not args.tumor_phased_vcf:
             sample_mean.append(statistics.median(remove_outliers_iqr(np.array(hp_1_values[i] + hp_2_values[i]))))
             sample_stdev.append(15)#statistics.stdev(remove_outliers_iqr(np.array(hp_1_values[i] + hp_2_values[i]))))
         else:
@@ -1839,25 +1842,26 @@ def collect_loh_centromere_regions(df_segs_hp1_, df_segs_hp2_, centers, integer_
         hp2_start = df_segs_hp_2_chrom.start.values.tolist()
         hp2_end = df_segs_hp_2_chrom.end.values.tolist()
 
-        if args.breakpoints and not args.cpd_internal_segments:
-            for index, (state1, state2, start, end) in enumerate(zip(hp1_state, hp2_state, hp1_start, hp1_end)):
-                #print(chrom, state1, state2, start, end)
-                if state1 == 0 or state2 == 0 and end - start > 2000000:
-                    loh_region_starts.append(start)
-                    loh_region_ends.append(end)
-        else:
-            for index, (state1, start, end) in enumerate(zip(hp1_state, hp1_start, hp1_end)):
-                if state1 == 0 and end - start > 2000000:
+        # if args.breakpoints and not args.cpd_internal_segments:
+        #     for index, (state1, state2, start, end) in enumerate(zip(hp1_state, hp2_state, hp1_start, hp1_end)):
+        #         #print(chrom, state1, state2, start, end)
+        #         if state1 == 0 or state2 == 0 and end - start > 2000000:
+        #             loh_region_starts.append(start)
+        #             loh_region_ends.append(end)
+        # else:
+        for index, (state1, start, end) in enumerate(zip(hp1_state, hp1_start, hp1_end)):
+            if state1 == 0 and end - start > 2000000:
+                loh_region_starts.append(start)
+                loh_region_ends.append(end)
+
+        for index, (state2, start, end) in enumerate(zip(hp2_state, hp2_start, hp2_end)):
+            if state2 == 0 and end - start > 2000000:
+                if not start in loh_region_starts and not end in loh_region_ends:
                     loh_region_starts.append(start)
                     loh_region_ends.append(end)
 
-            for index, (state2, start, end) in enumerate(zip(hp2_state, hp2_start, hp2_end)):
-                if state2 == 0 and end - start > 2000000:
-                    if not start in loh_region_starts and not end in loh_region_ends:
-                        loh_region_starts.append(start)
-                        loh_region_ends.append(end)
-
-            # sort
+        # sort
+        if loh_region_starts:
             sort_function = lambda x: x[0]
             sort_target = list(zip(loh_region_starts, loh_region_ends))
             sort_target.sort(key=sort_function)
@@ -2255,8 +2259,66 @@ def add_confidence_score_cn_segemnts(centers, df_segs_hp1_updated, df_segs_hp2_u
 
     return df_segs_hp1, df_segs_hp2
 
-def centromere_regions_blacklist(args, df_segs_hp1_):
+
+def centromere_regions_blacklist_bins(args, df_hp1_, df_hp2_, df_segs_hp1_updated_, df_segs_hp2_updated_):
+    df_segs_hp1 = df_segs_hp1_updated_.copy()
+    df_segs_hp2 = df_segs_hp2_updated_.copy()
+
+    updated_hp1 = []
+    updated_hp2 = []
+
+    fileDir = os.path.dirname(__file__)  # os.path.dirname(os.path.realpath('__file__'))
+    cen_coord = os.path.join(fileDir, args.centromere)
+    df_centm = csv_df_chromosomes_sorter(cen_coord, ['chr', 'start', 'end'])
+    df_centm['start'].mask(df_centm['start'] == 1, 0, inplace=True)
+
+    chroms = get_contigs_list(args.contigs)
+    for index, chrom in enumerate(chroms):
+        df_centm_chrom = df_centm[df_centm['chr'] == chrom]
+        if not df_centm_chrom.empty:
+            cents = [df_centm_chrom.start.values.tolist()[0], df_centm_chrom.end.values.tolist()[0]]
+        else:
+            cents = [0, 0]
+        df_segs_hp_1_chrom = df_segs_hp1[df_segs_hp1['chromosome'] == chrom]
+        df_segs_hp_2_chrom = df_segs_hp2[df_segs_hp2['chromosome'] == chrom]
+
+        df_hp_1_chrom = df_hp1_[df_hp1_['chr'] == chrom]
+        df_hp_2_chrom = df_hp2_[df_hp2_['chr'] == chrom]
+        df_hp_1_chrom = df_hp_1_chrom.reset_index(drop=True)
+        df_hp_2_chrom = df_hp_2_chrom.reset_index(drop=True)
+
+        ref_start_values = df_hp_1_chrom.start.values.tolist()
+
+        for idx, s1 in df_segs_hp_1_chrom.iterrows():
+            if (df_segs_hp_1_chrom.loc[idx, 'start'] == cents[0] or df_segs_hp_1_chrom.loc[idx, 'start'] == cents[0]+1) and df_segs_hp_1_chrom.loc[idx, 'end'] == cents[1]:# or df_segs_hp_1_chrom.loc[idx+1, 'start'] == cents[0] and df_segs_hp_1_chrom.loc[idx+1, 'end'] == cents[1]:
+                internal_bins = [k for k in ref_start_values if k >= s1['start'] and k <= s1['end']]
+                if internal_bins:
+                    j = ref_start_values.index(internal_bins[0])
+                    for l in range(len(internal_bins)):
+                        df_hp_1_chrom.loc[j, 'hp1'] = 3300
+                        j = j+1
+
+        for idx, s2 in df_segs_hp_2_chrom.iterrows():
+            if (df_segs_hp_2_chrom.loc[idx, 'start'] == cents[0] or df_segs_hp_2_chrom.loc[idx, 'start'] == cents[0]+1) and df_segs_hp_2_chrom.loc[idx, 'end'] == cents[1]:# or df_segs_hp_1_chrom.loc[idx+1, 'start'] == cents[0] and df_segs_hp_1_chrom.loc[idx+1, 'end'] == cents[1]:
+                internal_bins = [k for k in ref_start_values if k >= s2['start'] and k <= s2['end']]
+                if internal_bins:
+                    j = ref_start_values.index(internal_bins[0])
+                    for l in range(len(internal_bins)):
+                        df_hp_2_chrom.loc[j, 'hp2'] = 3300
+                        j = j+1
+
+        updated_hp1.append(df_hp_1_chrom)
+        updated_hp2.append(df_hp_2_chrom)
+
+    segs_hp1 = pd.concat(updated_hp1)
+    segs_hp2 = pd.concat(updated_hp2)
+
+    return segs_hp1, segs_hp2
+
+
+def centromere_regions_blacklist(args, df_segs_hp1_, df_segs_hp2_):
     df_segs_hp1 = df_segs_hp1_.copy()
+    df_segs_hp2 = df_segs_hp2_.copy()
 
     updated_hp1_segs = []
     updated_hp2_segs = []
@@ -2267,42 +2329,79 @@ def centromere_regions_blacklist(args, df_segs_hp1_):
     df_centm['start'].mask(df_centm['start'] == 1, 0, inplace=True)
 
     chroms = get_contigs_list(args.contigs)
-
     for index, chrom in enumerate(chroms):
         df_centm_chrom = df_centm[df_centm['chr'] == chrom]
         if not df_centm_chrom.empty:
             cents = [df_centm_chrom.start.values.tolist()[0], df_centm_chrom.end.values.tolist()[0]]
         else:
             cents = [0, 0]
-        indices = []
         df_segs_hp_1_chrom = df_segs_hp1[df_segs_hp1['chromosome'] == chrom]
-        for (idx, s1) in df_segs_hp_1_chrom.iterrows():
-            if (df_segs_hp_1_chrom.loc[idx, 'start'] == cents[0] or df_segs_hp_1_chrom.loc[idx, 'start'] == cents[0]+1) and df_segs_hp_1_chrom.loc[idx, 'end'] == cents[1]:# or df_segs_hp_1_chrom.loc[idx+1, 'start'] == cents[0] and df_segs_hp_1_chrom.loc[idx+1, 'end'] == cents[1]:
-                indices.append(idx)
-        df_segs_hp_1_chrom = df_segs_hp_1_chrom.drop(indices).reset_index(drop=True)
-        updated_hp1_segs.append(df_segs_hp_1_chrom)
+        df_segs_hp_2_chrom = df_segs_hp2[df_segs_hp2['chromosome'] == chrom]
 
+        for idx, s1 in df_segs_hp_1_chrom.iterrows():
+            if (df_segs_hp_1_chrom.loc[idx, 'start'] == cents[0] or df_segs_hp_1_chrom.loc[idx, 'start'] == cents[0]+1) and df_segs_hp_1_chrom.loc[idx, 'end'] == cents[1]:# or df_segs_hp_1_chrom.loc[idx+1, 'start'] == cents[0] and df_segs_hp_1_chrom.loc[idx+1, 'end'] == cents[1]:
+                df_segs_hp_1_chrom.loc[idx, 'depth'] = 3300
+                df_segs_hp_1_chrom.loc[idx, 'state'] = 3300
+
+        for idx, s2 in df_segs_hp_2_chrom.iterrows():
+            if (df_segs_hp_2_chrom.loc[idx, 'start'] == cents[0] or df_segs_hp_2_chrom.loc[idx, 'start'] == cents[0]+1) and df_segs_hp_2_chrom.loc[idx, 'end'] == cents[1]:# or df_segs_hp_1_chrom.loc[idx+1, 'start'] == cents[0] and df_segs_hp_1_chrom.loc[idx+1, 'end'] == cents[1]:
+                df_segs_hp_2_chrom.loc[idx, 'depth'] = 3300
+                df_segs_hp_2_chrom.loc[idx, 'state'] = 3300
+
+        updated_hp1_segs.append(df_segs_hp_1_chrom)
+        updated_hp2_segs.append(df_segs_hp_2_chrom)
 
     segs_hp1 = pd.concat(updated_hp1_segs)
+    segs_hp2 = pd.concat(updated_hp2_segs)
 
-    return segs_hp1
+    return segs_hp1, segs_hp2
 
-# def merge_bps_regions_cn(df_segs, args):
+def extract_centromere_regions(args):
+    fileDir = os.path.dirname(__file__)
+    cen_coord = os.path.join(fileDir, args.centromere)
+    df_centm = csv_df_chromosomes_sorter(cen_coord, ['chr', 'start', 'end'])
+    df_centm['start'].mask(df_centm['start'] == 1, 0, inplace=True)
+
+    return df_centm
+
+# def breakpoints_segments_means(args, csv_df_snps_mean):
+#     haplotype_1_segs_dfs = []
+#     haplotype_2_segs_dfs = []
+#
+#     fileDir = os.path.dirname(__file__)  # os.path.dirname(os.path.realpath('__file__'))
+#     cen_coord = os.path.join(fileDir, args.centromere)
+#     df_centm = csv_df_chromosomes_sorter(cen_coord, ['chr', 'start', 'end'])
+#     df_centm['start'].mask(df_centm['start'] == 1, 0, inplace=True)
+#
+#     if args.quick_start:
+#         loh_path = args.quick_start_coverage_path + '/'
+#     else:
+#         loh_path = args.out_dir_plots + '/coverage_data/'
+#     if args.tumor_phased_vcf and os.path.exists(loh_path + args.genome_name + '_loh_segments.csv'):
+#         df_loh = csv_df_chromosomes_sorter(loh_path + args.genome_name + '_loh_segments.csv', ['chr', 'start', 'end', 'hp'])
+#     else:
+#         df_loh = pd.DataFrame(columns=['chr', 'start', 'end', 'hp'])
+#
+#     if args.breakpoints:
+#         _, _, _, breakpoints_segemnts, bps, bps_bnd = sv_vcf_bps_cn_check(args.breakpoints, args)
+#         df_var_bins, df_var_bins_1 = get_chromosomes_bins(args.target_bam[0], args.bin_size, args)
+#
 #     chroms = get_contigs_list(args.contigs)
-#     _, _, _, bps_ids_all, bps, bps_bnd = sv_vcf_bps_cn_check(args.breakpoints, args)
-#     dfs = []
-#     n = len(bps_ids_all)
-#     edges_chr = [bps_ids_all[i] + (bps_ids_all[i + 1] if i + 1 < n else []) for i in range(0, n, 2)]
-#
 #     for index, chrom in enumerate(chroms):
-#         df_seg = df_segs[df_segs['chromosome'] == chrom]
-#         for (idx, s1) in df_seg.iterrows():
-#             for i, (a,b,c,_,d,e,f,_) in enumerate(edges_chr):#for bp in bps_ids_all:
-#                 if bp[0] == s1['chr'] and int(bp[1]) >= int(s1['start']) and int(bp[1]) <= int(s1['end']):
-#                     df_seg.loc[idx, 'depth'] = df_seg.loc[idx, 'depth']
-#                     df_seg.loc[idx, 'state'] = df_seg.loc[idx, 'depth']
+#         df_centm_chrom = df_centm[df_centm['chr'] == chrom]
+#         df_loh_chrom = df_loh[df_loh['chr'] == chrom]
 #
-#         dfs.append(df_seg)
-#     df_segs_updated = pd.concat(dfs)
+#         if args.breakpoints:
+#             df_var_bins_chr_1 = df_var_bins_1[df_var_bins_1['chr'] == chrom]
+#             all_breakpoints = df_var_bins_chr_1.start.values.tolist()
+#         else:
+#             all_breakpoints = []
+#             breakpoints_segemnts = []
 #
-#     return df_segs_updated
+#         snps_cpd_means, snps_cpd_lens, df_means_chr = change_point_detection_means(args, chrom, breakpoints_segemnts, csv_df_snps_mean, csv_df_snps_mean.start.tolist(), all_breakpoints, df_centm_chrom, df_loh_chrom)
+#         haplotype_1_segs_dfs.append(df_means_chr[0])
+#
+#         snps_cpd_means, snps_cpd_lens, df_means_chr = change_point_detection_means(args, chrom, breakpoints_segemnts, csv_df_snps_mean, csv_df_snps_mean.start.tolist(), all_breakpoints, df_centm_chrom, df_loh_chrom)
+#         haplotype_2_segs_dfs.append(df_means_chr[1])
+#
+#     return pd.concat(haplotype_1_segs_dfs), pd.concat(haplotype_2_segs_dfs)

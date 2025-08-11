@@ -310,7 +310,7 @@ def process_bam_for_snps_freqs(args, thread_pool):
     if args.normal_phased_vcf:
         vcf_input = args.normal_phased_vcf
     else:
-        vcf_input = args.tumor_vcf
+        vcf_input = args.tumor_phased_vcf
     basefile = pathlib.Path(args.target_bam[0]).stem
     output_bam = f"{os.path.join(args.out_dir_plots, 'data', basefile + '_reduced.bam')}"
 

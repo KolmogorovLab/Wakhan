@@ -47,17 +47,24 @@ def get_all_breakpoints_data(edges, edges_chr, height, path, args):
     hover_info = []
     colors = []
     widths = []
+    names_conv = []
     edges_chr = [edges_chr[i] + (edges_chr[i + 1] if i + 1 < n else []) for i in range(0, n, 2)]
     #BNDs and INVs
-    for i, (a,b,c,hp,d,e,f,_) in enumerate(edges_chr):
+    for i, (a,b,c,hp1, dv, d,e,f,hp2, dv) in enumerate(edges_chr):
+        if ('_2' in c and c.replace('_2', '_1') in names_conv) or ('_1' in c and c.replace('_1', '_2') in names_conv):
+            hp1 = '|'.join(reversed(hp1.split('|')))
+            hp2 = '|'.join(reversed(hp2.split('|')))
+        names_conv.append(c)
+
         #sort coordinates
-        data_df = {'chr': [a, d], 'start': [b, e]}
+        data_df = {'chr': [a, d], 'start': [b, e], 'hps': [hp1, hp2]}
         df = pd.DataFrame(data_df)
         df_sorted = df_chromosomes_sorter(df, ['chr','start'])
         a = df_sorted.iloc[0,0]
         b = df_sorted.iloc[0,1]
         d = df_sorted.iloc[1,0]
         e = df_sorted.iloc[1,1]
+        hp = df_sorted.iloc[0,2]
 
         if a == d:
             nr = 35
@@ -83,15 +90,7 @@ def get_all_breakpoints_data(edges, edges_chr, height, path, args):
             colors.append('#737373')
             hover_info.append('HP='+str(hp)+ '- ' + 'BND - ' + a + ':' + str(b) + '-' + d + ':' + str(e))
 
-    #edges = [[0, 1000000], [0, 100000000], [0, 190000000], [358000001, 234000000], [68754445, 345000000], [6577777, 462000000]]
-    #edges = [[358000001, 234000000]]
-
     for i, (j, k) in enumerate(edges):
-        #print(edges_chr[i])
-        # if j < k:
-        #     tooltips.append(f'interactions({labels[j]}, {labels[k]})={interact_strength[i]}')
-        # else:
-        #     tooltips.append(f'interactions({labels[k]}, {labels[j]})={interact_strength[i]}')
         b0 = [j, 0.0]
         b2 = [k, 0.0]
         b1 = get_b1(b0, b2)
@@ -102,18 +101,8 @@ def get_all_breakpoints_data(edges, edges_chr, height, path, args):
         yy.append(pts[nr // 2][1])  # ordinate of the same point
         x, y = zip(*pts)
 
-        # data.append(dict(type='scatter',
-        #                  x=x,
-        #                  y=y,
-        #                  name='',
-        #                  mode='lines',
-        #                  line=dict(width=1, color='#6b8aca', shape='spline'),
-        #                  hoverinfo='none',
-        #                  showlegend=False
-        #                  )
-        #             )
-
         data.append([x, y, '',  'lines', dict(width=1.2, color=colors[i], shape='spline'), hover_info[i], hover_info[i], False])
+
     return data
 #Foolowing Bezier curve code is adopted from https://notebook.community/empet/Plotly-plots/Arc-diagram-Force-Awakens
 def get_b1(b0, b2):

@@ -241,10 +241,12 @@ def squash_regions(region, bin_size):
     series = pd.Series(region, dtype="int")
     region = series.drop_duplicates().tolist()
     region_starts = [v for i, v in enumerate(region) if i == 0 or region[i] > region[i - 1] + bin_size]
-    region_ends = []
-    for i, val in enumerate(region_starts):
-        region_ends.append(region[region.index(val) - 1] + bin_size - 1)
-    region_ends = sorted(region_ends)
+    region_ends = [v + bin_size - 1 for i, v in enumerate(region) if i == len(region) - 1 or region[i + 1] - region[i] > bin_size]
+
+    # region_ends = []
+    # for i, val in enumerate(region_starts):
+    #     region_ends.append(region[region.index(val) - 1] + bin_size - 1)
+    # region_ends = sorted(region_ends)
 
     return region_starts, region_ends
 
@@ -277,18 +279,21 @@ def snps_frequencies_chrom_mean_phasesets(df_snps, ref_start_values, ref_end_val
     snps_haplotype1_mean = []
     for index, (i,j) in enumerate(zip(ref_start_values, ref_end_values)):
         sub_list = haplotype_1_coverage[haplotype_1_position.index(min(haplotype_1_position, key=lambda x:abs(x-i))):haplotype_1_position.index(min(haplotype_1_position, key=lambda x:abs(x-j)))]
+        sub_list = [x for x in sub_list if x != 0]
         if sub_list:
+
             #snps_haplotype1_mean.append(statistics.mean(sub_list))
-            snps_haplotype1_mean.append(statistics.mean(remove_outliers_iqr(np.array(sub_list))))
+            snps_haplotype1_mean.append(statistics.median(sub_list))
         else:
             snps_haplotype1_mean.append(0)
 
     snps_haplotype2_mean = []
     for index, (i, j) in enumerate(zip(ref_start_values, ref_end_values)):
         sub_list = haplotype_2_coverage[haplotype_2_position.index(min(haplotype_2_position, key=lambda x:abs(x-i))):haplotype_2_position.index(min(haplotype_2_position, key=lambda x:abs(x-j)))]
+        sub_list = [x for x in sub_list if x != 0]
         if sub_list:
             #snps_haplotype2_mean.append(statistics.mean(sub_list))
-            snps_haplotype2_mean.append(statistics.mean(remove_outliers_iqr(np.array(sub_list))))
+            snps_haplotype2_mean.append(statistics.median(sub_list))
         else:
             snps_haplotype2_mean.append(0)
 
@@ -341,6 +346,52 @@ def snps_frequencies_chrom_mean(df_snps, ref_start_values, chrom, args):
                 snps_haplotype2_mean.append(0)
         total += len_cov
     return snps_haplotype1_mean, snps_haplotype2_mean
+
+def snps_frequencies_homo_chrom_mean(file, chrom, args, loh_region_starts, loh_region_ends, haplotype_1_values, haplotype_2_values):
+
+    if args.quick_start:
+        csv_df_coverage = csv_df_chromosomes_sorter(args.quick_start_coverage_path+'/'+file, ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
+    else:
+        csv_df_coverage = csv_df_chromosomes_sorter(args.out_dir_plots+'/coverage_data/'+file, ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
+
+    df = csv_df_coverage[csv_df_coverage['chr'] == chrom]
+
+    #df = dict(tuple(df_snps.groupby('hp')))
+    haplotype_1_position = df.pos.values.tolist()
+    haplotype_1_coverage = df.freq_value_b.values.tolist()
+    haplotype_2_position = df.pos.values.tolist()
+    haplotype_2_coverage = df.freq_value_a.values.tolist()
+
+    for j, (starts, ends) in enumerate(zip(loh_region_starts, loh_region_ends)):
+        if ends - starts > 2000000:
+            total = starts // args.bin_size
+            for i in range(starts//args.bin_size,ends//args.bin_size):
+                #len_cov = len(df[(df.pos >= i) & (df.pos < i + args.bin_size)])
+                len_cov = len(df[(df['pos'] >= i*args.bin_size) & (df['pos'] <= (i+1)*args.bin_size)])
+                if len_cov == 0:
+                    haplotype_1_sub_value = 0
+                else:
+                    sub_list = haplotype_1_coverage[total:(total + len_cov)]
+                    if sub_list:
+                        haplotype_1_sub_value = statistics.mean(sub_list)
+                    else:
+                        haplotype_1_sub_value = 0
+
+                if len_cov == 0:
+                    haplotype_2_sub_value = 0
+                else:
+                    sub_list = haplotype_2_coverage[total:(total + len_cov)]
+                    if sub_list:
+                        haplotype_2_sub_value = statistics.mean(sub_list)
+                    else:
+                        haplotype_2_sub_value = 0
+
+                total += len_cov
+
+                haplotype_1_values[i] = haplotype_1_sub_value + haplotype_2_sub_value
+                haplotype_2_values[i] = 0
+
+    return haplotype_1_values, haplotype_2_values
 
 def cpd_mean(haplotype1_means, haplotype2_means, ref_values, chrom, args):
     import ruptures as rpt
@@ -455,23 +506,20 @@ def get_snp_frequencies_segments(args, target_bam, thread_pool):
     if args.normal_phased_vcf:
         vcf_input = args.normal_phased_vcf
     else:
-        vcf_input = args.tumor_vcf
+        vcf_input = args.tumor_phased_vcf
 
     basefile = pathlib.Path(vcf_input).stem
     output_csv = basefile + '_het_snps.csv'
     output_csv = f"{os.path.join(args.out_dir_plots, 'data_phasing', output_csv)}"
 
-    output_bed = basefile + '_het_snps.bed'
-    output_bed = f"{os.path.join(args.out_dir_plots, 'data_phasing', output_bed)}"
+    output_csv_homo = basefile + '_homo_snps.csv'
+    output_csv_homo = f"{os.path.join(args.out_dir_plots, 'data_phasing', output_csv_homo)}"
 
     output_acgts = basefile + '_het_snps_freqs.csv'
     output_acgts = f"{os.path.join(args.out_dir_plots, 'data_phasing', output_acgts)}"
 
-    # logger.info('bcftools -> Filtering out hetrozygous and phased SNPs and generating a new VCF')
-    # # Filter out het, phased SNPs
-    # cmd = ['bcftools', 'view', '--threads', '$(nproc)',  '--phased', '-g', 'het', '--types', 'snps', args.normal_phased_vcf'], '-Oz', '-o', args.normal_phased_vcf']]
-    # process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    # process.wait()
+    output_acgts_homo = basefile + '_homo_snps_freqs.csv'
+    output_acgts_homo = f"{os.path.join(args.out_dir_plots, 'data_phasing', output_acgts_homo)}"
 
     logger.info('bcftools -> Query for het SNPs and creating a %s CSV file', output_csv)
     # bcftools query for phasesets and GT,DP,VAF
@@ -479,25 +527,17 @@ def get_snp_frequencies_segments(args, target_bam, thread_pool):
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     process.wait()
 
-    cmd = ['bcftools', 'query', '-i', 'GT="het"', '-f',  '%CHROM\t%POS\n', vcf_input, '-o', output_bed] #
-    process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    process.wait()
-
-    #output_csv = '/home/rezkuh/GenData/COLO829/COLO829_chr7_details.csv'
-    #output_bed = '/home/rezkuh/GenData/COLO829/colo829_chr7.csv'
-
-    logger.info('SNPs frequency -> CSV to dataframe conversion')
+    logger.info('SNPs frequency -> CSV to dataframe conversion for heterozygous SNPs')
     dataframe_snps = csv_df_chromosomes_sorter(output_csv, ['chr', 'start', 'ref', 'alt', 'gt'])
-    #dataframe_snps = pd.read_csv(output_csv, sep='\t', names=['chr', 'start', 'ref', 'alt', 'gt'])
 
-    logger.info('SNPs frequency -> Comuting het SNPs frequency from tumor BAM')
+    logger.info('SNPs frequency -> Computing SNPs frequency from tumor BAM')
 
-    #output_pileups = bam_pileups_snps(output_bed, target_bam, args)
     if args.quick_start:
         output_pileups = args.quick_start_coverage_path + '/'+ 'pileup_SNPs.csv'
     else:
-        output_pileups = process_bam_for_snps_freqs(args, thread_pool)  # TODO Updated
+        output_pileups = process_bam_for_snps_freqs(args, thread_pool)
 
+    logger.info('SNPs frequency -> Computing ACGTs frequencies for heterozygous SNPs')
     compute_acgt_frequency(output_pileups, output_acgts, args)
     dataframe_acgt_frequency = csv_df_chromosomes_sorter(output_acgts, ['chr', 'start', 'a', 'c', 'g', 't'], ',')
     dataframe_acgt_frequency = pd.merge(dataframe_snps, dataframe_acgt_frequency, on=['chr', 'start'])

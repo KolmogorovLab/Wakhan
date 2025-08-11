@@ -417,12 +417,13 @@ def loh_plots_genome(df_snps_ratios, args, df_loh_regions):
                                yaxis=None, opacity=0.7, color='#3A6B35', mul_cols=False)
 
     ###################################
-    #snps_het, snps_homo, indices_het_freqs, indices_homo_freqs = get_snps_frquncies_genome(df_snps_in_csv)
-
-    #add_scatter_trace_coverage(fig, indices_het_freqs, snps_het, name='Het SNPs Freqs', text=None, yaxis=None,
+    # snps_het, snps_homo, indices_het_freqs, indices_homo_freqs = get_snps_frquncies_genome(df_snps_in_csv)
+    #
+    # add_scatter_trace_coverage(fig, indices_het_freqs, snps_het, name='Het SNPs Freqs', text=None, yaxis=None,
     #                           opacity=0.7, color='#E3B448', visibility='legendonly')
-    #add_scatter_trace_coverage(fig, indices_homo_freqs, snps_homo, name='Homo SNPs Freqs', text=None, yaxis=None,
+    # add_scatter_trace_coverage(fig, indices_homo_freqs, snps_homo, name='Homo SNPs Freqs', text=None, yaxis=None,
     #                           opacity=0.7, color='#3A6B35', visibility='legendonly')
+
     regions = get_chromosomes_regions(args)
     current = 0
     label_pos = []

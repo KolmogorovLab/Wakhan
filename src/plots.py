@@ -182,7 +182,7 @@ def coverage_plots_chromosomes(df, df_phasesets, args, thread_pool):
     #     #df_snps = df_snps.drop(df_snps[(df_snps.chr == "chrY")].index)
     #     output_file_path_snps = vcf_parse_to_csv_for_snps(args.normal_phased_vcf, args)
     # else:
-    #     output_file_path_snps = vcf_parse_to_csv_for_snps(args.tumor_vcf, args)
+    #     output_file_path_snps = vcf_parse_to_csv_for_snps(args.tumor_phased_vcf, args)
     # snps_het_df = csv_df_chromosomes_sorter(output_file_path_snps, ['chr', 'pos', 'qual', 'gt', 'dp', 'vaf'])
 
     if args.breakpoints:
@@ -199,7 +199,7 @@ def coverage_plots_chromosomes(df, df_phasesets, args, thread_pool):
         loh_path = args.quick_start_coverage_path + '/'
     else:
         loh_path = args.out_dir_plots + '/coverage_data/'
-    if args.tumor_vcf and os.path.exists(loh_path + args.genome_name + '_loh_segments.csv'):
+    if args.tumor_phased_vcf and os.path.exists(loh_path + args.genome_name + '_loh_segments.csv'):
         df_loh = csv_df_chromosomes_sorter(loh_path + args.genome_name + '_loh_segments.csv', ['chr', 'start', 'end', 'hp'])
     else:
         df_loh = pd.DataFrame(columns=['chr', 'start', 'end', 'hp'])
@@ -264,7 +264,7 @@ def coverage_plots_chromosomes(df, df_phasesets, args, thread_pool):
                 haplotype_1_values = adjust_extreme_outliers(haplotype_1_values)
                 haplotype_2_values = adjust_extreme_outliers(haplotype_2_values)
             ################################################################################
-            # if args.tumor_vcf']:
+            # if args.tumor_phased_vcf']:
             #     logger.info('hetrozygous phased snps frequencies coverage module')
             #     ref_start_values_updated, snps_het_counts, snps_homo_counts, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends = get_snps_frquncies_coverage(df_snps_in_csv, chrom, ref_start_values, args.bin_size_snps'])
             #     if snps_het_counts or snps_homo_counts:
@@ -431,6 +431,176 @@ def coverage_plots_chromosomes(df, df_phasesets, args, thread_pool):
         return values_extended, values_extended, values_extended, df_snps_freqs, snps_cpd_points, snps_cpd_points_weights, pd.concat(df_means_chr_all)
     else:
         return haplotype_1_values_updated, haplotype_2_values_updated, hunphased_updated, df_snps_freqs, snps_cpd_points, snps_cpd_points_weights, df_means_chr_all_
+
+def breakpoints_segments_means(df, df_phasesets, args, thread_pool):
+
+    haplotype_1_values_updated = []
+    haplotype_2_values_updated = []
+    hunphased_updated = []
+    values_extended = []
+    haplotype_1_snps_freqs_updated = []
+    haplotype_2_snps_freqs_updated = []
+
+    snps_cpd_points = []
+    snps_cpd_points_weights = []
+
+    chr_all = []
+    ref_start_values_all = []
+    ref_end_values_all = []
+    snps_het_all = []
+    snps_homo_all = []
+    snps_cpd_means_all = []
+    df_means_chr_all = []
+    df_means_chr_all_ = []
+    df_means_chr_all_hp1 = []
+    df_means_chr_all_hp2 = []
+
+    if args.phaseblock_flipping_disable and not args.without_phasing:
+        get_snp_segments(args, args.target_bam[0], thread_pool)
+        df_snps = csv_df_chromosomes_sorter(args.out_dir_plots+'/data/snps_frequencies.csv', ['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])
+
+    if args.breakpoints:
+        _, _, _, breakpoints_segemnts, bps, bps_bnd = sv_vcf_bps_cn_check(args.breakpoints, args)
+        df_var_bins, df_var_bins_1 = get_chromosomes_bins(args.target_bam[0], args.bin_size, args)
+
+    chroms = get_contigs_list(args.contigs)
+    fileDir = os.path.dirname(__file__) #os.path.dirname(os.path.realpath('__file__'))
+    cen_coord = os.path.join(fileDir, args.centromere)
+    df_centm = csv_df_chromosomes_sorter(cen_coord, ['chr', 'start', 'end'])
+    df_centm['start'].mask(df_centm['start'] == 1, 0, inplace=True)
+
+    if args.quick_start:
+        loh_path = args.quick_start_coverage_path + '/'
+    else:
+        loh_path = args.out_dir_plots + '/coverage_data/'
+    if args.tumor_phased_vcf and os.path.exists(loh_path + args.genome_name + '_loh_segments.csv'):
+        df_loh = csv_df_chromosomes_sorter(loh_path + args.genome_name + '_loh_segments.csv', ['chr', 'start', 'end', 'hp'])
+    else:
+        df_loh = pd.DataFrame(columns=['chr', 'start', 'end', 'hp'])
+
+    haplotype_1_segs_dfs = [] #pd.DataFrame()
+    haplotype_2_segs_dfs = [] #pd.DataFrame()
+    het_snps_df_all = []
+
+    for index, chrom in enumerate(chroms):
+        if chrom in chroms:# and (chrom == '1' or chrom == '18'):# and (chrom == 'chr5' or chrom == 'chr16'):
+            logger.info('Mean segmentation for ' + chrom)
+            fig = go.Figure()
+
+            df_chrom = df[df['chr'] == chrom]
+            df_centm_chrom = df_centm[df_centm['chr'] == chrom]
+            df_loh_chrom = df_loh[df_loh['chr'] == chrom]
+
+            if args.without_phasing:
+                values = df_chrom.coverage.values.tolist()
+                ref_start_values = df_chrom.start.values.tolist()
+                ref_end_values = df_chrom.end.values.tolist()
+            else:
+                df_chrom_phasesets = df_phasesets[df_phasesets['chr'] == chrom]
+                unphased_reads_values = df_chrom.hp3.values.tolist()
+                haplotype_1_values = df_chrom.hp1.values.tolist()
+                haplotype_2_values = df_chrom.hp2.values.tolist()
+                ref_start_values = df_chrom.start.values.tolist()
+                ref_end_values = df_chrom.end.values.tolist()
+
+                haplotype_1_values_phasesets = df_chrom_phasesets.hp1.clip(upper=args.cut_threshold).values.tolist()
+                haplotype_2_values_phasesets = df_chrom_phasesets.hp2.clip(upper=args.cut_threshold).values.tolist()
+                ref_start_values_phasesets = df_chrom_phasesets.start.values.tolist()
+                ref_end_values_phasesets = df_chrom_phasesets.end.values.tolist()
+                ref_start_values_1 = []
+            ################################################################################
+
+            #debug var_bins
+            if args.variable_size_bins:
+                df_var_bins_chr = df_var_bins[df_var_bins['chr'] == chrom]
+                ref_start_values = df_var_bins_chr.start.values.tolist()
+                ref_end_values = df_var_bins_chr.end.values.tolist()
+
+            if args.breakpoints:
+                df_var_bins_chr_1 = df_var_bins_1[df_var_bins_1['chr'] == chrom]
+                ref_start_values_1 = df_var_bins_chr_1.start.values.tolist()
+                ref_end_values_1 = df_var_bins_chr_1.end.values.tolist()
+            else:
+                ref_start_values_1 = []
+                breakpoints_segemnts = []
+            ################################################################################
+            if args.phaseblock_flipping_disable and not args.without_phasing:
+                haplotype_1_values, haplotype_2_values = snps_mean(df_snps, ref_start_values, ref_end_values, chrom, args)
+            ################################################################################
+            if not args.without_phasing:
+                haplotype_1_values = adjust_extreme_outliers(haplotype_1_values)
+                haplotype_2_values = adjust_extreme_outliers(haplotype_2_values)
+            ################################################################################
+            loh_region_starts = []
+            loh_region_ends = []
+            ################################################################################
+            ################################################################################
+            if args.phaseblocks_enable:
+                gaps_values = np.full(len(haplotype_1_values_phasesets), 'None')
+                haplotype_1_phaseblocks_values = list(itertools.chain.from_iterable(zip(haplotype_1_values_phasesets, haplotype_1_values_phasesets, gaps_values)))
+                haplotype_2_phaseblocks_values = list(itertools.chain.from_iterable(zip(haplotype_2_values_phasesets, haplotype_2_values_phasesets, gaps_values)))
+                phaseblocks_positions = list(itertools.chain.from_iterable(zip(ref_start_values_phasesets, ref_end_values_phasesets, gaps_values)))
+
+            regions = get_chromosomes_regions(args)
+            chroms = get_contigs_list(args.contigs)
+            chrom_index = chroms.index(chrom)
+            chr = range(len(ref_start_values))
+            chr_all.extend([chrom for ch in chr])
+            ref_start_values_all.extend(ref_start_values)
+            ref_end_values_all.extend(ref_end_values)
+
+            if args.without_phasing:
+                df_snps_freqs_chr = whole_genome_combined_df(args, chrom, chr, ref_start_values, ref_end_values, values, values, values)
+                snps_cpd_means, snps_cpd_lens, df_means_chr = change_point_detection_means(args, chrom, breakpoints_segemnts, df_snps_freqs_chr, ref_start_values, ref_start_values_1, df_centm_chrom, df_loh_chrom)
+                snps_cpd_points.extend(snps_cpd_means)
+                snps_cpd_points_weights.extend(snps_cpd_lens)
+                df_segs_hp1 = df_means_chr
+                df_segs_hp2 = df_means_chr
+                haplotype_1_segs_dfs.append(df_segs_hp1)
+                haplotype_2_segs_dfs.append(df_segs_hp2)
+            else:
+                df_snps_freqs_chr = whole_genome_combined_df(args, chrom, chr, ref_start_values, ref_end_values, haplotype_1_values, haplotype_2_values, unphased_reads_values)
+
+                #change point detection
+                snps_cpd_means, snps_cpd_lens, df_means_chr = change_point_detection_means(args, chrom, breakpoints_segemnts, df_snps_freqs_chr, ref_start_values, ref_start_values_1, df_centm_chrom, df_loh_chrom)
+                #df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, states, centers, stdev = apply_copynumbers(df_snps_freqs_chr, haplotype_1_values, haplotype_2_values, args, snps_cpd_means, [])
+                snps_cpd_points.extend(snps_cpd_means)
+                snps_cpd_points_weights.extend(snps_cpd_lens)
+
+                df_segs_hp1 = df_means_chr[0]
+                df_segs_hp2 = df_means_chr[1]
+
+                haplotype_1_segs_dfs.append(df_segs_hp1)
+                haplotype_2_segs_dfs.append(df_segs_hp2)
+
+            if args.without_phasing:
+                values_extended.extend(values)
+            else:
+                haplotype_1_values_updated.extend(haplotype_1_values)
+                haplotype_2_values_updated.extend(haplotype_2_values)
+                hunphased_updated.extend(unphased_reads_values)
+
+            snps_cpd_means_all.extend(snps_cpd_means)
+            if args.without_phasing:
+                df_means_chr_all.append(df_means_chr)
+            else:
+                df_means_chr_all_hp1.append(df_means_chr[0])
+                df_means_chr_all_hp2.append(df_means_chr[1])
+
+    if args.without_phasing:
+        df_snps_freqs = pd.DataFrame(list(zip(chr_all, ref_start_values_all, ref_end_values_all, values_extended)), columns=['chr', 'start', 'end', 'coverage'])
+    else:
+        df_snps_freqs = pd.DataFrame(list(zip(chr_all, ref_start_values_all, ref_end_values_all, haplotype_1_values_updated, haplotype_2_values_updated, hunphased_updated)), columns=['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
+
+    if not args.without_phasing:
+        df_means_chr_all_.append(pd.concat(df_means_chr_all_hp1))
+        df_means_chr_all_.append(pd.concat(df_means_chr_all_hp2))
+
+    if args.without_phasing:
+        return values_extended, values_extended, values_extended, df_snps_freqs, snps_cpd_points, snps_cpd_points_weights, pd.concat(df_means_chr_all)
+    else:
+        return haplotype_1_values_updated, haplotype_2_values_updated, hunphased_updated, df_snps_freqs, snps_cpd_points, snps_cpd_points_weights, df_means_chr_all_
+
 
 def plot_coverage_raw(args, chrom, html_graphs, ref_start_values, ref_end_values, haplotype_1_values, haplotype_2_values, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets):
     fig = go.Figure()
@@ -1472,7 +1642,7 @@ def copy_number_plots_genome_breakpoints(centers, integer_fractional_centers, df
         tickvals = [i for i in range(0, 1000, 25)]
         ticktext = [str(abs(i)) for i in range(0, 1000, 25)]
         yaxis2_3_range = [0, args.cut_threshold + 5]
-        plot_height = 850 + 150 + 20
+        plot_height = 850 + 150 + 20 + 20
         legend_y = 1.085
     else:
         tick_vals = centers_rev + centers
@@ -1480,7 +1650,7 @@ def copy_number_plots_genome_breakpoints(centers, integer_fractional_centers, df
         tickvals = [i for i in range(-1000, 1000, 25)]
         ticktext = [str(abs(i)) for i in range(-1000, 1000, 25)]
         yaxis2_3_range = [-(args.cut_threshold + 5), args.cut_threshold + 5]
-        plot_height = 850 + 150 + 130
+        plot_height = 850 + 150 + 130+ 10
         legend_y = 1.06
     # #############################################################
     # #############################################################
@@ -1531,17 +1701,15 @@ def copy_number_plots_genome_breakpoints(centers, integer_fractional_centers, df
         #),
         #font=dict(size=18, color="black")
     )
-    ax = 20
-    ay = -30
-    add_annotation(fig, 960000000, 75, ax, ay, "DEL", '#CF0759')
-    add_annotation(fig, 960000000+250000000, 75, ax, ay, "INV", '#2830DE')
-    add_annotation(fig, 960000000 + 250000000 + 250000000, 75, ax, ay, "INS", '#e0cf03')
-    add_annotation(fig, 960000000 + 250000000 + 250000000 + 250000000, 75, ax, ay, "BND", '#737373')
-    add_annotation(fig, 960000000 + 250000000 + 250000000 + 250000000 + 250000000, 75, ax, ay, "DUP", '#178117')
 
-    if args.loh_enable:
-        add_annotation(fig, 960000000 + 250000000 + 250000000, 0, ax, ay, "LOH", '#2980b9')
-        #fig.add_annotation(text="Het SNPs ratio threshold: " + str(args.hets_ratio) , x = 960000000 + 250000000 + 250000000, y=args.cut_threshold, showarrow=False, row=2, col=1)
+    fig.add_annotation(text="DEL",xref="paper",yref="paper",x=0.25,y=1.03,showarrow=False,font=dict(size=17, color="white"),bgcolor='#CF0759',bordercolor="#c7c7c7",borderwidth=2,borderpad=4, opacity=0.7,)
+    fig.add_annotation(text="INV",xref="paper",yref="paper",x=0.30,y=1.03,showarrow=False,font=dict(size=17, color="white"),bgcolor='#2830DE',bordercolor="#c7c7c7",borderwidth=2,borderpad=4, opacity=0.7,)
+    fig.add_annotation(text="INS",xref="paper",yref="paper",x=0.36,y=1.03,showarrow=False,font=dict(size=17, color="white"),bgcolor='#e0cf03',bordercolor="#c7c7c7",borderwidth=2,borderpad=4, opacity=0.7,)
+    fig.add_annotation(text="BND",xref="paper",yref="paper",x=0.42,y=1.03,showarrow=False,font=dict(size=17, color="white"),bgcolor='#737373',bordercolor="#c7c7c7",borderwidth=2,borderpad=4, opacity=0.7,)
+    fig.add_annotation(text="DUP",xref="paper",yref="paper",x=0.47,y=1.03,showarrow=False,font=dict(size=17, color="white"),bgcolor='#178117',bordercolor="#c7c7c7",borderwidth=2,borderpad=4, opacity=0.7,)
+
+    fig.add_annotation(text="LOH Regions",xref="paper",yref="paper",x=0.60,y=1.03,showarrow=False,font=dict(size=17, color="white"),bgcolor='#2980b9',bordercolor="#c7c7c7",borderwidth=2,borderpad=4, opacity=0.7,)
+    fig.add_annotation(text="Centromeres",xref="paper",yref="paper",x=0.75,y=1.03,showarrow=False,font=dict(size=17, color="white"),bgcolor='#7e1f14',bordercolor="#c7c7c7",borderwidth=2,borderpad=4, opacity=0.7,)
 
     # Update layout
     fig.update_layout(
@@ -1898,7 +2066,8 @@ def copy_number_plots_genome(centers, integer_fractional_centers, df_cnr_hp1, df
     ay = -30
 
     if args.loh_enable:
-        add_annotation(fig, 960000000 + 250000000 + 250000000, 0, ax, ay, "LOH", '#2980b9')
+        add_annotation(fig, 960000000 + 250000000 + 250000000, 0, ax, ay, "LOH regions", '#2980b9')
+        add_annotation(fig, 960000000 + 250000000 + 250000000 + 250000000 + 250000000, 0, ax, ay, "Centromeres", '#7e1f14')
         #fig.add_annotation(text="Het SNPs ratio threshold: " + str(args.hets_ratio) , x = 960000000 + 250000000 + 250000000, y=args.cut_threshold, showarrow=False, row=2, col=1)
 
     # Update layout
@@ -2853,7 +3022,7 @@ def copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_c
         tickvals = [i for i in range(0, 1000, 25)]
         ticktext = [str(abs(i)) for i in range(0, 1000, 25)]
         yaxis2_3_range = [0, args.cut_threshold + 5]
-        plot_height = 850 + 150 + 20
+        plot_height = 850 + 150 + 20 + 20
         legend_y = 1.085
     else:
         tick_vals = centers_rev + centers
@@ -2861,7 +3030,7 @@ def copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_c
         tickvals = [i for i in range(-1000, 1000, 25)]
         ticktext = [str(abs(i)) for i in range(-1000, 1000, 25)]
         yaxis2_3_range = [-(args.cut_threshold + 5), args.cut_threshold + 5]
-        plot_height = 850 + 150 + 130
+        plot_height = 850 + 150 + 130 + 20
         legend_y = 1.06
     # #############################################################
     # #############################################################
@@ -2903,17 +3072,14 @@ def copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_c
         #),
         #font=dict(size=18, color="black")
     )
-    ax = 20
-    ay = -30
-    add_annotation(fig, 960000000, 75, ax, ay, "DEL", '#CF0759')
-    add_annotation(fig, 960000000 + 250000000, 75, ax, ay, "INV", '#2830DE')
-    add_annotation(fig, 960000000 + 250000000 + 250000000, 75, ax, ay, "INS", '#e0cf03')
-    add_annotation(fig, 960000000 + 250000000 + 250000000 + 250000000, 75, ax, ay, "BND", '#737373')
-    add_annotation(fig, 960000000 + 250000000 + 250000000 + 250000000 + 250000000, 75, ax, ay, "DUP", '#178117')
+    fig.add_annotation(text="DEL",xref="paper",yref="paper",x=0.25,y=1.03,showarrow=False,font=dict(size=17, color="white"),bgcolor='#CF0759',bordercolor="#c7c7c7",borderwidth=2,borderpad=4, opacity=0.7,)
+    fig.add_annotation(text="INV",xref="paper",yref="paper",x=0.30,y=1.03,showarrow=False,font=dict(size=17, color="white"),bgcolor='#2830DE',bordercolor="#c7c7c7",borderwidth=2,borderpad=4, opacity=0.7,)
+    fig.add_annotation(text="INS",xref="paper",yref="paper",x=0.36,y=1.03,showarrow=False,font=dict(size=17, color="white"),bgcolor='#e0cf03',bordercolor="#c7c7c7",borderwidth=2,borderpad=4, opacity=0.7,)
+    fig.add_annotation(text="BND",xref="paper",yref="paper",x=0.42,y=1.03,showarrow=False,font=dict(size=17, color="white"),bgcolor='#737373',bordercolor="#c7c7c7",borderwidth=2,borderpad=4, opacity=0.7,)
+    fig.add_annotation(text="DUP",xref="paper",yref="paper",x=0.47,y=1.03,showarrow=False,font=dict(size=17, color="white"),bgcolor='#178117',bordercolor="#c7c7c7",borderwidth=2,borderpad=4, opacity=0.7,)
 
-    if args.loh_enable:
-        add_annotation(fig, 960000000 + 250000000 + 250000000, 0, ax, ay, "LOH", '#2980b9')
-        #fig.add_annotation(text="Het SNPs ratio threshold: " + str(args.hets_ratio), x=960000000 + 250000000 + 250000000, y=args.cut_threshold, showarrow=False, row=2, col=1)
+    fig.add_annotation(text="LOH Regions",xref="paper",yref="paper",x=0.60,y=1.03,showarrow=False,font=dict(size=17, color="white"),bgcolor='#2980b9',bordercolor="#c7c7c7",borderwidth=2,borderpad=4, opacity=0.7,)
+    fig.add_annotation(text="Centromeres",xref="paper",yref="paper",x=0.75,y=1.03,showarrow=False,font=dict(size=17, color="white"),bgcolor='#7e1f14',bordercolor="#c7c7c7",borderwidth=2,borderpad=4, opacity=0.7,)
 
     # Update layout
     fig.update_layout(
@@ -3302,6 +3468,7 @@ def copy_number_plots_genome_subclonal(centers, integer_fractional_centers, df_c
     ay = -30
     if args.loh_enable:
         add_annotation(fig, 960000000 + 250000000 + 250000000, 0, ax, ay, "LOH", '#2980b9')
+        add_annotation(fig, 960000000 + 250000000 + 250000000 + 250000000 + 250000000, 0, ax, ay, "Centromeres", '#7e1f14')
         #fig.add_annotation(text="Het SNPs ratio threshold: " + str(args.hets_ratio), x=960000000 + 250000000 + 250000000, y=args.cut_threshold, showarrow=False, row=2, col=1)
 
     # Update layout

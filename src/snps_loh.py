@@ -53,9 +53,9 @@ def plot_snps_ratios_genome(args, df_snps_in_csv, df_loh_regions):
 def snps_df_loh(args, thread_pool, df_coverage_data):
     df_coverage = df_coverage_data.copy()
     chroms = get_contigs_list(args.contigs)
-    if args.tumor_vcf or args.without_phasing:
-        if args.tumor_vcf:
-            output_phasesets_file_path = vcf_parse_to_csv_for_snps(args.tumor_vcf, args)
+    if args.tumor_phased_vcf or args.without_phasing:
+        if args.tumor_phased_vcf:
+            output_phasesets_file_path = vcf_parse_to_csv_for_snps(args.tumor_phased_vcf, args)
         else:
             output_phasesets_file_path = vcf_parse_to_csv_for_snps(args.normal_phased_vcf, args)
         logger.info('Loading and sorting SNPs df')
@@ -78,8 +78,8 @@ def snps_df_loh(args, thread_pool, df_coverage_data):
     return df_snps_in_csv
 
 def plot_snps_frequencies_without_phasing(args, df, df_segs_hp1_w, df_segs_hp2_w, centers, integer_fractional_means):
-    if args.tumor_vcf:
-        output_phasesets_file_path = vcf_parse_to_csv_for_snps(args.tumor_vcf, args)
+    if args.tumor_phased_vcf:
+        output_phasesets_file_path = vcf_parse_to_csv_for_snps(args.tumor_phased_vcf, args)
     else:
         output_phasesets_file_path = vcf_parse_to_csv_for_snps(args.normal_phased_vcf, args)
     logger.info('Loading and sorting SNPs df')
@@ -387,12 +387,13 @@ def loh_plots_genome(df_snps_in_csv, df_snps_ratios, args, df_loh_regions):
                                yaxis=None, opacity=0.7, color='#3A6B35', mul_cols=False)
 
     ###################################
-    #snps_het, snps_homo, indices_het_freqs, indices_homo_freqs = get_snps_frquncies_genome(df_snps_in_csv)
-
-    #add_scatter_trace_coverage(fig, indices_het_freqs, snps_het, name='Het SNPs Freqs', text=None, yaxis=None,
+    # snps_het, snps_homo, indices_het_freqs, indices_homo_freqs = get_snps_frquncies_genome(df_snps_in_csv)
+    #
+    # add_scatter_trace_coverage(fig, indices_het_freqs, snps_het, name='Het SNPs Freqs', text=None, yaxis=None,
     #                           opacity=0.7, color='#E3B448', visibility='legendonly')
-    #add_scatter_trace_coverage(fig, indices_homo_freqs, snps_homo, name='Homo SNPs Freqs', text=None, yaxis=None,
+    # add_scatter_trace_coverage(fig, indices_homo_freqs, snps_homo, name='Homo SNPs Freqs', text=None, yaxis=None,
     #                           opacity=0.7, color='#3A6B35', visibility='legendonly')
+
     regions = get_chromosomes_regions(args)
     current = 0
     label_pos = []

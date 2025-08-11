@@ -74,7 +74,7 @@ def df_chromosomes_sorter(dataframe, names, sept='\t'):
     return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
 
 def write_df_csv(df, file_name):
-    df.to_csv(file_name, sep='\t', index=False, header=False)
+    df.to_csv(file_name, sep='\t', index=False, header=False, mode='w')
 
 def write_segments_coverage(coverage_segments, output, args):
     with open(args.out_dir_plots+'/coverage_data/' + output, 'a') as fp:
@@ -118,10 +118,15 @@ def get_snps_frquncies_coverage_from_bam(df, chrom):
 
     return haplotype_1_position, haplotype_1_coverage, haplotype_2_position, haplotype_2_coverage
 
-def detect_alter_loh_regions(args, event, chrom, ref_ends, haplotype_1_values, haplotype_2_values, unphased_reads_values, starts, ends, switch_hps):
+def detect_alter_loh_regions(csv_df_coverage_tumor_chrom, args, event, chrom, ref_ends, haplotype_1_values, haplotype_2_values, unphased_reads_values, starts, ends, switch_hps):
     region_starts = []
     region_ends = []
     hp = []
+
+    if not args.without_phasing:
+        histo_unphased_reads_values = csv_df_coverage_tumor_chrom.hp3.values.tolist()
+        histo_haplotype_1_values = csv_df_coverage_tumor_chrom.hp1.values.tolist()
+        histo_haplotype_2_values = csv_df_coverage_tumor_chrom.hp2.values.tolist()
 
     if len(ref_ends) == 0:
         return haplotype_1_values, haplotype_2_values, unphased_reads_values, region_starts, region_ends, hp
@@ -140,12 +145,12 @@ def detect_alter_loh_regions(args, event, chrom, ref_ends, haplotype_1_values, h
 
     if not args.without_phasing and switch_hps:
         for j, (starts,ends) in enumerate(zip(region_starts, region_ends)):
-            if ends - starts > 2000000:
+            if ends - starts > 20000:
                 #TODO Discuss with Ayse, alternate approach on what HP should be selected for each region
                 #if mean_values(haplotype_1_values, starts//args.bin_size - 4, starts//args.bin_size - 1) > mean_values(haplotype_2_values, starts//args.bin_size - 4, starts//args.bin_size - 1):
                 for i in range(starts//args.bin_size,ends//args.bin_size):
-                    haplotype_1_values[i] = haplotype_1_values[i] + haplotype_2_values[i] + unphased_reads_values[i]
-                    haplotype_2_values[i] = 0
+                    haplotype_1_values[i] = histo_unphased_reads_values[i] + histo_haplotype_1_values[i] + histo_haplotype_2_values[i] #haplotype_1_values[i] + haplotype_2_values[i] + unphased_reads_values[i]
+                    haplotype_2_values[i] = 0.0001
                     unphased_reads_values[i] = 0
                 hp.append(1)
                 # else:
@@ -156,6 +161,79 @@ def detect_alter_loh_regions(args, event, chrom, ref_ends, haplotype_1_values, h
                 #     hp.append(2)
 
     return haplotype_1_values, haplotype_2_values, unphased_reads_values, region_starts, region_ends, hp
+
+def split_regions_by_points(starts, ends, values1, values2, split_points):
+    split_points = sorted(set(split_points))
+    new_starts = []
+    new_ends = []
+    new_values1 = []
+    new_values2 = []
+
+    for start, end, val1, val2 in zip(starts, ends, values1, values2):
+        # Get split points within this region
+        internal_splits = [pt for pt in split_points if start < pt < end]
+        boundaries = [start] + internal_splits + [end]
+
+        for i in range(len(boundaries) - 1):
+            new_starts.append(boundaries[i])
+            new_ends.append(boundaries[i + 1])
+            new_values1.append(val1)
+            new_values2.append(val2)
+
+    return new_starts, new_ends, new_values1, new_values2
+
+def adjust_loh_cent_phaseblocks(args, loh_region_starts, loh_region_ends, centrom_region, snps_haplotype1_mean, snps_haplotype2_mean, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets):
+
+    #remove centrom phaseblocks
+    if not centrom_region.empty:
+        cents = [centrom_region.start.values.tolist()[0], centrom_region.end.values.tolist()[0]]
+    else:
+        cents = [0,0]
+    #break phaseblocks at LOH/Cents
+    ref_start_values_phasesets,  ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets = split_regions_by_points(ref_start_values_phasesets,  ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets, cents)
+    ref_start_values_phasesets,  ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets = split_regions_by_points(ref_start_values_phasesets,  ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets, loh_region_starts+loh_region_ends)
+
+    index_cents = []
+    if len(ref_start_values_phasesets) > 1:
+        for i in range(len(ref_start_values_phasesets)):
+            if ref_start_values_phasesets[i] >= cents[0] and ref_end_values_phasesets[i] <= cents[1]:
+                index_cents.append(i)
+
+            for ps, (start,end) in enumerate(zip(loh_region_starts, loh_region_ends)):
+                if ref_start_values_phasesets[i] >= start and ref_end_values_phasesets[i] <= end:
+                    index_cents.append(i)
+
+    index_cents = list(set(index_cents))
+
+    #extend LOH phaseblocks
+    haplotype_1_values_phasesets_loh = []
+    haplotype_2_values_phasesets_loh = []
+    ref_start_values_phasesets_loh = []
+    ref_end_values_phasesets_loh = []
+    for ps, (start, end) in enumerate(zip(loh_region_starts, loh_region_ends)):
+        haplotype_1_values_phasesets_loh.append(mean_values(snps_haplotype1_mean, start//args.bin_size, end//args.bin_size))
+        haplotype_2_values_phasesets_loh.append(mean_values(snps_haplotype2_mean, start//args.bin_size, end//args.bin_size))
+        ref_start_values_phasesets_loh.append(start)
+        ref_end_values_phasesets_loh.append(end)
+
+    haplotype_1_values_phasesets = [i for j, i in enumerate(haplotype_1_values_phasesets) if j not in index_cents] + haplotype_1_values_phasesets_loh
+    haplotype_2_values_phasesets = [i for j, i in enumerate(haplotype_2_values_phasesets) if j not in index_cents] + haplotype_2_values_phasesets_loh
+    ref_start_values_phasesets = [i for j, i in enumerate(ref_start_values_phasesets) if j not in index_cents] + ref_start_values_phasesets_loh
+    ref_end_values_phasesets = [i for j, i in enumerate(ref_end_values_phasesets) if j not in index_cents] + ref_end_values_phasesets_loh
+
+    zipped = list(zip(ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets))
+    zipped_sorted = sorted(zipped, key=lambda x: x[0])
+    ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets = zip(*zipped_sorted)
+
+    return list(haplotype_1_values_phasesets), list(haplotype_2_values_phasesets), list(ref_start_values_phasesets), list(ref_end_values_phasesets)
+
+def extract_centromere_regions(args):
+    #fileDir = args.centromere #os.path.dirname(__file__)
+    #cen_coord = os.path.join(fileDir, args.centromere)
+    df_centm = csv_df_chromosomes_sorter(args.centromere, ['chr', 'start', 'end'])
+    df_centm['start'].mask(df_centm['start'] == 1, 0, inplace=True)
+
+    return df_centm
 
 def snps_frequencies_chrom_genes(df_snps_frequencies, args):
     df_chroms = []
@@ -265,15 +343,15 @@ def genes_segments_coverage(genes_coverage, args):
     return pd.DataFrame(list(zip(df_genes.chr.values.tolist(), df_genes.start.values.tolist(), df_genes.end.values.tolist(),
                                  df_genes.gene.values.tolist(), hp1, hp2)),
                          columns=['chr', 'start', 'end', 'gene', 'hp1', 'hp2'])
+
+
 def mean_values(selected_list, start_index, end_index):
-    result = []
-    for i in range(end_index - start_index):
-        try:
-            result.append(selected_list[start_index + i])
-        except IndexError:
-            break
-    if result:
-        return np.median(result)
+    selected_list = [i for i in selected_list[start_index:end_index] if i > 0]
+    if len(selected_list) >= 2:
+
+        return np.median(selected_list)
+    elif len(selected_list) == 1:
+        return selected_list[0]
     else:
         return 0.0
 
@@ -448,3 +526,43 @@ def add_breakpoints(args, phasesets_segments, breakpoints):
             bed.append([tail, chrom, start, end])
 
     return bed
+
+def find_peak_median_without_outliers(data):
+    import numpy as np
+    from scipy.stats import gaussian_kde
+    # from scipy.signal import find_peaks
+    # peaks, _ = find_peaks(data)
+    # peak_values = [data[i] for i in peaks]
+    # peak_index = peaks[np.argmax(peak_values)]
+    # peak_value = data[peak_index]
+
+    if len(data) == 0: #second time almost big bp boundries based PS will be one and will be set to 0, change condition
+        return 0
+    else:
+        return statistics.median(data)
+
+    from scipy.signal import find_peaks
+    from sklearn.neighbors import KernelDensity
+
+    #if len(data) < 5:
+    #    return statistics.median(data)
+
+    # 2. Remove outliers using IQR method
+    # q1 = np.percentile(data, 25)
+    # q3 = np.percentile(data, 75)
+    # iqr = q3 - q1
+    # lower_bound = q1 - 1.5 * iqr
+    # upper_bound = q3 + 1.5 * iqr
+    # filtered_data = data[(data >= lower_bound) & (data <= upper_bound)]
+    def remove_outliers_modified_z(data, peak_value, threshold=3.5):
+        data = np.array(data)
+        median = peak_value #np.median(data)
+        mad = np.median(np.abs(data - median))  # Median Absolute Deviation
+        if mad == 0:
+            return data  # No variation
+        modified_z_scores = 0.6745 * (data - median) / mad
+        return data[np.abs(modified_z_scores) <= threshold]
+
+    filtered_data = remove_outliers_modified_z(data, peak_value)
+    # 3. Compute median of filtered data
+    return np.median(filtered_data)

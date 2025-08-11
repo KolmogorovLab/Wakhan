@@ -272,6 +272,17 @@ def split_segments_by_breakpoints(df, breakpoints_list, chr_col='chr', start_col
     new_df = new_df.sort_values(by=[chr_col, start_col]).reset_index(drop=True)
 
     return new_df
+
+def extract_first_from_consecutive_groups(lst):
+    if not lst:
+        return []
+
+    result = [lst[0]]  # Always include the first element
+    for i in range(1, len(lst)):
+        if lst[i] != lst[i - 1] + 1:
+            result.append(lst[i])
+    return result
+
 def read_cn_segments_process_vcf(args, repo, type):
     if type == 'integers':
         fp_hp1 = args.out_dir_plots + '/' + repo + '/bed_output/' + args.genome_name+'_'+ repo + '_copynumbers_segments_HP_1.bed'
@@ -322,6 +333,7 @@ def read_cn_segments_process_vcf(args, repo, type):
         #hp2_segs_chrom = hp2_segs_chrom.drop(hp2_segs_chrom[hp2_segs_chrom.end == cents[1]].index)
 
         unique_points = sorted(list(set(hp1_segs_chrom.start.values.tolist()+hp2_segs_chrom.start.values.tolist())))
+        unique_points = extract_first_from_consecutive_groups(unique_points)
         hp1_segs_chrom = split_segments_by_breakpoints(hp1_segs_chrom, unique_points)
         hp2_segs_chrom = split_segments_by_breakpoints(hp2_segs_chrom, unique_points)
         hp1_segs_chrom = hp1_segs_chrom.drop_duplicates()
