@@ -56,15 +56,27 @@ conda env create -f environment.yml -n Wakhan
 conda activate Wakhan
 ```
 
-# Usage
-
-Wakhan can be run as a standalone [phase-correction](https://github.com/KolmogorovLab/Wakhan/tree/main/src/hapcorrect) and copy number profiling tool using below [1] tumor-only and tumor/normal pair commands.
-In case phased SVs/breakpoints, Long-Read Somatic Variant Calling pipeline mode [2] is recommended.
-
 ##### Breakpoints/Structural variations or change point detection algo for copy number model
 
 Wakhan accepts [Severus](https://github.com/KolmogorovLab/Severus) structural variants VCF as breakpoints with param `--breakpoints` inputs to detect copy number changes and this option is highly recommended. 
 However, if `--breakpoints` option is not used, `--change-point-detection-for-cna` should be used instead to use change point detection algorithm [ruptures](https://centre-borelli.github.io/ruptures-docs/) alternatively.
+
+##### Tumor-Normal mixture and purity/ploidy estimation
+
+User can input both `--ploidy-range` [default: 1.5-5.5 -> [min-max]] and `--purity-range` [default: 0.5-1.0 -> [min-max] to inform copy number model about normal contamination in tumor to estimate copy number states correctly.
+
+##### Genes/copy number annotations
+
+By default, Wakhan uses [COSMIC](https://cancer.sanger.ac.uk/cosmic) cancer census genes (100 genes freely available) to display corresponding copy number states in `<genome_name>_<ploidy>_<purity>_<confidence>_genes_genome.html` file.
+Complete COSMIC academic/research purpose cancer census genes set (Cosmic_CancerGeneCensus_v101_GRCh38.tsv) could be downloaded from [COSMIC](https://cancer.sanger.ac.uk/cosmic/download/cosmic/v101/cancergenecensus).
+Please run the `scripts/cosmic.py` to extract the required fields and then input resultant `cosmic_genes.tsv` in param `--user-input-genes`.
+Alternatively, user can also input path through param `--user-input-genes` to custom input genes/subset of genes [examples in src\annotations\user_input_genes_example_<N>.bed] bed file these genes will be used in plots instead of default COSMIC cancer genes.
+grch38 reference genes will be use as default, user can input alternate (i.e, chm13) `--reference-name` to change to T2T-CHM13 coordinates instead. 
+
+## Usage
+
+Wakhan can be run as a standalone [phase-correction](https://github.com/KolmogorovLab/Wakhan/tree/main/src/hapcorrect) and copy number profiling tool using below [1] tumor-only and tumor/normal pair commands.
+In case phased SVs/breakpoints, Long-Read Somatic Variant Calling pipeline mode [2] is recommended.
 
 ## 1. Standalone mode
 
@@ -79,6 +91,7 @@ python wakhan.py --threads <24> --reference <ref.fa>  --target-bam <tumor.bam>  
 ```
 python wakhan.py --threads <24> --reference <ref.fa>  --target-bam <tumor.bam>  --tumor-phased-vcf <tumor_phased.vcf.gz> --genome-name <cellline/dataset name> --out-dir-plots <genome_abc_output> --breakpoints <severus-sv-VCF>
 ```
+___
 
 ##### Phased breakpoints/structural variations
 
@@ -108,17 +121,20 @@ This pipeline (`Wakhan - hapcorrect` -> `Whatshap - haplotagging` -> `Severus - 
 [//]: # ()
 [//]: # (```)
 
-##### Tumor-Normal mixture and purity/ploidy estimation
 
-User can input both `--ploidy-range` [default: 1.5-5.5 -> [min-max]] and `--purity-range` [default: 0.5-1.0 -> [min-max] to inform copy number model about normal contamination in tumor to estimate copy number states correctly.
+## 3. Unphased mode 
+Wakhan can also be used in case phasing is not good in input tumor or analysis is being performed without considering phasing:
 
-##### Genes/copy number annotations
+* `--without-phasing` Enable it if CNA analysis is being performed without phasing in conjunction with `--phaseblock-flipping-disable` and `--histogram-coverage` with all other required parameters as mentioned in example command
 
-By default, Wakhan uses [COSMIC](https://cancer.sanger.ac.uk/cosmic) cancer census genes (100 genes freely available) to display corresponding copy number states in `<genome_name>_<ploidy>_<purity>_<confidence>_genes_genome.html` file.
-Complete COSMIC academic/research purpose cancer census genes set (Cosmic_CancerGeneCensus_v101_GRCh38.tsv) could be downloaded from [COSMIC](https://cancer.sanger.ac.uk/cosmic/download/cosmic/v101/cancergenecensus).
-Please run the `scripts/cosmic.py` to extract the required fields and then input resultant `cosmic_genes.tsv` in param `--user-input-genes`.
-Alternatively, user can also input path through param `--user-input-genes` to custom input genes/subset of genes [examples in src\annotations\user_input_genes_example_<N>.bed] bed file these genes will be used in plots instead of default COSMIC cancer genes.
-grch38 reference genes will be use as default, user can input alternate (i.e, chm13) `--reference-name` to change to T2T-CHM13 coordinates instead. 
+A sample command-line for running unphased mode (Mouse WGS data) could be:
+```
+python wakhan.py --threads <> --reference <mouse_ref>  --target-bam <tumor_bam>  --cut-threshold 75  --normal-phased-vcf <phased_normal.vcf.gz> --out-dir-plots <mouse_output> --genome-name mouse --copynumbers-subclonal-enable --loh-enable --breakpoints <severus_somatic.vcf> --contigs <chr1-19,chrX> --without-phasing --phaseblock-flipping-disable --histogram-coverage  --centromere <annotations/mouse_chr.bed> --cpd-internal-segments  --hets-ratio 0.4  --hets-smooth-window 10
+```
+
+Here is a sample copy number/breakpoints output plot without phasing.
+<img width="1373" alt="plots_example" src="examples/images/C15.png">
+
 
 ##### Quick-run if coverage/pileup data is already available
 
@@ -178,17 +194,6 @@ Few cell lines arbitrary phase-switch correction and copy number estimation outp
 
 * `--pdf-enable` Enabling PDF output for plots
 
-Wakhan can also be used in case phasing is not good in input tumor or analysis is being performed without considering phasing:
-
-* `--without-phasing` Enable it if CNA analysis is being performed without phasing in conjunction with `--phaseblock-flipping-disable` and `--histogram-coverage` with all other required parameters as mentioned in example command
-
-A sample command-line for running unphased mode (Mouse WGS data) could be:
-```
-python wakhan.py --threads <> --reference <mouse_ref>  --target-bam <tumor_bam>  --cut-threshold 75  --normal-phased-vcf <phased_normal.vcf.gz> --out-dir-plots <mouse_output> --genome-name mouse --copynumbers-subclonal-enable --loh-enable --breakpoints <severus_somatic.vcf> --contigs <chr1-19,chrX> --without-phasing --phaseblock-flipping-disable --histogram-coverage  --centromere <annotations/mouse_chr.bed> --cpd-internal-segments  --hets-ratio 0.4  --hets-smooth-window 10
-```
-
-Here is a sample copy number/breakpoints output plot without phasing.
-<img width="1373" alt="plots_example" src="examples/images/C15.png">
 
 ## Output produced
 Based on best confidence scores, tumor purity and ploidy values are calculated and solution(s) are ranked accordingly with output as `solution_<N>` symlink directories. 
@@ -211,13 +216,16 @@ Following are coverage and SNPs/LOH plots and bed directories in output folder, 
 
 
 ## Prerequisite
-1. Wakhan requires tumor BAM and normal phased VCF (in case tumor-normal mode) or tumor phased VCF (in case tumor-only mode).
+
+### Phased VCF
+
+Wakhan requires tumor BAM and normal phased VCF (in case tumor-normal mode) or tumor phased VCF (in case tumor-only mode).
 Following [Clair3](https://github.com/HKU-BAL/Clair3) command with [longphase](https://github.com/twolinin/longphase) as phasing tool is recommended for generating required phased VCF.
 
 #### For normal/tumor pair (generating normal phased-vcf):
-BAM= <path to normal BAM>
+BAM= Path to normal BAM
 #### For tumor-only (generating tumor phased-vcf):
-BAM= <path to tumor BAM>
+BAM= Path to tumor BAM
 
 ```
 #For ONT data
@@ -227,5 +235,7 @@ clair3 --bam_fn=${BAM} --ref_fn=${REF_FASTA} --threads=${THREADS} --platform=ont
 clair3 --bam_fn=${BAM} --ref_fn=${REF_FASTA} --threads=${THREADS} --platform=hifi --model_path=</clair3_models/hifi/> --output=${OUTPUT_DIR} --enable_phasing --longphase_for_phasing
 ```
 
-2. We also recommend to use structural variants (breakpoints), please refer to [Severus](https://github.com/KolmogorovLab/Severus).
+### SV/Breakpoints VCF (Phased SVs/Breakpoints, optional)
 
+We also recommend to use [structural variants (breakpoints)](https://github.com/KolmogorovLab/Wakhan/tree/main?tab=readme-ov-file#breakpointsstructural-variations-or-change-point-detection-algo-for-copy-number-model) in Wakhan, please refer to [Severus](https://github.com/KolmogorovLab/Severus).
+To used phased SVs/Breakpoints please refer to generating [Severus phased SVs](https://github.com/KolmogorovLab/Wakhan/tree/main?tab=readme-ov-file#phased-breakpointsstructural-variations) section.
