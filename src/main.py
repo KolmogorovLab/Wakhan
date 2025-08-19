@@ -341,7 +341,7 @@ def main(argv=None):
     args.centromere = os.path.join(fileDir, args.centromere)
 
     if os.path.exists(args.out_dir_plots+'/data'):
-        shutil.rmtree(args.out_dir_plots+'/data')
+        safe_rmtree(args.out_dir_plots+'/data')
         os.mkdir(args.out_dir_plots+'/data')
     else:
         os.mkdir(args.out_dir_plots+'/data')
@@ -358,6 +358,14 @@ def main(argv=None):
         return 0
     elif args.command is None:
         wakhan_all(args) #hapcorrect + cna
+
+def safe_rmtree(path):
+        if os.path.islink(path):
+            os.unlink(path)
+        elif os.path.isdir(path):
+            shutil.rmtree(path)
+        elif os.path.exists(path):
+            os.remove(path)
 
 def wakhan_all(args):
     logger.info('Starting hapcorrect() module...')
@@ -445,7 +453,7 @@ def cna_process(args):
             #csv_df_phasesets = csv_df_chromosomes_sorter(args.quick_start_coverage_path + '/coverage_ps.csv', ['chr', 'start', 'end', 'coverage'])
         elif args.histogram_coverage:
             if os.path.exists(args.out_dir_plots + '/coverage_data'):
-                shutil.rmtree(args.out_dir_plots + '/coverage_data')
+                safe_rmtree(args.out_dir_plots + '/coverage_data')
                 os.mkdir(args.out_dir_plots + '/coverage_data')
             else:
                 os.mkdir(args.out_dir_plots + '/coverage_data')
@@ -605,9 +613,9 @@ def cna_process(args):
     #    plot_snps_ratios_genome(args, df_snps_in_csv, loh_regions)
     ################################
     if os.path.exists(args.out_dir_plots+'/data'): #
-        shutil.rmtree(args.out_dir_plots+'/data')
+        safe_rmtree(args.out_dir_plots+'/data')
     if os.path.exists(args.out_dir_plots+'/data_phasing'):
-        shutil.rmtree(args.out_dir_plots+'/data_phasing')
+        safe.rmtree(args.out_dir_plots+'/data_phasing')
 
     #TODO, not required yet
     #move_100pct_purity_sol(args)
