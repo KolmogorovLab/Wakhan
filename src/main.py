@@ -614,7 +614,7 @@ def cna_process(args):
     if os.path.exists(args.out_dir_plots+'/data'): #
         safe_rmtree(args.out_dir_plots+'/data')
     if os.path.exists(args.out_dir_plots+'/data_phasing'):
-        safe.rmtree(args.out_dir_plots+'/data_phasing')
+        safe_rmtree(args.out_dir_plots+'/data_phasing')
 
     #TODO, not required yet
     #move_100pct_purity_sol(args)
