@@ -26,6 +26,15 @@ from src.hapcorrect.src.cpd import cpd_positions_means
 from src.hapcorrect.src.loh import detect_loh_centromere_regions, plot_snps
 
 MIN_SV_SIZE = 50
+
+def safe_rmtree(path):
+        if os.path.islink(path):
+            os.unlink(path)
+        elif os.path.isdir(path):
+            shutil.rmtree(path)
+        elif os.path.exists(path):
+            os.remove(path)
+
 def main_process(args):
     centromere_regions = extract_centromere_regions(args)
     if args.control_bam is None:
@@ -44,13 +53,13 @@ def main_process(args):
         os.mkdir(args.out_dir_plots)
 
     if os.path.exists(args.out_dir_plots+'/data_phasing'):
-        shutil.rmtree(args.out_dir_plots+'/data_phasing')
+        safe_rmtree(args.out_dir_plots+'/data_phasing')
         os.mkdir(args.out_dir_plots+'/data_phasing')
     else:
         os.mkdir(args.out_dir_plots+'/data_phasing')
 
     if os.path.exists(args.out_dir_plots+'/coverage_data'):
-        shutil.rmtree(args.out_dir_plots+'/coverage_data')
+        safe_rmtree(args.out_dir_plots+'/coverage_data')
         os.mkdir(args.out_dir_plots+'/coverage_data')
     else:
         os.mkdir(args.out_dir_plots+'/coverage_data')
