@@ -459,11 +459,12 @@ def cna_process(args):
                 output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(args.normal_phased_vcf, args)
             else:
                 output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(args.tumor_phased_vcf, args)
-            phasesets_segments = generate_phasesets_bins(args.target_bam[0], output_phasesets_file_path, args.bin_size, args) #TODO update for multiple bam files
-            logger.info('Computing coverage for phaseblocks')
-            phasesets_coverage = get_segments_coverage(phasesets_segments, coverage_histograms)
-            logger.info('Writing coverage for phaseblocks')
-            write_segments_coverage_dict(phasesets_coverage, 'coverage_ps.csv', args)
+            if not args.without_phasing:
+                phasesets_segments = generate_phasesets_bins(args.target_bam[0], output_phasesets_file_path, args.bin_size, args) #TODO update for multiple bam files
+                logger.info('Computing coverage for phaseblocks')
+                phasesets_coverage = get_segments_coverage(phasesets_segments, coverage_histograms)
+                logger.info('Writing coverage for phaseblocks')
+                write_segments_coverage_dict(phasesets_coverage, 'coverage_ps.csv', args)
             del coverage_histograms
             logger.info('Loading coverage (bins) and coverage (phaseblocks) files...')
             if args.without_phasing:
