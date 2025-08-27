@@ -3989,8 +3989,8 @@ def genes_plots_genome(df_genes, centers, integer_fractional_centers, df_cnr_hp1
         if not chrom.startswith('chr'):
             df_genes_chrom_1 = df_genes_1[df_genes_1['chr'] == 'chr' + chrom]
             genestart_1.extend(df_genes_chrom_1['start'].values.tolist())
-            gene_cn_hp1.extend(df_genes_chrom_1['hp1_state'].values.tolist())
-            gene_cn_hp2.extend(df_genes_chrom_1['hp2_state'].values.tolist())
+            gene_cn_hp1.extend(df_genes_chrom_1['copynumber_hp1_state'].values.tolist())
+            gene_cn_hp2.extend(df_genes_chrom_1['copynumber_hp2_state'].values.tolist())
 
             df_genes_chrom_2 = df_genes_2[df_genes_2['chr'] == 'chr' + chrom]
             genestart_2.extend(df_genes_chrom_2['start'].values.tolist())

@@ -210,6 +210,7 @@ def adjust_loh_cent_phaseblocks(args, loh_region_starts, loh_region_ends, centro
     haplotype_2_values_phasesets_loh = []
     ref_start_values_phasesets_loh = []
     ref_end_values_phasesets_loh = []
+
     for ps, (start, end) in enumerate(zip(loh_region_starts, loh_region_ends)):
         haplotype_1_values_phasesets_loh.append(mean_values(snps_haplotype1_mean, start//args.bin_size, end//args.bin_size))
         haplotype_2_values_phasesets_loh.append(mean_values(snps_haplotype2_mean, start//args.bin_size, end//args.bin_size))
