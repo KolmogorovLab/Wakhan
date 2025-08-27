@@ -237,7 +237,7 @@ Few cell lines arbitrary phase-switch correction and copy number estimation outp
 
 * `--phaseblocks-enable` Enabling phaseblocks display in coverage plots
 
-* `--contigs` List of contigs (chromosomes, default: chr1-22,chrX) to be included in the plots [e.g., chr1-22,chrX,chrY]
+* `--contigs` List of contigs (chromosomes, default: chr1-22,chrX) to be included in the plots [e.g., chr1-22,chrX,chrY], Note: Please use 1-22,X [e.g., 1-22,X,Y] in case REF, BAM, and VCFs entries don't contain `chr` name/notion
 
 * `--cut-threshold` Maximum cut threshold for coverage (readdepth) plots [default: 100]
 

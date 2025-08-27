@@ -247,7 +247,7 @@ def build_parser():
     global_parser.add_argument("--histogram-coverage", dest="histogram_coverage", action="store_true", help="use histogram coverage instead of SNPs pileup")
 
     global_parser.add_argument("--genome-name", dest="genome_name", default='Sample', help="Genome sample/cell line name to be displayed on plots")
-    global_parser.add_argument("--contigs", dest="contigs", default=DEFAULT_CONTIGS, help="List of contigs (choromosomes) to be included in the plots, default chr1-22,chrX [e.g., chr1-22,X,Y], Note: Please use 1-22,X [e.g., 1-22,X,Y] in case REF, BAM, and VCFs entries don't contians `chr` name/notion")
+    global_parser.add_argument("--contigs", dest="contigs", default=DEFAULT_CONTIGS, help="List of contigs (choromosomes) to be included in the plots, default chr1-22,chrX [e.g., chr1-22,X,Y], Note: Please use 1-22,X [e.g., 1-22,X,Y] in case REF, BAM, and VCFs entries don't contain `chr` name/notion")
 
     global_parser.add_argument("--bin-size", "--bin_size", dest="bin_size", default=BIN_SIZE, metavar="int", type=int, help="coverage (readdepth) bin size [50k]")
     global_parser.add_argument("--bin-size-snps", "--bin_size_snps", dest="bin_size_snps", default=BIN_SIZE_SNPS, metavar="int", type=int, help="SNPs bin size [50k]")
