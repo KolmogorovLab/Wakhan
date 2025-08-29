@@ -2135,6 +2135,8 @@ def find_p_values_peaks(p_values):
 
     data = remove_consecutive_duplicates(p_values)
     indices = [i for i, val in enumerate(p_values) if val in find_peaks(data)]
+    if len(p_values) == 1:
+        return [0]
     if p_values[0] > p_values[1]:
         indices = [0] + indices
     indices = remove_consecutive_diff_1(indices)
