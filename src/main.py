@@ -376,7 +376,7 @@ def cna_process(args):
     BCFTOOLS_BIN = "bcftools"
     MIN_SV_SIZE = 50
 
-    if not args.quick_start and not args.without_phasing and not args.phaseblock_flipping_disable and not args.histogram_coverage:
+    if not args.quick_start:# and not args.without_phasing and not args.phaseblock_flipping_disable and not args.histogram_coverage:
         args.quick_start = True
         args.quick_start_coverage_path = args.out_dir_plots+'/coverage_data'
 
@@ -436,13 +436,13 @@ def cna_process(args):
         if args.quick_start and not args.without_phasing:
             csv_df_coverage = csv_df_chromosomes_sorter(args.quick_start_coverage_path + '/coverage.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
             csv_df_phasesets = csv_df_chromosomes_sorter(args.quick_start_coverage_path + '/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
-        elif args.quick_start and args.without_phasing:
+        #elif args.quick_start and args.without_phasing:
             #df = pd.read_csv(args.quick_start_coverage_path + '/coverage_hps.csv', sep='\t', names=['chr', 'start', 'end', 'hp1', 'hp2', 'unphased'])
             #df['unphased'] = df['hp1'] + df['hp2'] + df['unphased']
             #df.to_csv(args.quick_start_coverage_path + '/coverage.csv', sep='\t', columns=['chr', 'start', 'end', 'unphased'], index=False, header=False)
 
-            csv_df_coverage = csv_df_chromosomes_sorter(args.quick_start_coverage_path + '/coverage.csv', ['chr', 'start', 'end', 'coverage'])
-            csv_df_phasesets = csv_df_chromosomes_sorter(args.quick_start_coverage_path + '/coverage_ps.csv', ['chr', 'start', 'end', 'coverage'])
+            #csv_df_coverage = csv_df_chromosomes_sorter(args.quick_start_coverage_path + '/coverage.csv', ['chr', 'start', 'end', 'coverage'])
+            #csv_df_phasesets = csv_df_chromosomes_sorter(args.quick_start_coverage_path + '/coverage_ps.csv', ['chr', 'start', 'end', 'coverage'])
         elif args.histogram_coverage:
             if os.path.exists(args.out_dir_plots + '/coverage_data'):
                 shutil.rmtree(args.out_dir_plots + '/coverage_data')
