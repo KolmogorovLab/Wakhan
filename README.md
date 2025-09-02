@@ -283,7 +283,7 @@ BAM= Path to normal BAM
 ```
 BAM= Path to tumor BAM
 ```
-Running Clair3 on BAM:
+Running Clair3 on BAM with `--enable_phasing --longphase_for_phasing` for germline variants:
 ```
 #For ONT data
 clair3 --bam_fn=${BAM} --ref_fn=${REF_FASTA} --threads=${THREADS} --platform=ont --model_path=</clair3_models/r1041_e82_400bps_sup_v420/> --output=${OUTPUT_DIR} --enable_phasing --longphase_for_phasing
