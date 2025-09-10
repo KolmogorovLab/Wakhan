@@ -137,7 +137,7 @@ def main_process(args):
         csv_df_coverage = pd.DataFrame([sublist[1:4] for sublist in segments], columns=["chr", "start", "end"])
         csv_df_phasesets = pd.DataFrame([sublist[1:4] for sublist in phasesets_segments], columns=["chr", "start", "end"])
 
-    csv_df_phasesets = csv_df_phasesets[(csv_df_phasesets["end"] - csv_df_phasesets["start"]) >= 300000]
+    csv_df_phasesets = csv_df_phasesets[(csv_df_phasesets["end"] - csv_df_phasesets["start"]) >= args.min_phaseblock]
 
     get_snp_frequencies_segments(args, args.target_bam[0], thread_pool)
     df_snps_frequencies = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/snps_frequencies.csv', ['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])
@@ -323,7 +323,8 @@ def main_process(args):
             get_phasingblocks(args.normal_phased_vcf)
             logger.info('VCF edit for phase change segments')
             out_vcf = os.path.join(args.out_dir_plots, 'phasing_output', 'rephased.vcf.gz')
-            rephase_vcf(csv_df_phase_change_segments, csv_df_phasesets_segments, csv_df_loh_regions, args.normal_phased_vcf, out_vcf)
+            rephase_vcf(csv_df_phase_change_segments, csv_df_phasesets_segments,
+                        csv_df_loh_regions, args.normal_phased_vcf, out_vcf, args.bin_size, args.min_phaseblock)
             index_vcf(out_vcf)
             get_phasingblocks(out_vcf)
 
@@ -331,7 +332,8 @@ def main_process(args):
             get_phasingblocks(args.tumor_phased_vcf)
             logger.info('VCF edit for phase change segments')
             out_vcf = os.path.join(args.out_dir_plots, 'phasing_output', 'rephased.vcf.gz')
-            rephase_vcf(csv_df_phase_change_segments, csv_df_phasesets_segments, csv_df_loh_regions, args.tumor_phased_vcf, out_vcf)
+            rephase_vcf(csv_df_phase_change_segments, csv_df_phasesets_segments,
+                        csv_df_loh_regions, args.tumor_phased_vcf, out_vcf, args.bin_size, args.min_phaseblock)
             index_vcf(out_vcf)
             get_phasingblocks(out_vcf)
 

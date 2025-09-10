@@ -8,6 +8,7 @@ import pysam
 import bisect
 import pandas as pd
 import numpy as np
+from intervaltree import IntervalTree, Interval
 from collections import  defaultdict, Counter
 
 logger = logging.getLogger()
@@ -683,40 +684,101 @@ def compute_acgt_frequency(pileup, snps_frequency, args): #https://www.biostars.
     # # Save as a CSV file (comma-separated)
     # df_filtered.to_csv(snps_frequency, index=False, header=False)
 
-def rephase_vcf(df, id_df, loh_df, vcf_in, out_vcf):
-    chr_list = list(set(df['chr']))
+
+def rephase_vcf(flip_bins_df, phasesets_df, loh_df, vcf_in, out_vcf, bin_size, min_block_size):
+    chr_list = list(set(flip_bins_df['chr']))
     chr_list_loh = []
     if len(loh_df):
         chr_list_loh = list(set(loh_df['chr']))
-    start_pos = defaultdict(list)
-    end_pos = defaultdict(list)
-    idls = defaultdict(list)
+    #flip_start_pos = defaultdict(list)
+    #flip_end_pos = defaultdict(list)
+    flip_bins = defaultdict(IntervalTree)
+    new_phasesets = defaultdict(IntervalTree)
+
+    #idls = defaultdict(list)
     start_pos_loh = defaultdict(list)
     end_pos_loh = defaultdict(list)
     hp = defaultdict(list)
+
     for seq in chr_list:
-        start_pos[seq] = sorted([key for key, val in Counter(df.loc[df['chr'] == seq, 'start']).items() if val%2 == 1])
-        end_pos[seq] = sorted([key for key, val in Counter(df.loc[df['chr'] == seq, 'end']).items() if val%2 == 1])
-        idls[seq] = sorted(id_df.loc[id_df['chr'] == seq, 'start'])
+        flip_counter = defaultdict(int)
+        for index, row in flip_bins_df[flip_bins_df['chr'] == seq].iterrows():
+            flip_counter[(row['start'], row['end'])] += 1
+        for (start, end), counter in flip_counter.items():
+            if counter % 2 == 1:    #can flip multiple times, only include bins flipped odd number of times
+                flip_bins[seq].add(Interval(start, end))
+        for index, row in phasesets_df[phasesets_df['chr'] == seq].iterrows():
+            new_phasesets[seq].add(Interval(row['start'], row['end']))
+
+        #flip_start_pos[seq] = sorted([key for key, val in Counter(flip_bins_df.loc[flip_bins_df['chr'] == seq, 'start']).items() if val%2 == 1])
+        #flip_end_pos[seq] = sorted([key for key, val in Counter(flip_bins_df.loc[flip_bins_df['chr'] == seq, 'end']).items() if val%2 == 1])
+        #idls[seq] = sorted(phasesets_df.loc[phasesets_df['chr'] == seq, 'start'])
+
         if seq in chr_list_loh:
             start_pos_loh[seq] = list(loh_df.loc[loh_df['chr'] == seq, 'start'])
             end_pos_loh[seq] = list(loh_df.loc[loh_df['chr'] == seq, 'end'])
             hp[seq] = list(loh_df.loc[loh_df['chr'] == seq, 'hp'])
-    vcf_in=pysam.VariantFile(vcf_in,"r")
-    vcf_out = pysam.VariantFile(out_vcf, 'w', header=vcf_in.header)
-    for var in vcf_in:
+
+    pysam_verbosity = pysam.set_verbosity(0)
+    with pysam.VariantFile(vcf_in, 'r') as vcf_reader:
+        original_ps = defaultdict(IntervalTree)
+        blocks_pos = defaultdict(list)
+        for var in vcf_reader:
+            sample = var.samples.keys()[0]
+            if var.samples[sample].phased:
+                blocks_pos[(var.chrom, var.samples[sample]['PS'])].append(var.pos)
+        for (chrom, ps), positions in blocks_pos.items():
+            original_ps[chrom].add(Interval(min(positions), max(positions) + 1, ps))
+
+    vcf_reader = pysam.VariantFile(vcf_in,"r")
+    vcf_out = pysam.VariantFile(out_vcf, 'w', header=vcf_reader.header)
+
+    for var in vcf_reader:
         sample = var.samples.keys()[0]
         if var.samples[sample].phased:
-            ind = bisect.bisect_right(idls[var.chrom], var.pos)
-            if ind > 0:
-                var.samples[sample]['PS'] = idls[var.chrom][ind-1]
-            strt = bisect.bisect_right(start_pos[var.chrom], var.pos)
-            end = bisect.bisect_right(end_pos[var.chrom], var.pos)
-            if strt == end + 1:
+            #ind = bisect.bisect_right(idls[var.chrom], var.pos)
+            #if ind > 0:
+            #    var.samples[sample]['PS'] = idls[var.chrom][ind-1]
+            old_ps = list(original_ps[var.chrom][var.pos])[0]
+            new_ps = new_phasesets[var.chrom][var.pos]
+            if len(new_ps) > 0:
+                var.samples[sample]['PS'] = list(new_ps)[0][0]
+
+            #if original block is small - it has not been phased by Wakhan.
+            #it should be then set to unphased
+            if old_ps[1] - old_ps[0] < min_block_size:
+                var.samples[sample]['PS'] = None
+                var.samples[sample]['GT'] = (0, 1)
+                var.samples[sample].phased = False
+                vcf_out.write(var)
+                continue
+
+            flip_ovlps = flip_bins[var.chrom][var.pos]
+            flip_ovlps_next = flip_bins[var.chrom][var.pos + bin_size]
+            flip_ovlps_prev = flip_bins[var.chrom][var.pos - bin_size]
+            ###remove after debugging
+            #strt = bisect.bisect_right(flip_start_pos[var.chrom], var.pos)
+            #end = bisect.bisect_right(flip_end_pos[var.chrom], var.pos)
+            #if (strt == end + 1) != (len(flip_ovlps) > 0):
+            #    print("Bad", var.chrom, var.pos, flip_ovlps, strt, end,
+            #          flip_start_pos[var.chrom][strt - 1], flip_end_pos[var.chrom][end - 1])
+            ###
+
+            #block start and end that does not fully cover a bin, follows the next/previous full bin
+            need_flip = False
+            if var.pos - old_ps[0] < bin_size:
+                need_flip = len(flip_ovlps_next) > 0
+            elif old_ps[1] - var.pos > bin_size:
+                need_flip = len(flip_ovlps) > 0
+            else:
+                need_flip = len(flip_ovlps_prev) > 0
+
+            if need_flip > 0:
                 (a,b) = var.samples[sample]['GT']
                 new_gt = (abs(a-1), abs(b-1))
                 var.samples[sample]['GT'] = new_gt
                 var.samples[sample].phased = True
+
         elif var.samples[sample]['GT'] == (1,1):
             strt = bisect.bisect_right(start_pos_loh[var.chrom], var.pos)
             end = bisect.bisect_right(end_pos_loh[var.chrom], var.pos)
@@ -724,8 +786,12 @@ def rephase_vcf(df, id_df, loh_df, vcf_in, out_vcf):
                 var.samples[sample]['GT'] = (0,1) if hp[var.chrom][end] == 1 else (1,0)
                 var.samples[sample].phased = True
                 var.samples[sample]['PS'] = int(start_pos_loh[var.chrom][end])
+
         vcf_out.write(var)
+
     vcf_out.close()
+    pysam.set_verbosity(pysam_verbosity)
+
 
 def index_vcf(out_vcf):
     bcf_cmd = ['bcftools', 'index', out_vcf]
