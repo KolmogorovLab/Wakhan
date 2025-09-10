@@ -208,6 +208,8 @@ def parse_aruments_(args):
         print("Running BNA mode...")
         print(f"BNA file: {args.bna_file}")
         print(f"BNA threshold: {args.bna_threshold}")
+
+
 def build_parser():
     # default tunable parameters
     MAX_READ_ERROR = 0.1
@@ -221,17 +223,19 @@ def build_parser():
     HETS_SMOOTH_WINDOW = 1
     HETS_LOH_SEG_SIZE = 200000 #2000000
     BP_MIN_LENGTH = 10000
+    MIN_PS_SIZE = 300000
 
     DEFAULT_CONTIGS = 'chr1-22,chrX' #('chr1-22' '1-22') ('chr1-22,chrX' '1-22,X')
     DEFAULT_PURITY = '0.25-1.0'
     DEFAULT_PLOIDY = '1.0-5.5'
     DEFAULT_REF = 'grch38'
 
-    global_parser = argparse.ArgumentParser(prog="wakhan", description="Wakhan plots coverage and copy number profiles from a bam and phased VCF files")
+    global_parser = argparse.ArgumentParser(prog="wakhan", description="Wakhan plots coverage and copy number profiles from a bam and phased VCF files",
+                                            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     ###################################################################################
     global_parser.add_argument("command", nargs="?", choices=["cna", "hapcorrect"], help="Optional cna or hapcorrect modes. If omitted, runs default mode with both modes." )
     ###################################################################################
-    global_parser.add_argument("--target-bam", dest="target_bam", required=True, metavar="path", default=None, nargs="+", help="path to one or 1/4 multiple target haplotagged bam files (must be indexed)")
+    global_parser.add_argument("--target-bam", dest="target_bam", required=True, metavar="path", default=None, nargs="+", help="path to one or multiple target haplotagged bam files (must be indexed)")
     global_parser.add_argument("--control-bam", dest="control_bam", metavar="path", default=None, nargs="+", help="path to one or multiple control haplotagged bam files (must be indexed)")
     global_parser.add_argument("--reference", dest="reference", required=True, metavar="path", default=None, help="path to reference")
 
@@ -243,23 +247,24 @@ def build_parser():
     global_parser.add_argument("--centromere", dest="centromere", metavar="path", default='annotations/grch38.cen_coord.curated.bed', help="Path to centromere annotations BED file")
     global_parser.add_argument("--cancer-genes", dest="cancer_genes", metavar="path", default='annotations/COSMIC_cancer_genes.tsv', help="Path to default COSMIC Cancer Genes TSV file")
     global_parser.add_argument("--user-input-genes", dest="user_input_genes", metavar="path", help="Path to user input genes names in *.bed file [each name in a single line (annotations/user_input_genes_example_1.bed), or tab delimated genes etries (annotations/user_input_genes_example_2.bed)], these genes will be used in plots instead of default COSMIC cancer genes")
-    global_parser.add_argument("--reference-name", dest="reference_name", default=DEFAULT_REF, help="Default reference name: grch38 [grch38, chm13]")
+    global_parser.add_argument("--reference-name", dest="reference_name", default=DEFAULT_REF, help="Default reference name")
     global_parser.add_argument("--histogram-coverage", dest="histogram_coverage", action="store_true", help="use histogram coverage instead of SNPs pileup")
 
     global_parser.add_argument("--genome-name", dest="genome_name", default='Sample', help="Genome sample/cell line name to be displayed on plots")
     global_parser.add_argument("--contigs", dest="contigs", default=DEFAULT_CONTIGS, help="List of contigs (choromosomes) to be included in the plots, default chr1-22,chrX [e.g., chr1-22,X,Y], Note: Please use 1-22,X [e.g., 1-22,X,Y] in case REF, BAM, and VCFs entries don't contain `chr` name/notion")
 
-    global_parser.add_argument("--bin-size", "--bin_size", dest="bin_size", default=BIN_SIZE, metavar="int", type=int, help="coverage (readdepth) bin size [50k]")
-    global_parser.add_argument("--bin-size-snps", "--bin_size_snps", dest="bin_size_snps", default=BIN_SIZE_SNPS, metavar="int", type=int, help="SNPs bin size [50k]")
-    global_parser.add_argument("--hets-ratio", "--hets_ratio", dest="hets_ratio", default=HETS_RATIO_LOH, metavar="float", type=float, help="Hetrozygous SNPs ratio threshold for LOH detection [0.25]")
-    global_parser.add_argument("--hets-smooth-window", "--hets_smooth_window", dest="hets_smooth_window", default=HETS_SMOOTH_WINDOW, metavar="int", type=int, help="Hetrozygous SNPs ratio smoothing window size for LOH detection [45]")
-    global_parser.add_argument("--hets-loh-seg-size", "--hets_loh_seg_size", dest="hets_loh_seg_size", default=HETS_LOH_SEG_SIZE, metavar="int", type=int, help="LOH detection minimum segment size where Het SNPs ratio is dropped [2M]")
-    global_parser.add_argument('--loh-enable', action="store_true",  dest="loh_enable", default=True, help="Enabling LOH regions in CN plots")
+    global_parser.add_argument("--bin-size", "--bin_size", dest="bin_size", default=BIN_SIZE, metavar="int", type=int, help="bin size for coverage calculation")
+    global_parser.add_argument("--min-phaseblock", "--min_phaseblock", dest="min_phaseblock", default=MIN_PS_SIZE, metavar="int", type=int, help="minimum phaseblock length for CNA estimation")
+    global_parser.add_argument("--bin-size-snps", "--bin_size_snps", dest="bin_size_snps", default=BIN_SIZE_SNPS, metavar="int", type=int, help="bin size for LOH detection")
+    global_parser.add_argument("--hets-ratio", "--hets_ratio", dest="hets_ratio", default=HETS_RATIO_LOH, metavar="float", type=float, help="Hetrozygous SNPs ratio threshold for LOH detection")
+    global_parser.add_argument("--hets-smooth-window", "--hets_smooth_window", dest="hets_smooth_window", default=HETS_SMOOTH_WINDOW, metavar="int", type=int, help="Hetrozygous SNPs ratio smoothing window size for LOH detection")
+    global_parser.add_argument("--hets-loh-seg-size", "--hets_loh_seg_size", dest="hets_loh_seg_size", default=HETS_LOH_SEG_SIZE, metavar="int", type=int, help="LOH detection minimum segment size where Het SNPs ratio is dropped")
+    global_parser.add_argument('--loh-enable', action="store_true",  dest="loh_enable", default=True, help="Plotting LOH regions in CN plots")
 
-    global_parser.add_argument("--cut-threshold", "--cut_threshold", dest="cut_threshold", default=MAX_CUT_THRESHOLD, metavar="int", type=int, help="Maximum cut threshold for coverage (readdepth) [100]")
-    global_parser.add_argument("--cut-threshold-snps-counts", "--cut_threshold_snps_counts", dest="cut_threshold_snps_counts", default=MAX_CUT_THRESHOLD_SNPS_COUNTS, metavar="int", type=int, help="Maximum cut threshold for SNPs counts [50]")
+    global_parser.add_argument("--cut-threshold", "--cut_threshold", dest="cut_threshold", default=MAX_CUT_THRESHOLD, metavar="int", type=int, help="Plotting threshold for coverage")
+    global_parser.add_argument("--cut-threshold-snps-counts", "--cut_threshold_snps_counts", dest="cut_threshold_snps_counts", default=MAX_CUT_THRESHOLD_SNPS_COUNTS, metavar="int", type=int, help="Plotting threshold for SNPs counts")
 
-    global_parser.add_argument("--min-aligned-length", "--min_aligned_length", dest="min_aligned_length", default=MIN_ALIGNED_LENGTH, metavar="int", type=int, help="Minimum aligned reads length [5000]")
+    global_parser.add_argument("--min-aligned-length", "--min_aligned_length", dest="min_aligned_length", default=MIN_ALIGNED_LENGTH, metavar="int", type=int, help="Minimum aligned reads length")
 
     global_parser.add_argument('--pdf-enable', action="store_true",  dest="pdf_enable", default=False, help="Enabling PDF output coverage plots")
 
@@ -280,12 +285,12 @@ def build_parser():
 
     global_parser.add_argument('--enable-simple-heuristics', action="store_true", dest="enable_simple_heuristics", default=False, help="enable simple heuristics")
 
-    global_parser.add_argument("-t", "--threads", dest="threads", default=1, metavar="int", type=int, help="number of parallel threads [8]")
+    global_parser.add_argument("-t", "--threads", dest="threads", default=1, metavar="int", type=int, help="number of parallel threads")
     global_parser.add_argument('--quick-start', action="store_true", dest="quick_start", default=False, help="Enabling quick_start")
     global_parser.add_argument("--quick-start-coverage-path", dest="quick_start_coverage_path", default=None, metavar="path", help="quick start coverage data directory")
 
-    global_parser.add_argument("--max-read-error", dest="max_read_error", default=MAX_READ_ERROR, metavar="float", type=float, help=f"maximum base alignment error [{MAX_READ_ERROR}]")
-    global_parser.add_argument("--min-mapq", dest="min_mapping_quality", default=MIN_MAPQ, metavar="int", type=int, help=f"minimum mapping quality for aligned segment [{MIN_MAPQ}]")
+    global_parser.add_argument("--max-read-error", dest="max_read_error", default=MAX_READ_ERROR, metavar="float", type=float, help=f"maximum base alignment error")
+    global_parser.add_argument("--min-mapq", dest="min_mapping_quality", default=MIN_MAPQ, metavar="int", type=int, help=f"minimum mapping quality for aligned segment")
 
     global_parser.add_argument("--cpd-internal-segments", dest="cpd_internal_segments", action="store_true", help="change point detection algo for more precise segments after breakpoint/cpd segments")
     global_parser.add_argument("--change-point-detection-for-cna", dest="change_point_detection_for_cna", action="store_true", help="use change point detection algo for more cna segmentation instead of breakpoints")
@@ -293,9 +298,9 @@ def build_parser():
     global_parser.add_argument('--copynumbers-disable', action="store_true", dest="copynumbers_disable", default=False, help="Disabling copy number in coverage plots")
     global_parser.add_argument('--copynumbers-subclonal-enable', action="store_true", dest="copynumbers_subclonal_enable", default=True, help="Enabling subclonal copy number in coverage plots")
 
-    global_parser.add_argument("--purity-range", dest="purity_range", default=DEFAULT_PURITY, help="Estimated tumor purity range (fraction) between [default: 0.5-1.0]")
-    global_parser.add_argument("--ploidy-range", dest="ploidy_range", default=DEFAULT_PLOIDY, help="Estimated tumor ploidy range between [default: 1.0-5.5]")
-    global_parser.add_argument('--dna-purity', action="store_true", dest="dna_purity", default=False, help="Enabling DNA purity instead of default cell purity estimation")
+    global_parser.add_argument("--purity-range", dest="purity_range", default=DEFAULT_PURITY, help="Target tumor purity range")
+    global_parser.add_argument("--ploidy-range", dest="ploidy_range", default=DEFAULT_PLOIDY, help="Target tumor ploidy range")
+    global_parser.add_argument('--dna-purity', action="store_true", dest="dna_purity", default=False, help="Compute tumor DNA purity instead of cell purity")
     global_parser.add_argument("--tumor-purity", dest="tumor_purity", default=0.0, metavar="float", type=float, help="user input tumor purity")
     global_parser.add_argument("--tumor-ploidy", dest="tumor_ploidy", default=0.0, metavar="float", type=float, help="user input tumor ploidy")
     global_parser.add_argument("--confidence-subclonal-score", dest="confidence_subclonal_score", default=0.6, metavar="float", type=float, help="user input p-value to detect if a segment is subclonal/off to integer copynumber")
@@ -304,7 +309,7 @@ def build_parser():
     global_parser.add_argument("--first-copy-breakpoints-filter", dest="first_copy_breakpoints_filter", default=0, metavar="int", type=int, help="Breakpoints filter only first copy")
 
     global_parser.add_argument("--breakpoints", dest="breakpoints", metavar="path", required=False, default=None, help="Path to breakpoints/SVs VCF file")
-    global_parser.add_argument("--breakpoints-min-length", dest="breakpoints_min_length", default=BP_MIN_LENGTH, metavar="int", type=int, help="breakpoints minimum length to include [10k]")
+    global_parser.add_argument("--breakpoints-min-length", dest="breakpoints_min_length", default=BP_MIN_LENGTH, metavar="int", type=int, help="breakpoints minimum length to include")
     global_parser.add_argument("--use-sv-haplotypes", dest="use_sv_haplotypes", action="store_true", default=False, required=False, help="Enable using phased SVs/breakpoints")
 
     return global_parser
