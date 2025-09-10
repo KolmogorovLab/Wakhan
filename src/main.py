@@ -346,6 +346,8 @@ def main(argv=None):
     else:
         os.mkdir(args.out_dir_plots+'/data')
 
+    test_input_files(args)
+
     if args.command == 'cna':
         logger.info('Starting cna() module...')
         cna_process(args) # cna()
@@ -621,3 +623,16 @@ def cna_process(args):
     #move_100pct_purity_sol(args)
 
     return 0
+
+
+def test_input_files(args):
+    filelist = [args.reference, args.tumor_phased_vcf, args.normal_phased_vcf, args.centromere, args.cancer_genes,
+                args.user_input_genes, args.breakpoints]
+    if args.target_bam is not None:
+        filelist.extend(args.target_bam)
+    if args.control_bam is not None:
+        filelist.extend(args.control_bam)
+    for file in filelist:
+        if file is not None and not os.path.exists(file):
+            logger.error(f"Input file does not exist: {file}")
+            raise Exception("Input error")
