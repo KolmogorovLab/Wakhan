@@ -694,11 +694,12 @@ def rephase_vcf(flip_bins_df, phasesets_df, loh_df, vcf_in, out_vcf, bin_size, m
     #flip_end_pos = defaultdict(list)
     flip_bins = defaultdict(IntervalTree)
     new_phasesets = defaultdict(IntervalTree)
+    loh_regions = defaultdict(IntervalTree)
 
     #idls = defaultdict(list)
-    start_pos_loh = defaultdict(list)
-    end_pos_loh = defaultdict(list)
-    hp = defaultdict(list)
+    #start_pos_loh = defaultdict(list)
+    #end_pos_loh = defaultdict(list)
+    #hp = defaultdict(list)
 
     for seq in chr_list:
         flip_counter = defaultdict(int)
@@ -714,10 +715,12 @@ def rephase_vcf(flip_bins_df, phasesets_df, loh_df, vcf_in, out_vcf, bin_size, m
         #flip_end_pos[seq] = sorted([key for key, val in Counter(flip_bins_df.loc[flip_bins_df['chr'] == seq, 'end']).items() if val%2 == 1])
         #idls[seq] = sorted(phasesets_df.loc[phasesets_df['chr'] == seq, 'start'])
 
-        if seq in chr_list_loh:
-            start_pos_loh[seq] = list(loh_df.loc[loh_df['chr'] == seq, 'start'])
-            end_pos_loh[seq] = list(loh_df.loc[loh_df['chr'] == seq, 'end'])
-            hp[seq] = list(loh_df.loc[loh_df['chr'] == seq, 'hp'])
+        #if seq in chr_list_loh:
+        for index, row in loh_df[loh_df['chr'] == seq].iterrows():
+            loh_regions[seq].add(Interval(row['start'], row['end'], row['hp']))
+            #start_pos_loh[seq] = list(loh_df.loc[loh_df['chr'] == seq, 'start'])
+            #end_pos_loh[seq] = list(loh_df.loc[loh_df['chr'] == seq, 'end'])
+            #hp[seq] = list(loh_df.loc[loh_df['chr'] == seq, 'hp'])
 
     pysam_verbosity = pysam.set_verbosity(0)
     with pysam.VariantFile(vcf_in, 'r') as vcf_reader:
@@ -780,12 +783,15 @@ def rephase_vcf(flip_bins_df, phasesets_df, loh_df, vcf_in, out_vcf, bin_size, m
                 var.samples[sample].phased = True
 
         elif var.samples[sample]['GT'] == (1,1):
-            strt = bisect.bisect_right(start_pos_loh[var.chrom], var.pos)
-            end = bisect.bisect_right(end_pos_loh[var.chrom], var.pos)
-            if strt == end + 1:
-                var.samples[sample]['GT'] = (0,1) if hp[var.chrom][end] == 1 else (1,0)
+            #strt = bisect.bisect_right(start_pos_loh[var.chrom], var.pos)
+            #end = bisect.bisect_right(end_pos_loh[var.chrom], var.pos)
+            #if strt == end + 1:
+            loh_ovlps = list(loh_regions[var.chrom][var.pos])
+            if len(loh_ovlps) > 0:
+                var.samples[sample]['GT'] = (1,0) if loh_ovlps[0][2] == 1 else (0,1)
                 var.samples[sample].phased = True
-                var.samples[sample]['PS'] = int(start_pos_loh[var.chrom][end])
+                var.samples[sample]['PS'] = loh_ovlps[0][0]
+                #var.samples[sample]['PS'] = int(start_pos_loh[var.chrom][end])
 
         vcf_out.write(var)
 
@@ -799,6 +805,8 @@ def index_vcf(out_vcf):
     bcf_1.wait()
     if bcf_1.returncode != 0:
         raise ValueError('bcftols index subprocess returned nonzero value: {}'.format(bcf_1.returncode))
+
+
 def _calc_nx(lengths, norm_len, rate):
     n50 = 0
     sum_len = 0
