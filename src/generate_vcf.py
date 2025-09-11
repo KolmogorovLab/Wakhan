@@ -298,6 +298,8 @@ def read_cn_segments_process_vcf(args, repo, type):
         output_path = args.out_dir_plots + '/' + repo + '/vcf_output/' + args.genome_name + '_' + repo + '_wakhan_cna_subclonals.vcf'
 
     hp1_segs = pd.read_csv(fp_hp1, sep='\t', header=None, comment='#')
+    if args.change_point_detection_for_cna:
+        hp1_segs['bps_new'] = None
     if type == 'integers':
         hp1_segs = hp1_segs[[0, 1, 2, 3, 4, 5, 6]]
     else:
@@ -305,6 +307,8 @@ def read_cn_segments_process_vcf(args, repo, type):
     hp1_segs.columns = ['chr', 'start', 'end', 'depth', 'state', 'p_value', 'bps']
 
     hp2_segs = pd.read_csv(fp_hp2, sep='\t', header=None, comment='#')
+    if args.change_point_detection_for_cna:
+        hp2_segs['bps_new'] = None
     if type == 'integers':
         hp2_segs = hp2_segs[[0, 1, 2, 3, 4, 5, 6]]
     else:

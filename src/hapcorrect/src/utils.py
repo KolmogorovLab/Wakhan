@@ -567,3 +567,23 @@ def find_peak_median_without_outliers(data):
     filtered_data = remove_outliers_modified_z(data, peak_value)
     # 3. Compute median of filtered data
     return np.median(filtered_data)
+
+def update_hp_assignment_loh_segments(args, loh_df, coverage_df):
+    updated_loh_segs = []
+    chroms = get_contigs_list(args.contigs)
+    for index, chrom in enumerate(chroms):
+        df_loh_chrom = loh_df[loh_df['chr'] == chrom]
+        df_coverage_chrom = coverage_df[coverage_df['chr'] == chrom]
+        hp2_cov = df_coverage_chrom.hp2.values.tolist()
+        hp2_start = df_coverage_chrom.start.values.tolist()
+        hp2_end = df_coverage_chrom.end.values.tolist()
+        for idx, seg in df_loh_chrom.iterrows():
+            #print(chrom, df_loh_chrom.loc[idx, 'start'], df_loh_chrom.loc[idx, 'end'], hp2_start.index(df_loh_chrom.loc[idx, 'start']), hp2_end.index(df_loh_chrom.loc[idx, 'end']))
+            if statistics.mean(hp2_cov[(df_loh_chrom.loc[idx, 'start']//args.bin_size)+1:(df_loh_chrom.loc[idx, 'end']//args.bin_size)-1]) > 0.0001:
+                df_loh_chrom.loc[idx, 'hp'] = 2
+
+        updated_loh_segs.append(df_loh_chrom)
+
+    segs_loh = pd.concat(updated_loh_segs)
+
+    return segs_loh

@@ -721,7 +721,7 @@ def rephase_vcf(df, id_df, loh_df, vcf_in, out_vcf):
             strt = bisect.bisect_right(start_pos_loh[var.chrom], var.pos)
             end = bisect.bisect_right(end_pos_loh[var.chrom], var.pos)
             if strt == end + 1:
-                var.samples[sample]['GT'] = (0,1) if hp[var.chrom][end] == 1 else (1,0)
+                var.samples[sample]['GT'] = (1,0) if hp[var.chrom][end] == 1 else (0,1)
                 var.samples[sample].phased = True
                 var.samples[sample]['PS'] = int(start_pos_loh[var.chrom][end])
         vcf_out.write(var)
