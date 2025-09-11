@@ -19,7 +19,7 @@ from src.hapcorrect.src.process_bam import get_all_reads_parallel, update_covera
 from src.hapcorrect.src.process_vcf import vcf_parse_to_csv_for_het_phased_snps_phasesets, get_snp_frequencies_segments, snps_frequencies_chrom_mean, get_snps_frquncies_coverage, vcf_parse_to_csv_for_snps, index_vcf, rephase_vcf, get_phasingblocks, snps_frequencies_chrom_mean_phasesets, snps_frequencies_homo_chrom_mean
 from src.hapcorrect.src.phase_correction import generate_phasesets_bins, phase_flips_cis_trans, switch_inter_phaseblocks_bins, phaseblock_flipping_simple_heuristics, check_missing_phasesets_original, reintroduce_broken_phasesets, update_remaining_phasesets, subtract_intervals, without_phasesets_bins_correction
 from src.hapcorrect.src.utils import get_chromosomes_bins, write_segments_coverage, csv_df_chromosomes_sorter, get_snps_frquncies_coverage_from_bam, adjust_loh_cent_phaseblocks, extract_centromere_regions,\
-                    infer_missing_phaseblocks, df_chromosomes_sorter, is_phasesets_check_simple_heuristics, write_df_csv, loh_regions_events, snps_frequencies_chrom_genes, genes_segments_coverage, genes_segments_list, extend_snps_ratios_df, get_chromosomes_regions, add_breakpoints
+                    infer_missing_phaseblocks, df_chromosomes_sorter, is_phasesets_check_simple_heuristics, write_df_csv, loh_regions_events, snps_frequencies_chrom_genes, genes_segments_coverage, genes_segments_list, extend_snps_ratios_df, get_chromosomes_regions, add_breakpoints, update_hp_assignment_loh_segments
 from src.hapcorrect.src.extras import get_contigs_list
 from src.hapcorrect.src.plots import plot_coverage_data, change_point_detection, plot_coverage_data_after_correction, loh_plots_genome
 from src.hapcorrect.src.cpd import cpd_positions_means
@@ -294,14 +294,6 @@ def main_process(args):
 
     html_graphs.write("</body></html>")
 
-    if args.tumor_phased_vcf and len(loh_regions_events_all):
-        loh_df_final = pd.concat(loh_regions_events_all)
-        loh_df_final_filtered = loh_df_final[loh_df_final['end'] - loh_df_final['start'] >= 20000]
-        write_df_csv(loh_df_final_filtered, args.out_dir_plots+'/coverage_data/'+args.genome_name+'_loh_segments.csv')
-        csv_df_loh_regions = csv_df_chromosomes_sorter(args.out_dir_plots + '/coverage_data/'+args.genome_name + '_loh_segments.csv', ['chr', 'start', 'end', 'hp'])
-    else:
-        csv_df_loh_regions = pd.DataFrame(columns=['chr', 'start', 'end', 'hp'])
-
     updated_ps = pd.concat(start_values_phasesets_contiguous_all)
     write_df_csv(updated_ps[['chr', 'start', 'end']], args.out_dir_plots + '/data_phasing/' + args.genome_name + '_phasesets.csv')
     write_df_csv(updated_ps, args.out_dir_plots + '/coverage_data/' + 'coverage_ps.csv')
@@ -314,6 +306,16 @@ def main_process(args):
         write_df_csv(cancer_genes_df_all, args.out_dir_plots + '/coverage_data/cancer_genes_coverage.csv')
     else:
         write_df_csv(pd.DataFrame(columns=['chr', 'start', 'end', 'gene', 'hp1', 'hp2']), args.out_dir_plots + '/coverage_data/cancer_genes_coverage.csv')
+
+    if args.tumor_phased_vcf and len(loh_regions_events_all):
+        loh_df_final = pd.concat(loh_regions_events_all)
+        loh_df_final_filtered = loh_df_final[loh_df_final['end'] - loh_df_final['start'] >= 20000]
+        #update HP in LOH regions for flipped segments
+        loh_df = update_hp_assignment_loh_segments(args, loh_df_final_filtered, pd.concat(df_updated_coverage))
+        write_df_csv(loh_df, args.out_dir_plots+'/coverage_data/'+args.genome_name+'_loh_segments.csv')
+        csv_df_loh_regions = csv_df_chromosomes_sorter(args.out_dir_plots + '/coverage_data/'+args.genome_name + '_loh_segments.csv', ['chr', 'start', 'end', 'hp'])
+    else:
+        csv_df_loh_regions = pd.DataFrame(columns=['chr', 'start', 'end', 'hp'])
 
     if os.path.isfile(args.out_dir_plots+'/data_phasing/' + args.genome_name + '_phase_change_segments.csv'):
         csv_df_phase_change_segments = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/' + args.genome_name + '_phase_change_segments.csv', ['chr', 'start', 'end'])
