@@ -118,7 +118,9 @@ def get_snps_frquncies_coverage_from_bam(df, chrom):
 
     return haplotype_1_position, haplotype_1_coverage, haplotype_2_position, haplotype_2_coverage
 
-def detect_alter_loh_regions(csv_df_coverage_tumor_chrom, args, event, chrom, ref_ends, haplotype_1_values, haplotype_2_values, unphased_reads_values, starts, ends, switch_hps):
+
+def detect_alter_loh_regions(csv_df_coverage_tumor_chrom, args, event, chrom, ref_ends, haplotype_1_values, haplotype_2_values,
+                             unphased_reads_values, starts, ends, switch_hps):
     region_starts = []
     region_ends = []
     hp = []
@@ -182,7 +184,9 @@ def split_regions_by_points(starts, ends, values1, values2, split_points):
 
     return new_starts, new_ends, new_values1, new_values2
 
-def adjust_loh_cent_phaseblocks(args, loh_region_starts, loh_region_ends, centrom_region, snps_haplotype1_mean, snps_haplotype2_mean, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets):
+
+def adjust_loh_cent_phaseblocks(args, loh_region_starts, loh_region_ends, centrom_region, snps_haplotype1_mean, snps_haplotype2_mean,
+                                haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets):
 
     #remove centrom phaseblocks
     if not centrom_region.empty:
@@ -190,8 +194,12 @@ def adjust_loh_cent_phaseblocks(args, loh_region_starts, loh_region_ends, centro
     else:
         cents = [0,0]
     #break phaseblocks at LOH/Cents
-    ref_start_values_phasesets,  ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets = split_regions_by_points(ref_start_values_phasesets,  ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets, cents)
-    ref_start_values_phasesets,  ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets = split_regions_by_points(ref_start_values_phasesets,  ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets, loh_region_starts+loh_region_ends)
+    ref_start_values_phasesets,  ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets = \
+            split_regions_by_points(ref_start_values_phasesets,  ref_end_values_phasesets,
+                                    haplotype_1_values_phasesets, haplotype_2_values_phasesets, cents)
+    ref_start_values_phasesets,  ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets = \
+            split_regions_by_points(ref_start_values_phasesets,  ref_end_values_phasesets, haplotype_1_values_phasesets,
+                                    haplotype_2_values_phasesets, loh_region_starts+loh_region_ends)
 
     index_cents = []
     if len(ref_start_values_phasesets) > 1:
@@ -227,6 +235,7 @@ def adjust_loh_cent_phaseblocks(args, loh_region_starts, loh_region_ends, centro
     ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets = zip(*zipped_sorted)
 
     return list(haplotype_1_values_phasesets), list(haplotype_2_values_phasesets), list(ref_start_values_phasesets), list(ref_end_values_phasesets)
+
 
 def extract_centromere_regions(args):
     #fileDir = args.centromere #os.path.dirname(__file__)

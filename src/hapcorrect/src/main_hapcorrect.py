@@ -198,29 +198,55 @@ def main_process(args):
                 snps_haplotype2_mean = haplotype_2_values
             else:
                 snps_haplotype1_mean, snps_haplotype2_mean  = snps_frequencies_chrom_mean(df_snps_frequencies, ref_start_values, chrom, args)
-                haplotype_1_values_phasesets, haplotype_2_values_phasesets = snps_frequencies_chrom_mean_phasesets(df_snps_frequencies, ref_start_values_phasesets, ref_end_values_phasesets, chrom, args)
+                haplotype_1_values_phasesets, haplotype_2_values_phasesets = \
+                        snps_frequencies_chrom_mean_phasesets(df_snps_frequencies, ref_start_values_phasesets, ref_end_values_phasesets, chrom, args)
 
             #TODO create coverage and phaseset-coverage CSVs
             if not args.histogram_coverage:
                 ##################################
-                df_coverage.append(pd.DataFrame(list(zip([chrom for ch in range(len(ref_start_values))], ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values)), columns=['chr', 'start', 'end', 'hp1', 'hp2', 'hp3']))
-                df_phasesets.append(pd.DataFrame(list(zip([chrom for ch in range(len(ref_start_values_phasesets))], ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets)), columns=['chr', 'start', 'end', 'hp1', 'hp2']))
+                df_coverage.append(pd.DataFrame(list(zip([chrom for ch in range(len(ref_start_values))], 
+                                                ref_start_values, ref_end_values, snps_haplotype1_mean, 
+                                                snps_haplotype2_mean, unphased_reads_values)), columns=['chr', 'start', 'end', 'hp1', 'hp2', 'hp3']))
+                df_phasesets.append(pd.DataFrame(list(zip([chrom for ch in range(len(ref_start_values_phasesets))], 
+                                                 ref_start_values_phasesets, ref_end_values_phasesets, 
+                                                 haplotype_1_values_phasesets, haplotype_2_values_phasesets)), columns=['chr', 'start', 'end', 'hp1', 'hp2']))
                 ##################################
-            plot_coverage_data(html_graphs, args, chrom, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, "without_phase_correction")
+            plot_coverage_data(html_graphs, args, chrom, ref_start_values, ref_end_values, 
+                               snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, 
+                               haplotype_1_values_phasesets, haplotype_2_values_phasesets, 
+                               ref_start_values_phasesets, ref_end_values_phasesets, "without_phase_correction")
             ##################################
             if args.tumor_phased_vcf:
-                ref_start_values_updated, snps_het_counts, snps_homo_counts, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends = get_snps_frquncies_coverage(df_snps_in_csv_loh, chrom, ref_start_values, args.bin_size_snps, args.hets_ratio, args.hets_smooth_window, args)
+                (ref_start_values_updated, snps_het_counts, snps_homo_counts,
+                centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends) = \
+                    get_snps_frquncies_coverage(df_snps_in_csv_loh, chrom, ref_start_values, args.bin_size_snps,
+                                                args.hets_ratio, args.hets_smooth_window, args)
                 df_snps_ratios_chrom = extend_snps_ratios_df(chrom, offset, ref_start_values_updated, snps_het_counts, snps_homo_counts)
                 df_snps_ratios.append(df_snps_ratios_chrom)
                 offset += regions[index]
 
                 if args.without_phasing:
-                    detect_loh_centromere_regions(None, chrom, args, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
+                    detect_loh_centromere_regions(None, chrom, args, centromere_region_starts, centromere_region_ends,
+                                                  loh_region_starts, loh_region_ends, ref_start_values, 
+                                                  ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, 
+                                                  unphased_reads_values, haplotype_1_values_phasesets, 
+                                                  haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
                 else:
                     csv_df_coverage_tumor_chrom = csv_df_coverage_tumor[csv_df_coverage_tumor['chr'] == chrom]
-                    snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, loh_region_starts, loh_region_ends, hp = detect_loh_centromere_regions(csv_df_coverage_tumor_chrom, chrom, args, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
+                    (snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values,
+                     haplotype_1_values_phasesets, haplotype_2_values_phasesets,
+                     ref_start_values_phasesets, ref_end_values_phasesets, loh_region_starts, loh_region_ends, hp) = \
+                             detect_loh_centromere_regions(csv_df_coverage_tumor_chrom, chrom, args, centromere_region_starts,
+                                                           centromere_region_ends, loh_region_starts, loh_region_ends,
+                                                           ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean,
+                                                           unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets,
+                                                           ref_start_values_phasesets, ref_end_values_phasesets)
                     if len(haplotype_1_values_phasesets):
-                        haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets = adjust_loh_cent_phaseblocks(args, loh_region_starts, loh_region_ends, centromere_region, snps_haplotype1_mean, snps_haplotype2_mean, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
+                        (haplotype_1_values_phasesets, haplotype_2_values_phasesets,
+                         ref_start_values_phasesets, ref_end_values_phasesets) = \
+                                 adjust_loh_cent_phaseblocks(args, loh_region_starts, loh_region_ends, centromere_region,
+                                                             snps_haplotype1_mean, snps_haplotype2_mean, haplotype_1_values_phasesets,
+                                                             haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
                     loh_chrom = pd.DataFrame({'chr': [], 'start': [], 'end': []})
                     if len(loh_region_starts):
                         chr_list = [chrom for ch in range(len(loh_region_starts))]
@@ -229,7 +255,10 @@ def main_process(args):
             else:
                loh_region_starts = []
                loh_region_ends = []
-            updated_df_phasesets = pd.DataFrame(list(zip(ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets)), columns=['start', 'end', 'hp1', 'hp2'])
+
+            updated_df_phasesets = pd.DataFrame(list(zip(ref_start_values_phasesets, ref_end_values_phasesets,
+                                                         haplotype_1_values_phasesets, haplotype_2_values_phasesets)),
+                                                columns=['start', 'end', 'hp1', 'hp2'])
 
             #phaseblocks flipping main algo
             is_simple_heuristics = True
@@ -241,9 +270,16 @@ def main_process(args):
 
             if is_simple_heuristics:
                 # #plot resultant
-                snps_haplotype1_mean, snps_haplotype2_mean, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets = \
-                    phaseblock_flipping_simple_heuristics(chrom, args, is_simple_heuristics, snps_haplotype1_mean, snps_haplotype2_mean, ref_start_values, ref_start_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
-                plot_coverage_data(html_graphs, args, chrom, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, "phase_correction_1")
+                (snps_haplotype1_mean, snps_haplotype2_mean, haplotype_1_values_phasesets, 
+                 haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets) = \
+                    phaseblock_flipping_simple_heuristics(chrom, args, is_simple_heuristics, snps_haplotype1_mean, 
+                                                          snps_haplotype2_mean, ref_start_values, ref_start_values, 
+                                                          haplotype_1_values_phasesets, haplotype_2_values_phasesets, 
+                                                          ref_start_values_phasesets, ref_end_values_phasesets)
+                plot_coverage_data(html_graphs, args, chrom, ref_start_values, ref_end_values, 
+                                   snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values,
+                                   haplotype_1_values_phasesets, haplotype_2_values_phasesets, 
+                                   ref_start_values_phasesets, ref_end_values_phasesets, "phase_correction_1")
             else:
                 # #detect centromeres
                 #ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets = detect_centromeres(ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets, snps_haplotype1_mean, snps_haplotype2_mean, ref_start_values, args.bin_size'])
@@ -251,34 +287,75 @@ def main_process(args):
                 #ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets = infer_missing_phaseblocks(ref_start_values, ref_end_values, ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets, snps_haplotype1_mean, snps_haplotype2_mean, args.bin_size'])
 
                 breakpoints_chrom = []
-                broken_phasesets, mean_cis_trans_ps, snps_haplotype1_mean, snps_haplotype2_mean, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets = phase_flips_cis_trans(chrom, args, breakpoints_chrom, snps_haplotype1_mean, snps_haplotype2_mean, ref_start_values, ref_end_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, True, False, False, False) #internal_ps=False, bins_adjust=False, merge=False, merge_final=False
-                plot_coverage_data(html_graphs, args, chrom, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, "phase_correction_0.1")
+                (broken_phasesets, mean_cis_trans_ps, snps_haplotype1_mean,
+                 snps_haplotype2_mean, haplotype_1_values_phasesets,
+                 haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets) = \
+                         phase_flips_cis_trans(chrom, args, breakpoints_chrom, snps_haplotype1_mean, snps_haplotype2_mean,
+                                               ref_start_values, ref_end_values, haplotype_1_values_phasesets,
+                                               haplotype_2_values_phasesets, ref_start_values_phasesets,
+                                               ref_end_values_phasesets, True, False, False, False)
+                                               #internal_ps=False, bins_adjust=False, merge=False, merge_final=False
+                plot_coverage_data(html_graphs, args, chrom, ref_start_values, ref_end_values,
+                                   snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values,
+                                   haplotype_1_values_phasesets, haplotype_2_values_phasesets,
+                                   ref_start_values_phasesets, ref_end_values_phasesets, "phase_correction_0.1")
                 # switch inter phaseblocks bins
-                snps_haplotype1_mean, snps_haplotype2_mean = switch_inter_phaseblocks_bins(chrom, args, ref_start_values, snps_haplotype1_mean, snps_haplotype2_mean, ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets)
-                plot_coverage_data(html_graphs, args, chrom, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, "phase_correction_0.2")
+                snps_haplotype1_mean, snps_haplotype2_mean = \
+                        switch_inter_phaseblocks_bins(chrom, args, ref_start_values, snps_haplotype1_mean, snps_haplotype2_mean,
+                                                      ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets,
+                                                      haplotype_2_values_phasesets)
+                plot_coverage_data(html_graphs, args, chrom, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean,
+                                   unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets,
+                                   ref_start_values_phasesets, ref_end_values_phasesets, "phase_correction_0.2")
 
                 ###########################################################
                 #merge ps
                 from src.hapcorrect.src.phase_correction import merge_contiguous_indices, find_indices_to_be_merged
-                indices_merge = find_indices_to_be_merged(mean_cis_trans_ps, ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets)
-                ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets = merge_contiguous_indices(indices_merge, snps_haplotype1_mean, snps_haplotype2_mean, ref_start_values, ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets, False)
-                plot_coverage_data(html_graphs, args, chrom, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, "phase_correction_0.3")
+                indices_merge = find_indices_to_be_merged(mean_cis_trans_ps, ref_start_values_phasesets,
+                                                          ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets)
+                ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets = \
+                        merge_contiguous_indices(indices_merge, snps_haplotype1_mean, snps_haplotype2_mean, ref_start_values,
+                                                 ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets,
+                                                 haplotype_2_values_phasesets, False)
+                plot_coverage_data(html_graphs, args, chrom, ref_start_values, ref_end_values, snps_haplotype1_mean,
+                                   snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets,
+                                   ref_start_values_phasesets, ref_end_values_phasesets, "phase_correction_0.3")
                 ###########################################################
                 #snps_haplotype1_mean, snps_haplotype2_mean = switch_inter_phaseblocks_bins(chrom, args, ref_start_values, snps_haplotype1_mean, snps_haplotype2_mean, ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets)
 
                 #ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets = update_remaining_phasesets(indices_merge, ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets_merged, ref_end_values_phasesets_merged, haplotype_1_values_phasesets_merged, haplotype_2_values_phasesets_merged)
-                _, mean_cis_trans_ps, snps_haplotype1_mean, snps_haplotype2_mean, haplotype_1_values_phasesets_merged, haplotype_2_values_phasesets_merged, ref_start_values_phasesets_merged, ref_end_values_phasesets_merged = phase_flips_cis_trans(chrom, args, breakpoints_chrom, snps_haplotype1_mean, snps_haplotype2_mean, ref_start_values, ref_end_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, False, False, False, True) #internal_ps=False, bins_adjust=False, merge=False, merge_final=False
+                (_, mean_cis_trans_ps, snps_haplotype1_mean, snps_haplotype2_mean,
+                 haplotype_1_values_phasesets_merged, haplotype_2_values_phasesets_merged,
+                 ref_start_values_phasesets_merged, ref_end_values_phasesets_merged) = \
+                         phase_flips_cis_trans(chrom, args, breakpoints_chrom, snps_haplotype1_mean, snps_haplotype2_mean,
+                                               ref_start_values, ref_end_values, haplotype_1_values_phasesets,
+                                               haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets,
+                                               False, False, False, True) #internal_ps=False, bins_adjust=False, merge=False, merge_final=False
                 if broken_phasesets:
-                    haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets = reintroduce_broken_phasesets(broken_phasesets, ref_start_values, snps_haplotype1_mean, snps_haplotype2_mean, updated_df_phasesets.start.values.tolist(), updated_df_phasesets.end.values.tolist(), ref_start_values_phasesets_merged, ref_end_values_phasesets_merged, haplotype_1_values_phasesets_merged, haplotype_2_values_phasesets_merged)
-            snps_haplotype1_mean, snps_haplotype2_mean = without_phasesets_bins_correction(args, chrom, ref_start_values, snps_haplotype1_mean, snps_haplotype2_mean, ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets)
-            plot_coverage_data(html_graphs, args, chrom, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, "phase_correction_1")
+                    (haplotype_1_values_phasesets, haplotype_2_values_phasesets,
+                     ref_start_values_phasesets, ref_end_values_phasesets) = \
+                             reintroduce_broken_phasesets(broken_phasesets, ref_start_values, snps_haplotype1_mean, snps_haplotype2_mean,
+                                                          updated_df_phasesets.start.values.tolist(), updated_df_phasesets.end.values.tolist(),
+                                                          ref_start_values_phasesets_merged, ref_end_values_phasesets_merged,
+                                                          haplotype_1_values_phasesets_merged, haplotype_2_values_phasesets_merged)
+            snps_haplotype1_mean, snps_haplotype2_mean = \
+                    without_phasesets_bins_correction(args, chrom, ref_start_values, snps_haplotype1_mean, snps_haplotype2_mean,
+                                                      ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets,
+                                                      haplotype_2_values_phasesets)
+            plot_coverage_data(html_graphs, args, chrom, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean,
+                               unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets,
+                               ref_start_values_phasesets, ref_end_values_phasesets, "phase_correction_1")
             from src.smoothing import smoothing
-            snps_haplotype1_mean_smoothed, snps_haplotype2_mean_smoothed, unphased_reads_values_smoothed = smoothing(snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, conv_window_size=5)
-            plot_coverage_data(html_graphs, args, chrom, ref_start_values, ref_end_values, snps_haplotype1_mean_smoothed, snps_haplotype2_mean_smoothed, unphased_reads_values_smoothed, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, "phase_correction_2")
+            snps_haplotype1_mean_smoothed, snps_haplotype2_mean_smoothed, unphased_reads_values_smoothed = \
+                    smoothing(snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, conv_window_size=5)
+            plot_coverage_data(html_graphs, args, chrom, ref_start_values, ref_end_values, snps_haplotype1_mean_smoothed,
+                               snps_haplotype2_mean_smoothed, unphased_reads_values_smoothed, haplotype_1_values_phasesets,
+                               haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, "phase_correction_2")
             ##################################
             chr_list = [chrom for ch in range(len(snps_haplotype1_mean))]
-            df_updated_coverage.append(pd.DataFrame(list(zip(chr_list, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values)),
-                                             columns=['chr', 'start', 'end', 'hp1', 'hp2', 'hp3']))
+            df_updated_coverage.append(pd.DataFrame(list(zip(chr_list, ref_start_values, ref_end_values, snps_haplotype1_mean,
+                                                             snps_haplotype2_mean, unphased_reads_values)),
+                                                    columns=['chr', 'start', 'end', 'hp1', 'hp2', 'hp3']))
             ##################################
             chr_list = [chrom for ch in range(len(ref_start_values_phasesets))]
 
@@ -287,7 +364,8 @@ def main_process(args):
                 updated_ps = subtract_intervals(updated_ps, loh_chrom)
             updated_ps = check_missing_phasesets_original(updated_ps, csv_df_phaseset)
             updated_ps = updated_ps.drop_duplicates()
-            updated_ps_haplotype_1_values_phasesets, updated_ps_haplotype_2_values_phasesets = snps_frequencies_chrom_mean_phasesets(df_snps_frequencies, updated_ps.start.values.tolist(), updated_ps.end.values.tolist(), chrom, args)
+            updated_ps_haplotype_1_values_phasesets, updated_ps_haplotype_2_values_phasesets = \
+                    snps_frequencies_chrom_mean_phasesets(df_snps_frequencies, updated_ps.start.values.tolist(), updated_ps.end.values.tolist(), chrom, args)
             updated_ps['hp1'] = updated_ps_haplotype_1_values_phasesets
             updated_ps['hp2'] = updated_ps_haplotype_2_values_phasesets
             start_values_phasesets_contiguous_all.append(updated_ps)
