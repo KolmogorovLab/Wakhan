@@ -528,8 +528,9 @@ def cna_process(args):
         tumor_cov = statistics.mean([sum(x) for x in zip(haplotype_1_values_updated, haplotype_2_values_updated)])
     logger.info('Tumor coverage: %s', tumor_cov)
 
-    centers, is_half_peak, centers_half, subclonals, x_axis, observed_hist, single_copy_cov, single_copy_cov_half = peak_detection_optimization(args, snps_cpd_means, snps_cpd_points_weights, tumor_cov)
-    args.first_copy_breakpoints_filter = single_copy_cov
+    centers, is_half_peak, centers_half, subclonals, x_axis, observed_hist, single_copy_cov, single_copy_cov_half = \
+            peak_detection_optimization(args, snps_cpd_means, snps_cpd_points_weights, tumor_cov)
+    args.first_copy_breakpoints_filter = single_copy_cov if not is_half_peak else single_copy_cov // 2
 
     logger.info('Initial detected clusters means: %s', centers)
     args.cut_threshold = single_copy_cov * len(centers)
