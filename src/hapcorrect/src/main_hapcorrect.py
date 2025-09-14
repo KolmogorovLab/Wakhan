@@ -404,7 +404,7 @@ def main_process(args):
             logger.info('VCF edit for phase change segments')
             out_vcf = os.path.join(args.out_dir_plots, 'phasing_output', 'rephased.vcf.gz')
             rephase_vcf(csv_df_phase_change_segments, csv_df_phasesets_segments,
-                        csv_df_loh_regions, args.normal_phased_vcf, out_vcf, args.bin_size, args.min_phaseblock)
+                        csv_df_loh_regions, args.normal_phased_vcf, out_vcf, args)
             index_vcf(out_vcf)
             get_phasingblocks(out_vcf)
 
@@ -413,7 +413,7 @@ def main_process(args):
             logger.info('VCF edit for phase change segments')
             out_vcf = os.path.join(args.out_dir_plots, 'phasing_output', 'rephased.vcf.gz')
             rephase_vcf(csv_df_phase_change_segments, csv_df_phasesets_segments,
-                        csv_df_loh_regions, args.tumor_phased_vcf, out_vcf, args.bin_size, args.min_phaseblock)
+                        csv_df_loh_regions, args.tumor_phased_vcf, out_vcf, args)
             index_vcf(out_vcf)
             get_phasingblocks(out_vcf)
 

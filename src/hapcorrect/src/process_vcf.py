@@ -685,21 +685,14 @@ def compute_acgt_frequency(pileup, snps_frequency, args): #https://www.biostars.
     # df_filtered.to_csv(snps_frequency, index=False, header=False)
 
 
-def rephase_vcf(flip_bins_df, phasesets_df, loh_df, vcf_in, out_vcf, bin_size, min_block_size):
+def rephase_vcf(flip_bins_df, phasesets_df, loh_df, vcf_in, out_vcf, args):
     chr_list = list(set(flip_bins_df['chr']))
     chr_list_loh = []
     if len(loh_df):
         chr_list_loh = list(set(loh_df['chr']))
-    #flip_start_pos = defaultdict(list)
-    #flip_end_pos = defaultdict(list)
     flip_bins = defaultdict(IntervalTree)
     new_phasesets = defaultdict(IntervalTree)
     loh_regions = defaultdict(IntervalTree)
-
-    #idls = defaultdict(list)
-    #start_pos_loh = defaultdict(list)
-    #end_pos_loh = defaultdict(list)
-    #hp = defaultdict(list)
 
     for seq in chr_list:
         flip_counter = defaultdict(int)
@@ -711,16 +704,8 @@ def rephase_vcf(flip_bins_df, phasesets_df, loh_df, vcf_in, out_vcf, bin_size, m
         for index, row in phasesets_df[phasesets_df['chr'] == seq].iterrows():
             new_phasesets[seq].add(Interval(row['start'], row['end']))
 
-        #flip_start_pos[seq] = sorted([key for key, val in Counter(flip_bins_df.loc[flip_bins_df['chr'] == seq, 'start']).items() if val%2 == 1])
-        #flip_end_pos[seq] = sorted([key for key, val in Counter(flip_bins_df.loc[flip_bins_df['chr'] == seq, 'end']).items() if val%2 == 1])
-        #idls[seq] = sorted(phasesets_df.loc[phasesets_df['chr'] == seq, 'start'])
-
-        #if seq in chr_list_loh:
         for index, row in loh_df[loh_df['chr'] == seq].iterrows():
             loh_regions[seq].add(Interval(row['start'], row['end'], row['hp']))
-            #start_pos_loh[seq] = list(loh_df.loc[loh_df['chr'] == seq, 'start'])
-            #end_pos_loh[seq] = list(loh_df.loc[loh_df['chr'] == seq, 'end'])
-            #hp[seq] = list(loh_df.loc[loh_df['chr'] == seq, 'hp'])
 
     pysam_verbosity = pysam.set_verbosity(0)
     with pysam.VariantFile(vcf_in, 'r') as vcf_reader:
@@ -738,18 +723,16 @@ def rephase_vcf(flip_bins_df, phasesets_df, loh_df, vcf_in, out_vcf, bin_size, m
 
     for var in vcf_reader:
         sample = var.samples.keys()[0]
+        old_ps = list(original_ps[var.chrom][var.pos])
+        new_ps = list(new_phasesets[var.chrom][var.pos])
+
         if var.samples[sample].phased:
-            #ind = bisect.bisect_right(idls[var.chrom], var.pos)
-            #if ind > 0:
-            #    var.samples[sample]['PS'] = idls[var.chrom][ind-1]
-            old_ps = list(original_ps[var.chrom][var.pos])[0]
-            new_ps = new_phasesets[var.chrom][var.pos]
             if len(new_ps) > 0:
-                var.samples[sample]['PS'] = list(new_ps)[0][0]
+                var.samples[sample]['PS'] = new_ps[0][0]
 
             #if original block is small - it has not been phased by Wakhan.
             #it should be then set to unphased
-            if old_ps[1] - old_ps[0] < min_block_size:
+            if old_ps[0][1] - old_ps[0][0] < args.min_phaseblock:
                 var.samples[sample]['PS'] = None
                 var.samples[sample]['GT'] = (0, 1)
                 var.samples[sample].phased = False
@@ -757,21 +740,14 @@ def rephase_vcf(flip_bins_df, phasesets_df, loh_df, vcf_in, out_vcf, bin_size, m
                 continue
 
             flip_ovlps = flip_bins[var.chrom][var.pos]
-            flip_ovlps_next = flip_bins[var.chrom][var.pos + bin_size]
-            flip_ovlps_prev = flip_bins[var.chrom][var.pos - bin_size]
-            ###remove after debugging
-            #strt = bisect.bisect_right(flip_start_pos[var.chrom], var.pos)
-            #end = bisect.bisect_right(flip_end_pos[var.chrom], var.pos)
-            #if (strt == end + 1) != (len(flip_ovlps) > 0):
-            #    print("Bad", var.chrom, var.pos, flip_ovlps, strt, end,
-            #          flip_start_pos[var.chrom][strt - 1], flip_end_pos[var.chrom][end - 1])
-            ###
+            flip_ovlps_next = flip_bins[var.chrom][var.pos + args.bin_size]
+            flip_ovlps_prev = flip_bins[var.chrom][var.pos - args.bin_size]
 
             #block start and end that does not fully cover a bin, follows the next/previous full bin
             need_flip = False
-            if var.pos - old_ps[0] < bin_size:
+            if var.pos - old_ps[0][0] < args.bin_size:
                 need_flip = len(flip_ovlps_next) > 0
-            elif old_ps[1] - var.pos > bin_size:
+            elif old_ps[0][1] - var.pos > args.bin_size:
                 need_flip = len(flip_ovlps) > 0
             else:
                 need_flip = len(flip_ovlps_prev) > 0
@@ -782,16 +758,20 @@ def rephase_vcf(flip_bins_df, phasesets_df, loh_df, vcf_in, out_vcf, bin_size, m
                 var.samples[sample]['GT'] = new_gt
                 var.samples[sample].phased = True
 
+        #unphased
         elif var.samples[sample]['GT'] == (1,1):
-            #strt = bisect.bisect_right(start_pos_loh[var.chrom], var.pos)
-            #end = bisect.bisect_right(end_pos_loh[var.chrom], var.pos)
-            #if strt == end + 1:
+            #check that variant is within LOH, minus flanking regions
+            within_loh = False
             loh_ovlps = list(loh_regions[var.chrom][var.pos])
             if len(loh_ovlps) > 0:
+                if min(var.pos - loh_ovlps[0][0], loh_ovlps[0][1] - var.pos) > args.bin_size_snps:
+                    within_loh = True
+
+            #within LOH and does not belong to original phse blocks:
+            if within_loh and len(old_ps) == 0:
                 var.samples[sample]['GT'] = (1,0) if loh_ovlps[0][2] == 1 else (0,1)
                 var.samples[sample].phased = True
                 var.samples[sample]['PS'] = loh_ovlps[0][0]
-                #var.samples[sample]['PS'] = int(start_pos_loh[var.chrom][end])
 
         vcf_out.write(var)
 
