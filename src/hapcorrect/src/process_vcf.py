@@ -241,8 +241,10 @@ def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, bin_siz
 def squash_regions(region, bin_size):
     series = pd.Series(region, dtype="int")
     region = series.drop_duplicates().tolist()
-    region_starts = [v for i, v in enumerate(region) if i == 0 or region[i] > region[i - 1] + bin_size]
-    region_ends = [v + bin_size - 1 for i, v in enumerate(region) if i == len(region) - 1 or region[i + 1] - region[i] > bin_size]
+
+    #Note: removing 1st and last bin from LOH since they only partially contain LOH and may contain phased regions with breakpoints
+    region_starts = [v + bin_size for i, v in enumerate(region) if i == 0 or region[i] > region[i - 1] + bin_size]
+    region_ends = [v - 1 for i, v in enumerate(region) if i == len(region) - 1 or region[i + 1] - region[i] > bin_size]
 
     # region_ends = []
     # for i, val in enumerate(region_starts):
@@ -764,8 +766,8 @@ def rephase_vcf(flip_bins_df, phasesets_df, loh_df, vcf_in, out_vcf, args):
             within_loh = False
             loh_ovlps = list(loh_regions[var.chrom][var.pos])
             if len(loh_ovlps) > 0:
-                if min(var.pos - loh_ovlps[0][0], loh_ovlps[0][1] - var.pos) > args.bin_size_snps:
-                    within_loh = True
+                #if min(var.pos - loh_ovlps[0][0], loh_ovlps[0][1] - var.pos) > args.bin_size_snps:
+                within_loh = True
 
             #within LOH and does not belong to original phse blocks:
             if within_loh and len(old_ps) == 0:
