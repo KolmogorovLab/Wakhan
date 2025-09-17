@@ -298,7 +298,13 @@ def snps_frequencies_chrom_genes(df_snps_frequencies, args):
 
             snps_haplotype1_mean = []
             for index, (i,j) in enumerate(zip(df_genes.start.values.tolist(), df_genes.end.values.tolist())):
-                sub_list = haplotype_1_coverage[haplotype_1_position.index(min(haplotype_1_position, key=lambda x:abs(x-i))):haplotype_1_position.index(min(haplotype_1_position, key=lambda x:abs(x-j)))]
+                sub_list = []
+                try:
+                    sub_list = haplotype_1_coverage[haplotype_1_position.index(
+                        min(haplotype_1_position, key=lambda x:abs(x-i))):haplotype_1_position.index(
+                        min(haplotype_1_position, key=lambda x:abs(x-j)))]
+                except ValueError:
+                    logger.info('No Hets pileup found!')
                 if sub_list:
                     snps_haplotype1_mean.append(statistics.mean(sub_list))
                 else:
@@ -306,9 +312,13 @@ def snps_frequencies_chrom_genes(df_snps_frequencies, args):
 
             snps_haplotype2_mean = []
             for index, (i, j) in enumerate(zip(df_genes.start.values.tolist(), df_genes.end.values.tolist())):
-                sub_list = haplotype_2_coverage[haplotype_2_position.index(
-                    min(haplotype_2_position, key=lambda x: abs(x - i))):haplotype_2_position.index(
-                    min(haplotype_2_position, key=lambda x: abs(x - j)))]
+                sub_list = []
+                try:
+                    sub_list = haplotype_2_coverage[haplotype_2_position.index(
+                        min(haplotype_2_position, key=lambda x: abs(x - i))):haplotype_2_position.index(
+                        min(haplotype_2_position, key=lambda x: abs(x - j)))]
+                except ValueError:
+                    logger.info('No Hets pileup found!')
                 if sub_list:
                     snps_haplotype2_mean.append(statistics.mean(sub_list))
                 else:
