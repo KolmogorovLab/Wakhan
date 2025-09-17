@@ -158,19 +158,20 @@ def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, bin_siz
     snps_df_gt = snps_df['gt'].tolist()
 
     snps_df_pos = snps_df.pos.values.tolist()
-    snps_het = []
-    snps_homo = []
+    #snps_het = []
+    #snps_homo = []
     snps_het_pos = []
     snps_homo_pos = []
     for index, (gt,vaf) in enumerate(zip(snps_df_gt,snps_df_vaf)):
         if gt == '1/1' or  gt == '1|1':
         #if vaf > 0.9 or vaf < 0.1:
-            snps_homo.append(vaf)
+            #snps_homo.append(vaf)
             snps_homo_pos.append(snps_df_pos[index])
         else:
-            snps_het.append(vaf)
+            #snps_het.append(vaf)
             snps_het_pos.append(snps_df_pos[index])
 
+    """
     snps_het_counts = []
     for index, pos in enumerate(ref_start_values):
         l2 = [i for i in snps_het_pos if i > pos and i < pos+bin_size]
@@ -189,27 +190,32 @@ def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, bin_siz
             snps_homo_counts.append(snps_homo[snps_homo_pos.index(max(l2))])
         else:
             snps_homo_counts.append(0)
+    """
 
     snps_homo_counts = []
     snps_het_counts = []
     loh_regions = []
     centromere_region = []
+    #num_hets = []
+    #num_homs = []
     for index, pos in enumerate(ref_start_values):
         l1 = [i for i in snps_het_pos if i > pos and i < pos + bin_size]
         l2 = [i for i in snps_homo_pos if i > pos and i < pos + bin_size]
+        #num_hets.append(len(l1))
+        #num_homs.append(len(l2))
         # snps_homo_counts.append(len(l2)/len(snps_homo_pos)*bin_size)
         if l1:
             het_ratio = len(l1) / (len(l1) + len(l2))
             snps_het_counts.append(het_ratio)
         else:
             snps_het_counts.append(0)
-            het_ratio = 0
+            #het_ratio = 0
         if l2:
             homo_ratio = len(l2) / (len(l1) + len(l2))
             snps_homo_counts.append(homo_ratio)
         else:
             snps_homo_counts.append(0)
-            homo_ratio = 0
+            #homo_ratio = 0
 
         if len(l1) == 0 and len(l2) == 0:
             centromere_region.append(pos)
@@ -224,8 +230,10 @@ def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, bin_siz
             snps_homo_counts_updated.append(homo_counts)
             ref_start_values_updated.append(start_values)
 
-    if snps_het_counts:
-        snps_het_counts_updated, snps_homo_counts_updated, _ = smoothing(snps_het_counts_updated, snps_homo_counts_updated, snps_homo_counts_updated, conv_window_size=smooth_loh_conv_window)
+    #Smoothing was shifting values by 1 to the left, now disabled
+    #if snps_het_counts:
+    #    snps_het_counts_updated, snps_homo_counts_updated, _ = \
+    #            smoothing(snps_het_counts_updated, snps_homo_counts_updated, snps_homo_counts_updated, conv_window_size=smooth_loh_conv_window)
 
     for index, pos in enumerate(ref_start_values_updated):
         #if snps_het_counts[index] < 0.7 and snps_homo_counts[index] > 0.14:
