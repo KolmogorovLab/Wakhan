@@ -339,7 +339,7 @@ def main_process(args):
                                                           ref_start_values_phasesets_merged, ref_end_values_phasesets_merged,
                                                           haplotype_1_values_phasesets_merged, haplotype_2_values_phasesets_merged)
             snps_haplotype1_mean, snps_haplotype2_mean = \
-                    without_phasesets_bins_correction(args, chrom, ref_start_values, snps_haplotype1_mean, snps_haplotype2_mean,
+                    without_phasesets_bins_correction(loh_chrom, args, chrom, ref_start_values, snps_haplotype1_mean, snps_haplotype2_mean,
                                                       ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets,
                                                       haplotype_2_values_phasesets)
             plot_coverage_data(html_graphs, args, chrom, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean,

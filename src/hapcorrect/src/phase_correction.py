@@ -817,11 +817,14 @@ def subtract_intervals(df1, df2):
 
     return pd.DataFrame(result)
 
-def without_phasesets_bins_correction(args, chrom, ref_start_values, snps_haplotype1_mean, snps_haplotype2_mean, ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets):
+def without_phasesets_bins_correction(loh_chrom, args, chrom, ref_start_values, snps_haplotype1_mean, snps_haplotype2_mean, ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets):
     ref_start_values_phasesets_new = []
     ref_end_values_phasesets_new = []
     haplotype_1_values_phasesets_new = []
     haplotype_2_values_phasesets_new = []
+    starts_loh = loh_chrom.start.values.tolist()
+    ends_loh = loh_chrom.end.values.tolist()
+
     start = False
     end = False
 
@@ -897,29 +900,32 @@ def without_phasesets_bins_correction(args, chrom, ref_start_values, snps_haplot
             internal_bins = [k for k in ref_start_values if k >= ref_start_values_phasesets[val] and k <= ref_end_values_phasesets[val]]  # [k for k in ref_start_values if k >= ref_start_values_phasesets[i + 1] and k <= ref_end_values_phasesets[i + 1]]
             j = ref_start_values.index(internal_bins[0])
             for l, bin in enumerate(internal_bins):
-                new_hp2 = snps_haplotype2_mean[j]
-                new_hp1 = snps_haplotype1_mean[j]
-                snps_haplotype1_mean[j] = new_hp2
-                snps_haplotype2_mean[j] = new_hp1
-                j = j + 1
+                if not any(start <= ref_start_values[j] <= end for start, end in zip(starts_loh, ends_loh)):
+                    new_hp2 = snps_haplotype2_mean[j]
+                    new_hp1 = snps_haplotype1_mean[j]
+                    snps_haplotype1_mean[j] = new_hp2
+                    snps_haplotype2_mean[j] = new_hp1
 
-                dict = []
-                dict.append((chrom + '\t' + str(bin) + '\t' + str(bin + args.bin_size - 1)))
-                write_segments_coverage_snps(dict, args.genome_name + '_phase_change_segments.csv', args)
+                    dict = []
+                    dict.append((chrom + '\t' + str(bin) + '\t' + str(bin + args.bin_size - 1)))
+                    write_segments_coverage_snps(dict, args.genome_name + '_phase_change_segments.csv', args)
+                j = j + 1
     if end:
         if (haplotype_1_values_phasesets[-1] > haplotype_2_values_phasesets[-1] and haplotype_1_values_phasesets[-2] < haplotype_2_values_phasesets[-2]) or (haplotype_1_values_phasesets[-1] < haplotype_2_values_phasesets[-1] and haplotype_1_values_phasesets[-2] > haplotype_2_values_phasesets[-2]):
             val = -1
             internal_bins = [k for k in ref_start_values if k >= ref_start_values_phasesets[val] and k <= ref_end_values_phasesets[val]]  # [k for k in ref_start_values if k >= ref_start_values_phasesets[i + 1] and k <= ref_end_values_phasesets[i + 1]]
             j = ref_start_values.index(internal_bins[0])
+
             for l, bin in enumerate(internal_bins):
-                new_hp2 = snps_haplotype2_mean[j]
-                new_hp1 = snps_haplotype1_mean[j]
-                snps_haplotype1_mean[j] = new_hp2
-                snps_haplotype2_mean[j] = new_hp1
+                if not any(start <= ref_start_values[j] <= end for start, end in zip(starts_loh, ends_loh)):
+                    new_hp2 = snps_haplotype2_mean[j]
+                    new_hp1 = snps_haplotype1_mean[j]
+                    snps_haplotype1_mean[j] = new_hp2
+                    snps_haplotype2_mean[j] = new_hp1
+
+
+                    dict = []
+                    dict.append((chrom + '\t' + str(bin) + '\t' + str(bin + args.bin_size - 1)))
+                    write_segments_coverage_snps(dict, args.genome_name + '_phase_change_segments.csv', args)
                 j = j + 1
-
-                dict = []
-                dict.append((chrom + '\t' + str(bin) + '\t' + str(bin + args.bin_size - 1)))
-                write_segments_coverage_snps(dict, args.genome_name + '_phase_change_segments.csv', args)
-
     return snps_haplotype1_mean, snps_haplotype2_mean

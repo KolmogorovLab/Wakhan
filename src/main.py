@@ -173,42 +173,6 @@ def copy_numbers_assignment_haplotypes(args, tumor_cov, max_limit, single_copy_c
         logger.info(
             'No estimated purity [%s] and ploidy [%s] value detected inside given ranges or overall ploidy is less than 0.1', args.purity_range, args.ploidy_range)
 
-def parse_aruments_(args):
-    parser = argparse.ArgumentParser(description="CNA/BNA tool with default arguments")
-
-    subparsers = parser.add_subparsers(dest="command")  # store which subcommand is used
-
-    # Default arguments (when no command given)
-    parser.add_argument("--input", required=True, help="Default input file")
-    parser.add_argument("--output", help="Default output file")
-
-    # CNA subcommand
-    cna_parser = subparsers.add_parser("cna", help="Run CNA analysis")
-    cna_parser.add_argument("--cna-file", required=False, help="CNA input file")
-    cna_parser.add_argument("--input", required=True, help="CNA input file")
-    cna_parser.add_argument("--cna-param", type=int, default=10, help="CNA parameter")
-
-    # BNA subcommand
-    bna_parser = subparsers.add_parser("bna", help="Run BNA analysis")
-    bna_parser.add_argument("--bna-file", required=True, help="BNA input file")
-    bna_parser.add_argument("--bna-threshold", type=float, default=0.05, help="BNA threshold")
-
-    args = parser.parse_args()
-
-    # If no subcommand, use default group
-    if args.command is None:
-        print("Running default mode...")
-        print(f"Input: {args.input}")
-        print(f"Output: {args.output}")
-    elif args.command == "cna":
-        print("Running CNA mode...")
-        print(f"CNA file: {args.cna_file}")
-        print(f"CNA param: {args.cna_param}")
-    elif args.command == "bna":
-        print("Running BNA mode...")
-        print(f"BNA file: {args.bna_file}")
-        print(f"BNA threshold: {args.bna_threshold}")
-
 
 def build_parser():
     # default tunable parameters
