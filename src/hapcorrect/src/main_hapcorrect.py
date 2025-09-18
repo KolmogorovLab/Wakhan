@@ -184,6 +184,7 @@ def main_process(args):
             csv_df_coverage_chrom = csv_df_coverage[csv_df_coverage['chr'] == chrom]
             ref_start_values = csv_df_coverage_chrom.start.values.tolist()
             ref_end_values = csv_df_coverage_chrom.end.values.tolist()
+            loh_chrom = pd.DataFrame({'chr': [], 'start': [], 'end': []})
 
             if args.histogram_coverage:
                 unphased_reads_values = csv_df_coverage_chrom.hp3.values.tolist()
@@ -247,7 +248,6 @@ def main_process(args):
                                  adjust_loh_cent_phaseblocks(args, loh_region_starts, loh_region_ends, centromere_region,
                                                              snps_haplotype1_mean, snps_haplotype2_mean, haplotype_1_values_phasesets,
                                                              haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
-                    loh_chrom = pd.DataFrame({'chr': [], 'start': [], 'end': []})
                     if len(loh_region_starts):
                         chr_list = [chrom for ch in range(len(loh_region_starts))]
                         loh_chrom = pd.DataFrame(list(zip(chr_list, loh_region_starts, loh_region_ends, hp)), columns=['chr', 'start', 'end', 'hp'])
