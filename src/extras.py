@@ -1,4 +1,6 @@
 import logging
+import pandas as pd
+from intervaltree import IntervalTree, Interval
 
 logger = logging.getLogger()
 
@@ -46,10 +48,42 @@ class bps_sample(object):
 
 #def sv_vcf_bps_cn_check(path, df_segs_hp1, df_segs_hp2):
 def sv_vcf_bps_cn_check(path, args):
+    HP_BALANCE_RATE = 0.3
+
     #########################################
     from vcf_parser import VCFParser
     my_parser = VCFParser(infile=path, split_variants=True, check_info=True)
     from collections import defaultdict
+
+    #Coverage of phase blocks to check if we are in balanced region
+    chr_phaseblocks = defaultdict(IntervalTree)
+    csv_df_phaseblocks_coverage = pd.read_csv(args.out_dir_plots + '/coverage_data/coverage_ps.csv',
+                                              sep="\t", names=['chr', 'start', 'end', 'hp1', 'hp2'], header=None)
+    for index, row in csv_df_phaseblocks_coverage.iterrows():
+        chr_phaseblocks[row['chr']].add(Interval(row['start'], row['end'], (row['hp1'], row['hp2'])))
+
+    #Also LOH coverage, if it's tumor-only
+    chr_loh = defaultdict(IntervalTree)
+    if args.tumor_phased_vcf:
+        csv_df_loh = pd.read_csv(args.out_dir_plots + '/coverage_data/' + args.genome_name + '_loh_segments.csv',
+                                 sep="\t", names=['chr', 'start', 'end', 'hp'], header=None)
+        for index, row in csv_df_loh.iterrows():
+            chr_loh[row['chr']].add(Interval(row['start'], row['end']))
+
+    def different_hp_coverage(chrom, pos):
+        ovlps_ps = chr_phaseblocks[chrom][pos]
+        ovlps_loh = chr_loh[chrom][pos]
+        if ovlps_loh:
+            #print(chrom, pos, "LOH")
+            return True
+        if not ovlps_ps:
+            #print(chrom, pos, "Not in block")
+            return False
+        cov_1, cov_2 = list(ovlps_ps)[0][2]
+        #print(chrom, pos, abs(cov_1 - cov_2) / (min(cov_1, cov_2) + 0.0001) > HP_BALANCE_RATE)
+        return abs(cov_1 - cov_2) / (min(cov_1, cov_2) + 0.0001) > HP_BALANCE_RATE
+    ###
+
     sample_list = defaultdict(list)
     sample_single_list = defaultdict(list)
     chroms = get_contigs_list(args.contigs)
@@ -69,24 +103,34 @@ def sv_vcf_bps_cn_check(path, args):
 
         if ("INV" in variant['ID'] and variant['info_dict']['DETAILED_TYPE'] == ['reciprocal_inv']) or  "INS" in variant['ID']:
             continue
-        if variant['info_dict']['SVTYPE'][0] == 'INV' or variant['info_dict']['SVTYPE'][0] == 'DUP' or ((variant['info_dict']['SVTYPE'][0] == 'INS' or variant['info_dict']['SVTYPE'][0] == 'DEL') and int(variant['info_dict']['SVLEN'][0]) > args.breakpoints_min_length):
+        if variant['info_dict']['SVTYPE'][0] == 'INV' or variant['info_dict']['SVTYPE'][0] == 'DUP' or \
+                ((variant['info_dict']['SVTYPE'][0] == 'INS' or variant['info_dict']['SVTYPE'][0] == 'DEL') and
+                        int(variant['info_dict']['SVLEN'][0]) > args.breakpoints_min_length):
             if not variant['CHROM'] in chroms:
                 continue
+
             hp = '0|0'
             if 'HP' in variant['info_dict'] and '|' in variant['info_dict']['HP'][0] and args.use_sv_haplotypes:
-                hp = variant['info_dict']['HP'][0]
+                start = int(variant['POS'])
+                end = start + int(variant['info_dict']['SVLEN'][0])
+                if different_hp_coverage(variant['CHROM'], start) and different_hp_coverage(variant['CHROM'], end):
+                    hp = variant['info_dict']['HP'][0]
 
             bp_junctions_bnd.append([variant['CHROM'], int(variant['POS'])])
             bp_junctions_bnd.append([variant['CHROM'], int(variant['POS'])+int(variant['info_dict']['SVLEN'][0])])
-            sample_list[variant['ID']] = bps_sample(variant['CHROM'], int(variant['POS']), variant['ID'], variant['CHROM'], int(variant['POS'])+int(variant['info_dict']['SVLEN'][0]), hp, dv_value, False)
+            sample_list[variant['ID']] = bps_sample(variant['CHROM'], int(variant['POS']), variant['ID'],
+                                                    variant['CHROM'], int(variant['POS'])+int(variant['info_dict']['SVLEN'][0]), hp, dv_value, False)
 
         elif variant['info_dict']['SVTYPE'][0] == 'sBND' or 'sBND' in variant['ID']:
             hp = '0|0'
             if 'HP' in variant['info_dict'] and '|' in variant['info_dict']['HP'][0] and args.use_sv_haplotypes:
-                hp = variant['info_dict']['HP'][0]
+                if different_hp_coverage(variant['CHROM'], int(variant['POS'])):
+                    hp = variant['info_dict']['HP'][0]
+
             bp_junctions_bnd.append([variant['CHROM'], int(variant['POS'])])
             bp_junctions_bnd.append([variant['CHROM'], int(variant['POS']) + 1])
-            sample_list[variant['ID']] = bps_sample(variant['CHROM'], int(variant['POS']), variant['ID'], variant['CHROM'], int(variant['POS']) + 1, hp, dv_value, False)
+            sample_list[variant['ID']] = bps_sample(variant['CHROM'], int(variant['POS']), variant['ID'],
+                                                    variant['CHROM'], int(variant['POS']) + 1, hp, dv_value, False)
 
         elif variant['info_dict']['SVTYPE'][0] == 'BND':
 
@@ -101,7 +145,8 @@ def sv_vcf_bps_cn_check(path, args):
                 continue
             hp = '0|0'
             if 'HP' in variant['info_dict'] and '|' in variant['info_dict']['HP'][0] and args.use_sv_haplotypes:
-                hp = variant['info_dict']['HP'][0]
+                if different_hp_coverage(variant['CHROM'], int(variant['POS'])) and different_hp_coverage(chr2_id, chr2_end):
+                    hp = variant['info_dict']['HP'][0]
 
             bp_junctions_bnd.append([variant['CHROM'], int(variant['POS'])])
             bp_junctions_bnd.append([chr2_id, chr2_end])
