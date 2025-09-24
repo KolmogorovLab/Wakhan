@@ -87,12 +87,12 @@ def copy_numbers_assignment_haplotypes(args, tumor_cov, max_limit, single_copy_c
             tumor_purity = cellular_tumor_purity
         # tumor_purity = dna_purity_to_cell_purity(tumor_purity, overall_ploidy)
         _, _, _, normal_fraction = normal_genome_proportion(tumor_purity, overall_ploidy, tumor_cov)
-        if normal_coverage == 0 and p_value > 0:
-            average_p_value.append(p_value)
-            data.append([overall_ploidy, tumor_purity, cen_out, p_value, dna_tumor_purity])
-            logger.info("overall_ploidy: %s, dna_tumor_purity: %s, cell_tumor_purity: %s, average_p_value: %s, for i: %s,  centers: %s, norm frac: %s",
-                overall_ploidy, dna_tumor_purity, cellular_tumor_purity, p_value, normal_coverage, cen_out[0:4], normal_fraction)
-            continue
+        #if normal_coverage == 0 and p_value > 0:
+        #    average_p_value.append(p_value)
+        #    data.append([overall_ploidy, tumor_purity, cen_out, p_value, dna_tumor_purity])
+        #    logger.info("overall_ploidy: %s, dna_tumor_purity: %s, cell_tumor_purity: %s, average_p_value: %s, for i: %s,  centers: %s, norm frac: %s",
+        #        overall_ploidy, dna_tumor_purity, cellular_tumor_purity, p_value, normal_coverage, cen_out[0:4], normal_fraction)
+        #    continue
 
         if (float(args.purity_range.split('-')[0]) <= tumor_purity <= float(args.purity_range.split('-')[1])) and (float(args.ploidy_range.split('-')[0]) <= overall_ploidy <= float(args.ploidy_range.split('-')[1])):
             average_p_value.append(p_value)
