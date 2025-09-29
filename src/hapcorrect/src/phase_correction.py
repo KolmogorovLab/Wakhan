@@ -273,10 +273,16 @@ def find_indices_to_be_merged(mean_cis_trans_ps, ref_start_values_phasesets, ref
 
     if len(ref_start_values_phasesets) > 1:
         for i in range(len(ref_start_values_phasesets)-1):
-            if (haplotype_1_values_phasesets[i] > haplotype_2_values_phasesets[i] and haplotype_1_values_phasesets[i+1] > haplotype_2_values_phasesets[i+1] or \
-              haplotype_1_values_phasesets[i] < haplotype_2_values_phasesets[i] and haplotype_1_values_phasesets[i + 1] < haplotype_2_values_phasesets[i + 1]) and \
-                    ((abs(haplotype_1_values_phasesets[i] - haplotype_2_values_phasesets[i]) / (min(haplotype_1_values_phasesets[i], haplotype_2_values_phasesets[i])+0.0001)) > 0.3 and \
-                    (abs(haplotype_1_values_phasesets[i+1] - haplotype_2_values_phasesets[i+1]) / (min(haplotype_1_values_phasesets[i+1], haplotype_2_values_phasesets[i+1])+0.0001)) > 0.3):
+            #if (haplotype_1_values_phasesets[i] > haplotype_2_values_phasesets[i] and haplotype_1_values_phasesets[i+1] > haplotype_2_values_phasesets[i+1] or \
+            #  haplotype_1_values_phasesets[i] < haplotype_2_values_phasesets[i] and haplotype_1_values_phasesets[i + 1] < haplotype_2_values_phasesets[i + 1]) and \
+            #        ((abs(haplotype_1_values_phasesets[i] - haplotype_2_values_phasesets[i]) / (min(haplotype_1_values_phasesets[i], haplotype_2_values_phasesets[i])+0.0001)) > 0.3 and \
+            #        (abs(haplotype_1_values_phasesets[i+1] - haplotype_2_values_phasesets[i+1]) / (min(haplotype_1_values_phasesets[i+1], haplotype_2_values_phasesets[i+1])+0.0001)) > 0.3):
+            min_diff_fst = min(0.3 * min(haplotype_1_values_phasesets[i], haplotype_2_values_phasesets[i]), 10)
+            min_diff_snd = min(0.3 * min(haplotype_1_values_phasesets[i + 1], haplotype_2_values_phasesets[i + 1]), 10)
+            if ((haplotype_1_values_phasesets[i] < haplotype_2_values_phasesets[i]) == (haplotype_1_values_phasesets[i + 1] < haplotype_2_values_phasesets[i + 1])) and \
+                abs(haplotype_1_values_phasesets[i] - haplotype_2_values_phasesets[i]) > min_diff_fst and \
+                abs(haplotype_1_values_phasesets[i + 1] - haplotype_2_values_phasesets[i + 1]) > min_diff_snd:
+
                 sub.append(i)
                 sub.append(i+1)
             else:
@@ -687,6 +693,7 @@ def phaseblock_flipping_simple_heuristics(chrom, args, is_simple_correction, hap
         for i in range(len(ref_start_values_phasesets) - 1):
             if haplotype_1_values_phasesets[i] > haplotype_2_values_phasesets[i]:
                 hp_changed.append([ref_start_values_phasesets[i], ref_end_values_phasesets[i]+1])
+                haplotype_1_values_phasesets[i], haplotype_2_values_phasesets[i] = haplotype_2_values_phasesets[i], haplotype_1_values_phasesets[i]
 
         for i in range(len(ref_start_values)):
             for j in range(len(hp_changed)):
