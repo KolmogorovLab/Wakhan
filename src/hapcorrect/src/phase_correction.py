@@ -8,6 +8,9 @@ import logging
 logger = logging.getLogger()
 
 
+
+
+
 def generate_phasesets_bins(bam, path, bin_size, args):
     return get_phasesets_bins(bam, path, bin_size, args)
 
@@ -334,6 +337,34 @@ def phase_blocks_updated_coverage(args, ref_start_values_phasesets, ref_end_valu
         values_phasesets_hp2.append(median_data(haplotype_2_values[ref_start_values_phasesets[i]//args.bin_size:ref_end_values_phasesets[i]//args.bin_size]))
 
     return ref_start_values_phasesets, ref_end_values_phasesets, values_phasesets_hp1, values_phasesets_hp2
+
+
+
+def remove_centromere_phaseblocks(haplotype_1_values_phasesets, haplotype_2_values_phasesets,
+                                  ref_start_values_phasesets, ref_end_values_phasesets, centromere_region):
+    cen = centromere_region.iloc[0]
+    new_median_1 = []
+    new_median_2 = []
+    new_starts = []
+    new_ends = []
+    for i, (bs, be) in enumerate(zip(ref_start_values_phasesets, ref_end_values_phasesets)):
+        if cen['start'] < bs and be < cen['end']:   #contained
+            continue
+
+        new_median_1.append(haplotype_1_values_phasesets[i])
+        new_median_2.append(haplotype_2_values_phasesets[i])
+
+        if bs < cen['start'] and cen['start'] < be:
+            new_starts.append(bs)
+            new_ends.append(cen['start'])
+        elif bs < cen['end'] and cen['end'] < be:
+            new_starts.append(cen['end'])
+            new_ends.append(be)
+        else:
+            new_starts.append(bs)
+            new_ends.append(be)
+
+    return new_median_1, new_median_2, new_starts, new_ends
 
 
 def phase_flips_cis_trans(chrom, args, breakpoints_additional, haplotype_1_values, haplotype_2_values,
