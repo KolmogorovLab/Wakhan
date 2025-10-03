@@ -293,7 +293,7 @@ def main_process(args):
                          phase_flips_cis_trans(chrom, args, breakpoints_chrom, snps_haplotype1_mean, snps_haplotype2_mean,
                                                ref_start_values, ref_end_values, haplotype_1_values_phasesets,
                                                haplotype_2_values_phasesets, ref_start_values_phasesets,
-                                               ref_end_values_phasesets, True, False, False, False)
+                                               ref_end_values_phasesets, True, False, False, False, False)
                                                #internal_ps=False, bins_adjust=False, merge=False, merge_final=False
                 plot_coverage_data(html_graphs, args, chrom, ref_start_values, ref_end_values,
                                    snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values,
@@ -330,7 +330,7 @@ def main_process(args):
                          phase_flips_cis_trans(chrom, args, breakpoints_chrom, snps_haplotype1_mean, snps_haplotype2_mean,
                                                ref_start_values, ref_end_values, haplotype_1_values_phasesets,
                                                haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets,
-                                               False, False, False, True) #internal_ps=False, bins_adjust=False, merge=False, merge_final=False
+                                               False, False, False, True, True) #internal_ps=False, bins_adjust=False, merge=False, merge_final=False
                 if broken_phasesets:
                     (haplotype_1_values_phasesets, haplotype_2_values_phasesets,
                      ref_start_values_phasesets, ref_end_values_phasesets) = \

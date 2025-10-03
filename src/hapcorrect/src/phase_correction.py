@@ -338,7 +338,15 @@ def phase_blocks_updated_coverage(args, ref_start_values_phasesets, ref_end_valu
 
 def phase_flips_cis_trans(chrom, args, breakpoints_additional, haplotype_1_values, haplotype_2_values,
                           ref_start_values, ref_end_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets,
-                          ref_start_values_phasesets, ref_end_values_phasesets, internal_ps=False, bins_adjust=False, merge=False, swap_final=False):
+                          ref_start_values_phasesets, ref_end_values_phasesets, internal_ps=False, bins_adjust=False,
+                          merge=False, swap_final=False, flank_coverage=False):
+
+    FLANK_LEN = 1000000 // args.bin_size
+
+    def get_block_coverage(idx):
+        start_bin, end_bin = ref_start_values_phasesets[idx] // args.bin_size, ref_end_values_phasesets[idx] // args.bin_size
+        return haplotype_1_values[start_bin : end_bin + 1], haplotype_2_values[start_bin : end_bin + 1]
+
     mean_cis_trans_ps = []
     values_ps = []
     for index, value in enumerate(ref_start_values_phasesets):
@@ -362,19 +370,27 @@ def phase_flips_cis_trans(chrom, args, breakpoints_additional, haplotype_1_value
     indices_merge = []
     if len(ref_start_values_phasesets) > 1:
         for i in range(len(ref_start_values_phasesets)-1):
+            prev_cov_1, prev_cov_2 = haplotype_1_values_phasesets[i], haplotype_2_values_phasesets[i]
+            next_cov_1, next_cov_2 = haplotype_1_values_phasesets[i + 1], haplotype_2_values_phasesets[i + 1]
+
+            if flank_coverage:
+                #print(prev_cov_1, prev_cov_2, next_cov_1, next_cov_2)
+                prev_bins_1, prev_bins_2 = get_block_coverage(i)
+                next_bins_1, next_bins_2 = get_block_coverage(i + 1)
+                prev_cov_1, prev_cov_2 = np.median(prev_bins_1[-FLANK_LEN:]), np.median(prev_bins_2[-FLANK_LEN:])
+                next_cov_1, next_cov_2 = np.median(next_bins_1[:FLANK_LEN]), np.median(next_bins_2[:FLANK_LEN])
+                #print(prev_cov_1, prev_cov_2, next_cov_1, next_cov_2)
+
             # Cis = min(|A1 - B1|, |A2 - B2|), Trans = min(|A1-B2|, |A2 - B1|)
-            cis_right = min(abs(haplotype_1_values_phasesets[i] - haplotype_1_values_phasesets[i+1]),
-                            abs(haplotype_2_values_phasesets[i] - haplotype_2_values_phasesets[i+1]))
-            trans_right = min(abs(haplotype_1_values_phasesets[i] - haplotype_2_values_phasesets[i+1]),
-                              abs(haplotype_2_values_phasesets[i] - haplotype_1_values_phasesets[i+1]))
+            cis_right = min(abs(prev_cov_1 - next_cov_1), abs(prev_cov_2 - next_cov_2))
+            trans_right = min(abs(prev_cov_1 - next_cov_2), abs(prev_cov_2 - next_cov_1))
+            if flank_coverage:
+                cis_right = abs(prev_cov_1 - next_cov_1) * abs(prev_cov_2 - next_cov_2)
+                trans_right = abs(prev_cov_1 - next_cov_2) * abs(prev_cov_2 - next_cov_1)
+                #print("Cis", cis_right, "trans", trans_right)
+                #print("")
 
-            # Cis = | A1 - B1 | + | A2 - B2 |, Trans = | A1 - B2 | + | A2 - B1 | -> trans_right < cis_right
-            #cis_right = abs(haplotype_1_values_phasesets[i] - haplotype_1_values_phasesets[i+1]) +\
-            #                abs(haplotype_2_values_phasesets[i] - haplotype_2_values_phasesets[i+1])
-            #trans_right = abs(haplotype_1_values_phasesets[i] - haplotype_2_values_phasesets[i+1]) +\
-            #                  abs(haplotype_2_values_phasesets[i] - haplotype_1_values_phasesets[i+1])
-
-            if trans_right < cis_right:# or (abs(haplotype_1_values_phasesets[i] - haplotype_1_values_phasesets[i+1]) > 7 and abs(haplotype_2_values_phasesets[i] - haplotype_2_values_phasesets[i+1]) > 7):
+            if trans_right < cis_right:
                 new_hp2_ps = haplotype_2_values_phasesets[i+1]
                 new_hp1_ps = haplotype_1_values_phasesets[i+1]
                 haplotype_1_values_phasesets[i+1] = new_hp2_ps
