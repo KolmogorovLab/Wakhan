@@ -8,6 +8,9 @@ import logging
 logger = logging.getLogger()
 
 
+
+
+
 def generate_phasesets_bins(bam, path, bin_size, args):
     return get_phasesets_bins(bam, path, bin_size, args)
 
@@ -153,9 +156,12 @@ def merge_contiguous_indices(indices, haplotype_1_values, haplotype_2_values, re
     hp_1_values = []
     hp_2_values = []
 
-    indices_slices = [sorted(list(set(indices_sub_list))) for indices_sub_list in indices]
+    #indices_slices = [sorted(list(set(indices_sub_list))) for indices_sub_list in indices]
+    indices_slices = indices
 
     for i, value in enumerate(indices_slices):
+        #single_imbalance = _has_imbalance(haplotype_1_values_phasesets[value[0]], haplotype_2_values_phasesets[value[0]])
+        #if len(value) > 1 or single_imbalance:
         if len(value) > 1:
             internal_bins = [k for k in ref_start_values if k >= ref_start_values_phasesets[value[0]] and k <= ref_end_values_phasesets[value[-1]]]
             if internal_bins:
@@ -250,10 +256,15 @@ def split_on_singletons_and_gaps(data):
     return result
 
 
+def _has_imbalance(val_1, val_2):
+    MIN_HP_DIFF_RATE = 0.3
+    MIN_HP_DIFF_ABS = 10
+    min_diff = min(MIN_HP_DIFF_RATE * min(val_1, val_2), MIN_HP_DIFF_ABS)
+    return abs(val_1 - val_2) > min_diff
+
+
 def find_indices_to_be_merged(mean_cis_trans_ps, ref_start_values_phasesets, ref_end_values_phasesets, 
                               haplotype_1_values_phasesets, haplotype_2_values_phasesets):
-    indices = []
-    sub = []
 
     small_ps = []
     for i, (start,end) in enumerate(zip(ref_start_values_phasesets, ref_end_values_phasesets)):
@@ -267,25 +278,27 @@ def find_indices_to_be_merged(mean_cis_trans_ps, ref_start_values_phasesets, ref
        mean_cis_trans_ps = 5
 
     ##| A-B | / min(A, B)
-    # (abs(haplotype_1_values_phasesets[i] - haplotype_2_values_phasesets[i]) / (min(haplotype_1_values_phasesets[i], haplotype_2_values_phasesets[i])+0.0001)) > 0.5,0.3:
-
-    # abs(haplotype_1_values_phasesets[i + 1] - haplotype_2_values_phasesets[i + 1]) > 1*mean_cis_trans_ps:
-
+    to_merge = []
     if len(ref_start_values_phasesets) > 1:
-        for i in range(len(ref_start_values_phasesets)-1):
-            if (haplotype_1_values_phasesets[i] > haplotype_2_values_phasesets[i] and haplotype_1_values_phasesets[i+1] > haplotype_2_values_phasesets[i+1] or \
-              haplotype_1_values_phasesets[i] < haplotype_2_values_phasesets[i] and haplotype_1_values_phasesets[i + 1] < haplotype_2_values_phasesets[i + 1]) and \
-                    ((abs(haplotype_1_values_phasesets[i] - haplotype_2_values_phasesets[i]) / (min(haplotype_1_values_phasesets[i], haplotype_2_values_phasesets[i])+0.0001)) > 0.3 and \
-                    (abs(haplotype_1_values_phasesets[i+1] - haplotype_2_values_phasesets[i+1]) / (min(haplotype_1_values_phasesets[i+1], haplotype_2_values_phasesets[i+1])+0.0001)) > 0.3):
-                sub.append(i)
-                sub.append(i+1)
+        cur_merged = [0]
+        for i in range(1, len(ref_start_values_phasesets)):
+            #min_diff_fst = min(MIN_HP_DIFF_RATE * min(haplotype_1_values_phasesets[i - 1], haplotype_2_values_phasesets[i - 1]), MIN_HP_DIFF_ABS)
+            #min_diff_snd = min(MIN_HP_DIFF_RATE * min(haplotype_1_values_phasesets[i], haplotype_2_values_phasesets[i]), MIN_HP_DIFF_ABS)
+            if ((haplotype_1_values_phasesets[i - 1] < haplotype_2_values_phasesets[i - 1]) ==
+                    (haplotype_1_values_phasesets[i] < haplotype_2_values_phasesets[i])) and \
+                _has_imbalance(haplotype_1_values_phasesets[i - 1], haplotype_2_values_phasesets[i - 1]) and \
+                _has_imbalance(haplotype_1_values_phasesets[i], haplotype_2_values_phasesets[i]):
+
+                cur_merged.append(i)
             else:
-                sub.append(i)
-                indices.append(sub)
-                sub = []
-        if sub:
-            indices.append(sub)
-    return indices
+                to_merge.append(cur_merged)
+                cur_merged = [i]
+
+        if cur_merged:
+            to_merge.append(cur_merged)
+    #print(len(ref_start_values_phasesets), to_merge)
+
+    return to_merge
 
 
 def updated_means_ps(ref_start_values, haplotype_1_values, haplotype_2_values, ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets):
@@ -330,9 +343,45 @@ def phase_blocks_updated_coverage(args, ref_start_values_phasesets, ref_end_valu
     return ref_start_values_phasesets, ref_end_values_phasesets, values_phasesets_hp1, values_phasesets_hp2
 
 
+
+def remove_centromere_phaseblocks(haplotype_1_values_phasesets, haplotype_2_values_phasesets,
+                                  ref_start_values_phasesets, ref_end_values_phasesets, centromere_region):
+    cen = centromere_region.iloc[0]
+    new_median_1 = []
+    new_median_2 = []
+    new_starts = []
+    new_ends = []
+    for i, (bs, be) in enumerate(zip(ref_start_values_phasesets, ref_end_values_phasesets)):
+        if cen['start'] < bs and be < cen['end']:   #contained
+            continue
+
+        new_median_1.append(haplotype_1_values_phasesets[i])
+        new_median_2.append(haplotype_2_values_phasesets[i])
+
+        if bs < cen['start'] and cen['start'] < be:
+            new_starts.append(bs)
+            new_ends.append(cen['start'])
+        elif bs < cen['end'] and cen['end'] < be:
+            new_starts.append(cen['end'])
+            new_ends.append(be)
+        else:
+            new_starts.append(bs)
+            new_ends.append(be)
+
+    return new_median_1, new_median_2, new_starts, new_ends
+
+
 def phase_flips_cis_trans(chrom, args, breakpoints_additional, haplotype_1_values, haplotype_2_values,
                           ref_start_values, ref_end_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets,
-                          ref_start_values_phasesets, ref_end_values_phasesets, internal_ps=False, bins_adjust=False, merge=False, swap_final=False):
+                          ref_start_values_phasesets, ref_end_values_phasesets, internal_ps=False, bins_adjust=False,
+                          merge=False, swap_final=False, flank_coverage=False):
+
+    FLANK_LEN = 1000000 // args.bin_size
+
+    def get_block_coverage(idx):
+        start_bin, end_bin = ref_start_values_phasesets[idx] // args.bin_size, ref_end_values_phasesets[idx] // args.bin_size
+        return haplotype_1_values[start_bin : end_bin + 1], haplotype_2_values[start_bin : end_bin + 1]
+
     mean_cis_trans_ps = []
     values_ps = []
     for index, value in enumerate(ref_start_values_phasesets):
@@ -356,19 +405,27 @@ def phase_flips_cis_trans(chrom, args, breakpoints_additional, haplotype_1_value
     indices_merge = []
     if len(ref_start_values_phasesets) > 1:
         for i in range(len(ref_start_values_phasesets)-1):
+            prev_cov_1, prev_cov_2 = haplotype_1_values_phasesets[i], haplotype_2_values_phasesets[i]
+            next_cov_1, next_cov_2 = haplotype_1_values_phasesets[i + 1], haplotype_2_values_phasesets[i + 1]
+
+            if flank_coverage:
+                #print(prev_cov_1, prev_cov_2, next_cov_1, next_cov_2)
+                prev_bins_1, prev_bins_2 = get_block_coverage(i)
+                next_bins_1, next_bins_2 = get_block_coverage(i + 1)
+                prev_cov_1, prev_cov_2 = np.median(prev_bins_1[-FLANK_LEN:]), np.median(prev_bins_2[-FLANK_LEN:])
+                next_cov_1, next_cov_2 = np.median(next_bins_1[:FLANK_LEN]), np.median(next_bins_2[:FLANK_LEN])
+                #print(prev_cov_1, prev_cov_2, next_cov_1, next_cov_2)
+
             # Cis = min(|A1 - B1|, |A2 - B2|), Trans = min(|A1-B2|, |A2 - B1|)
-            cis_right = min(abs(haplotype_1_values_phasesets[i] - haplotype_1_values_phasesets[i+1]),
-                            abs(haplotype_2_values_phasesets[i] - haplotype_2_values_phasesets[i+1]))
-            trans_right = min(abs(haplotype_1_values_phasesets[i] - haplotype_2_values_phasesets[i+1]),
-                              abs(haplotype_2_values_phasesets[i] - haplotype_1_values_phasesets[i+1]))
+            cis_right = min(abs(prev_cov_1 - next_cov_1), abs(prev_cov_2 - next_cov_2))
+            trans_right = min(abs(prev_cov_1 - next_cov_2), abs(prev_cov_2 - next_cov_1))
+            if flank_coverage:
+                cis_right = abs(prev_cov_1 - next_cov_1) * abs(prev_cov_2 - next_cov_2)
+                trans_right = abs(prev_cov_1 - next_cov_2) * abs(prev_cov_2 - next_cov_1)
+                #print("Cis", cis_right, "trans", trans_right)
+                #print("")
 
-            # Cis = | A1 - B1 | + | A2 - B2 |, Trans = | A1 - B2 | + | A2 - B1 | -> trans_right < cis_right
-            #cis_right = abs(haplotype_1_values_phasesets[i] - haplotype_1_values_phasesets[i+1]) +\
-            #                abs(haplotype_2_values_phasesets[i] - haplotype_2_values_phasesets[i+1])
-            #trans_right = abs(haplotype_1_values_phasesets[i] - haplotype_2_values_phasesets[i+1]) +\
-            #                  abs(haplotype_2_values_phasesets[i] - haplotype_1_values_phasesets[i+1])
-
-            if trans_right < cis_right:# or (abs(haplotype_1_values_phasesets[i] - haplotype_1_values_phasesets[i+1]) > 7 and abs(haplotype_2_values_phasesets[i] - haplotype_2_values_phasesets[i+1]) > 7):
+            if trans_right < cis_right:
                 new_hp2_ps = haplotype_2_values_phasesets[i+1]
                 new_hp1_ps = haplotype_1_values_phasesets[i+1]
                 haplotype_1_values_phasesets[i+1] = new_hp2_ps
@@ -687,6 +744,7 @@ def phaseblock_flipping_simple_heuristics(chrom, args, is_simple_correction, hap
         for i in range(len(ref_start_values_phasesets) - 1):
             if haplotype_1_values_phasesets[i] > haplotype_2_values_phasesets[i]:
                 hp_changed.append([ref_start_values_phasesets[i], ref_end_values_phasesets[i]+1])
+                haplotype_1_values_phasesets[i], haplotype_2_values_phasesets[i] = haplotype_2_values_phasesets[i], haplotype_1_values_phasesets[i]
 
         for i in range(len(ref_start_values)):
             for j in range(len(hp_changed)):

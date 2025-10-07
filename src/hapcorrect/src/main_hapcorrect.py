@@ -15,17 +15,27 @@ from collections import defaultdict
 
 logger = logging.getLogger()
 
-from src.hapcorrect.src.process_bam import get_all_reads_parallel, update_coverage_hist, get_segments_coverage, haplotype_update_all_bins_parallel, get_snps_frequencies, tumor_bam_haplotag
-from src.hapcorrect.src.process_vcf import vcf_parse_to_csv_for_het_phased_snps_phasesets, get_snp_frequencies_segments, snps_frequencies_chrom_mean, get_snps_frquncies_coverage, vcf_parse_to_csv_for_snps, index_vcf, rephase_vcf, get_phasingblocks, snps_frequencies_chrom_mean_phasesets, snps_frequencies_homo_chrom_mean
-from src.hapcorrect.src.phase_correction import generate_phasesets_bins, phase_flips_cis_trans, switch_inter_phaseblocks_bins, phaseblock_flipping_simple_heuristics, check_missing_phasesets_original, reintroduce_broken_phasesets, update_remaining_phasesets, subtract_intervals, without_phasesets_bins_correction
-from src.hapcorrect.src.utils import get_chromosomes_bins, write_segments_coverage, csv_df_chromosomes_sorter, get_snps_frquncies_coverage_from_bam, adjust_loh_cent_phaseblocks, extract_centromere_regions,\
-                    infer_missing_phaseblocks, df_chromosomes_sorter, is_phasesets_check_simple_heuristics, write_df_csv, loh_regions_events, snps_frequencies_chrom_genes, genes_segments_coverage, genes_segments_list, extend_snps_ratios_df, get_chromosomes_regions, add_breakpoints, update_hp_assignment_loh_segments
+from src.hapcorrect.src.process_bam import (get_all_reads_parallel, update_coverage_hist, get_segments_coverage, haplotype_update_all_bins_parallel,
+                                            get_snps_frequencies, tumor_bam_haplotag)
+from src.hapcorrect.src.process_vcf import (vcf_parse_to_csv_for_het_phased_snps_phasesets, get_snp_frequencies_segments, snps_frequencies_chrom_mean,
+                                            get_snps_frquncies_coverage, vcf_parse_to_csv_for_snps, index_vcf, rephase_vcf, get_phasingblocks,
+                                            snps_frequencies_chrom_mean_phasesets, snps_frequencies_homo_chrom_mean)
+from src.hapcorrect.src.phase_correction import (generate_phasesets_bins, phase_flips_cis_trans, switch_inter_phaseblocks_bins,
+                                                 phaseblock_flipping_simple_heuristics, check_missing_phasesets_original, reintroduce_broken_phasesets,
+                                                 update_remaining_phasesets, subtract_intervals, without_phasesets_bins_correction,
+                                                 remove_centromere_phaseblocks)
+from src.hapcorrect.src.utils import (get_chromosomes_bins, write_segments_coverage, csv_df_chromosomes_sorter, get_snps_frquncies_coverage_from_bam,
+                                      adjust_loh_cent_phaseblocks, extract_centromere_regions, infer_missing_phaseblocks, df_chromosomes_sorter,
+                                      is_phasesets_check_simple_heuristics, write_df_csv, loh_regions_events, snps_frequencies_chrom_genes,
+                                      genes_segments_coverage, genes_segments_list, extend_snps_ratios_df, get_chromosomes_regions,
+                                      add_breakpoints, update_hp_assignment_loh_segments)
 from src.hapcorrect.src.extras import get_contigs_list
 from src.hapcorrect.src.plots import plot_coverage_data, change_point_detection, plot_coverage_data_after_correction, loh_plots_genome
 from src.hapcorrect.src.cpd import cpd_positions_means
 from src.hapcorrect.src.loh import detect_loh_centromere_regions, plot_snps
 
 MIN_SV_SIZE = 50
+
 
 def safe_rmtree(path):
         if os.path.islink(path):
@@ -34,6 +44,7 @@ def safe_rmtree(path):
             shutil.rmtree(path)
         elif os.path.exists(path):
             os.remove(path)
+
 
 def main_process(args):
     centromere_regions = extract_centromere_regions(args)
@@ -169,7 +180,7 @@ def main_process(args):
     df_snps_ratios = []
     offset = 0
     for index, chrom in enumerate(chroms):
-        if chrom in chroms: # and chrom == 'chr17': #and (chrom == '1' or chrom == '18'):# and (chrom == 'chr5' or chrom == 'chr16'):
+        if chrom in chroms:
             regions = get_chromosomes_regions(args)
             logger.info('Loading coverage (bins) and coverage (phaseblocks) datasets for ' + chrom)
             csv_df_phaseset = csv_df_phasesets[csv_df_phasesets['chr'] == chrom]
@@ -286,6 +297,10 @@ def main_process(args):
                 #infer missing phaseblocks
                 #ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets = infer_missing_phaseblocks(ref_start_values, ref_end_values, ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets, snps_haplotype1_mean, snps_haplotype2_mean, args.bin_size'])
 
+                haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets = \
+                        remove_centromere_phaseblocks(haplotype_1_values_phasesets, haplotype_2_values_phasesets,
+                                                      ref_start_values_phasesets, ref_end_values_phasesets, centromere_region)
+
                 breakpoints_chrom = []
                 (broken_phasesets, mean_cis_trans_ps, snps_haplotype1_mean,
                  snps_haplotype2_mean, haplotype_1_values_phasesets,
@@ -293,7 +308,7 @@ def main_process(args):
                          phase_flips_cis_trans(chrom, args, breakpoints_chrom, snps_haplotype1_mean, snps_haplotype2_mean,
                                                ref_start_values, ref_end_values, haplotype_1_values_phasesets,
                                                haplotype_2_values_phasesets, ref_start_values_phasesets,
-                                               ref_end_values_phasesets, True, False, False, False)
+                                               ref_end_values_phasesets, True, False, False, False, False)
                                                #internal_ps=False, bins_adjust=False, merge=False, merge_final=False
                 plot_coverage_data(html_graphs, args, chrom, ref_start_values, ref_end_values,
                                    snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values,
@@ -330,7 +345,7 @@ def main_process(args):
                          phase_flips_cis_trans(chrom, args, breakpoints_chrom, snps_haplotype1_mean, snps_haplotype2_mean,
                                                ref_start_values, ref_end_values, haplotype_1_values_phasesets,
                                                haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets,
-                                               False, False, False, True) #internal_ps=False, bins_adjust=False, merge=False, merge_final=False
+                                               False, False, False, True, True) #internal_ps=False, bins_adjust=False, merge=False, merge_final=False
                 if broken_phasesets:
                     (haplotype_1_values_phasesets, haplotype_2_values_phasesets,
                      ref_start_values_phasesets, ref_end_values_phasesets) = \
