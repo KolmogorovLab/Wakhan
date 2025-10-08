@@ -17,7 +17,7 @@ from scipy.signal import find_peaks
 from src.hapcorrect.src.main_hapcorrect import main_process
 from src.__version__ import __version__
 
-from src.bam_processing import get_all_reads_parallel, update_coverage_hist, get_segments_coverage, haplotype_update_all_bins_parallel, get_snps_frequencies
+from src.bam_processing import get_all_reads_parallel, update_coverage_hist, get_segments_coverage, haplotype_update_all_bins_parallel, get_snps_frequencies, ref_bam_vcfs_nomenclature_check
 from src.utils import get_chromosomes_bins, write_segments_coverage, write_segments_coverage_dict, csv_df_chromosomes_sorter,\
     seperate_dfs_coverage, flatten_smooth, get_contigs_list, write_copynumber_segments_csv, integer_fractional_cluster_means, \
     adjust_diversified_segments, get_chromosomes_bins_bam, normal_genome_proportion, update_subclonal_means_states, adjust_first_copy_mean, \
@@ -316,6 +316,10 @@ def main(argv=None):
         os.mkdir(args.out_dir_plots+'/data')
 
     test_input_files(args)
+    #grch37/grch38 chr notations check
+    if not ref_bam_vcfs_nomenclature_check(args):
+        logger.info('Prefix notation/nomenclature in any/all Reference (.fasta/.fa), tumor BAM and phased VCF (normal/tumor) are different than those used in --contigs param. --contigs chr1-22,chrX if chr1,chr2..chrX else --contigs 1-22,X if 1,2,..X')
+        return 0
 
     if args.command == 'cna':
         logger.info('Starting cna() module...')
