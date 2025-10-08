@@ -221,6 +221,8 @@ Few cell lines arbitrary phase-switch correction and copy number estimation outp
 
 
 ## Optional parameters
+* `--contigs` List of contigs (chromosomes, default: chr1-22,chrX) to be included in the plots [e.g., chr1-22,chrX,chrY], Note: Please use 1-22,X [e.g., 1-22,X,Y] in case REF, BAM, and VCFs entries don't contain `chr` name/notion, same should be observed in `--centromere` and `--cancer-genes` params in case no `chr` in names, use `*_nochr.bed` instead available in `src/annotations` or customized.
+
 * `--breakpoints` For segmentation to use in CN estimation, structural variations/breakpoints VCF file is required
 
 * `--breakpoints-min-length` To adjust breakpoints min length to be included in copy number analysis [default: 10000]
@@ -236,8 +238,6 @@ Few cell lines arbitrary phase-switch correction and copy number estimation outp
 * `--phaseblock-flipping-disable` Disabling phaseblock flipping if traget tumor BAM doesn't need phase-correction (default: enabled)
 
 * `--phaseblocks-enable` Enabling phaseblocks display in coverage plots
-
-* `--contigs` List of contigs (chromosomes, default: chr1-22,chrX) to be included in the plots [e.g., chr1-22,chrX,chrY], Note: Please use 1-22,X [e.g., 1-22,X,Y] in case REF, BAM, and VCFs entries don't contain `chr` name/notion
 
 * `--cut-threshold` Maximum cut threshold for coverage (readdepth) plots [default: 100]
 

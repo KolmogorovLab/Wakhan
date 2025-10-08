@@ -7,6 +7,8 @@ import pandas
 from collections import defaultdict
 import logging
 
+from src.utils import csv_df_chromosomes_sorter
+
 logger = logging.getLogger()
 class ReadSegment(object):
     __slots__ = ("read_start", "read_end", "ref_start", "ref_end", "read_id", "ref_id",
@@ -400,9 +402,15 @@ def ref_bam_vcfs_nomenclature_check(args):
     df_vcf = pandas.read_csv(out_bcftools, sep='\t')
     df_bam = pandas.read_csv(out_bam, sep='\t')
     df_fasta = pandas.read_csv(out_fasta, sep='\t')
-    if df_vcf.iloc[0, 0].startswith('chr') and df_bam.iloc[0, 0].startswith('chr') and df_fasta.iloc[0, 0].startswith('chr') and 'chr' in args.contigs:
+
+    df_centm = csv_df_chromosomes_sorter(args.centromere, ['chr', 'start', 'end'])
+    df_centm['start'].mask(df_centm['start'] == 1, 0, inplace=True)
+
+    df_genes = csv_df_chromosomes_sorter(args.cancer_genes, ['chr', 'start', 'end', 'gene'])
+
+    if df_vcf.iloc[0, 0].startswith('chr') and df_bam.iloc[0, 0].startswith('chr') and df_fasta.iloc[0, 0].startswith('chr') and df_centm.iloc[0, 0].startswith('chr') and df_genes.iloc[0, 0].startswith('chr') and 'chr' in args.contigs:
         return True
-    elif not df_vcf.iloc[0, 0].startswith('chr') and not df_bam.iloc[0, 0].startswith('chr') and not df_fasta.iloc[0, 0].startswith('chr') and not 'chr' in args.contigs:
+    elif not df_vcf.iloc[0, 0].startswith('chr') and not df_bam.iloc[0, 0].startswith('chr') and not df_centm.iloc[0, 0].startswith('chr') and not df_genes.iloc[0, 0].startswith('chr') and not 'chr' in args.contigs and not df_fasta.iloc[0, 0].startswith('chr'):
         return True
     else:
         return False

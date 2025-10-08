@@ -223,7 +223,7 @@ def build_parser():
     global_parser.add_argument("--hets-ratio", "--hets_ratio", dest="hets_ratio", default=HETS_RATIO_LOH, metavar="float", type=float, help="Hetrozygous SNPs ratio threshold for LOH detection")
     global_parser.add_argument("--hets-smooth-window", "--hets_smooth_window", dest="hets_smooth_window", default=HETS_SMOOTH_WINDOW, metavar="int", type=int, help="Hetrozygous SNPs ratio smoothing window size for LOH detection")
     global_parser.add_argument("--hets-loh-seg-size", "--hets_loh_seg_size", dest="hets_loh_seg_size", default=HETS_LOH_SEG_SIZE, metavar="int", type=int, help="LOH detection minimum segment size where Het SNPs ratio is dropped")
-    global_parser.add_argument('--loh-enable', action="store_true",  dest="loh_enable", default=True, help="Plotting LOH regions in CN plots")
+    global_parser.add_argument('--loh-enable', action="store_true",  dest="loh_enable", default=False, help="Plotting LOH regions in CN plots")
 
     global_parser.add_argument("--cut-threshold", "--cut_threshold", dest="cut_threshold", default=MAX_CUT_THRESHOLD, metavar="int", type=int, help="Plotting threshold for coverage")
     global_parser.add_argument("--cut-threshold-snps-counts", "--cut_threshold_snps_counts", dest="cut_threshold_snps_counts", default=MAX_CUT_THRESHOLD_SNPS_COUNTS, metavar="int", type=int, help="Plotting threshold for SNPs counts")
@@ -305,21 +305,21 @@ def main(argv=None):
     logger.info("Cmd: %s", " ".join(sys.argv))
     logger.info("Python version: " + sys.version)
 
-    fileDir = os.path.dirname(__file__)
-    args.cancer_genes = os.path.join(fileDir, args.cancer_genes)
-    args.centromere = os.path.join(fileDir, args.centromere)
-
     if os.path.exists(args.out_dir_plots+'/data'):
         safe_rmtree(args.out_dir_plots+'/data')
         os.mkdir(args.out_dir_plots+'/data')
     else:
         os.mkdir(args.out_dir_plots+'/data')
 
+    fileDir = os.path.dirname(__file__)
+    args.cancer_genes = os.path.join(fileDir, args.cancer_genes)
+    args.centromere = os.path.join(fileDir, args.centromere)
     test_input_files(args)
+
     #grch37/grch38 chr notations check
-    if not ref_bam_vcfs_nomenclature_check(args):
-        logger.info('Prefix notation/nomenclature in any/all Reference (.fasta/.fa), tumor BAM and phased VCF (normal/tumor) are different than those used in --contigs param. --contigs chr1-22,chrX if chr1,chr2..chrX else --contigs 1-22,X if 1,2,..X')
-        return 0
+    if ref_bam_vcfs_nomenclature_check(args) == False:
+       logger.info('Prefix notation/nomenclature in any/all Reference (.fasta/.fa), tumor BAM and phased VCF (normal/tumor) and/or in cancer_genes/centrmore file(s) are different than those used in --contigs param. --contigs chr1-22,chrX if chr1,chr2..chrX else --contigs 1-22,X if 1,2,..X')
+       return 0
 
     if args.command == 'cna':
         logger.info('Starting cna() module...')
