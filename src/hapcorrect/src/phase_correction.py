@@ -29,7 +29,9 @@ def get_phasesets_bins(bam, phasesets, bin_size, args):
 
 def check_missing_phasesets_original(df1, df2):
     df2 = df2[['chr', 'start', 'end']]
-    if len(df2) == 0 or len(df2) == 0:
+    if len(df1) == 0:
+        return df2
+    if len(df2) == 0:
         return df1
 
     def is_overlapping(row, df):
