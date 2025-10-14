@@ -1369,6 +1369,76 @@ def add_intermediaries(numbers, max_difference):
         result.append(numbers[i])
 
     return result
+
+def update_segs_with_normal_optimized(df_hp1, df_hp2, df_segs_hp1, df_segs_hp2, dna_tumor_fraction, args):
+    df_segs_hp1_ = df_segs_hp1.copy()
+    df_segs_hp2_ = df_segs_hp2.copy()
+
+    df_hp1_ = df_hp1.copy()
+    df_hp2_ = df_hp2.copy()
+
+    chroms = get_contigs_list(args.contigs)
+    updated_df_segs_hp1 = []
+    updated_df_segs_hp2 = []
+    updated_df_hp1 = []
+    updated_df_hp2 = []
+
+    if args.quick_start:
+        loh_path = args.quick_start_coverage_path + '/'
+    else:
+        loh_path = args.out_dir_plots + '/coverage_data/'
+    if args.tumor_phased_vcf and os.path.exists(loh_path + args.genome_name + '_loh_segments.csv'):
+        df_loh = csv_df_chromosomes_sorter(loh_path + args.genome_name + '_loh_segments.csv', ['chr', 'start', 'end', 'hp'])
+
+    for index, chrom in enumerate(chroms):
+        df_hp1_chrom = df_hp1_[df_hp1_['chr'] == chrom]
+        df_hp2_chrom = df_hp2_[df_hp2_['chr'] == chrom]
+        df_loh_chrom = df_loh[df_loh['chr'] == chrom]
+        haplotype_1_values = df_hp1_chrom.hp1.values.tolist()
+        haplotype_2_values = df_hp2_chrom.hp2.values.tolist()
+
+        for j, (starts, ends, hp) in enumerate(zip(df_loh_chrom.start.values.tolist(), df_loh_chrom.end.values.tolist(), df_loh_chrom.hp.values.tolist())):
+            for i in range(starts // args.bin_size, ends // args.bin_size):
+                if hp == 1:
+                   haplotype_1_values[i] = haplotype_1_values[i] - dna_tumor_fraction
+                   #haplotype_2_values[i] = haplotype_2_values[i] + dna_tumor_fraction
+                else:
+                   #haplotype_1_values[i] = haplotype_1_values[i] + dna_tumor_fraction
+                   haplotype_2_values[i] = haplotype_2_values[i] - dna_tumor_fraction
+
+        updated_df_hp1.append(
+                pd.DataFrame(list(zip(df_hp1_chrom.chr.values.tolist(), df_hp1_chrom.start.values.tolist(), df_hp1_chrom.end.values.tolist(), haplotype_1_values)),
+                             columns=['chr', 'start', 'end', 'hp1']))
+        updated_df_hp2.append(
+                pd.DataFrame(list(zip(df_hp2_chrom.chr.values.tolist(), df_hp2_chrom.start.values.tolist(), df_hp2_chrom.end.values.tolist(), haplotype_2_values)),
+                             columns=['chr', 'start', 'end', 'hp2']))
+
+        df_seg_hp1_chrom = df_segs_hp1_[df_segs_hp1_['chromosome'] == chrom]
+        df_seg_hp2_chrom = df_segs_hp2_[df_segs_hp2_['chromosome'] == chrom]
+
+        for idx, s1 in df_seg_hp1_chrom.iterrows():
+            sub_list = haplotype_1_values[s1['start'] // args.bin_size:s1['end'] // args.bin_size]
+            sub_list = [x for x in sub_list if x > 0.1]
+            if len(sub_list):
+                median = statistics.median(sub_list)
+            else:
+                median = 0
+            df_seg_hp1_chrom.loc[idx, 'state'] = median
+
+        for idx, s1 in df_seg_hp2_chrom.iterrows():
+            sub_list = haplotype_2_values[s1['start'] // args.bin_size:s1['end'] // args.bin_size]
+            sub_list = [x for x in sub_list]
+            if len(sub_list):
+                median = statistics.median(sub_list)
+            else:
+                median = 0
+            df_seg_hp2_chrom.loc[idx, 'state'] = median
+
+        updated_df_segs_hp1.append(df_seg_hp1_chrom)
+        updated_df_segs_hp2.append(df_seg_hp2_chrom)
+
+    return pd.concat(updated_df_hp1), pd.concat(updated_df_hp2), pd.concat(updated_df_segs_hp1), pd.concat(updated_df_segs_hp2)
+
 def adjust_diversified_segments(centers, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, args):
     chroms = get_contigs_list(args.contigs)
     updated_df_segs_hp1 = []

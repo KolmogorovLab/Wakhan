@@ -7,10 +7,6 @@ from src.hapcorrect.src.utils import csv_df_chromosomes_sorter, df_chromosomes_s
 import logging
 logger = logging.getLogger()
 
-
-
-
-
 def generate_phasesets_bins(bam, path, bin_size, args):
     return get_phasesets_bins(bam, path, bin_size, args)
 
@@ -29,7 +25,9 @@ def get_phasesets_bins(bam, phasesets, bin_size, args):
 
 def check_missing_phasesets_original(df1, df2):
     df2 = df2[['chr', 'start', 'end']]
-    if len(df2) == 0 or len(df2) == 0:
+    if len(df1) == 0:
+        return df2
+    if len(df2) == 0:
         return df1
 
     def is_overlapping(row, df):
@@ -341,8 +339,6 @@ def phase_blocks_updated_coverage(args, ref_start_values_phasesets, ref_end_valu
         values_phasesets_hp2.append(median_data(haplotype_2_values[ref_start_values_phasesets[i]//args.bin_size:ref_end_values_phasesets[i]//args.bin_size]))
 
     return ref_start_values_phasesets, ref_end_values_phasesets, values_phasesets_hp1, values_phasesets_hp2
-
-
 
 def remove_centromere_phaseblocks(haplotype_1_values_phasesets, haplotype_2_values_phasesets,
                                   ref_start_values_phasesets, ref_end_values_phasesets, centromere_region):
