@@ -153,6 +153,7 @@ def closest(lst):
 
 def merge_contiguous_indices(indices, haplotype_1_values, haplotype_2_values, ref_start_values, ref_start_values_phasesets, 
                              ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets, consider_remaining):
+    LARGE_BLOCK = 1000000
     new_starts = []
     new_ends = []
     hp_1_values = []
@@ -162,9 +163,11 @@ def merge_contiguous_indices(indices, haplotype_1_values, haplotype_2_values, re
     indices_slices = indices
 
     for i, value in enumerate(indices_slices):
-        #single_imbalance = _has_imbalance(haplotype_1_values_phasesets[value[0]], haplotype_2_values_phasesets[value[0]])
-        #if len(value) > 1 or single_imbalance:
-        if len(value) > 1:
+        first_imbalance = _has_imbalance(haplotype_1_values_phasesets[value[0]], haplotype_2_values_phasesets[value[0]])
+        first_len = ref_end_values_phasesets[value[0]] - ref_start_values_phasesets[value[0]]
+
+        if len(value) > 1 or (first_imbalance and first_len > LARGE_BLOCK):
+        #if len(value) > 1:
             internal_bins = [k for k in ref_start_values if k >= ref_start_values_phasesets[value[0]] and k <= ref_end_values_phasesets[value[-1]]]
             if internal_bins:
                 new_starts.append(ref_start_values_phasesets[value[0]])
@@ -284,12 +287,15 @@ def find_indices_to_be_merged(mean_cis_trans_ps, ref_start_values_phasesets, ref
     if len(ref_start_values_phasesets) > 1:
         cur_merged = [0]
         for i in range(1, len(ref_start_values_phasesets)):
-            #min_diff_fst = min(MIN_HP_DIFF_RATE * min(haplotype_1_values_phasesets[i - 1], haplotype_2_values_phasesets[i - 1]), MIN_HP_DIFF_ABS)
-            #min_diff_snd = min(MIN_HP_DIFF_RATE * min(haplotype_1_values_phasesets[i], haplotype_2_values_phasesets[i]), MIN_HP_DIFF_ABS)
+            len_fst = ref_end_values_phasesets[i - 1] - ref_start_values_phasesets[i - 1]
+            len_snd = ref_end_values_phasesets[i] - ref_start_values_phasesets[i]
+            gap = ref_start_values_phasesets[i] - ref_end_values_phasesets[i - 1]
+
             if ((haplotype_1_values_phasesets[i - 1] < haplotype_2_values_phasesets[i - 1]) ==
                     (haplotype_1_values_phasesets[i] < haplotype_2_values_phasesets[i])) and \
                 _has_imbalance(haplotype_1_values_phasesets[i - 1], haplotype_2_values_phasesets[i - 1]) and \
-                _has_imbalance(haplotype_1_values_phasesets[i], haplotype_2_values_phasesets[i]):
+                _has_imbalance(haplotype_1_values_phasesets[i], haplotype_2_values_phasesets[i]) and \
+                gap < (len_fst + len_snd) / 2:
 
                 cur_merged.append(i)
             else:
@@ -378,7 +384,7 @@ def phase_flips_cis_trans(chrom, args, breakpoints_additional, haplotype_1_value
                           ref_start_values_phasesets, ref_end_values_phasesets, internal_ps=False, bins_adjust=False,
                           merge=False, swap_final=False, flank_coverage=False):
 
-    FLANK_LEN = 1000000 // args.bin_size
+    FLANK_LEN = 5000000 // args.bin_size
 
     def get_block_coverage(idx):
         start_bin, end_bin = ref_start_values_phasesets[idx] // args.bin_size, ref_end_values_phasesets[idx] // args.bin_size
