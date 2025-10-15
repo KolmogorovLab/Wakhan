@@ -64,15 +64,20 @@ def find_peaks_with_min_distance(signal, min_distance=2):
     peaks, _ = find_peaks(signal, distance=min_distance)
     return peaks.tolist()
 
-def copy_numbers_assignment_haplotypes(args, tumor_cov, max_limit, single_copy_cov, centers, subclonals, df_hp1, df_hp2, df_segs_hp1, df_segs_hp2, snps_cpd_means_df, csv_df_snps_mean, df_snps_in_csv, df_unphased, x_axis, observed_hist, is_half):
+def copy_numbers_assignment_haplotypes(args, tumor_cov, max_limit, single_copy_cov, centers, subclonals, df_hp1_base, df_hp2_base, df_segs_hp1_base, df_segs_hp2_base, snps_cpd_means_df, csv_df_snps_mean, df_snps_in_csv, df_unphased, x_axis, observed_hist, is_half):
     data = []
     average_p_value = []
     #max_limit = 3/2 #debug
     for normal_coverage in np.arange(0, max_limit, 0.1):
         if args.tumor_phased_vcf:
-            df_hp1, df_hp2, df_segs_hp1, df_segs_hp2 = update_segs_with_normal_optimized(df_hp1, df_hp2, df_segs_hp1, df_segs_hp2, normal_coverage, args)
+            df_hp1, df_hp2, df_segs_hp1, df_segs_hp2 = update_segs_with_normal_optimized(df_hp1_base, df_hp2_base, df_segs_hp1_base, df_segs_hp2_base, normal_coverage, args)
             _, centers, is_half_peak, centers_half, subclonals, x_axis, observed_hist, single_copy_cov, single_copy_cov_half = \
                 peak_detection_optimization(args, df_segs_hp1.state.values.tolist() + df_segs_hp2.state.values.tolist(), [x - y for x, y in zip(df_segs_hp1.end.values.tolist(), df_segs_hp1.start.values.tolist())]  + [x - y for x, y in zip(df_segs_hp2.end.values.tolist(), df_segs_hp2.start.values.tolist())], tumor_cov)
+        else:
+            df_hp1 = df_hp1_base.copy()
+            df_hp2 = df_hp2_base.copy()
+            df_segs_hp1 = df_segs_hp1_base.copy()
+            df_segs_hp2 = df_segs_hp2_base.copy()
 
         cen_out = [normal_coverage] + [normal_coverage + (i * single_copy_cov) for i in range(1, len(centers))]
         df_segs_hp1_updated, df_segs_hp2_updated = adjust_diversified_segments(cen_out, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, args)
@@ -102,17 +107,27 @@ def copy_numbers_assignment_haplotypes(args, tumor_cov, max_limit, single_copy_c
 
         if (float(args.purity_range.split('-')[0]) <= tumor_purity <= float(args.purity_range.split('-')[1])) and (float(args.ploidy_range.split('-')[0]) <= overall_ploidy <= float(args.ploidy_range.split('-')[1])):
             average_p_value.append(p_value)
-            data.append([overall_ploidy, tumor_purity, cen_out, p_value, dna_tumor_purity])
+            data.append([overall_ploidy, tumor_purity, cen_out, p_value, dna_tumor_purity, normal_coverage/2])
             logger.info("overall_ploidy: %s, dna_tumor_purity: %s, cell_tumor_purity: %s, average_p_value: %s, for i: %s,  centers: %s, norm frac: %s",
                 overall_ploidy, dna_tumor_purity, cellular_tumor_purity, p_value, normal_coverage, cen_out[0:4], normal_fraction)
 
     plot_ploidy_purity_p_values(args, [data[n][0] for n in range(len(data))], [data[n][1] for n in range(len(data))], [data[n][3] for n in range(len(data))])
+
     if average_p_value:
         optimized_normal = find_p_values_peaks(average_p_value)
         for j in optimized_normal:
             args.tumor_ploidy = round(data[j][0], 2)
             args.tumor_purity = round(data[j][1], 2)
             dna_tumor_fraction = round(data[j][4], 2)
+            normal_fraction = round(data[j][5], 2)
+            if args.tumor_phased_vcf:
+                df_hp1, df_hp2, df_segs_hp1, df_segs_hp2 = update_segs_with_normal_optimized(df_hp1_base, df_hp2_base, df_segs_hp1_base, df_segs_hp2_base, normal_fraction, args)
+            else:
+                df_hp1 = df_hp1_base.copy()
+                df_hp2 = df_hp2_base.copy()
+                df_segs_hp1 = df_segs_hp1_base.copy()
+                df_segs_hp2 = df_segs_hp2_base.copy()
+
             cen_out = data[j][2]
             logger.info('Normal optimized clusters means: %s', cen_out)
             integer_fractional_means = sorted([i for i in range(0, len(cen_out))])
