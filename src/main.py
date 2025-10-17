@@ -71,8 +71,8 @@ def copy_numbers_assignment_haplotypes(args, tumor_cov, max_limit, single_copy_c
     for normal_coverage in np.arange(0, max_limit, 0.1):
         if args.tumor_phased_vcf:
             df_hp1, df_hp2, df_segs_hp1, df_segs_hp2 = update_segs_with_normal_optimized(df_hp1_base, df_hp2_base, df_segs_hp1_base, df_segs_hp2_base, normal_coverage, args)
-            _, centers, is_half_peak, centers_half, subclonals, x_axis, observed_hist, single_copy_cov, single_copy_cov_half = \
-                peak_detection_optimization(args, df_segs_hp1.state.values.tolist() + df_segs_hp2.state.values.tolist(), [x - y for x, y in zip(df_segs_hp1.end.values.tolist(), df_segs_hp1.start.values.tolist())]  + [x - y for x, y in zip(df_segs_hp2.end.values.tolist(), df_segs_hp2.start.values.tolist())], tumor_cov)
+            #_, centers, is_half_peak, centers_half, subclonals, x_axis, observed_hist, single_copy_cov, single_copy_cov_half = \
+            #    peak_detection_optimization(args, df_segs_hp1.state.values.tolist() + df_segs_hp2.state.values.tolist(), [x - y for x, y in zip(df_segs_hp1.end.values.tolist(), df_segs_hp1.start.values.tolist())]  + [x - y for x, y in zip(df_segs_hp2.end.values.tolist(), df_segs_hp2.start.values.tolist())], tumor_cov)
         else:
             df_hp1 = df_hp1_base.copy()
             df_hp2 = df_hp2_base.copy()

@@ -1400,11 +1400,11 @@ def update_segs_with_normal_optimized(df_hp1, df_hp2, df_segs_hp1, df_segs_hp2, 
         for j, (starts, ends, hp) in enumerate(zip(df_loh_chrom.start.values.tolist(), df_loh_chrom.end.values.tolist(), df_loh_chrom.hp.values.tolist())):
             for i in range(starts // args.bin_size, ends // args.bin_size):
                 if hp == 1:
-                   haplotype_1_values[i] = haplotype_1_values[i] - dna_tumor_fraction
-                   #haplotype_2_values[i] = haplotype_2_values[i] + dna_tumor_fraction
+                   haplotype_1_values[i] = max(haplotype_1_values[i] - dna_tumor_fraction, 0)
+                   haplotype_2_values[i] = haplotype_2_values[i] + dna_tumor_fraction
                 else:
-                   #haplotype_1_values[i] = haplotype_1_values[i] + dna_tumor_fraction
-                   haplotype_2_values[i] = haplotype_2_values[i] - dna_tumor_fraction
+                   haplotype_1_values[i] = haplotype_1_values[i] + dna_tumor_fraction
+                   haplotype_2_values[i] = max(haplotype_2_values[i] - dna_tumor_fraction, 0)
 
         updated_df_hp1.append(
                 pd.DataFrame(list(zip(df_hp1_chrom.chr.values.tolist(), df_hp1_chrom.start.values.tolist(), df_hp1_chrom.end.values.tolist(), haplotype_1_values)),
