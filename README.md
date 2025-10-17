@@ -233,7 +233,7 @@ Few cell lines arbitrary phase-switch correction and copy number estimation outp
 
 * `--copynumbers-subclonal-enable` Enabling subclonal/fractional copy number states in plots  [default: enabled]
 
-* `--loh-enable` Enabling LOH regions display in CN plots [default: enabled]
+* `--loh-enable` Enabling LOH regions display in CN plots [default: disabled]
 
 * `--phaseblock-flipping-disable` Disabling phaseblock flipping if traget tumor BAM doesn't need phase-correction (default: enabled)
 
