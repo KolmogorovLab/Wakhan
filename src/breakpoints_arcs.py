@@ -18,6 +18,8 @@ def get_all_breakpoints_data(edges, edges_chr, height, path, args):
     for variant in my_parser:
         if not variant['CHROM'] in chroms:
             continue
+        if 'SVLEN' not in variant['info_dict']: #rare bug in Severus output
+            continue
         if variant['info_dict']['SVTYPE'][0] == 'INV':
             bp_junctions_inv.append([variant['CHROM'], int(variant['POS'])])
         elif variant['info_dict']['SVTYPE'][0] == 'sBND':

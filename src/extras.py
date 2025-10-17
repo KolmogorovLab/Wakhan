@@ -110,6 +110,9 @@ def sv_vcf_bps_cn_check(path, args):
             if not variant['CHROM'] in chroms:
                 continue
 
+            if 'SVLEN' not in variant['info_dict']: #rare bug in Severus output
+                continue
+
             hp = '0|0'
             if 'HP' in variant['info_dict'] and '|' in variant['info_dict']['HP'][0] and args.use_sv_haplotypes:
                 start = int(variant['POS'])
