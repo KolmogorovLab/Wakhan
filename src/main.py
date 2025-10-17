@@ -199,11 +199,11 @@ def copy_numbers_assignment_haplotypes(args, tumor_cov, max_limit, single_copy_c
 def build_parser():
     # default tunable parameters
     MAX_READ_ERROR = 0.1
-    MIN_MAPQ = 10
+    MIN_MAPQ = 5
     BIN_SIZE = 50000
     BIN_SIZE_SNPS = 200000
     MAX_CUT_THRESHOLD = 100
-    MIN_ALIGNED_LENGTH = 5000
+    MIN_ALIGNED_LENGTH = 1000
     MAX_CUT_THRESHOLD_SNPS_COUNTS = 50
     HETS_RATIO_LOH = 0.15
     HETS_SMOOTH_WINDOW = 1

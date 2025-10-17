@@ -314,6 +314,9 @@ def process_bam_for_snps_freqs(args, thread_pool):
     else:
         vcf_input = args.tumor_phased_vcf
     basefile = pathlib.Path(args.target_bam[0]).stem
+
+    output_bam = args.target_bam[0]
+    """
     output_bam = f"{os.path.join(args.out_dir_plots+'/data', basefile + '_reduced.bam')}"
 
     samtools_cmd = ['samtools', 'view', '-@', str(args.threads), '-F', '3844', '-q', '5', '-h', args.target_bam[0]]
@@ -334,6 +337,7 @@ def process_bam_for_snps_freqs(args, thread_pool):
         raise ValueError('awk subprocess returned nonzero value: {}'.format(awk.returncode))
     if st_2.returncode != 0:
         raise ValueError('samtools view for bam output subprocess returned nonzero value: {}'.format(st_2.returncode))
+    """
 
     basefile = pathlib.Path(vcf_input).stem
     output_csv = basefile + '_het_snps.csv'
@@ -381,7 +385,22 @@ def process_pileups(bam, ref, input_beds, thread_pool, args):
 def process_pileups_parallel(bam, ref, bed, args):
     basefile = pathlib.Path(bed).stem
     output_csv = f"{os.path.join(args.out_dir_plots+'/coverage_data', basefile + '_SNPs.csv')}"
-    cmd = ['samtools', 'mpileup', '-l', bed, '-f', ref, bam,  '-o', output_csv]
-    process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    process.wait()
+    #cmd = ['samtools', 'mpileup', '-l', bed, '-f', ref, bam,  '-o', output_csv]
+
+    chromosomes = set()
+    with open(bed, "r") as f:
+        for line in f:
+            if line.startswith("#"):
+                continue
+            chromosomes.add(line.split()[0])
+
+    #open(output_csv, "w").close()
+    with open(output_csv, "w") as samtools_out:
+        for chrom in chromosomes:
+            cmd = ['samtools', 'mpileup', '-l', bed, '-f', ref, '-r', chrom, bam, '--no-BAQ', '-q', '5', '-Q', '1',
+                   '--no-output-ins', '--no-output-ins', '--no-output-del', '--no-output-del', '--no-output-ends']
+            #print(cmd)
+            process = subprocess.Popen(cmd, stdout=samtools_out, stderr=open(os.devnull, "w"))
+            process.wait()
+
     return output_csv
