@@ -49,7 +49,9 @@ class bps_sample(object):
 #def sv_vcf_bps_cn_check(path, df_segs_hp1, df_segs_hp2):
 def sv_vcf_bps_cn_check(path, args):
     HP_BALANCE_RATE = 0.3
-    BP_RELIABLE_COV_RATE = 0.3
+    BP_RELIABLE_COV_RATE = 0.5
+    BP_MIN_COV = 3
+    bp_cov_threshold = max(args.first_copy_breakpoints_filter * BP_RELIABLE_COV_RATE, BP_MIN_COV)
 
     #########################################
     from vcf_parser import VCFParser
@@ -99,7 +101,7 @@ def sv_vcf_bps_cn_check(path, args):
 
     for variant in my_parser:
         dv_value = int(variant[my_parser.individuals[0]].split(':')[4])
-        if args.first_copy_breakpoints_filter > 0 and (dv_value < args.first_copy_breakpoints_filter * BP_RELIABLE_COV_RATE):
+        if dv_value < bp_cov_threshold:
             continue
 
         if ("INV" in variant['ID'] and variant['info_dict']['DETAILED_TYPE'] == ['reciprocal_inv']) or  "INS" in variant['ID']:
