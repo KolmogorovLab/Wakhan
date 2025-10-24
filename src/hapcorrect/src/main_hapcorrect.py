@@ -400,15 +400,17 @@ def main_process(args):
     else:
         write_df_csv(pd.DataFrame(columns=['chr', 'start', 'end', 'gene', 'hp1', 'hp2']), args.out_dir_plots + '/coverage_data/cancer_genes_coverage.csv')
 
-    if args.tumor_phased_vcf and len(loh_regions_events_all):
-        loh_df_final = pd.concat(loh_regions_events_all)
-        loh_df_final_filtered = loh_df_final[loh_df_final['end'] - loh_df_final['start'] >= 20000]
-        #update HP in LOH regions for flipped segments
-        loh_df = update_hp_assignment_loh_segments(args, loh_df_final_filtered, pd.concat(df_updated_coverage))
-        write_df_csv(loh_df, args.out_dir_plots+'/coverage_data/'+args.genome_name+'_loh_segments.csv')
-        csv_df_loh_regions = csv_df_chromosomes_sorter(args.out_dir_plots + '/coverage_data/'+args.genome_name + '_loh_segments.csv', ['chr', 'start', 'end', 'hp'])
-    else:
-        csv_df_loh_regions = pd.DataFrame(columns=['chr', 'start', 'end', 'hp'])
+    csv_df_loh_regions = pd.DataFrame(columns=['chr', 'start', 'end', 'hp'])
+    if args.tumor_phased_vcf:
+        if len(loh_regions_events_all):
+            loh_df_final = pd.concat(loh_regions_events_all)
+            loh_df_final_filtered = loh_df_final[loh_df_final['end'] - loh_df_final['start'] >= 20000]
+            #update HP in LOH regions for flipped segments
+            loh_df = update_hp_assignment_loh_segments(args, loh_df_final_filtered, pd.concat(df_updated_coverage))
+            write_df_csv(loh_df, args.out_dir_plots+'/coverage_data/'+args.genome_name+'_loh_segments.csv')
+            csv_df_loh_regions = csv_df_chromosomes_sorter(args.out_dir_plots + '/coverage_data/'+args.genome_name + '_loh_segments.csv', ['chr', 'start', 'end', 'hp'])
+        else:
+            open(args.out_dir_plots + '/coverage_data/' + args.genome_name + '_loh_segments.csv', "w").close()
 
     if os.path.isfile(args.out_dir_plots+'/data_phasing/' + args.genome_name + '_phase_change_segments.csv'):
         csv_df_phase_change_segments = csv_df_chromosomes_sorter(args.out_dir_plots+'/data_phasing/' + args.genome_name + '_phase_change_segments.csv', ['chr', 'start', 'end'])
