@@ -390,7 +390,9 @@ def ref_bam_vcfs_nomenclature_check(args):
     except Exception as e:
         print(f"An unexpected error occurred while reading BAM header: {e}")
 
-    command_3 = "less " + args.reference+".fai" + " | awk -v OFS='\t' '{print $1}' > " + out_fasta
+    #command_3 = "less " + args.reference+".fai" + " | awk -v OFS='\t' '{print $1}' > " + out_fasta
+    #command_3 = "cat " + args.reference + ".fai" + " | awk -v OFS='\t' '{print $1}' > " + out_fasta
+    command_3 = "awk -v OFS='\t' '{print $1}' " + args.reference + ".fai" + " > " + out_fasta
     try:
         process = subprocess.Popen(command_3, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         stdout, stderr = process.communicate()
