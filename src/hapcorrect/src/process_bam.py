@@ -6,6 +6,9 @@ import os
 import pandas
 from collections import defaultdict
 import logging
+
+from src.utils import csv_df_chromosomes_sorter
+
 logger = logging.getLogger()
 
 class ReadSegment(object):
