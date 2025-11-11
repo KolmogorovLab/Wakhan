@@ -110,9 +110,9 @@ def main_process(args):
 
     logger.info('Parsing phaseblocks information')
     if args.normal_phased_vcf:
-        output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(args.normal_phased_vcf, args)
+        output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(args.normal_phased_vcf, args, 'data_phasing')
     else:
-        output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(args.tumor_phased_vcf, args)
+        output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(args.tumor_phased_vcf, args, 'data_phasing')
     phasesets_segments = generate_phasesets_bins(args.target_bam[0], output_phasesets_file_path, args.bin_size, args)  # TODO update for multiple bam files
 
     logger.info('Computing coverage for bins')
@@ -156,7 +156,7 @@ def main_process(args):
     cancer_genes_df_all = snps_frequencies_chrom_genes(df_snps_frequencies, args)
 
     if args.tumor_phased_vcf:
-        output_phasesets_file_path = vcf_parse_to_csv_for_snps(args.tumor_phased_vcf, args)
+        output_phasesets_file_path = vcf_parse_to_csv_for_snps(args.tumor_phased_vcf, args, 'data_phasing')
         df_snps_in_csv_loh = csv_df_chromosomes_sorter(output_phasesets_file_path, ['chr', 'pos', 'qual', 'gt', 'dp', 'vaf'])
         #df_snps_frequencies_homo = csv_df_chromosomes_sorter(args.out_dir_plots + '/data_phasing/snps_frequencies_homo.csv', ['chr', 'pos', 'freq_value_a', 'hp_a', 'freq_value_b', 'hp_b'])
 

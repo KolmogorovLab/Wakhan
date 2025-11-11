@@ -10,35 +10,14 @@ logger = logging.getLogger()
 
 from src.utils import write_segments_coverage_dict, csv_df_chromosomes_sorter, smoothing
 from src.hapcorrect.src.process_bam import process_bam_for_snps_freqs
+# Import common VCF utilities from hapcorrect
+from src.hapcorrect.src.process_vcf import count_bases, chunks
 
 import csv
 import multiprocessing
 from collections import Counter
 from typing import List, Tuple
 
-def af_field_selection(vcf_path):
-    vcf_file = open(vcf_path, "r") if "gz" not in vcf_path else gzip.open(vcf_path, "rt")
-    af_field = 'NULL'
-    for line in vcf_file:
-        line = line.rstrip("\n")
-        # skip header
-        if not line.startswith("#"):
-            [_,_, _, _, _, _,_,_, format_, sample_] = line.split("\t")
-            # searching in INFO for AF/VAF
-            if format_.__contains__("AF"):
-                try:
-                    format_.split(":").index("AF")
-                    af_index = format_.split(":").index("AF")
-                    #af = float(sample_.split(":")[af_index])
-                    af_field = 'AF'
-                except ValueError:
-                    if format_.__contains__("VAF"):
-                        af_index = format_.split(":").index("VAF")
-                        #af = float(sample_.split(":")[af_index])
-                        af_field = 'VAF'
-            break
-    vcf_file.close()
-    return af_field
 
 def get_snps_counts(snps_df_sorted, chrom, ref_start_values, bin_size):  # TODO This module needs better implementation, currently slow
     snps_df = snps_df_sorted[snps_df_sorted['chr'] == chrom]
@@ -119,31 +98,6 @@ def get_snps_counts_cn_regions(snps_df_sorted, chrom, ref_start_values, ref_end_
 
     return snps_het_counts, snps_homo_counts, ref_start_values, ref_end_values
 
-def get_snps_frquncies(snps_df_sorted, chrom):  # TODO This module needs better implementation, currently slow
-    snps_df = snps_df_sorted[snps_df_sorted['chr'] == chrom]
-    if 'gt' in snps_df.columns:
-        snps_df['gt'].astype(str)    #snps_df = snps_df[(snps_df['qual'] > 15)]
-
-    if snps_df.vaf.dtype == object:
-        snps_df_vaf = [eval(i) for i in snps_df.vaf.str.split(',').str[0].values.tolist()]
-    else:
-        snps_df_vaf = snps_df.vaf.values.tolist()
-    snps_df_gt = snps_df['gt'].tolist()
-
-    snps_df_pos = snps_df.pos.values.tolist()
-    snps_het = []
-    snps_homo = []
-    snps_het_pos = []
-    snps_homo_pos = []
-    for index, (gt,vaf) in enumerate(zip(snps_df_gt,snps_df_vaf)):
-        if gt == '1/1' or  gt == '1|1':
-            snps_homo.append(vaf)
-            snps_homo_pos.append(snps_df_pos[index])
-        else:
-            snps_het.append(vaf)
-            snps_het_pos.append(snps_df_pos[index])
-
-    return snps_het, snps_homo, snps_het_pos, snps_homo_pos
 
 def get_snps_frquncies_genome(snps_df):  # TODO This module needs better implementation, currently slow
     if 'gt' in snps_df.columns:
@@ -171,29 +125,6 @@ def get_snps_frquncies_genome(snps_df):  # TODO This module needs better impleme
 
     return snps_het, snps_homo, snps_het_pos, snps_homo_pos
 
-def het_homo_snps_gts(snps_df_sorted, chrom, ref_start_values, bin_size):
-    snps_df = snps_df_sorted[snps_df_sorted['chr'] == chrom]
-    if 'gt' in snps_df.columns:
-        snps_df['gt'].astype(str)
-    snps_df = snps_df[(snps_df['qual'] > 15)]
-
-    snps_df_haplotype1 = snps_df[(snps_df['gt'] == '0|1') | (snps_df['gt'] == '1|0')]
-    snps_df_haplotype1.reindex(snps_df_haplotype1)
-    if snps_df.vaf.dtype == object:
-        snps_df_haplotype1_vaf = [eval(i) for i in snps_df.vaf.str.split(',').str[0].values.tolist()]
-    else:
-        snps_df_haplotype1_vaf = snps_df.vaf.values.tolist()
-    snps_df_haplotype1_pos = snps_df_haplotype1.pos.values.tolist()
-
-    snps_df_haplotype2 = snps_df[(snps_df['gt'] == '0/0') | (snps_df['gt'] == '1/1') ]
-    snps_df_haplotype2.reindex(snps_df_haplotype2)
-    if snps_df.vaf.dtype == object:
-        snps_df_haplotype2_vaf = [eval(i) for i in snps_df.vaf.str.split(',').str[0].values.tolist()]
-    else:
-        snps_df_haplotype2_vaf = snps_df.vaf.values.tolist()
-    snps_df_haplotype2_pos = snps_df_haplotype2.pos.values.tolist()
-
-    return snps_df_haplotype1_vaf, snps_df_haplotype2_vaf, snps_df_haplotype1_pos, snps_df_haplotype2_pos
 
 def het_snps_means_df(args, chrom, snps_df_sorted, ref_start_values):
     snps_df = snps_df_sorted[snps_df_sorted['chr'] == chrom]
@@ -405,6 +336,7 @@ def squash_regions(region, bin_size):
     region_ends = sorted(region_ends)
 
     return region_starts, region_ends
+
 def snps_mean(df_snps, ref_start_values, ref_end_values, chrom, args):
     df = df_snps[df_snps['chr'] == chrom]
 
@@ -443,94 +375,8 @@ def snps_mean(df_snps, ref_start_values, ref_end_values, chrom, args):
         total += len_cov
     return snps_haplotype1_mean, snps_haplotype2_mean
 
-def cpd_mean(haplotype1_means, haplotype2_means, ref_values, chrom, args):
-    import ruptures as rpt
-    import numpy as np
-
-    data = np.array(haplotype1_means, dtype='int') #numpy.clip(haplotype1_means, a_min=1, a_max=300)
-    algo = rpt.Pelt(model="rbf").fit(data)
-    result = algo.predict(pen=10)
-    change_points = [i for i in result if i <= len(data)]
-
-    snps_haplotype1_mean = []
-    snps_haplotype1_pos = []
-    start = 0
-    snps_haplotype1_pos.append(0)
-    for index, point in enumerate(change_points):
-        sub_list=haplotype1_means[start:point]
-        if sub_list:
-            snps_haplotype1_mean.append(statistics.mean(sub_list))
-        else:
-            snps_haplotype1_mean.append(0)
-        start = point + 1
-        snps_haplotype1_pos.append(point * args.bin_size)
-    snps_haplotype1_pos.append(ref_values[-1] * args.bin_size)
-    ############################################################
-    data = np.array(haplotype2_means, dtype='int') #numpy.clip(haplotype2_means, a_min=1, a_max=300)
-    algo = rpt.Pelt(model="rbf").fit(data)
-    result = algo.predict(pen=10)
-    change_points = [i for i in result if i <= len(data)]
-
-    snps_haplotype2_mean = []
-    snps_haplotype2_pos = []
-    start = 0
-    snps_haplotype2_pos.append(0)
-    for index, point in enumerate(change_points):
-        sub_list=haplotype2_means[start:point]
-        if sub_list:
-            snps_haplotype2_mean.append(statistics.mean(sub_list))
-        else:
-            snps_haplotype2_mean.append(0)
-        start = point + 1
-        snps_haplotype2_pos.append(point * args.bin_size)
-    snps_haplotype2_pos.append(ref_values[-1] * args.bin_size)
-
-    chr = range(len(snps_haplotype1_pos))
-    df_cpd_hp1 = pd.DataFrame(list(zip([chrom for ch in chr], snps_haplotype1_pos, snps_haplotype1_mean)), columns=['chr', 'start', 'hp1'])
-    df_cpd_hp2 = pd.DataFrame(list(zip([chrom for ch in chr], snps_haplotype2_pos, snps_haplotype2_mean)), columns=['chr', 'start', 'hp2'])
-
-    slices = slice_when(lambda x, y: y - x > 10, sorted(snps_haplotype1_mean + snps_haplotype2_mean))
-    data = list(slices)
-    #print(data)
-    #print([sum(sub_list) / len(sub_list) for sub_list in data])
 
 
-    return df_cpd_hp1, df_cpd_hp2
-
-def slice_when(predicate, iterable):
-  i, x, size = 0, 0, len(iterable)
-  while i < size-1:
-    if predicate(iterable[i], iterable[i+1]):
-      yield iterable[x:i+1]
-      x = i + 1
-    i += 1
-  yield iterable[x:size]
-
-
-def vcf_parse_to_csv_for_snps(input_vcf, args):
-    # pathlib.Path(input_vcf).suffix #extension
-    # TODO add output check conditions with all these processes
-    basefile = pathlib.Path(input_vcf).stem  # filename without extension
-    output_vcf = basefile + '_snps.vcf.gz'
-    output_vcf = f"{os.path.join(args.out_dir_plots, 'data', output_vcf)}"
-
-    output_csv = basefile + '_snps.csv'
-    output_csv = f"{os.path.join(args.out_dir_plots, 'data', output_csv)}"
-
-    # logger.info('bcftools -> Filtering out hetrozygous and phased SNPs and generating a new VCF')
-    # # Filter out het, phased SNPs
-    # cmd = ['bcftools', 'view', '--threads', '$(nproc)', input_vcf, '-Oz', '-o', output_vcf]
-    # process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    # process.wait()
-    af_field = af_field_selection(input_vcf)
-    logger.info('bcftools -> Query for phasesets and GT, DP, VAF feilds by creating a CSV file')
-    # bcftools query for phasesets and GT,DP,VAF
-    query = '%CHROM\t%POS\t%QUAL\t[%GT]\t[%DP]\t[%'+af_field+']\n'
-    cmd = ['bcftools', 'query', '-f', query, '-i', 'FILTER="PASS"', input_vcf, '-o', output_csv]  #
-    process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    process.wait()
-
-    return output_csv
 
 def vcf_parse_to_csv_for_het_phased_snps(input_vcf, args):
     #pathlib.Path(input_vcf).suffix #extension
@@ -545,29 +391,6 @@ def vcf_parse_to_csv_for_het_phased_snps(input_vcf, args):
     # logger.info('bcftools -> Filtering out hetrozygous and phased SNPs and generating a new VCF')
     # # Filter out het, phased SNPs
     # cmd = ['bcftools', 'view', '--threads', '$(nproc)',  '-g', 'het', '--types', 'snps', input_vcf, '-Oz', '-o', output_vcf]
-    # process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    # process.wait()
-
-    logger.info('bcftools -> Query for phasesets and GT, DP, VAF feilds by creating a CSV file')
-    # bcftools query for phasesets and GT,DP,VAF
-    cmd = ['bcftools', 'query', '-f',  '%CHROM\t%POS\t[%PS]\n', '-i PS>1', input_vcf, '-o', output_csv] #
-    process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    process.wait()
-
-    return output_csv
-def vcf_parse_to_csv_for_het_phased_snps_phasesets(input_vcf, args):
-    #pathlib.Path(input_vcf).suffix #extension
-    # TODO add output check conditions with all these processes
-    basefile = pathlib.Path(input_vcf).stem #filename without extension
-    output_vcf = basefile + '_het_phased_snps.vcf.gz'
-    output_vcf = f"{os.path.join(args.out_dir_plots, 'data', output_vcf)}"
-
-    output_csv = basefile + '_phasesets.csv'
-    output_csv = f"{os.path.join(args.out_dir_plots, 'data', output_csv)}"
-
-    # logger.info('bcftools -> Filtering out hetrozygous and phased SNPs and generating a new VCF')
-    # # Filter out het, phased SNPs
-    # cmd = ['bcftools', 'view', '--threads', '$(nproc)',  '--phased', '-g', 'het', '--types', 'snps', input_vcf, '-Oz', '-o', output_vcf]
     # process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     # process.wait()
 
@@ -664,29 +487,8 @@ def get_snp_segments_frequencies_final(dataframe_acgt_frequency):
         snp_segments_final.append((contig + '\t' + str(pos) + '\t' + str(freq_value_a) + '\t'+ str(hp_a) + '\t' + str(freq_value_b) + '\t' + str(hp_b)))
 
     return snp_segments_final
-def bam_pileups_snps(snps_list, target_bam, args):
-    basefile = pathlib.Path(target_bam).stem
-    output_csv = basefile + '_snps_pileup.csv'
-    output_csv = f"{os.path.join(args.out_dir_plots, 'data', output_csv)}"
 
-    #target_bam = '/home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7_haplotagged.bam'
 
-    cmd = ['samtools', 'mpileup', '-l',  snps_list, '-f', args.reference, target_bam, '-o', output_csv] #
-    process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    process.wait()
-
-    return output_csv
-
-def count_bases(positions: List[Tuple[str, int, str, str]]) -> List[Tuple[str, int, int, int, int, int]]:
-    base_counts = []
-    for seq_name, pos, ref_base, reads in positions:
-        counts = Counter(reads.replace(",", ref_base).replace(".", ref_base))
-        base_counts.append((seq_name, pos, counts['A'] + counts['a'], counts['C'] + counts['c'], counts['G'] + counts['g'], counts['T'] + counts['t']))
-    return base_counts
-
-def chunks(lst, n):
-    for i in range(0, len(lst), n):
-        yield lst[i:i + n]
 
 def compute_acgt_frequency(pileup, snps_frequency, args): #https://www.biostars.org/p/95700/
     with open(pileup, 'r') as f:

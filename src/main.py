@@ -26,7 +26,7 @@ from src.utils import get_chromosomes_bins, write_segments_coverage, write_segme
     centromere_regions_blacklist_bins, update_segs_with_normal_optimized
 from src.plots import coverage_plots_chromosomes, copy_number_plots_genome_details, copy_number_plots_genome, plots_genome_coverage, copy_number_plots_chromosomes, breakpoints_segments_means, \
     copy_number_plots_genome_breakpoints, copy_number_plots_genome_breakpoints_subclonal, copy_number_plots_genome_subclonal, genes_copy_number_plots_genome, genes_plots_genome, heatmap_copy_number_plots_genome, plot_ploidy_purity_p_values
-from src.vcf_processing import vcf_parse_to_csv_for_het_phased_snps_phasesets
+from src.hapcorrect.src.process_vcf import vcf_parse_to_csv_for_het_phased_snps_phasesets
 from src.snps_loh import plot_snps_frequencies_without_phasing, plot_snps_frequencies, plot_snps_ratios_genome, snps_df_loh, variation_plots, write_loh_regions
 from src.hapcorrect.src.phase_correction import generate_phasesets_bins
 from src.optimization import peak_detection_optimization
@@ -461,9 +461,9 @@ def cna_process(args):
             write_segments_coverage_dict(segments_coverage, 'coverage.csv', args)
             logger.info('Parsing phaseblocks information')
             if args.normal_phased_vcf:
-                output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(args.normal_phased_vcf, args)
+                output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(args.normal_phased_vcf, args, 'data')
             else:
-                output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(args.tumor_phased_vcf, args)
+                output_phasesets_file_path = vcf_parse_to_csv_for_het_phased_snps_phasesets(args.tumor_phased_vcf, args, 'data')
             if not args.without_phasing:
                 phasesets_segments = generate_phasesets_bins(args.target_bam[0], output_phasesets_file_path, args.bin_size, args) #TODO update for multiple bam files
                 logger.info('Computing coverage for phaseblocks')

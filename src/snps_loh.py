@@ -8,7 +8,8 @@ import logging
 
 logger = logging.getLogger()
 
-from src.vcf_processing import get_snps_frquncies, het_homo_snps_gts, vcf_parse_to_csv_for_het_phased_snps_phasesets, snps_mean, cpd_mean, get_snp_segments, get_snps_frquncies_coverage, vcf_parse_to_csv_for_snps, get_snps_counts, get_snps_counts_cn_regions, get_snps_frquncies_genome
+from src.vcf_processing import snps_mean, get_snp_segments, get_snps_frquncies_coverage, get_snps_counts, get_snps_counts_cn_regions, get_snps_frquncies_genome
+from src.hapcorrect.src.process_vcf import get_snps_frquncies, het_homo_snps_gts, cpd_mean, vcf_parse_to_csv_for_snps
 from src.utils import csv_df_chromosomes_sorter, get_vafs_from_tumor_phased_vcf
 from src.extras import get_contigs_list
 from src.plots import add_scatter_trace_coverage, print_chromosome_html, plots_add_markers_lines, plots_layout_settings,\
@@ -55,9 +56,9 @@ def snps_df_loh(args, thread_pool, df_coverage_data):
     chroms = get_contigs_list(args.contigs)
     if args.tumor_phased_vcf or args.without_phasing:
         if args.tumor_phased_vcf:
-            output_phasesets_file_path = vcf_parse_to_csv_for_snps(args.tumor_phased_vcf, args)
+            output_phasesets_file_path = vcf_parse_to_csv_for_snps(args.tumor_phased_vcf, args, 'data')
         else:
-            output_phasesets_file_path = vcf_parse_to_csv_for_snps(args.normal_phased_vcf, args)
+            output_phasesets_file_path = vcf_parse_to_csv_for_snps(args.normal_phased_vcf, args, 'data')
         logger.info('Loading and sorting SNPs df')
         df_snps_in_csv = csv_df_chromosomes_sorter(output_phasesets_file_path, ['chr', 'pos', 'qual', 'gt', 'dp', 'vaf'])
         logger.info('Getting BAFs based on VAF score')
@@ -79,9 +80,9 @@ def snps_df_loh(args, thread_pool, df_coverage_data):
 
 def plot_snps_frequencies_without_phasing(args, df, df_segs_hp1_w, df_segs_hp2_w, centers, integer_fractional_means):
     if args.tumor_phased_vcf:
-        output_phasesets_file_path = vcf_parse_to_csv_for_snps(args.tumor_phased_vcf, args)
+        output_phasesets_file_path = vcf_parse_to_csv_for_snps(args.tumor_phased_vcf, args, 'data')
     else:
-        output_phasesets_file_path = vcf_parse_to_csv_for_snps(args.normal_phased_vcf, args)
+        output_phasesets_file_path = vcf_parse_to_csv_for_snps(args.normal_phased_vcf, args, 'data')
     logger.info('Loading and sorting SNPs df')
     df_snps_in_csv = csv_df_chromosomes_sorter(output_phasesets_file_path, ['chr', 'pos', 'qual', 'gt', 'dp', 'vaf'])
 
