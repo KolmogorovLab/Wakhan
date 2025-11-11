@@ -9,7 +9,7 @@ import logging
 logger = logging.getLogger()
 
 from src.utils import write_segments_coverage_dict, csv_df_chromosomes_sorter, smoothing
-from src.bam_processing import process_bam_for_snps_freqs
+from src.hapcorrect.src.process_bam import process_bam_for_snps_freqs
 
 import csv
 import multiprocessing

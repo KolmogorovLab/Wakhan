@@ -17,7 +17,7 @@ from scipy.signal import find_peaks
 from src.hapcorrect.src.main_hapcorrect import main_process
 from src.__version__ import __version__
 
-from src.bam_processing import get_all_reads_parallel, update_coverage_hist, get_segments_coverage, haplotype_update_all_bins_parallel, get_snps_frequencies, ref_bam_vcfs_nomenclature_check
+from src.hapcorrect.src.process_bam import get_all_reads_parallel, update_coverage_hist, get_segments_coverage, haplotype_update_all_bins_parallel, get_snps_frequencies, ref_bam_vcfs_nomenclature_check
 from src.utils import get_chromosomes_bins, write_segments_coverage, write_segments_coverage_dict, csv_df_chromosomes_sorter,\
     seperate_dfs_coverage, flatten_smooth, get_contigs_list, write_copynumber_segments_csv, integer_fractional_cluster_means, \
     adjust_diversified_segments, get_chromosomes_bins_bam, normal_genome_proportion, update_subclonal_means_states, adjust_first_copy_mean, \
