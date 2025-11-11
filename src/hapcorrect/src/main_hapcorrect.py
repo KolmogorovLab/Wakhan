@@ -29,7 +29,7 @@ from src.hapcorrect.src.utils import (get_chromosomes_bins, write_segments_cover
                                       is_phasesets_check_simple_heuristics, write_df_csv, loh_regions_events, snps_frequencies_chrom_genes,
                                       genes_segments_coverage, genes_segments_list, extend_snps_ratios_df, get_chromosomes_regions,
                                       add_breakpoints, update_hp_assignment_loh_segments)
-from src.hapcorrect.src.extras import get_contigs_list
+from src.extras import get_contigs_list
 from src.hapcorrect.src.plots import plot_coverage_data, change_point_detection, plot_coverage_data_after_correction, loh_plots_genome
 from src.hapcorrect.src.cpd import cpd_positions_means
 from src.hapcorrect.src.loh import detect_loh_centromere_regions, plot_snps
