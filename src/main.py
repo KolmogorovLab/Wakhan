@@ -28,7 +28,7 @@ from src.plots import coverage_plots_chromosomes, copy_number_plots_genome_detai
     copy_number_plots_genome_breakpoints, copy_number_plots_genome_breakpoints_subclonal, copy_number_plots_genome_subclonal, genes_copy_number_plots_genome, genes_plots_genome, heatmap_copy_number_plots_genome, plot_ploidy_purity_p_values
 from src.vcf_processing import vcf_parse_to_csv_for_het_phased_snps_phasesets
 from src.snps_loh import plot_snps_frequencies_without_phasing, plot_snps_frequencies, plot_snps_ratios_genome, snps_df_loh, variation_plots, write_loh_regions
-from src.phasing_correction import generate_phasesets_bins, fix_inter_cn_phase_switch_errors, bins_correction_phaseblocks
+from src.hapcorrect.src.phase_correction import generate_phasesets_bins
 from src.optimization import peak_detection_optimization
 from src.generate_vcf import read_cn_segments_process_vcf
 from src.extras import sv_vcf_bps_cn_check
