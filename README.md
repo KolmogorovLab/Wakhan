@@ -62,27 +62,45 @@ conda create -n wakhan_env wakhan
 conda activate wakhan_env
 ```
 
-##### Breakpoints/Structural variations or change point detection algo for copy number model
-
-Wakhan accepts [Severus](https://github.com/KolmogorovLab/Severus) structural variants VCF as breakpoints with param `--breakpoints` inputs to detect copy number changes and this option is highly recommended. 
-However, if `--breakpoints` option is not used, `--change-point-detection-for-cna` should be used instead to use change point detection algorithm [ruptures](https://centre-borelli.github.io/ruptures-docs/) alternatively.
-
-##### Tumor-Normal mixture and purity/ploidy estimation
-
-User can input both `--ploidy-range` [default: 1.5-5.5 -> [min-max]] and `--purity-range` [default: 0.5-1.0 -> [min-max] to inform copy number model about normal contamination in tumor to estimate copy number states correctly.
-
-##### Genes/copy number annotations
-
-By default, Wakhan uses [COSMIC](https://cancer.sanger.ac.uk/cosmic) cancer census genes (100 genes freely available) to display corresponding copy number states in `<genome_name>_<ploidy>_<purity>_<confidence>_genes_genome.html` file.
-Complete COSMIC academic/research purpose cancer census genes set (Cosmic_CancerGeneCensus_v101_GRCh38.tsv) could be downloaded from [COSMIC](https://cancer.sanger.ac.uk/cosmic/download/cosmic/v101/cancergenecensus).
-Please run the `scripts/cosmic.py` to extract the required fields and then input resultant `cosmic_genes.tsv` in param `--user-input-genes`.
-Alternatively, user can also input path through param `--user-input-genes` to custom input genes/subset of genes [examples in src\annotations\user_input_genes_example_<N>.bed] bed file these genes will be used in plots instead of default COSMIC cancer genes.
-grch38 reference genes will be use as default, user can input alternate (i.e, chm13) `--reference-name` to change to T2T-CHM13 coordinates instead. 
-
 ## Usage
 
 Wakhan can be run as a standalone [phase-correction](https://github.com/KolmogorovLab/Wakhan/tree/main/src/hapcorrect) and copy number profiling tool using below [1] tumor-only and tumor/normal pair commands.
 In case phased SVs/breakpoints, Long-Read Somatic Variant Calling pipeline mode [2] is recommended.
+
+## Key required/recommended parameters
+
+* `--reference` Reference file path
+
+* `--target-bam` path to target bam files (must be indexed)
+  
+* `--out-dir-plots` path to output coverage plots
+
+* `--genome-name` genome cellline/sample name to be displayed on plots
+
+* `--normal-phased-vcf` normal phased VCF file (tumor/normal pair mode) to generate het SNPs frequncies pileup for tumor BAM (if tumor-only mode, use phased `--tumor-phased-vcf` instead)
+
+* `--tumor-phased-vcf` phased VCF is required in tumor-only mode
+
+* `--breakpoints` (Highly recommended) Somatic SV calls in vcf format
+
+* `--threads` number of threads to use
+
+## Useful optional parameters
+
+* `--contigs` List of contigs (chromosomes, default: chr1-22,chrX) to be included in the plots [e.g., chr1-22,chrX,chrY], Note: Please use 1-22,X [e.g., 1-22,X,Y] in case REF, BAM, and VCFs entries don't contain `chr` name/notion, same should be observed in `--centromere` and `--cancer-genes` params in case no `chr` in names, use `*_nochr.bed` instead available in `src/annotations` or customized.
+
+* `--use-sv-haplotypes` To use phased Severus SV/breakpoints [default: disabled]
+
+* `--cpd-internal-segments` For change point detection algo on internal segments after breakpoint/cpd algo for more precise segmentation.
+
+* `--cut-threshold` Maximum cut threshold for coverage (readdepth) plots [default: 100]
+
+* `--centromere` Path to centromere annotations BED file [default: annotations/grch38.cen_coord.curated.bed]
+
+* `--cancer-genes` Path to Cancer Genes in TSV format to display in CNA plots [default: annotations/CancerGenes.tsv]
+
+* `--pdf-enable` Enabling PDF output for plots
+
 
 ## 1. Standalone mode
 
@@ -97,14 +115,11 @@ python wakhan.py --threads <24> --reference <ref.fa>  --target-bam <tumor.bam>  
 ```
 python wakhan.py --threads <24> --reference <ref.fa>  --target-bam <tumor.bam>  --tumor-phased-vcf <tumor_phased.vcf.gz> --genome-name <cellline/dataset name> --out-dir-plots <genome_abc_output> --breakpoints <severus-sv-VCF>
 ```
-___
 
-##### Phased breakpoints/structural variations
+## 2. Phased SVs/Breakpoints pipeline mode
 
 Severus also produces phased breakpoints/structural variations after rephasing tumor (tumor-only mode) or normal (tumor/normal pair mode) phased VCF which can be used in Wakhan by setting `--use-sv-haplotypes` param. 
 This option enables to segment copy numbers boundaries in only one appropriate haplotype.
-
-## 2. Phased SVs/Breakpoints pipeline mode
 
 To use phased SVs/breakpoints Wakhan works in two steps, in first step it uses `hapcorrect()` module for phase-correction and generates rephased VCF, which is used to haplotag BAMs through Whatshap,
 then Severus uses haplotagged BAMs to generate phased SVs. In second step, Wakhan takes this resultant Severus phased SVs VCF and runs `cna()` module with `--use-sv-haplotypes` param.
@@ -172,7 +187,6 @@ severus --target-bam ${SAMPLE_T}.haplotagged.bam --out-dir severus_out -t 16 --p
 python wakhan.py cna --threads 16 --reference  ${REF_FASTA}  --target-bam ${BAM_T}  --tumor-phased-vcf ${VCF}  --genome-name ${SAMPLE_T} \
     --breakpoints severus_out/severus_somatic.vcf --use-sv-haplotypes
 ```
-___
 
 ## 3. Unphased mode 
 Wakhan can also be used in case phasing is not good in input tumor or analysis is being performed without considering phasing:
@@ -187,7 +201,23 @@ python wakhan.py --threads <> --reference <mouse_ref>  --target-bam <tumor_bam> 
 Here is a sample copy number/breakpoints output plot without phasing for a mouse subline dataset.
 <img width="1373" alt="plots_example" src="examples/images/C15.png">
 
-___
+##### Breakpoints/Structural variations or change point detection algo for copy number model
+
+Wakhan accepts [Severus](https://github.com/KolmogorovLab/Severus) structural variants VCF as breakpoints with param `--breakpoints` inputs to detect copy number changes and this option is highly recommended. 
+However, if `--breakpoints` option is not used, `--change-point-detection-for-cna` should be used instead to use change point detection algorithm [ruptures](https://centre-borelli.github.io/ruptures-docs/) alternatively.
+
+##### Tumor-Normal mixture and purity/ploidy estimation
+
+User can input both `--ploidy-range` [default: 1.5-5.5 -> [min-max]] and `--purity-range` [default: 0.5-1.0 -> [min-max] to inform copy number model about normal contamination in tumor to estimate copy number states correctly.
+
+##### Genes/copy number annotations
+
+By default, Wakhan uses [COSMIC](https://cancer.sanger.ac.uk/cosmic) cancer census genes (100 genes freely available) to display corresponding copy number states in `<genome_name>_<ploidy>_<purity>_<confidence>_genes_genome.html` file.
+Complete COSMIC academic/research purpose cancer census genes set (Cosmic_CancerGeneCensus_v101_GRCh38.tsv) could be downloaded from [COSMIC](https://cancer.sanger.ac.uk/cosmic/download/cosmic/v101/cancergenecensus).
+Please run the `scripts/cosmic.py` to extract the required fields and then input resultant `cosmic_genes.tsv` in param `--user-input-genes`.
+Alternatively, user can also input path through param `--user-input-genes` to custom input genes/subset of genes [examples in src\annotations\user_input_genes_example_<N>.bed] bed file these genes will be used in plots instead of default COSMIC cancer genes.
+grch38 reference genes will be use as default, user can input alternate (i.e, chm13) `--reference-name` to change to T2T-CHM13 coordinates instead. 
+
 
 ##### Quick-run if coverage/pileup data is already available
 
@@ -205,47 +235,6 @@ This will save runtime significantly by not invoking coverage and pileup methods
 
 ## Examples
 Few cell lines arbitrary phase-switch correction and copy number estimation output with coverage profile is included in the [examples](https://github.com/KolmogorovLab/Wakhan/tree/main/examples) directory. 
-
-## Required parameters
-* `--reference` Reference file path
-
-* `--target-bam` path to target bam files (must be indexed)
-  
-* `--out-dir-plots` path to output coverage plots
-
-* `--genome-name` genome cellline/sample name to be displayed on plots
-
-* `--normal-phased-vcf` normal phased VCF file (tumor/normal pair mode) to generate het SNPs frequncies pileup for tumor BAM (if tumor-only mode, use phased `--tumor-phased-vcf` instead)
-
-* `--tumor-phased-vcf` phased VCF is required in tumor-only mode
-
-
-## Optional parameters
-* `--contigs` List of contigs (chromosomes, default: chr1-22,chrX) to be included in the plots [e.g., chr1-22,chrX,chrY], Note: Please use 1-22,X [e.g., 1-22,X,Y] in case REF, BAM, and VCFs entries don't contain `chr` name/notion, same should be observed in `--centromere` and `--cancer-genes` params in case no `chr` in names, use `*_nochr.bed` instead available in `src/annotations` or customized.
-
-* `--breakpoints` For segmentation to use in CN estimation, structural variations/breakpoints VCF file is required
-
-* `--breakpoints-min-length` To adjust breakpoints min length to be included in copy number analysis [default: 10000]
-
-* `--use-sv-haplotypes` To use phased Severus SV/breakpoints [default: disabled]
-
-* `--cpd-internal-segments` For change point detection algo on internal segments after breakpoint/cpd algo for more precise segmentation.
-
-* `--copynumbers-subclonal-enable` Enabling subclonal/fractional copy number states in plots  [default: enabled]
-
-* `--loh-enable` Enabling LOH regions display in CN plots [default: disabled]
-
-* `--phaseblock-flipping-disable` Disabling phaseblock flipping if traget tumor BAM doesn't need phase-correction (default: enabled)
-
-* `--phaseblocks-enable` Enabling phaseblocks display in coverage plots
-
-* `--cut-threshold` Maximum cut threshold for coverage (readdepth) plots [default: 100]
-
-* `--centromere` Path to centromere annotations BED file [default: annotations/grch38.cen_coord.curated.bed]
-
-* `--cancer-genes` Path to Cancer Genes in TSV format to display in CNA plots [default: annotations/CancerGenes.tsv]
-
-* `--pdf-enable` Enabling PDF output for plots
 
 
 ## Output produced
