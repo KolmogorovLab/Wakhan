@@ -20,7 +20,7 @@ from src.file_tools.process_vcf_legacy import get_snps_frquncies_coverage, snps_
 from src.file_tools.process_vcf import vcf_parse_to_csv_for_het_phased_snps_phasesets, get_snps_frquncies, het_homo_snps_gts, cpd_mean, vcf_parse_to_csv_for_snps
 from src.utils import subclonal_values_adjusted, get_chromosomes_bins, csv_df_chromosomes_sorter, get_breakpoints, flatten, get_snps_frquncies_coverage_from_bam, detect_alter_loh_regions, is_phasesets_check_simple_heuristics, change_point_detection_means, \
     df_chromosomes_sorter, get_chromosomes_regions, adjust_extreme_outliers, genes_phase_correction, write_df_csv, bins_with_copynumber_states
-from src.extras import get_contigs_list, sv_vcf_bps_cn_check
+from src.breakpoints import get_contigs_list, sv_vcf_bps_cn_check
 
 pd.options.mode.chained_assignment = None
 

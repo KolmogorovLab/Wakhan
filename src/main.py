@@ -31,7 +31,7 @@ from src.snps_loh import plot_snps_frequencies_without_phasing, plot_snps_freque
 from src.hapcorrect.src.phase_correction import generate_phasesets_bins
 from src.optimization import peak_detection_optimization
 from src.generate_vcf import read_cn_segments_process_vcf
-from src.extras import sv_vcf_bps_cn_check
+from src.breakpoints import sv_vcf_bps_cn_check
 
 logger = logging.getLogger()
 

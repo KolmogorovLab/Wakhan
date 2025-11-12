@@ -14,7 +14,7 @@ logger = logging.getLogger()
 
 from src.smoothing import smoothing
 #from hmm import call_copynumbers
-from src.extras import get_contigs_list, sv_vcf_bps_cn_check
+from src.breakpoints import get_contigs_list, sv_vcf_bps_cn_check
 
 def get_chromosomes_bins_replica(bam_file, bin_size, args):
     bed=[]
