@@ -30,7 +30,7 @@ from src.file_tools.process_vcf import vcf_parse_to_csv_for_het_phased_snps_phas
 from src.snps_loh import plot_snps_frequencies_without_phasing, plot_snps_ratios_genome, snps_df_loh, variation_plots, write_loh_regions
 from src.hapcorrect.src.phase_correction import generate_phasesets_bins
 from src.optimization import peak_detection_optimization
-from src.generate_vcf import read_cn_segments_process_vcf
+from src.file_tools.generate_vcf import read_cn_segments_process_vcf
 
 logger = logging.getLogger()
 
