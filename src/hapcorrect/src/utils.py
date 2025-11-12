@@ -11,7 +11,7 @@ import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 from src.extras import get_contigs_list
-from src.hapcorrect.src.process_bam import get_segments_coverage
+from src.file_tools.process_bam import get_segments_coverage
 
 def get_chromosomes_bins(bam_file, bin_size, args):
     bed=[]

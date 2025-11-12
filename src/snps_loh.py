@@ -8,8 +8,8 @@ import logging
 
 logger = logging.getLogger()
 
-from src.vcf_processing import snps_mean, get_snp_segments, get_snps_frquncies_coverage, get_snps_counts, get_snps_counts_cn_regions, get_snps_frquncies_genome
-from src.hapcorrect.src.process_vcf import get_snps_frquncies, het_homo_snps_gts, cpd_mean, vcf_parse_to_csv_for_snps
+from src.file_tools.process_vcf import get_snps_frquncies, het_homo_snps_gts, cpd_mean, vcf_parse_to_csv_for_snps
+from src.file_tools.process_vcf_legacy import snps_mean, get_snp_segments, get_snps_frquncies_coverage, get_snps_counts, get_snps_counts_cn_regions, get_snps_frquncies_genome
 from src.utils import csv_df_chromosomes_sorter, get_vafs_from_tumor_phased_vcf
 from src.extras import get_contigs_list
 from src.plots import add_scatter_trace_coverage, print_chromosome_html, plots_add_markers_lines, plots_layout_settings,\

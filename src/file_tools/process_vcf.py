@@ -14,7 +14,7 @@ from collections import  defaultdict, Counter
 logger = logging.getLogger()
 
 from src.hapcorrect.src.utils import write_segments_coverage_snps, csv_df_chromosomes_sorter
-from src.hapcorrect.src.process_bam import process_bam_for_snps_freqs
+from src.file_tools.process_bam import process_bam_for_snps_freqs
 from src.smoothing import smoothing
 
 import csv

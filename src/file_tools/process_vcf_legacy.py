@@ -9,9 +9,9 @@ import logging
 logger = logging.getLogger()
 
 from src.utils import write_segments_coverage_dict, csv_df_chromosomes_sorter, smoothing
-from src.hapcorrect.src.process_bam import process_bam_for_snps_freqs
+from src.file_tools.process_bam import process_bam_for_snps_freqs
 # Import common VCF utilities from hapcorrect
-from src.hapcorrect.src.process_vcf import count_bases, chunks
+from src.file_tools.process_vcf import count_bases, chunks
 
 import csv
 import multiprocessing

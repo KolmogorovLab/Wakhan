@@ -15,9 +15,9 @@ from collections import defaultdict
 
 logger = logging.getLogger()
 
-from src.hapcorrect.src.process_bam import (get_all_reads_parallel, update_coverage_hist, get_segments_coverage, haplotype_update_all_bins_parallel,
+from src.file_tools.process_bam import (get_all_reads_parallel, update_coverage_hist, get_segments_coverage, haplotype_update_all_bins_parallel,
                                             get_snps_frequencies, tumor_bam_haplotag)
-from src.hapcorrect.src.process_vcf import (vcf_parse_to_csv_for_het_phased_snps_phasesets, get_snp_frequencies_segments, snps_frequencies_chrom_mean,
+from src.file_tools.process_vcf import (vcf_parse_to_csv_for_het_phased_snps_phasesets, get_snp_frequencies_segments, snps_frequencies_chrom_mean,
                                             get_snps_frquncies_coverage, vcf_parse_to_csv_for_snps, index_vcf, rephase_vcf, get_phasingblocks,
                                             snps_frequencies_chrom_mean_phasesets, snps_frequencies_homo_chrom_mean)
 from src.hapcorrect.src.phase_correction import (generate_phasesets_bins, phase_flips_cis_trans, switch_inter_phaseblocks_bins,
