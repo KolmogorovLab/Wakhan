@@ -16,7 +16,7 @@ logger = logging.getLogger()
 
 #from src.phasing_correction import phaseblock_flipping, phase_correction_centers, contiguous_phaseblocks, detect_centromeres, flip_phaseblocks_contigous, remove_overlaping_contiguous, switch_inter_phaseblocks_bins
 from src.smoothing import smoothing
-from src.vcf_processing import get_snps_frquncies_coverage, snps_mean, get_snp_segments, het_snps_means_df
+from src.vcf_processing import get_snps_frquncies_coverage, snps_mean, get_snp_segments
 from src.hapcorrect.src.process_vcf import vcf_parse_to_csv_for_het_phased_snps_phasesets, get_snps_frquncies, het_homo_snps_gts, cpd_mean, vcf_parse_to_csv_for_snps
 from src.utils import subclonal_values_adjusted, get_chromosomes_bins, csv_df_chromosomes_sorter, get_breakpoints, flatten, get_snps_frquncies_coverage_from_bam, detect_alter_loh_regions, is_phasesets_check_simple_heuristics, change_point_detection_means, \
     df_chromosomes_sorter, get_chromosomes_regions, adjust_extreme_outliers, genes_phase_correction, write_df_csv, bins_with_copynumber_states

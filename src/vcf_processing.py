@@ -19,6 +19,7 @@ from collections import Counter
 from typing import List, Tuple
 
 
+#TODO: similar funciton with the same name is defined in hapcorrect vcf processing file
 def get_snps_counts(snps_df_sorted, chrom, ref_start_values, bin_size):  # TODO This module needs better implementation, currently slow
     snps_df = snps_df_sorted[snps_df_sorted['chr'] == chrom]
     if 'gt' in snps_df.columns:
@@ -60,6 +61,8 @@ def get_snps_counts(snps_df_sorted, chrom, ref_start_values, bin_size):  # TODO 
 
     return snps_het_counts, snps_homo_counts, snps_het_pos_bins, snps_homo_pos_bins
 
+
+#TODO: this one is unique to main version of vcf tools, called from snps_loh.py
 def get_snps_counts_cn_regions(snps_df_sorted, chrom, ref_start_values, ref_end_values):  # TODO This module needs better implementation, currently slow
     snps_df = snps_df_sorted[snps_df_sorted['chr'] == chrom]
     if 'gt' in snps_df.columns:
@@ -99,6 +102,7 @@ def get_snps_counts_cn_regions(snps_df_sorted, chrom, ref_start_values, ref_end_
     return snps_het_counts, snps_homo_counts, ref_start_values, ref_end_values
 
 
+#TODO: unique to main, called from plots.py and snp_loh.py
 def get_snps_frquncies_genome(snps_df):  # TODO This module needs better implementation, currently slow
     if 'gt' in snps_df.columns:
         snps_df['gt'].astype(str)
@@ -126,44 +130,7 @@ def get_snps_frquncies_genome(snps_df):  # TODO This module needs better impleme
     return snps_het, snps_homo, snps_het_pos, snps_homo_pos
 
 
-def het_snps_means_df(args, chrom, snps_df_sorted, ref_start_values):
-    snps_df = snps_df_sorted[snps_df_sorted['chr'] == chrom]
-    snps_df['gt'].astype(str)
-    snps_df = snps_df[(snps_df['qual'] > 15)]
-
-    snps_df_A_allele = snps_df[(snps_df['gt'] == '0|1') | (snps_df['gt'] == '1|0')]
-    snps_df_A_allele.reindex(snps_df_A_allele)
-    if snps_df_A_allele.vaf.dtype == object:
-        snps_df_A_allele_vaf = [eval(i) for i in snps_df_A_allele.vaf.str.split(',').str[0].values.tolist()]
-    else:
-        snps_df_A_allele_vaf = [i for i in snps_df_A_allele.vaf.values.tolist()]
-    snps_df_A_allele_pos = [i for i in snps_df_A_allele.pos.values.tolist()]
-    snps_df_A_allele_vaf = [1 - x if x > 0.5 else x for x in snps_df_A_allele_vaf]
-
-    # snps_df_B_allele = snps_df[(snps_df['gt'] == '1|0') | (snps_df['gt'] == '1/0')]
-    # snps_df_B_allele.reindex(snps_df_B_allele)
-    # if snps_df_B_allele.vaf.dtype == object:
-    #     snps_df_B_allele_vaf = [eval(i) for i in snps_df_B_allele.vaf.str.split(',').str[0].values.tolist() if eval(i) > 0.5]
-    # else:
-    #     snps_df_B_allele_vaf = [i for i in snps_df.vaf.values.tolist() if i > 0.5]
-
-    snps_A_allele_mean = []
-    total = 0
-    for index, i in enumerate(ref_start_values):
-        len_cov = len(snps_df_A_allele[(snps_df_A_allele.pos >= i) & (snps_df_A_allele.pos < i + args.bin_size)])
-        if len_cov == 0:
-            snps_A_allele_mean.append(0)
-        else:
-            sub_list = snps_df_A_allele_vaf[total:(total + len_cov)]
-            if sub_list:
-                snps_A_allele_mean.append(statistics.mean(sub_list))
-                #snps_A_allele_mean.append(min(sub_list)/sum(sub_list))
-            else:
-                snps_A_allele_mean.append(0)
-        total += len_cov
-
-    return pd.DataFrame(list(zip([chrom for ch in range(len(ref_start_values))], ref_start_values, snps_A_allele_mean)), columns=['chr', 'start', 'vaf_mean'])
-
+#TODO: has a variation with the same name in hapcorrect, called from plot.py and snp_loh.py
 def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, args): #TODO This module needs better implementation, currently slow
     snps_df = snps_df_sorted[snps_df_sorted['chr'] == chrom]
     if 'gt' in snps_df.columns:
@@ -322,12 +289,14 @@ def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, args): 
             loh_regions.append(pos)
             loh_regions.append(pos + args.bin_size_snps)
 
-    centromere_region_starts, centromere_region_ends = squash_regions(centromere_region, args.bin_size_snps)
-    loh_region_starts, loh_region_ends = squash_regions(loh_regions, args.bin_size_snps)
+    centromere_region_starts, centromere_region_ends = _squash_regions(centromere_region, args.bin_size_snps)
+    loh_region_starts, loh_region_ends = _squash_regions(loh_regions, args.bin_size_snps)
 
     return ref_start_values_updated, snps_het_counts_updated, snps_homo_counts_updated, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends
 
-def squash_regions(region, bin_size):
+
+#TODO: has a variation in hapcorrect, called in this modeule
+def _squash_regions(region, bin_size):
     region = pd.Series(region, dtype=object).drop_duplicates().tolist()
     region_starts = [v for i, v in enumerate(region) if i == 0 or region[i] > region[i - 1] + bin_size]
     region_ends = []
@@ -337,6 +306,8 @@ def squash_regions(region, bin_size):
 
     return region_starts, region_ends
 
+
+#TODO: unique to main, called from plots.py
 def snps_mean(df_snps, ref_start_values, ref_end_values, chrom, args):
     df = df_snps[df_snps['chr'] == chrom]
 
@@ -376,32 +347,7 @@ def snps_mean(df_snps, ref_start_values, ref_end_values, chrom, args):
     return snps_haplotype1_mean, snps_haplotype2_mean
 
 
-
-
-def vcf_parse_to_csv_for_het_phased_snps(input_vcf, args):
-    #pathlib.Path(input_vcf).suffix #extension
-    # TODO add output check conditions with all these processes
-    basefile = pathlib.Path(input_vcf).stem #filename without extension
-    output_vcf = basefile + '_het_phased_snps_bafs.vcf.gz'
-    output_vcf = f"{os.path.join(args.out_dir_plots, 'data', output_vcf)}"
-
-    output_csv = basefile + '_bafs.csv'
-    output_csv = f"{os.path.join(args.out_dir_plots, 'data', output_csv)}"
-
-    # logger.info('bcftools -> Filtering out hetrozygous and phased SNPs and generating a new VCF')
-    # # Filter out het, phased SNPs
-    # cmd = ['bcftools', 'view', '--threads', '$(nproc)',  '-g', 'het', '--types', 'snps', input_vcf, '-Oz', '-o', output_vcf]
-    # process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    # process.wait()
-
-    logger.info('bcftools -> Query for phasesets and GT, DP, VAF feilds by creating a CSV file')
-    # bcftools query for phasesets and GT,DP,VAF
-    cmd = ['bcftools', 'query', '-f',  '%CHROM\t%POS\t[%PS]\n', '-i PS>1', input_vcf, '-o', output_csv] #
-    process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    process.wait()
-
-    return output_csv
-
+#TODO: unique to main, but calls a variation of non-unique function. Called from plots.py and snp_loh.py
 def get_snp_segments(args, target_bam, thread_pool):
     if not args.phaseblock_flipping_disable:
         normal_vcf = os.path.join(args.out_dir_plots, 'phasing_output', args.genome_name+'.rephased.vcf.gz')
@@ -447,13 +393,15 @@ def get_snp_segments(args, target_bam, thread_pool):
     else:
         output_pileups = process_bam_for_snps_freqs(args, thread_pool)  # TODO Updated
 
-    compute_acgt_frequency(output_pileups, output_acgts, args)
+    _compute_acgt_frequency(output_pileups, output_acgts, args)
     dataframe_acgt_frequency = csv_df_chromosomes_sorter(output_acgts, ['chr', 'start', 'a', 'c', 'g', 't'], ',')
     dataframe_acgt_frequency = pd.merge(dataframe_snps, dataframe_acgt_frequency, on=['chr', 'start'])
-    snp_segments_frequencies = get_snp_segments_frequencies_final(dataframe_acgt_frequency)
+    snp_segments_frequencies = _get_snp_segments_frequencies_final(dataframe_acgt_frequency)
     write_segments_coverage_dict(snp_segments_frequencies, 'snps_frequencies.csv', args)
 
-def get_snp_segments_frequencies_final(dataframe_acgt_frequency):
+
+#TODO: has variation in hapcorrect, called in this file
+def _get_snp_segments_frequencies_final(dataframe_acgt_frequency):
     snp_segments = dataframe_acgt_frequency.values.tolist()
     snp_segments_final = []
     for i in range(len(snp_segments)):
@@ -489,8 +437,8 @@ def get_snp_segments_frequencies_final(dataframe_acgt_frequency):
     return snp_segments_final
 
 
-
-def compute_acgt_frequency(pileup, snps_frequency, args): #https://www.biostars.org/p/95700/
+#TODO: has variation in hapcorrect, called in this file
+def _compute_acgt_frequency(pileup, snps_frequency, args): #https://www.biostars.org/p/95700/
     with open(pileup, 'r') as f:
         input_data = f.readlines()
     base_counts = []
@@ -504,6 +452,3 @@ def compute_acgt_frequency(pileup, snps_frequency, args): #https://www.biostars.
     with open(snps_frequency, 'w') as f:
         writer = csv.writer(f)
         writer.writerows(base_counts)
-
-
-
