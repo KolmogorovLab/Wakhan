@@ -5,7 +5,6 @@ import logging
 import os
 import gzip
 import pysam
-import bisect
 import pandas as pd
 import numpy as np
 from intervaltree import IntervalTree, Interval

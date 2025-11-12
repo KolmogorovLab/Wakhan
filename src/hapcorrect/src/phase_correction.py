@@ -89,59 +89,6 @@ def remove_overlapping_and_small_phasesets(df):
     return pd.DataFrame(result)
 
 
-def remove_overlapping_and_small_phasesets_old(phasesets, bin_size, args):
-    #dfs = pd.read_csv(phasesets, sep='\t', names=['chr', 'pos', 'ps'])
-    dfs = csv_df_chromosomes_sorter(phasesets, ['chr', 'pos', 'ps'])
-    input_chroms = dfs['chr'].unique().tolist()
-    values_all = []
-    indices_all = []
-    chroms_contigs = get_contigs_list(args.contigs)
-    chroms = [chrm for chrm in chroms_contigs if chrm in input_chroms]
-    #
-    for index, chrom in enumerate(chroms):
-        df = dfs[dfs['chr'] == chrom]
-        unique_ps_by_chr = df.groupby('chr', group_keys=True)['ps'].apply(lambda x: list(np.unique(x)))
-        # Find overlapping phase blocks locations
-        for unique in unique_ps_by_chr[0]:
-            indices_overlapping = []
-            indices = np.where(df["ps"] == unique)
-            list_new = []
-            for i in indices[0]:
-                list_new.append(i)
-        for i in range(len(list_new) - 1):
-            if not list_new[i + 1] - list_new[i] == 1:
-                indices_overlapping.append(list_new[i] + 1)
-                indices_overlapping.append(list_new[i + 1] - list_new[i] - 1)
-        for i in range(0, len(indices_overlapping) - 1, 2):
-            df = df.drop(labels=range(indices_overlapping[i], indices_overlapping[i] + indices_overlapping[i + 1]),
-                         axis=0)
-        final = []
-        # Remove overlapping phase blocks
-        ps = df.ps.values.tolist()
-        pos = df.pos.values.tolist()
-        unique_ps_by_chr = df.groupby('chr')['ps'].apply(lambda x: list(np.unique(x)))
-        for x in range(len(unique_ps_by_chr[0])):
-            if x == len(unique_ps_by_chr[0])-1:
-                final.append(pos[ps.index(unique_ps_by_chr[0][x])])
-                final.append(pos[len(ps) - 1 - ps[::-1].index(unique_ps_by_chr[0][x])])
-            else:
-                if (unique_ps_by_chr[0][x + 1] - unique_ps_by_chr[0][x] > bin_size):
-                    final.append(pos[ps.index(unique_ps_by_chr[0][x])])
-                    final.append(pos[len(ps) - 1 - ps[::-1].index(unique_ps_by_chr[0][x])])
-
-        index = []
-        # Remove small (< bin_size) phase blocks
-        for i in range(len(final)):
-            init = 0
-            for m in range(1, final[-1], bin_size):
-                init += 1
-                if final[i] > m and final[i] < m + bin_size:
-                    index.append(init)
-        indices_all.append(index)
-        values_all.append(final)
-    return indices_all, values_all, chroms
-
-
 def closest(lst):
     s = sorted(set(lst))
     return min([[a, b] for a, b in zip(s, s[1:])], key=lambda x: x[1] - x[0])

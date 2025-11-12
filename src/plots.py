@@ -6,7 +6,6 @@ import pandas as pd
 import numpy as np
 import csv
 import os
-import math
 import shutil
 import statistics
 import itertools
@@ -17,8 +16,8 @@ logger = logging.getLogger()
 #from src.phasing_correction import phaseblock_flipping, phase_correction_centers, contiguous_phaseblocks, detect_centromeres, flip_phaseblocks_contigous, remove_overlaping_contiguous, switch_inter_phaseblocks_bins
 from src.smoothing import smoothing
 from src.file_tools.process_vcf_legacy import get_snps_frquncies_coverage, snps_mean, get_snp_segments
-from src.file_tools.process_vcf import vcf_parse_to_csv_for_het_phased_snps_phasesets, get_snps_frquncies, het_homo_snps_gts, cpd_mean, vcf_parse_to_csv_for_snps
-from src.utils import subclonal_values_adjusted, get_chromosomes_bins, csv_df_chromosomes_sorter, get_breakpoints, flatten, get_snps_frquncies_coverage_from_bam, detect_alter_loh_regions, is_phasesets_check_simple_heuristics, change_point_detection_means, \
+from src.file_tools.process_vcf import vcf_parse_to_csv_for_snps
+from src.utils import subclonal_values_adjusted, get_chromosomes_bins, csv_df_chromosomes_sorter, get_breakpoints, detect_alter_loh_regions, change_point_detection_means, \
     df_chromosomes_sorter, get_chromosomes_regions, adjust_extreme_outliers, genes_phase_correction, write_df_csv, bins_with_copynumber_states
 from src.breakpoints import get_contigs_list, sv_vcf_bps_cn_check
 
@@ -5186,7 +5185,7 @@ def plot_bins_histograms(hp1,hp2, args, chrom):
     # plotly.io.write_image(fig, "kmeans.pdf", format='pdf')
 
     from kneed import KneeLocator
-    from sklearn.metrics import silhouette_samples, silhouette_score
+    from sklearn.metrics import silhouette_score
 
     kn = KneeLocator(x=K, y=Sum_of_squared_distances, curve='convex', direction='decreasing')
     print(kn.knee)

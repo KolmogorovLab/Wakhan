@@ -2,7 +2,6 @@ import pathlib
 import subprocess
 import statistics
 import os
-import gzip
 import pandas as pd
 import logging
 
@@ -15,8 +14,6 @@ from src.file_tools.process_vcf import count_bases, chunks
 
 import csv
 import multiprocessing
-from collections import Counter
-from typing import List, Tuple
 
 
 #TODO: similar funciton with the same name is defined in hapcorrect vcf processing file

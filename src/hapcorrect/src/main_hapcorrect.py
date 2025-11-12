@@ -1,11 +1,7 @@
 #!/usr/bin/env python3
-import statistics
-import sys
 import shutil
 
-import numpy
 import pysam
-import argparse
 import logging
 import os
 import pandas as pd
@@ -15,8 +11,7 @@ from collections import defaultdict
 
 logger = logging.getLogger()
 
-from src.file_tools.process_bam import (get_all_reads_parallel, update_coverage_hist, get_segments_coverage, haplotype_update_all_bins_parallel,
-                                            get_snps_frequencies, tumor_bam_haplotag)
+from src.file_tools.process_bam import (get_all_reads_parallel, update_coverage_hist, get_segments_coverage, tumor_bam_haplotag)
 from src.file_tools.process_vcf import (vcf_parse_to_csv_for_het_phased_snps_phasesets, get_snp_frequencies_segments, snps_frequencies_chrom_mean,
                                             get_snps_frquncies_coverage, vcf_parse_to_csv_for_snps, index_vcf, rephase_vcf, get_phasingblocks,
                                             snps_frequencies_chrom_mean_phasesets, snps_frequencies_homo_chrom_mean)
@@ -24,14 +19,13 @@ from src.hapcorrect.src.phase_correction import (generate_phasesets_bins, phase_
                                                  phaseblock_flipping_simple_heuristics, check_missing_phasesets_original, reintroduce_broken_phasesets,
                                                  update_remaining_phasesets, subtract_intervals, without_phasesets_bins_correction,
                                                  remove_centromere_phaseblocks)
-from src.hapcorrect.src.utils import (get_chromosomes_bins, write_segments_coverage, csv_df_chromosomes_sorter, get_snps_frquncies_coverage_from_bam,
+from src.hapcorrect.src.utils import (get_chromosomes_bins, write_segments_coverage, csv_df_chromosomes_sorter,
                                       adjust_loh_cent_phaseblocks, extract_centromere_regions, infer_missing_phaseblocks, df_chromosomes_sorter,
                                       is_phasesets_check_simple_heuristics, write_df_csv, loh_regions_events, snps_frequencies_chrom_genes,
                                       genes_segments_coverage, genes_segments_list, extend_snps_ratios_df, get_chromosomes_regions,
                                       add_breakpoints, update_hp_assignment_loh_segments)
 from src.breakpoints import get_contigs_list
-from src.hapcorrect.src.plots import plot_coverage_data, change_point_detection, plot_coverage_data_after_correction, loh_plots_genome
-from src.hapcorrect.src.cpd import cpd_positions_means
+from src.hapcorrect.src.plots import plot_coverage_data, loh_plots_genome
 from src.hapcorrect.src.loh import detect_loh_centromere_regions, plot_snps
 
 MIN_SV_SIZE = 50

@@ -16,30 +16,6 @@ from src.smoothing import smoothing
 #from hmm import call_copynumbers
 from src.breakpoints import get_contigs_list, sv_vcf_bps_cn_check
 
-def get_chromosomes_bins_replica(bam_file, bin_size, args):
-    bed=[]
-    bam_alignment = pysam.AlignmentFile(bam_file)
-    headers = bam_alignment.header
-    seq_dict = headers['SQ']
-    region = [''] * len(seq_dict)
-    chrs = [''] * len(seq_dict)
-    head, tail = os.path.split(bam_file)
-    chroms = get_contigs_list(args.contigs)
-    for i, seq_elem in enumerate(seq_dict):
-        region[i] = seq_elem['LN']
-        chrs[i] = seq_elem['SN']
-        start=0
-        end=bin_size
-        if chrs[i] in chroms:
-            for c in range(0,region[i],bin_size):
-                if end > region[i]:
-                    bed.append(chrs[i]+'\t'+str(start)+'\t'+str(region[i]))
-                else:
-                    bed.append(chrs[i]+'\t'+str(start)+'\t'+str(end))
-                start=end+1
-                end+=bin_size
-    return bed
-
 def get_chromosomes_regions(args):
     chroms = get_contigs_list(args.contigs)
     bam_alignment = pysam.AlignmentFile(args.target_bam[0])

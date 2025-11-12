@@ -7,7 +7,6 @@ from datetime import datetime
 import sys
 import os
 import pandas as pd
-import math
 
 from src.utils import get_contigs_list, get_chromosomes_regions, csv_df_chromosomes_sorter
 
