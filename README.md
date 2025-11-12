@@ -67,39 +67,6 @@ conda activate wakhan_env
 Wakhan can be run as a standalone [phase-correction](https://github.com/KolmogorovLab/Wakhan/tree/main/src/hapcorrect) and copy number profiling tool using below [1] tumor-only and tumor/normal pair commands.
 In case phased SVs/breakpoints, Long-Read Somatic Variant Calling pipeline mode [2] is recommended.
 
-## Key required/recommended parameters
-
-* `--reference` Reference file path
-
-* `--target-bam` path to target bam files (must be indexed)
-  
-* `--out-dir-plots` path to output coverage plots
-
-* `--genome-name` genome cellline/sample name to be displayed on plots
-
-* `--normal-phased-vcf` normal phased VCF file (tumor/normal pair mode) to generate het SNPs frequncies pileup for tumor BAM (if tumor-only mode, use phased `--tumor-phased-vcf` instead)
-
-* `--tumor-phased-vcf` phased VCF is required in tumor-only mode
-
-* `--breakpoints` (Highly recommended) Somatic SV calls in vcf format
-
-* `--threads` number of threads to use
-
-## Useful optional parameters
-
-* `--contigs` List of contigs (chromosomes, default: chr1-22,chrX) to be included in the plots [e.g., chr1-22,chrX,chrY], Note: Please use 1-22,X [e.g., 1-22,X,Y] in case REF, BAM, and VCFs entries don't contain `chr` name/notion, same should be observed in `--centromere` and `--cancer-genes` params in case no `chr` in names, use `*_nochr.bed` instead available in `src/annotations` or customized.
-
-* `--use-sv-haplotypes` To use phased Severus SV/breakpoints [default: disabled]
-
-* `--cpd-internal-segments` For change point detection algo on internal segments after breakpoint/cpd algo for more precise segmentation.
-
-* `--cut-threshold` Maximum cut threshold for coverage (readdepth) plots [default: 100]
-
-* `--centromere` Path to centromere annotations BED file [default: annotations/grch38.cen_coord.curated.bed]
-
-* `--cancer-genes` Path to Cancer Genes in TSV format to display in CNA plots [default: annotations/CancerGenes.tsv]
-
-* `--pdf-enable` Enabling PDF output for plots
 
 
 ## 1. Standalone mode
@@ -187,6 +154,41 @@ severus --target-bam ${SAMPLE_T}.haplotagged.bam --out-dir severus_out -t 16 --p
 python wakhan.py cna --threads 16 --reference  ${REF_FASTA}  --target-bam ${BAM_T}  --tumor-phased-vcf ${VCF}  --genome-name ${SAMPLE_T} \
     --breakpoints severus_out/severus_somatic.vcf --use-sv-haplotypes
 ```
+
+## Key required/recommended parameters
+
+* `--reference` Reference file path
+
+* `--target-bam` path to target bam files (must be indexed)
+  
+* `--out-dir-plots` path to output coverage plots
+
+* `--genome-name` genome cellline/sample name to be displayed on plots
+
+* `--normal-phased-vcf` normal phased VCF file (tumor/normal pair mode) to generate het SNPs frequncies pileup for tumor BAM (if tumor-only mode, use phased `--tumor-phased-vcf` instead)
+
+* `--tumor-phased-vcf` phased VCF is required in tumor-only mode
+
+* `--breakpoints` (Highly recommended) Somatic SV calls in vcf format
+
+* `--threads` number of threads to use
+
+## Useful optional parameters
+
+* `--contigs` List of contigs (chromosomes, default: chr1-22,chrX) to be included in the plots [e.g., chr1-22,chrX,chrY], Note: Please use 1-22,X [e.g., 1-22,X,Y] in case REF, BAM, and VCFs entries don't contain `chr` name/notion, same should be observed in `--centromere` and `--cancer-genes` params in case no `chr` in names, use `*_nochr.bed` instead available in `src/annotations` or customized.
+
+* `--use-sv-haplotypes` To use phased Severus SV/breakpoints [default: disabled]
+
+* `--cpd-internal-segments` For change point detection algo on internal segments after breakpoint/cpd algo for more precise segmentation.
+
+* `--cut-threshold` Maximum cut threshold for coverage (readdepth) plots [default: 100]
+
+* `--centromere` Path to centromere annotations BED file [default: annotations/grch38.cen_coord.curated.bed]
+
+* `--cancer-genes` Path to Cancer Genes in TSV format to display in CNA plots [default: annotations/CancerGenes.tsv]
+
+* `--pdf-enable` Enabling PDF output for plots
+
 
 ## 3. Unphased mode 
 Wakhan can also be used in case phasing is not good in input tumor or analysis is being performed without considering phasing:
