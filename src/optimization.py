@@ -15,41 +15,6 @@ logger = logging.getLogger()
 # N_GAUSS = 4
 HIST_RANGE = 0, 500
 
-def merge_similar_elements(data, threshold):
-  """
-  This function takes a list of data and a threshold.
-  It groups elements whose difference is less than the threshold and returns a list
-  containing the mean of each group.
-
-  Args:
-      data: A list of numerical data.
-      threshold: The maximum difference allowed for elements to be considered similar.
-
-  Returns:
-      A list containing the mean of each group of similar elements.
-  """
-
-  if not data:
-    return []
-
-  merged_data = []
-  current_group = []
-  current_value = data[0]
-
-  for value in data[1:]:
-    if abs(value - current_value) <= threshold:
-      current_group.append(value)
-    else:
-      # Add the mean of the previous group
-      merged_data.append(sum(current_group) / len(current_group))
-      current_group = [value]
-      current_value = value
-
-  # Add the mean of the last group
-  merged_data.append(sum(current_group) / len(current_group))
-
-  return merged_data
-
 def smooth_triangle(data, degree):
     triangle=np.concatenate((np.arange(degree + 1), np.arange(degree)[::-1])) # up then down
     smoothed=[]
@@ -66,82 +31,11 @@ def smooth_triangle(data, degree):
     else:
         return data
 
-def simulate(sample_size):
-    """
-    Simulates sum of X gaussians
-    """
-    MEANS = [10, 25, 25, 55]
-    SIG = 3
-
-    distr = [scipy.stats.norm(loc=m, scale=SIG) for m in MEANS]
-    sampled = []
-    for _ in range(sample_size):
-        distr_id = random.randint(0, len(MEANS) - 1)
-        sampled.append(distr[distr_id].rvs())
-
-    return sampled
-
-
-def model_distribution(offset, peak_dist, sig, abundance):
-    """
-    Generates theoretical distribution function, sum of multiple gaussians.
-    The return type is still a function with one input agrument (x)
-    """
-    # abundance = [abundance[0]] * len(abundance)
-    # peak_dist = 15
-    norms = [scipy.stats.norm(loc=(offset + i * peak_dist), scale=sig) for i in range(len(abundance))]
-    return lambda x: sum([abundance[i] * norms[i].pdf(x) for i in range(len(abundance))])
-
-
-def fit_optimization(observed_hist, num_gauss, guess_offset, guess_distance, guess_sig):
-    """
-    Fits the observed historgram with given initial guesses
-    """
-
-    def loss_function(offset, peak_dist, sig, abundance):
-        theor_fixed = model_distribution(offset, peak_dist, sig, abundance)
-        return 10 * sum([(observed_hist[x] - theor_fixed(x)) ** 2
-                         for x in range(*HIST_RANGE)])
-
-    def optimization_wrapper(x):
-        return loss_function(x[0], x[1], x[2], x[3:])
-
-    num_samples = sum(observed_hist)
-    x0 = [guess_offset, guess_distance, guess_sig] + [num_samples / num_gauss] * num_gauss
-    x0 = np.array(x0)
-
-    # positive bounds for all variablex, x > 0
-    bounds = [(0, None) for x in x0]
-
-    # constaint: offset < peak_dist
-    # cons_matrix = [-1, 1, 0] + [0] * num_gauss
-    # constraint = scipy.optimize.LinearConstraint(np.array(cons_matrix), lb=0, ub="inf")
-
-    res = scipy.optimize.minimize(optimization_wrapper, x0, method="Powell", bounds=bounds)
-    # res = scipy.optimize.minimize(optimization_wrapper, x0, method="nelder-mead", bounds=bounds)
-
-    # print(res)
-    return res
-
-
-def parse_segments_cov(filename):
-    cov = []
-    for line in open(filename, "r"):
-        cov.extend(map(float, line.strip().split(",")))
-    return cov
-
-
-def parse_segments_cov_bins(filename):
-    cov = []
-    with open(filename, 'r') as f:
-        lines = f.readlines()
-        for line in lines:
-            elements = line.strip().split("\t")
-            hp1 = float(elements[3])
-            hp2 = float(elements[4])
-            cov.append(hp1)
-            cov.append(hp2)
-    return cov
+# def parse_segments_cov(filename):
+#     cov = []
+#     for line in open(filename, "r"):
+#         cov.extend(map(float, line.strip().split(",")))
+#     return cov
 
 
 def peak_detection_optimization(args, input_segments, input_weights, tumor_cov):

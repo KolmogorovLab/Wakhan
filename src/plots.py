@@ -17,7 +17,7 @@ logger = logging.getLogger()
 from src.smoothing import smoothing
 from src.file_tools.process_vcf_legacy import get_snps_frquncies_coverage, snps_mean, get_snp_segments
 from src.file_tools.process_vcf import vcf_parse_to_csv_for_snps
-from src.utils import subclonal_values_adjusted, get_chromosomes_bins, csv_df_chromosomes_sorter, get_breakpoints, detect_alter_loh_regions, change_point_detection_means, \
+from src.utils import subclonal_values_adjusted, get_chromosomes_bins, csv_df_chromosomes_sorter, detect_alter_loh_regions, change_point_detection_means, \
     df_chromosomes_sorter, get_chromosomes_regions, adjust_extreme_outliers, genes_phase_correction, write_df_csv, bins_with_copynumber_states
 from src.breakpoints import get_contigs_list, sv_vcf_bps_cn_check
 
@@ -4791,47 +4791,6 @@ def add_scatter_trace_breakpoints(fig, break_points):
         hoverinfo="x+name+text",
     ))
 
-def plots_layout_settings_test(fig, chrom, args, limit_x, limit_y):
-    # Update layout
-    fig.update_layout(
-        template="plotly_white",
-        font_family="Times New Roman"
-    )
-
-    fig.update_layout(
-        title=chrom,
-    )
-    #Legend
-    fig.update_layout(legend=dict(
-        orientation = 'h', xanchor = "center", x = 0.45, y= 1.2, #orientation = 'v', xanchor = "center", x = 1.08, y= .5
-    ))
-    fig.update_layout(margin=dict(l=5, r=0, b=5, pad=1))
-    fig.update_xaxes(tick0=0.0, rangemode="nonnegative")
-
-    fig.update_layout(legend={'itemsizing': 'constant'})
-
-    fig.update_layout(font_family= "Times New Roman")
-
-    fig.update_layout(
-        title={
-            'text': chrom + ' - ' +args.genome_name,
-            'y':0.96,
-            'x':0.5,
-            'xanchor': 'center',
-            'yanchor': 'top'},
-
-        font_family = "Courier New",
-        font_color = "dimgray",
-        title_font_family = "Times New Roman",
-        title_font_color = "red",
-        legend_title_font_color = "green",
-    )
-    #Size
-    fig.update_layout(
-        width=1680,
-        height=800,
-       )
-
 def plots_layout_settings(fig, chrom, args, limit_x, limit_y):
     # Update axes
     fig.update_layout(
@@ -4914,467 +4873,256 @@ def plots_layout_settings(fig, chrom, args, limit_x, limit_y):
         height=400,
        )
 
-def plot_bins_ratios(hp1,hp2, args):
-    import plotly.express as px
-    fig = go.Figure()
-
-    numpy.clip(hp1, a_min=1, a_max=300)
-    numpy.clip(hp2, a_min=1, a_max=300)
-
-    add_scatter_trace_coverage(fig, hp1/hp2, hp2/hp1, name='HP-1/HP-2 ratio', text=None, yaxis=None,
-                               opacity=0.7, color='firebrick')
-
-    fig.write_html(args.out_dir_plots +'/'+ args.genome_name + "_genome_ratio.html")
-
-def flat_with_diff(A, atol=3):
-    runs = np.split(A, np.where(np.abs(np.diff(A)) >= atol)[0] + 1)
-    return [list(x) for x in runs if len(x) > 1]
-
-def change_point_detection(hp_data, start, ends, ref_start_values_1, args, chrom, html_graphs, hp, color):
-    import ruptures as rpt
-    fig = go.Figure()
-
-    #starts = [i for i in range(0, len(data), 50000)]
-    add_scatter_trace_coverage(fig, start, hp_data, name='HP-'+str(hp), text=None, yaxis=None, opacity=0.7, color=color)
-
-    ############################################
-    # temp_start = []
-    # extra_cpd_points = []
-    # start_pos = False
-    # for k in range(5, len(start)-5):
-    #     if start_pos == False and statistics.mean(hp_data[k-5:k]) > abs(statistics.mean(hp_data[k-4:k-1]) - hp_data[k])  > statistics.mean(hp_data[k-5:k]):
-    #         temp_start.append(k)
-    #         start_pos = True
-    #     elif start_pos and statistics.mean(hp_data[k-5:k]) > abs(statistics.mean(hp_data[k+1:k+5]) - hp_data[k])  > statistics.mean(hp_data[k:k+5]) :
-    #         temp_start.append(k)
-    #         extra_cpd_points.append(temp_start[0])
-    #         extra_cpd_points.append(temp_start[-1])
-    #         temp_start = []
-    #         start_pos = False
-
-    ##############################################
-    cpd_peaks_points = []
-    # temp_start = []
-    # for k in range(1, len(start) - 1):
-    #     if abs(hp_data[k-1] - hp_data[k]) > 30:
-    #         temp_start.append(k)
-    #         for l in range(k+1,len(start) - 1):
-    #             if abs(hp_data[k] - hp_data[l]) > 30:
-    #                 continue
-    #             else:
-    #                 if l > k:
-    #                     temp_start.append(l)
-    #                 break
-    # temp_start = sorted(list(set(temp_start)))
-    # temp_start_groups = flat_with_diff(temp_start)
-    #
-    # for i, val in enumerate(temp_start_groups):
-    #     if len(val) > 5:
-    #         cpd_peaks_points.append(val[0])
-    #         cpd_peaks_points.append(val[-1])
-
-    ############################################
-    zeros_values = []
-    for i in range(len(hp_data)):
-        if hp_data[i] < 1:
-            zeros_values.append(i)
-
-    from itertools import groupby, count
-    groups = groupby(zeros_values, key=lambda item, c=count(): item - next(c))
-    tmp = [list(g) for k, g in groups]
-
-    cpd_zeros_points = []
-    for i, val in enumerate(tmp):
-        if len(val) == 1:
-            hp_data[i] = statistics.mean(hp_data[val[0]:val[0]+2])
-        else:
-            cpd_zeros_points.append(val[0])
-            cpd_zeros_points.append(val[-1])
-    ####################################################
-    data = np.array(hp_data, dtype='int') #numpy.clip(data, a_min=0, a_max=1000)
-    algo = rpt.Pelt(model="rbf", jump=25).fit(data)
-    result = algo.predict(pen=10)
-    change_points = [i for i in result if i < len(data)]
-    ############################################
-    ov_indices = []
-    for i, val1 in enumerate(change_points):
-        for j, val2 in enumerate(tmp):
-            if len(val2) > 2:
-                if val2[-1]>= val1 >= val2[0]:
-                    ov_indices.append(i)
-    if ov_indices:
-        for index in sorted(list(set(ov_indices)), reverse=True):
-            del change_points[index]
-    ############################################
-    change_points = sorted(list(set(change_points + cpd_zeros_points + cpd_peaks_points)))
-    ############################################
-    ############################################
-    from src.smoothing import smooth_triangle
-    hp_data_new = []
-
-    if len(hp_data[0:change_points[0]]) > 46:
-        hp_data_new.extend(smooth_triangle(hp_data[0:change_points[0]], 15))
-    else:
-        hp_data_new.extend(hp_data[0:change_points[0]])
-
-    for p in range(1, len(change_points)):
-        if change_points[p] - change_points[p - 1] > 46:
-            hp_data_new.extend(smooth_triangle(hp_data[change_points[p - 1]:change_points[p]], 15))
-        else:
-            hp_data_new.extend(hp_data[change_points[p - 1]:change_points[p]])
-
-    if len(hp_data[change_points[-1]:]) > 46:
-        hp_data_new.extend(smooth_triangle(hp_data[change_points[-1]:], 15))
-    else:
-        hp_data_new.extend(hp_data[change_points[-1]:])
-    ############################################
-    add_scatter_trace_coverage(fig, start, hp_data_new, name='HP-' + str(hp), text=None, yaxis=None, opacity=0.7, color='grey')
-    ############################################
-
-    #model = CUSUM(k=1., h=2., burnin=50, mu=0., sigma=1.)
-    #model = EWMA(r=0.15, L=2.4, burnin=50, mu=0., sigma=1.)
-    #model = TwoSample(statistic="Lepage", threshold=3.1)
-
-    # model.process(data)
-    # change_points = model.changepoints
-
-    if args.variable_size_bins:
-        start_pos = 0
-        snps_haplotype_mean = []
-        snps_haplotype_len = []
-        snps_haplotype_pos = []
-        snps_haplotype_pos.append(0)
-        for index, point in enumerate(change_points):
-            i = start[point-1]
-
-            sub_list = hp_data[start_pos:i]
-            if sub_list:
-                snps_haplotype_mean.append(statistics.median(sub_list))
-                snps_haplotype_len.append(len(sub_list))
-                snps_haplotype_pos.append(i)
-            start_pos = point + 1
-
-        for i, point in enumerate(snps_haplotype_pos):
-            fig.add_vline(x=point, line_width=1, line_dash="dash", line_color=color)
-    else:
-        for i, point in enumerate(change_points):
-            fig.add_vline(x=point*args.bin_size, line_width=1, line_dash="dash", line_color=color)
-
-    #plots_add_markers_lines(fig)
-    plots_layout_settings(fig, chrom, args, ends[-1:][0], args.cut_threshold)
-
-    print_chromosome_html(fig, chrom + '_hp_'  + str(hp), html_graphs, args.out_dir_plots)
-    html_graphs.write("  <object data=\"" + chrom + '_hp_'  + str(hp)  + '.html' + "\" width=\"700\" height=\"420\"></object>" + "\n")
-
-
-def plot_bins_histograms(hp1,hp2, args, chrom):
-    import plotly.express as px
-    from sklearn.cluster import KMeans
-    import plotly.figure_factory as ff
-
-    #hp1=numpy.clip(hp1, a_min=1, a_max=300)
-    #hp2=numpy.clip(hp2, a_min=1, a_max=300)
-
-    hp1 = [i for i in hp1 if i > 0 and i < 600]
-    hp2 = [i for i in hp2 if i > 0 and i < 600]
-
-    hp1 = np.array(hp1, dtype='int')
-    hp2 = np.array(hp2, dtype='int')
-
-    ##########################################
-    import ruptures as rpt
-    algo = rpt.Pelt(model="rbf").fit(hp1)
-    result = algo.predict(pen=10)
-    change_points = [i for i in result if i < len(hp1)]
-
-    # Plot the time series
-    import matplotlib.pyplot as plt
-    fig, ax = plt.subplots(figsize=(12, 6))
-    plt.scatter([i for i in range(0,len(hp1))], hp1)
-
-    # Plot the abrupt changes
-    for i in range(len(change_points)):
-        ax.axvline(change_points[i], color='r')
-
-    # Add labels, grid, and legend
-    ax.set_xlabel('Time')
-    ax.set_ylabel('Signal')
-    ax.set_title(chrom)
-    ax.legend()
-    ax.grid(True)
-    ax.set_ylim([0, 160])
-
-    # Show the plot
-    plt.show()
-    ######################################
-    import ruptures as rpt
-    algo = rpt.Pelt(model="rbf").fit(hp2)
-    result = algo.predict(pen=10)
-    change_points = [i for i in result if i < len(hp2)]
-
-    # Plot the time series
-    import matplotlib.pyplot as plt
-    fig, ax = plt.subplots(figsize=(12, 6))
-    plt.scatter([i for i in range(0,len(hp2))], hp2)
-
-    # Plot the abrupt changes
-    for i in range(len(change_points)):
-        ax.axvline(change_points[i], color='g')
-
-    # Add labels, grid, and legend
-    ax.set_xlabel('Time')
-    ax.set_ylabel('Signal')
-    ax.set_title(chrom)
-    ax.legend()
-    ax.grid(True)
-    ax.set_ylim([0, 160])
-
-    # Show the plot
-    plt.show()
-    ######################################
-
-    from sklearn.neighbors import KernelDensity
-    from numpy import exp
-    model = KernelDensity(bandwidth=2, kernel='gaussian')
-    values = np.concatenate((hp1, hp2))
-    values = values.reshape(-1, 1)
-    model.fit(values)
-    probabilities_hp1 = model.score_samples(hp1.reshape(-1, 1))
-    probabilities_hp1 = exp(probabilities_hp1)
-    probabilities_hp2 = model.score_samples(hp2.reshape(-1, 1))
-    probabilities_hp2 = exp(probabilities_hp2)
-
-    df = pd.DataFrame(dict(
-        Haplotypes=np.concatenate((["HP-1"] * len(hp1), ["HP-2"] * len(hp2))),
-        coverage=np.concatenate((hp1, hp2)),
-        probabilities = np.concatenate((probabilities_hp1, probabilities_hp2))
-    ))
-
-    # df = pd.DataFrame(dict(
-    #     Haplotypes=(["HP-1/HP-2"] * len(hp1)),
-    #     coverage=(hp1/(hp1+hp2)),
-    # ))
-
-    #X=list(zip(hp1,start))
-
-    # df = pd.DataFrame(dict(
-    #     Haplotypes=(["HP-1 & HP-2"] * (len(hp1)*2)),
-    #     coverage=np.concatenate((hp1, hp2)),
-    # ))
-
-    hp1[hp1 != 0]
-    hp = list(hp1)
-    hp1=hp1.reshape(-1, 1)
-
-    hp2[hp2 != 0]
-    hp = list(hp2)
-    hp2=hp2.reshape(-1, 1)
-
-    new = np.concatenate((hp1, hp2))#list(zip(hp1, hp2))
-
-    Sum_of_squared_distances = []
-    K = range(1, 15)
-    for k in K:
-        km = KMeans(n_clusters=k)
-        km = km.fit(new)
-        Sum_of_squared_distances.append(km.inertia_)
-
-    # fig = px.line(x=K, y=Sum_of_squared_distances, markers=True)
-    # fig.update_yaxes(title='Sum_of_squared_distances')
-    # fig.update_xaxes(title='Number_of_clusters')
-    # plotly.io.write_image(fig, "kmeans.pdf", format='pdf')
-
-    from kneed import KneeLocator
-    from sklearn.metrics import silhouette_score
-
-    kn = KneeLocator(x=K, y=Sum_of_squared_distances, curve='convex', direction='decreasing')
-    print(kn.knee)
-
-    ###########################
-
-    ###########################
-    km1 = KMeans(n_clusters=kn.knee, n_init="auto", max_iter=100, random_state=0).fit(new)
-    labels1 = list(km1.labels_)
-    print(km1.cluster_centers_)
-    print(silhouette_score(new, labels1))
-    ###########################
-    km = KMeans(n_clusters=kn.knee+1, n_init="auto", max_iter = 100, random_state=0).fit(new)
-    labels = list(km.labels_)
-    u_labels = np.unique(labels)
-    #centers = list(np.concatenate(km.cluster_centers_))
-    print(km.cluster_centers_)
-    print(silhouette_score(new, labels))
-
-
-
-    stdev = []
-    clusters = []
-    for i in range(len(u_labels)):
-        clusters.append([int(a) for a, b in zip(new, labels) if b == i])
-        stdev.append(numpy.std([(a, b) for a, b in zip(new, labels) if b == i]))
-
-    # Group data togetherhist_data = {list: 4} [[array([76.40792133]), array([76.40792133]), array([76.40792133]), array([76.40792133]), array([76.40792133]), array([76.40792133]), array([76.40792133]), array([76.40792133]), array([76.40792133]), array([76.40792133]), array([76.40792133]), array([76.40... View
-    hist_data = clusters # [i for i in clusters]
-    group_labels = ['Cluster '+str(i) for i in range(len(clusters))]
-    fig = ff.create_distplot(hist_data, group_labels, curve_type='normal', # override default 'kde'
-    )
-
-    fig = px.histogram(df, x="coverage", y="probabilities", color="Haplotypes", barmode="overlay", marginal="violin")#, log_y=True)
-
-    #fig.update_yaxes(range=[1, 1000])
-    #fig.update_xaxes(range=[1, 36])
-
-
-    fig.update_layout(
-        title={
-            'text': 'Genome - ' + args.genome_name,
-            'y': 0.96,
-            'x': 0.5,
-            'xanchor': 'center',
-            'yanchor': 'top'},
-
-        font_family="Courier New",
-        font_color="dimgray",
-        title_font_family="Times New Roman",
-        title_font_color="red",
-        legend_title_font_color="green",
-    )
-
-    fig.write_html(args.out_dir_plots +'/'+ args.genome_name + "_genome_histogram_"+chrom+".html")
-
-def plot_bins_distributions(hp1,hp2, args):
-    import plotly.express as px
-    from sklearn.cluster import KMeans
-    import plotly.figure_factory as ff
-
-    hp1=numpy.clip(hp1, a_min=1, a_max=300)
-    hp2=numpy.clip(hp2, a_min=1, a_max=300)
-
-    import plotly.figure_factory as ff
-    import numpy as np
-
-    group_labels = ['Group 1', 'Group 2']
-
-    colors = ['slategray', 'magenta']
-
-    # Create distplot with curve_type set to 'normal'
-    fig = ff.create_distplot([hp1, hp2], group_labels, bin_size=.5,
-                             curve_type='normal',  # override default 'kde'
-                             colors=colors)
-
-    # Add title
-    fig.update_layout(title_text='Distplot with Normal Distribution')
-
-    fig.write_html(args.out_dir_plots +'/'+ args.genome_name + "_genome_histogram_distplot.html")
-
-
-def add_histo_clusters_plot(depth_values_hp1, depth_values_hp2, labels, means, covar, args, chrom, html_graphs):
-    from plotly.subplots import make_subplots
-    import plotly.graph_objects as go
-    import math
-    # fig = go.Figure()
-
-    depth_values_hp1 = np.array(depth_values_hp1, dtype='int')
-    depth_values_hp2 = np.array(depth_values_hp2, dtype='int')
-
-    depth_values_hp1 = depth_values_hp1.reshape(-1, 1)
-    depth_values_hp2 = depth_values_hp2.reshape(-1, 1)
-    Y = np.concatenate([depth_values_hp1, depth_values_hp2])
-
-    fig = make_subplots(rows=1, cols=2, shared_yaxes=True, column_widths=[0.8, 0.2], vertical_spacing=0.01,
-                        horizontal_spacing=0.01)
-
-    y = np.concatenate(list(Y)).ravel().tolist()
-    lst = [i for i in range(0, (len(y) // 2) * args.bin_size, args.bin_size)]
-    x = lst + lst
-
-    cdict = {0: '#1f77b4',  # muted blue
-             1: '#ff7f0e',  # safety orange
-             2: '#2ca02c',  # cooked asparagus green
-             3: '#d62728',  # brick red
-             4: '#9467bd',  # muted purple
-             5: '#8c564b',  # chestnut brown
-             6: '#e377c2',  # raspberry yogurt pink
-             7: '#7f7f7f',  # middle gray
-             8: '#bcbd22',  # curry yellow-green
-             9: '#17becf'  # blue-teal
-             }
-    ldict = {0: 'Cluster_1', 1: 'Cluster_2', 2: 'Cluster_3', 3: 'Cluster_4', 4: 'Cluster_5', \
-             5: 'Cluster_6', 6: 'Cluster_7', 7: 'Cluster_8', 8: 'Cluster_9', 9: 'Cluster_10'}
-
-    for g in np.unique(labels):
-        ix = [index for index, i in enumerate(x) if labels[index] == g]
-        xn = [x[i] for i in ix]
-        yn = [y[i] for i in ix]
-        fig.add_trace(go.Scatter(x=xn, y=yn, mode='markers', marker=dict(color=cdict[g]), name=ldict[g], opacity=0.7, ),
-                      row=1, col=1)
-
-    fig.update_traces(
-        # hoverinfo="name+x+text+y",
-        # line={"width": 0.5},
-        marker={"size": 2},
-        mode="markers",
-        showlegend=True
-    )
-
-    for i in range(len(means)):
-        fig.add_hline(y=means[i], line_width=2,
-                      line=dict(dash='solid'), line_color=cdict[i], annotation_position="top right", annotation_text="mean_" + str(i + 1))
-
-        fig.add_hline(y=means[i] + covar[i], line_width=1,
-                      line=dict(dash='dash'), line_color=cdict[i], annotation_position="top left", annotation_text="stdev_" + str(i + 1))
-        fig.add_hline(y=means[i] - covar[i], line_width=1,
-                      line=dict(dash='dash'), line_color=cdict[i], annotation_position="top left", annotation_text="stdev_" + str(i + 1))
-    fig.update_yaxes(range=[0, 160])
-
-    # fig.add_trace(go.Histogram(y=y, orientation='h', nbinsy=5000,), row=1, col=2)
-    fig.add_trace(
-        go.Histogram(y=np.concatenate(list(Y)).ravel().tolist(), orientation='h', marker_color='gray', name='Histogram',
-                     nbinsy=8000), row=1, col=2)
-    fig.update_layout(xaxis2=dict(range=[0, 200]))
-    # fig.add_trace(go.Histogram(y=np.concatenate(list(Y[0:len(Y)//2-1])).ravel().tolist(), name='HP-1', orientation='h', nbinsy=8000, marker_color='#6A5ACD'), row=1, col=2)
-    # fig.add_trace(go.Histogram(y=np.concatenate(list(Y[len(Y)//2:len(Y)])).ravel().tolist(), name='HP-2', orientation='h', nbinsy=8000, marker_color='#2E8B57'), row=1, col=2)
-
-    # Overlay both histograms
-    # fig.update_layout(barmode='overlay')
-    # Reduce opacity to see both histograms
-    # fig.update_traces(opacity=0.75)
-    fig.update_layout(legend={'itemsizing': 'constant'})
-    # Update layout
-    fig.update_layout(
-        template="plotly_white",
-        font_family="Times New Roman"
-    )
-    fig.update_layout(
-        title=chrom,
-    )
-    fig.update_layout(legend=dict(
-        orientation = 'h', xanchor = "center", x = 0.5, y= 1.2 #orientation = 'v', xanchor = "center", x = 1.08, y= .5
-    ))
-    fig.update_layout(margin=dict(l=5, r=5, b=5, pad=1))
-    fig.update_layout(
-        width=680,
-        height=400,
-       )
-    fig.update_layout(
-        title={
-            'text': chrom + ' - ' + args.genome_name,
-            'y': 0.96,
-            'x': 0.5,
-            'xanchor': 'center',
-            'yanchor': 'top'},
-
-        font_family="Courier New",
-        font_color="dimgray",
-        title_font_family="Times New Roman",
-        title_font_color="red",
-        legend_title_font_color="green",
-    )
-
-    print_chromosome_html(fig, chrom + '_clusters_'  + str(len(means)), html_graphs, args.out_dir_plots)
-    html_graphs.write("  <object data=\"" + chrom + '_clusters_'  + str(len(means))  + '.html' + "\" width=\"700\" height=\"420\"></object>" + "\n")
-
-    #fig.write_html("coverage_plots/" + chrom + "_cluster_" + str(len(means)) + ".html")
+# def flat_with_diff(A, atol=3):
+#     runs = np.split(A, np.where(np.abs(np.diff(A)) >= atol)[0] + 1)
+#     return [list(x) for x in runs if len(x) > 1]
+
+# def change_point_detection(hp_data, start, ends, ref_start_values_1, args, chrom, html_graphs, hp, color):
+#     import ruptures as rpt
+#     fig = go.Figure()
+# 
+#     #starts = [i for i in range(0, len(data), 50000)]
+#     add_scatter_trace_coverage(fig, start, hp_data, name='HP-'+str(hp), text=None, yaxis=None, opacity=0.7, color=color)
+# 
+#     ############################################
+#     # temp_start = []
+#     # extra_cpd_points = []
+#     # start_pos = False
+#     # for k in range(5, len(start)-5):
+#     #     if start_pos == False and statistics.mean(hp_data[k-5:k]) > abs(statistics.mean(hp_data[k-4:k-1]) - hp_data[k])  > statistics.mean(hp_data[k-5:k]):
+#     #         temp_start.append(k)
+#     #         start_pos = True
+#     #     elif start_pos and statistics.mean(hp_data[k-5:k]) > abs(statistics.mean(hp_data[k+1:k+5]) - hp_data[k])  > statistics.mean(hp_data[k:k+5]) :
+#     #         temp_start.append(k)
+#     #         extra_cpd_points.append(temp_start[0])
+#     #         extra_cpd_points.append(temp_start[-1])
+#     #         temp_start = []
+#     #         start_pos = False
+# 
+#     ##############################################
+#     cpd_peaks_points = []
+#     # temp_start = []
+#     # for k in range(1, len(start) - 1):
+#     #     if abs(hp_data[k-1] - hp_data[k]) > 30:
+#     #         temp_start.append(k)
+#     #         for l in range(k+1,len(start) - 1):
+#     #             if abs(hp_data[k] - hp_data[l]) > 30:
+#     #                 continue
+#     #             else:
+#     #                 if l > k:
+#     #                     temp_start.append(l)
+#     #                 break
+#     # temp_start = sorted(list(set(temp_start)))
+#     # temp_start_groups = flat_with_diff(temp_start)
+#     #
+#     # for i, val in enumerate(temp_start_groups):
+#     #     if len(val) > 5:
+#     #         cpd_peaks_points.append(val[0])
+#     #         cpd_peaks_points.append(val[-1])
+# 
+#     ############################################
+#     zeros_values = []
+#     for i in range(len(hp_data)):
+#         if hp_data[i] < 1:
+#             zeros_values.append(i)
+# 
+#     from itertools import groupby, count
+#     groups = groupby(zeros_values, key=lambda item, c=count(): item - next(c))
+#     tmp = [list(g) for k, g in groups]
+# 
+#     cpd_zeros_points = []
+#     for i, val in enumerate(tmp):
+#         if len(val) == 1:
+#             hp_data[i] = statistics.mean(hp_data[val[0]:val[0]+2])
+#         else:
+#             cpd_zeros_points.append(val[0])
+#             cpd_zeros_points.append(val[-1])
+#     ####################################################
+#     data = np.array(hp_data, dtype='int') #numpy.clip(data, a_min=0, a_max=1000)
+#     algo = rpt.Pelt(model="rbf", jump=25).fit(data)
+#     result = algo.predict(pen=10)
+#     change_points = [i for i in result if i < len(data)]
+#     ############################################
+#     ov_indices = []
+#     for i, val1 in enumerate(change_points):
+#         for j, val2 in enumerate(tmp):
+#             if len(val2) > 2:
+#                 if val2[-1]>= val1 >= val2[0]:
+#                     ov_indices.append(i)
+#     if ov_indices:
+#         for index in sorted(list(set(ov_indices)), reverse=True):
+#             del change_points[index]
+#     ############################################
+#     change_points = sorted(list(set(change_points + cpd_zeros_points + cpd_peaks_points)))
+#     ############################################
+#     ############################################
+#     from src.smoothing import smooth_triangle
+#     hp_data_new = []
+# 
+#     if len(hp_data[0:change_points[0]]) > 46:
+#         hp_data_new.extend(smooth_triangle(hp_data[0:change_points[0]], 15))
+#     else:
+#         hp_data_new.extend(hp_data[0:change_points[0]])
+# 
+#     for p in range(1, len(change_points)):
+#         if change_points[p] - change_points[p - 1] > 46:
+#             hp_data_new.extend(smooth_triangle(hp_data[change_points[p - 1]:change_points[p]], 15))
+#         else:
+#             hp_data_new.extend(hp_data[change_points[p - 1]:change_points[p]])
+# 
+#     if len(hp_data[change_points[-1]:]) > 46:
+#         hp_data_new.extend(smooth_triangle(hp_data[change_points[-1]:], 15))
+#     else:
+#         hp_data_new.extend(hp_data[change_points[-1]:])
+#     ############################################
+#     add_scatter_trace_coverage(fig, start, hp_data_new, name='HP-' + str(hp), text=None, yaxis=None, opacity=0.7, color='grey')
+#     ############################################
+# 
+#     #model = CUSUM(k=1., h=2., burnin=50, mu=0., sigma=1.)
+#     #model = EWMA(r=0.15, L=2.4, burnin=50, mu=0., sigma=1.)
+#     #model = TwoSample(statistic="Lepage", threshold=3.1)
+# 
+#     # model.process(data)
+#     # change_points = model.changepoints
+# 
+#     if args.variable_size_bins:
+#         start_pos = 0
+#         snps_haplotype_mean = []
+#         snps_haplotype_len = []
+#         snps_haplotype_pos = []
+#         snps_haplotype_pos.append(0)
+#         for index, point in enumerate(change_points):
+#             i = start[point-1]
+# 
+#             sub_list = hp_data[start_pos:i]
+#             if sub_list:
+#                 snps_haplotype_mean.append(statistics.median(sub_list))
+#                 snps_haplotype_len.append(len(sub_list))
+#                 snps_haplotype_pos.append(i)
+#             start_pos = point + 1
+# 
+#         for i, point in enumerate(snps_haplotype_pos):
+#             fig.add_vline(x=point, line_width=1, line_dash="dash", line_color=color)
+#     else:
+#         for i, point in enumerate(change_points):
+#             fig.add_vline(x=point*args.bin_size, line_width=1, line_dash="dash", line_color=color)
+# 
+#     #plots_add_markers_lines(fig)
+#     plots_layout_settings(fig, chrom, args, ends[-1:][0], args.cut_threshold)
+# 
+#     print_chromosome_html(fig, chrom + '_hp_'  + str(hp), html_graphs, args.out_dir_plots)
+#     html_graphs.write("  <object data=\"" + chrom + '_hp_'  + str(hp)  + '.html' + "\" width=\"700\" height=\"420\"></object>" + "\n")
+# 
+
+
+
+# def add_histo_clusters_plot(depth_values_hp1, depth_values_hp2, labels, means, covar, args, chrom, html_graphs):
+#     from plotly.subplots import make_subplots
+#     import plotly.graph_objects as go
+#     import math
+#     # fig = go.Figure()
+# 
+#     depth_values_hp1 = np.array(depth_values_hp1, dtype='int')
+#     depth_values_hp2 = np.array(depth_values_hp2, dtype='int')
+# 
+#     depth_values_hp1 = depth_values_hp1.reshape(-1, 1)
+#     depth_values_hp2 = depth_values_hp2.reshape(-1, 1)
+#     Y = np.concatenate([depth_values_hp1, depth_values_hp2])
+# 
+#     fig = make_subplots(rows=1, cols=2, shared_yaxes=True, column_widths=[0.8, 0.2], vertical_spacing=0.01,
+#                         horizontal_spacing=0.01)
+# 
+#     y = np.concatenate(list(Y)).ravel().tolist()
+#     lst = [i for i in range(0, (len(y) // 2) * args.bin_size, args.bin_size)]
+#     x = lst + lst
+# 
+#     cdict = {0: '#1f77b4',  # muted blue
+#              1: '#ff7f0e',  # safety orange
+#              2: '#2ca02c',  # cooked asparagus green
+#              3: '#d62728',  # brick red
+#              4: '#9467bd',  # muted purple
+#              5: '#8c564b',  # chestnut brown
+#              6: '#e377c2',  # raspberry yogurt pink
+#              7: '#7f7f7f',  # middle gray
+#              8: '#bcbd22',  # curry yellow-green
+#              9: '#17becf'  # blue-teal
+#              }
+#     ldict = {0: 'Cluster_1', 1: 'Cluster_2', 2: 'Cluster_3', 3: 'Cluster_4', 4: 'Cluster_5', \
+#              5: 'Cluster_6', 6: 'Cluster_7', 7: 'Cluster_8', 8: 'Cluster_9', 9: 'Cluster_10'}
+# 
+#     for g in np.unique(labels):
+#         ix = [index for index, i in enumerate(x) if labels[index] == g]
+#         xn = [x[i] for i in ix]
+#         yn = [y[i] for i in ix]
+#         fig.add_trace(go.Scatter(x=xn, y=yn, mode='markers', marker=dict(color=cdict[g]), name=ldict[g], opacity=0.7, ),
+#                       row=1, col=1)
+# 
+#     fig.update_traces(
+#         # hoverinfo="name+x+text+y",
+#         # line={"width": 0.5},
+#         marker={"size": 2},
+#         mode="markers",
+#         showlegend=True
+#     )
+# 
+#     for i in range(len(means)):
+#         fig.add_hline(y=means[i], line_width=2,
+#                       line=dict(dash='solid'), line_color=cdict[i], annotation_position="top right", annotation_text="mean_" + str(i + 1))
+# 
+#         fig.add_hline(y=means[i] + covar[i], line_width=1,
+#                       line=dict(dash='dash'), line_color=cdict[i], annotation_position="top left", annotation_text="stdev_" + str(i + 1))
+#         fig.add_hline(y=means[i] - covar[i], line_width=1,
+#                       line=dict(dash='dash'), line_color=cdict[i], annotation_position="top left", annotation_text="stdev_" + str(i + 1))
+#     fig.update_yaxes(range=[0, 160])
+# 
+#     # fig.add_trace(go.Histogram(y=y, orientation='h', nbinsy=5000,), row=1, col=2)
+#     fig.add_trace(
+#         go.Histogram(y=np.concatenate(list(Y)).ravel().tolist(), orientation='h', marker_color='gray', name='Histogram',
+#                      nbinsy=8000), row=1, col=2)
+#     fig.update_layout(xaxis2=dict(range=[0, 200]))
+#     # fig.add_trace(go.Histogram(y=np.concatenate(list(Y[0:len(Y)//2-1])).ravel().tolist(), name='HP-1', orientation='h', nbinsy=8000, marker_color='#6A5ACD'), row=1, col=2)
+#     # fig.add_trace(go.Histogram(y=np.concatenate(list(Y[len(Y)//2:len(Y)])).ravel().tolist(), name='HP-2', orientation='h', nbinsy=8000, marker_color='#2E8B57'), row=1, col=2)
+# 
+#     # Overlay both histograms
+#     # fig.update_layout(barmode='overlay')
+#     # Reduce opacity to see both histograms
+#     # fig.update_traces(opacity=0.75)
+#     fig.update_layout(legend={'itemsizing': 'constant'})
+#     # Update layout
+#     fig.update_layout(
+#         template="plotly_white",
+#         font_family="Times New Roman"
+#     )
+#     fig.update_layout(
+#         title=chrom,
+#     )
+#     fig.update_layout(legend=dict(
+#         orientation = 'h', xanchor = "center", x = 0.5, y= 1.2 #orientation = 'v', xanchor = "center", x = 1.08, y= .5
+#     ))
+#     fig.update_layout(margin=dict(l=5, r=5, b=5, pad=1))
+#     fig.update_layout(
+#         width=680,
+#         height=400,
+#        )
+#     fig.update_layout(
+#         title={
+#             'text': chrom + ' - ' + args.genome_name,
+#             'y': 0.96,
+#             'x': 0.5,
+#             'xanchor': 'center',
+#             'yanchor': 'top'},
+# 
+#         font_family="Courier New",
+#         font_color="dimgray",
+#         title_font_family="Times New Roman",
+#         title_font_color="red",
+#         legend_title_font_color="green",
+#     )
+# 
+#     print_chromosome_html(fig, chrom + '_clusters_'  + str(len(means)), html_graphs, args.out_dir_plots)
+#     html_graphs.write("  <object data=\"" + chrom + '_clusters_'  + str(len(means))  + '.html' + "\" width=\"700\" height=\"420\"></object>" + "\n")
+# 
+#     #fig.write_html("coverage_plots/" + chrom + "_cluster_" + str(len(means)) + ".html")
 
 def plot_ploidy_purity_p_values(args, ploidy_values, purity_values, p_values):
     def plot_heatmap_with_nan_fill(p_values, ploidy, purity, title="Heatmap Plot"):

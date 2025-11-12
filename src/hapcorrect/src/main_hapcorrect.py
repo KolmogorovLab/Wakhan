@@ -14,7 +14,7 @@ logger = logging.getLogger()
 from src.file_tools.process_bam import (get_all_reads_parallel, update_coverage_hist, get_segments_coverage, tumor_bam_haplotag)
 from src.file_tools.process_vcf import (vcf_parse_to_csv_for_het_phased_snps_phasesets, get_snp_frequencies_segments, snps_frequencies_chrom_mean,
                                             get_snps_frquncies_coverage, vcf_parse_to_csv_for_snps, index_vcf, rephase_vcf, get_phasingblocks,
-                                            snps_frequencies_chrom_mean_phasesets, snps_frequencies_homo_chrom_mean)
+                                            snps_frequencies_chrom_mean_phasesets)
 from src.hapcorrect.src.phase_correction import (generate_phasesets_bins, phase_flips_cis_trans, switch_inter_phaseblocks_bins,
                                                  phaseblock_flipping_simple_heuristics, check_missing_phasesets_original, reintroduce_broken_phasesets,
                                                  update_remaining_phasesets, subtract_intervals, without_phasesets_bins_correction,

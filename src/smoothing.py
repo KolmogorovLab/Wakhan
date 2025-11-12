@@ -6,8 +6,6 @@ logger = logging.getLogger()
 
 #def talib_sma(array, period):
 #    return ta.MA(array, period)
-def convolve_sma(x, N):
-    return np.convolve(x, np.ones((N,))/N)[(N-1):]
 
 def smoothing(haplotype_1_values, haplotype_2_values, unphased_reads_values = None, conv_window_size = 5):
     if not unphased_reads_values == None:
@@ -32,19 +30,3 @@ def smooth_triangle(data, degree):
         return smoothed
     else:
         return data
-
-def smooth_gaussian(list, degree):
-    window = degree*2-1
-    import numpy
-    weight = numpy.array([1.0]*window)
-    weightGauss = []
-    for i in range(window):
-        i = i-degree+1
-        frac = i/float(window)
-        gauss = 1/(numpy.exp((4*(frac))**2))
-        weightGauss.append(gauss)
-    weight = numpy.array(weightGauss)*weight
-    smoothed = [0.0]*(len(list)-window)
-    for i in range(len(smoothed)):
-        smoothed[i] = sum(numpy.array(list[i:i+window])*weight)/sum(weight)
-    return smoothed

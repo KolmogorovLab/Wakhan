@@ -204,10 +204,6 @@ def get_all_reads_parallel(bam_file, thread_pool, ref_lengths,
             segments_by_read[aln.read_id].append(aln)
     return segments_by_read
 
-def haplotype_update_all_bins_parallel(bam_file, thread_pool, bins, bin_size):
-    tasks = [(bam_file, region) for region in bins]
-    parsing_results = thread_pool.starmap(process_all_reads, tasks)
-
 def process_all_reads(histograms, bam_file, genome_id, region):
     ref_id, region_start, region_end, haplotype_1, haplotype_2 = region
 
@@ -260,12 +256,6 @@ def update_coverage_hist(genome_ids, ref_lengths, segments_by_read, min_mapq, ma
             coverage_histograms[(read.genome_id, read.haplotype, read.ref_id)][i] += 1
 
     return coverage_histograms
-
-def get_snps_frequencies(bam, snp_segments, thread_pool):
-    tasks = [(bam, region) for region in snp_segments]
-    snps_results = None
-    snps_results = thread_pool.starmap(compute_snp_frequency, tasks)
-    return snps_results
 
 def compute_snp_frequency(bam, region):
     from collections import Counter

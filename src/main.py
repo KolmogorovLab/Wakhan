@@ -59,10 +59,6 @@ def _enable_logging(log_file, debug, overwrite):
 def _version():
     return __version__
 
-def find_peaks_with_min_distance(signal, min_distance=2):
-    peaks, _ = find_peaks(signal, distance=min_distance)
-    return peaks.tolist()
-
 def copy_numbers_assignment_haplotypes(args, tumor_cov, max_limit, single_copy_cov, centers, subclonals, df_hp1_base, df_hp2_base, df_segs_hp1_base, df_segs_hp2_base, snps_cpd_means_df, csv_df_snps_mean, df_snps_in_csv, df_unphased, x_axis, observed_hist, is_half):
     data = []
     average_p_value = []

@@ -83,33 +83,33 @@ def get_chromosomes_bins(bam_file, bin_size, args):
 
     return bed, bed_1
 
-def chunk_range(start, end, num_chunks):
-
-  if num_chunks == 0:
-    raise ValueError("Number of chunks cannot be zero")
-
-  # Calculate the ideal chunk size (might have a remainder)
-  ideal_chunk_size = (end - start) // num_chunks
-
-  # Initialize list to store chunks
-  chunks = []
-  current_start = start
-  last = end
-
-  # Iterate and create chunks
-  for _ in range(num_chunks):
-    # Handle last chunk potentially being larger
-    if _ == num_chunks :
-      end_value = end
-    else:
-      end_value = current_start + ideal_chunk_size
-    if not last == end_value:
-        chunks.append([current_start, end_value-1])
-    else:
-        chunks.append([current_start, end_value])
-    current_start = end_value
-
-  return chunks
+# def chunk_range(start, end, num_chunks):
+#
+#   if num_chunks == 0:
+#     raise ValueError("Number of chunks cannot be zero")
+#
+#   # Calculate the ideal chunk size (might have a remainder)
+#   ideal_chunk_size = (end - start) // num_chunks
+#
+#   # Initialize list to store chunks
+#   chunks = []
+#   current_start = start
+#   last = end
+#
+#   # Iterate and create chunks
+#   for _ in range(num_chunks):
+#     # Handle last chunk potentially being larger
+#     if _ == num_chunks :
+#       end_value = end
+#     else:
+#       end_value = current_start + ideal_chunk_size
+#     if not last == end_value:
+#         chunks.append([current_start, end_value-1])
+#     else:
+#         chunks.append([current_start, end_value])
+#     current_start = end_value
+#
+#   return chunks
 
 
 def update_bins_with_bps(bed, bps, bps_bnd, args, region):
@@ -439,25 +439,25 @@ def df_chromosomes_sorter(dataframe, names):
     dataframe.sort_values(by=['chr', names[1]], ascending=[True, True], inplace=True)
     return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
 
-def get_breakpoints(chrom, bp_file_path): #TODO add call in plots
-    break_points = []
-    with open(bp_file_path) as bp_file:
-        next(bp_file)
-        for st in bp_file:
-            # st = '-chr1:2671683|+chr1:2673127,0,0,0,9,10,22'
-            st = st.split(",")
-            #Parse the file
-            chr1 = (st[0].split("|"))[0].split(":")[0][1:]
-            chr2 = (st[0].split("|"))[1].split(":")[0][1:]
-            bp_pos1 = int((st[0].split("|"))[0].split(":")[1])
-            bp_pos2 = int((st[0].split("|"))[1].split(":")[1])
-            val_1=int(st[1])
-            val_2=int(st[4])
-            if ( val_1 == 0 and val_2 >= 3) and (abs(bp_pos1 - bp_pos2) > 1000) and (chr1 == chr2) and (chr2 == chrom):
-                #1k condition and both connections should be on same chromosome for the moment
-                mid=bp_pos1 + round((abs(bp_pos1 - bp_pos2) / 2))
-                break_points.extend([bp_pos1, mid, bp_pos2])
-    return break_points
+# def get_breakpoints(chrom, bp_file_path): #TODO add call in plots
+#     break_points = []
+#     with open(bp_file_path) as bp_file:
+#         next(bp_file)
+#         for st in bp_file:
+#             # st = '-chr1:2671683|+chr1:2673127,0,0,0,9,10,22'
+#             st = st.split(",")
+#             #Parse the file
+#             chr1 = (st[0].split("|"))[0].split(":")[0][1:]
+#             chr2 = (st[0].split("|"))[1].split(":")[0][1:]
+#             bp_pos1 = int((st[0].split("|"))[0].split(":")[1])
+#             bp_pos2 = int((st[0].split("|"))[1].split(":")[1])
+#             val_1=int(st[1])
+#             val_2=int(st[4])
+#             if ( val_1 == 0 and val_2 >= 3) and (abs(bp_pos1 - bp_pos2) > 1000) and (chr1 == chr2) and (chr2 == chrom):
+#                 #1k condition and both connections should be on same chromosome for the moment
+#                 mid=bp_pos1 + round((abs(bp_pos1 - bp_pos2) / 2))
+#                 break_points.extend([bp_pos1, mid, bp_pos2])
+#     return break_points
 
 def write_segments_coverage_dict(coverage_segments, output, args):
     with open(args.out_dir_plots+'/coverage_data/' + output, 'a') as fp:
@@ -561,19 +561,6 @@ def loh_regions_events(chrom, region_starts, region_ends, args):
     #write_segments_coverage(dict, args.genome_name + '_loh_segments.bed')
     return dict
 
-
-def is_phasesets_check_simple_heuristics(ref_start_values_phasesets, ref_end_values_phasesets):
-    ps_region_starts = []
-    ps_region_ends = []
-    for i, (start, end) in enumerate(zip(ref_start_values_phasesets, ref_end_values_phasesets)):
-        if end - start > 2000000:
-            ps_region_starts.append(start)
-            ps_region_ends.append(end)
-
-    if len(ps_region_starts) < 5:
-        return True
-    else:
-        return False
 def mean_values(selected_list, start_index, end_index):
     result = []
     for i in range(end_index - start_index):

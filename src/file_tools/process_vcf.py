@@ -113,31 +113,6 @@ def get_snps_frquncies(snps_df_sorted, chrom):  # TODO This module needs better 
 
     return snps_het, snps_homo, snps_het_pos, snps_homo_pos
 
-def het_homo_snps_gts(snps_df_sorted, chrom, ref_start_values,
-                                bin_size):
-    snps_df = snps_df_sorted[snps_df_sorted['chr'] == chrom]
-    if 'gt' in snps_df.columns:
-        snps_df['gt'].astype(str)
-    snps_df = snps_df[(snps_df['qual'] > 15)]
-
-    snps_df_haplotype1 = snps_df[(snps_df['gt'] == '0|1') | (snps_df['gt'] == '1|0')]
-    snps_df_haplotype1.reindex(snps_df_haplotype1)
-    if snps_df.vaf.dtype == object:
-        snps_df_haplotype1_vaf = [eval(i) for i in snps_df.vaf.str.split(',').str[0].values.tolist()]
-    else:
-        snps_df_haplotype1_vaf = snps_df.vaf.values.tolist()
-    snps_df_haplotype1_pos = snps_df_haplotype1.pos.values.tolist()
-
-    snps_df_haplotype2 = snps_df[(snps_df['gt'] == '0/0') | (snps_df['gt'] == '1/1') ]
-    snps_df_haplotype2.reindex(snps_df_haplotype2)
-    if snps_df.vaf.dtype == object:
-        snps_df_haplotype2_vaf = [eval(i) for i in snps_df.vaf.str.split(',').str[0].values.tolist()]
-    else:
-        snps_df_haplotype2_vaf = snps_df.vaf.values.tolist()
-    snps_df_haplotype2_pos = snps_df_haplotype2.pos.values.tolist()
-
-    return snps_df_haplotype1_vaf, snps_df_haplotype2_vaf, snps_df_haplotype1_pos, snps_df_haplotype2_pos
-
 def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, bin_size, hets_ratio, smooth_loh_conv_window, args): #TODO This module needs better implementation, currently slow
 
     snps_df = snps_df_sorted[snps_df_sorted['chr'] == chrom]
@@ -260,22 +235,6 @@ def squash_regions(region, bin_size):
 
     return region_starts, region_ends
 
-def get_vafs_from_normal_phased_vcf(df_snps, chroms):
-    df_final = []
-    for index, chrom in enumerate(chroms):
-        df = df_snps[df_snps['chr'] == chrom]
-        vaf = []
-        # df = dict(tuple(df_snps.groupby('hp')))
-        haplotype_1_position = df.pos.values.tolist()
-        haplotype_1_coverage = df.freq_value_b.values.tolist()
-        haplotype_2_position = df.pos.values.tolist()
-        haplotype_2_coverage = df.freq_value_a.values.tolist()
-        # vaf = a/a+b
-        vaf = [round(i / (i + j + 0.0000000001), 3) for i, j in zip(haplotype_1_coverage, haplotype_2_coverage)]
-        df_final.append(pd.DataFrame(list(zip([df['chr'].iloc[0] for ch in range(len(haplotype_1_position))], haplotype_1_position, vaf)), columns=['chr', 'pos', 'vaf']))
-
-    return pd.concat(df_final)
-
 def snps_frequencies_chrom_mean_phasesets(df_snps, ref_start_values, ref_end_values, chrom, args):
     df = df_snps[df_snps['chr'] == chrom]
 
@@ -317,14 +276,6 @@ def snps_frequencies_chrom_mean_phasesets(df_snps, ref_start_values, ref_end_val
 
     return snps_haplotype1_mean, snps_haplotype2_mean
 
-def remove_outliers_iqr(data, threshold=5):
-    q1 = np.percentile(data, 25)
-    q3 = np.percentile(data, 75)
-    iqr = q3 - q1
-    lower_bound = q1 - threshold * iqr
-    upper_bound = q3 + threshold * iqr
-    outliers_removed = data[(data >= lower_bound) & (data <= upper_bound)]
-    return outliers_removed
 def snps_frequencies_chrom_mean(df_snps, ref_start_values, chrom, args):
     df = df_snps[df_snps['chr'] == chrom]
 
@@ -364,111 +315,6 @@ def snps_frequencies_chrom_mean(df_snps, ref_start_values, chrom, args):
                 snps_haplotype2_mean.append(0)
         total += len_cov
     return snps_haplotype1_mean, snps_haplotype2_mean
-
-def snps_frequencies_homo_chrom_mean(file, chrom, args, loh_region_starts, loh_region_ends, haplotype_1_values, haplotype_2_values):
-
-    if args.quick_start:
-        csv_df_coverage = csv_df_chromosomes_sorter(args.quick_start_coverage_path+'/'+file, ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
-    else:
-        csv_df_coverage = csv_df_chromosomes_sorter(args.out_dir_plots+'/coverage_data/'+file, ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
-
-    df = csv_df_coverage[csv_df_coverage['chr'] == chrom]
-
-    #df = dict(tuple(df_snps.groupby('hp')))
-    haplotype_1_position = df.pos.values.tolist()
-    haplotype_1_coverage = df.freq_value_b.values.tolist()
-    haplotype_2_position = df.pos.values.tolist()
-    haplotype_2_coverage = df.freq_value_a.values.tolist()
-
-    for j, (starts, ends) in enumerate(zip(loh_region_starts, loh_region_ends)):
-        if ends - starts > 2000000:
-            total = starts // args.bin_size
-            for i in range(starts//args.bin_size,ends//args.bin_size):
-                #len_cov = len(df[(df.pos >= i) & (df.pos < i + args.bin_size)])
-                len_cov = len(df[(df['pos'] >= i*args.bin_size) & (df['pos'] <= (i+1)*args.bin_size)])
-                if len_cov == 0:
-                    haplotype_1_sub_value = 0
-                else:
-                    sub_list = haplotype_1_coverage[total:(total + len_cov)]
-                    if sub_list:
-                        haplotype_1_sub_value = statistics.mean(sub_list)
-                    else:
-                        haplotype_1_sub_value = 0
-
-                if len_cov == 0:
-                    haplotype_2_sub_value = 0
-                else:
-                    sub_list = haplotype_2_coverage[total:(total + len_cov)]
-                    if sub_list:
-                        haplotype_2_sub_value = statistics.mean(sub_list)
-                    else:
-                        haplotype_2_sub_value = 0
-
-                total += len_cov
-
-                haplotype_1_values[i] = haplotype_1_sub_value + haplotype_2_sub_value
-                haplotype_2_values[i] = 0
-
-    return haplotype_1_values, haplotype_2_values
-
-def cpd_mean(haplotype1_means, haplotype2_means, ref_values, chrom, args):
-    import ruptures as rpt
-    import numpy as np
-
-    data = np.array(haplotype1_means, dtype='int') #numpy.clip(haplotype1_means, a_min=1, a_max=300)
-    algo = rpt.Pelt(model="rbf").fit(data)
-    result = algo.predict(pen=10)
-    change_points = [i for i in result if i <= len(data)]
-
-    snps_haplotype1_mean = []
-    snps_haplotype1_pos = []
-    start = 0
-    snps_haplotype1_pos.append(0)
-    for index, point in enumerate(change_points):
-        sub_list=haplotype1_means[start:point]
-        if sub_list:
-            snps_haplotype1_mean.append(statistics.mean(sub_list))
-        else:
-            snps_haplotype1_mean.append(0)
-        start = point + 1
-        snps_haplotype1_pos.append(point * args.bin_size)
-    snps_haplotype1_pos.append(ref_values[-1] * args.bin_size)
-    ############################################################
-    data = np.array(haplotype2_means, dtype='int') #numpy.clip(haplotype2_means, a_min=1, a_max=300)
-    algo = rpt.Pelt(model="rbf").fit(data)
-    result = algo.predict(pen=10)
-    change_points = [i for i in result if i <= len(data)]
-
-    snps_haplotype2_mean = []
-    snps_haplotype2_pos = []
-    start = 0
-    snps_haplotype2_pos.append(0)
-    for index, point in enumerate(change_points):
-        sub_list=haplotype2_means[start:point]
-        if sub_list:
-            snps_haplotype2_mean.append(statistics.mean(sub_list))
-        else:
-            snps_haplotype2_mean.append(0)
-        start = point + 1
-        snps_haplotype2_pos.append(point * args.bin_size)
-    snps_haplotype2_pos.append(ref_values[-1] * args.bin_size)
-
-    chr = range(len(snps_haplotype1_pos))
-    df_cpd_hp1 = pd.DataFrame(list(zip([chrom for ch in chr], snps_haplotype1_pos, snps_haplotype1_mean)), columns=['chr', 'start', 'hp1'])
-    df_cpd_hp2 = pd.DataFrame(list(zip([chrom for ch in chr], snps_haplotype2_pos, snps_haplotype2_mean)), columns=['chr', 'start', 'hp2'])
-
-    slices = slice_when(lambda x, y: y - x > 10, sorted(snps_haplotype1_mean + snps_haplotype2_mean))
-    return df_cpd_hp1, df_cpd_hp2
-
-def slice_when(predicate, iterable):
-  i, x, size = 0, 0, len(iterable)
-  while i < size-1:
-    if predicate(iterable[i], iterable[i+1]):
-      yield iterable[x:i+1]
-      x = i + 1
-    i += 1
-  yield iterable[x:size]
-
 
 def vcf_parse_to_csv_for_snps(input_vcf, args, output_subdir):
     # pathlib.Path(input_vcf).suffix #extension
@@ -601,20 +447,6 @@ def get_snp_segments_frequencies_final(dataframe_acgt_frequency):
         snp_segments_final.append((contig + '\t' + str(pos) + '\t' + str(freq_value_a) + '\t'+ str(hp_a) + '\t' + str(freq_value_b) + '\t' + str(hp_b)))
 
     return snp_segments_final
-
-
-def bam_pileups_snps(snps_list, target_bam, args, output_subdir):
-    basefile = pathlib.Path(target_bam).stem
-    output_csv = basefile + '_snps_pileup.csv'
-    output_csv = f"{os.path.join(args.out_dir_plots, output_subdir, output_csv)}"
-
-    #target_bam = '/home/rezkuh/GenData/COLO829/colo829_tumor_grch38_md_chr7_haplotagged.bam'
-
-    cmd = ['samtools', 'mpileup', '-l',  snps_list, '-f', args.reference, target_bam, '-o', output_csv] #
-    process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    process.wait()
-
-    return output_csv
 
 def count_bases(positions: List[Tuple[str, int, str, str]]) -> List[Tuple[str, int, int, int, int, int]]:
     base_counts = []
