@@ -294,7 +294,6 @@ def plot_snps(chrom, index, df_snps_in_csv, html_graphs, args, df_chrom):
     else:
         return [], [], [], []
 def save_snps_counts_per_bin(hets,homos,ref_start, chrom, coverage, args, index):
-    import pandas as pd
     fp = open(args.out_dir_plots + '/bed_output/' + args.genome_name + '_snps_counts.bed', 'a')
 
     if index == 0:
@@ -305,7 +304,6 @@ def save_snps_counts_per_bin(hets,homos,ref_start, chrom, coverage, args, index)
     snps_counts_df.to_csv(fp, sep='\t', index=False, mode='a', header=False)
 
 def snps_counts_per_cn_region(hets, homos, ref_start, ref_end, chrom):
-    import pandas as pd
     chr_list = [chrom for ch in range(len(ref_start))]
     snps_counts_df = pd.DataFrame(list(zip(chr_list, ref_start, ref_end, hets, homos)), columns=['chr', 'start', 'end', 'hets_count', 'homos_count'])
     return snps_counts_df

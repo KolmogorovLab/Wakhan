@@ -10,6 +10,7 @@ import shutil
 import statistics
 import itertools
 import logging
+import plotly.express as px
 
 logger = logging.getLogger()
 
@@ -20,6 +21,7 @@ from src.file_tools.process_vcf import vcf_parse_to_csv_for_snps
 from src.utils import subclonal_values_adjusted, get_chromosomes_bins, csv_df_chromosomes_sorter, detect_alter_loh_regions, change_point_detection_means, \
     df_chromosomes_sorter, get_chromosomes_regions, adjust_extreme_outliers, genes_phase_correction, write_df_csv, bins_with_copynumber_states
 from src.breakpoints import get_contigs_list, sv_vcf_bps_cn_check
+from src.breakpoints_arcs import get_all_breakpoints_data
 
 pd.options.mode.chained_assignment = None
 
@@ -985,7 +987,6 @@ def copy_number_plots_genome_breakpoints_cytos(centers, integer_fractional_cente
         last_len = 0
         coords_single = [j for i in [x[1:2] for x in coords_single] for j in i]
 
-        from src.breakpoints_arcs import get_all_breakpoints_data
         arcs_data = get_all_breakpoints_data(coords, coords_chr, 75, args.breakpoints, args)
         arcs_data1 = get_all_breakpoints_data(coords, coords_chr, -75, args.breakpoints, args)
 
@@ -1411,7 +1412,6 @@ def copy_number_plots_genome_breakpoints(centers, integer_fractional_centers, df
         last_len = 0
         coords_single = [j for i in [x[1:2] for x in coords_single] for j in i]
 
-        from src.breakpoints_arcs import get_all_breakpoints_data
         arcs_data = get_all_breakpoints_data(coords, coords_chr, 75, args.breakpoints, args)
         arcs_data1 = get_all_breakpoints_data(coords, coords_chr, -75, args.breakpoints, args)
 
@@ -2253,7 +2253,6 @@ def copy_number_plots_genome_breakpoints_subclonal_cytos(centers, integer_fracti
     indices = np.arange(0, len(df_cnr_hp1)*args.bin_size, args.bin_size, dtype=int)
 
     ###########################################################
-    from src.breakpoints_arcs import get_all_breakpoints_data
 
     arcs_data = get_all_breakpoints_data(coords, coords_chr, 75, args.breakpoints, args)
     arcs_data1 = get_all_breakpoints_data(coords, coords_chr, -75, args.breakpoints, args)
@@ -2769,7 +2768,6 @@ def copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_c
     indices = np.arange(0, len(df_cnr_hp1)*args.bin_size, args.bin_size, dtype=int)
 
     ###########################################################
-    from src.breakpoints_arcs import get_all_breakpoints_data
 
     arcs_data = get_all_breakpoints_data(coords, coords_chr, 75, args.breakpoints, args)
     arcs_data1 = get_all_breakpoints_data(coords, coords_chr, -75, args.breakpoints, args)
@@ -4415,7 +4413,6 @@ def heatmap_copy_number_plots_genome(df_genes, centers, integer_fractional_cente
 
     fig = make_subplots(rows=2, cols=1, vertical_spacing=0.1, shared_xaxes=True, horizontal_spacing=0.02, row_heights=[0.30, 0.30])
 
-    import plotly.express as px
     cmap = [
         (r, c)
         for r, c in zip(

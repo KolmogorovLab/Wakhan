@@ -1,6 +1,8 @@
 import logging
 import pandas as pd
 from intervaltree import IntervalTree, Interval
+from vcf_parser import VCFParser
+from collections import defaultdict
 
 logger = logging.getLogger()
 
@@ -54,9 +56,7 @@ def sv_vcf_bps_cn_check(path, args):
     bp_cov_threshold = max(args.first_copy_breakpoints_filter * BP_RELIABLE_COV_RATE, BP_MIN_COV)
 
     #########################################
-    from vcf_parser import VCFParser
     my_parser = VCFParser(infile=path, split_variants=True, check_info=True)
-    from collections import defaultdict
 
     #Coverage of phase blocks to check if we are in balanced region
     chr_phaseblocks = defaultdict(IntervalTree)

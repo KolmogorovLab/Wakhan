@@ -2,6 +2,8 @@ import os
 import statistics
 import numpy as np
 import pandas as pd
+from collections import Counter
+from itertools import groupby
 from src.hapcorrect.utils import csv_df_chromosomes_sorter, df_chromosomes_sorter, write_segments_coverage_snps, merge_regions, get_contigs_list, find_peak_median_without_outliers
 
 import logging
@@ -168,7 +170,6 @@ def phase_contiguous_cis_trans(breakpoints_additional, indices_merge, haplotype_
 
     return haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets
 
-from collections import Counter
 
 
 def split_on_singletons_and_gaps(data):
@@ -462,7 +463,6 @@ def scan_and_update_phaseswitches_inside_phaseblocks(args, chrom, values_ps, hap
         #     print('here')
         internal_bins = [i for i in ref_start_values if i >= value_ps[0] and i <= value_ps[1]]
         if internal_bins:
-            from itertools import groupby
             sub_list = np.arange(ref_start_values.index(internal_bins[0]), ref_start_values.index(internal_bins[len(internal_bins)-1]), 1).tolist()
             haplotype_1_higher = [list(v) for k, v in groupby(sub_list, lambda sub_list: haplotype_1_values[sub_list] > haplotype_2_values[sub_list]) if k]
             haplotype_2_higher = [list(v) for k, v in groupby(sub_list, lambda sub_list: haplotype_2_values[sub_list] > haplotype_1_values[sub_list]) if k]

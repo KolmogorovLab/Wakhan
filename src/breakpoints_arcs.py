@@ -1,13 +1,13 @@
 import numpy as np
 import pandas as pd
 import logging
+from vcf_parser import VCFParser
 
 logger = logging.getLogger()
 
 from src.utils import get_contigs_list, df_chromosomes_sorter
 
 def get_all_breakpoints_data(edges, edges_chr, height, path, args):
-    from vcf_parser import VCFParser
     my_parser = VCFParser(infile=path, split_variants=True, check_info=True)
     chroms = get_contigs_list(args.contigs)
     bp_junctions_inv = [[]]

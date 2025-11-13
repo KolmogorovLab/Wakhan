@@ -7,6 +7,7 @@ from datetime import datetime
 import sys
 import os
 import pandas as pd
+import ast
 
 from src.utils import get_contigs_list, get_chromosomes_regions, csv_df_chromosomes_sorter
 
@@ -35,7 +36,6 @@ class vcf_format(object):
 
     def bps_segments(self):
         if len(self.bps) > 0:
-            import ast
             list_bps = ','.join(ast.literal_eval(self.bps))
             return f";BPS={list_bps}"
         else:

@@ -4,7 +4,14 @@ import numpy as np
 import pandas as pd
 import pysam
 import os
+from itertools import takewhile
 import logging
+import csv
+import statistics
+from scipy.stats import gaussian_kde
+from scipy.signal import find_peaks
+from sklearn.neighbors import KernelDensity
+
 logger = logging.getLogger()
 
 import warnings
@@ -39,7 +46,6 @@ def get_chromosomes_bins(bam_file, bin_size, args):
     return bed
 
 def chromosomes_sorter(label):
-    from itertools import takewhile
     # Strip "chr" prefix
     chrom = (label[3:] if label.lower().startswith('chr')
              else label)
@@ -261,7 +267,6 @@ def snps_frequencies_chrom_genes(df_snps_frequencies, args):
             ref = args.reference_name #default
         else:
             ref = 'grch38'
-        import csv
         prefix, filename = os.path.split(args.cancer_genes)
         ref_name = prefix + '/' + ref + '_genes.tsv'
         chroms = []
@@ -376,7 +381,6 @@ def mean_values(selected_list, start_index, end_index):
         return 0.0
 
 def infer_missing_phaseblocks(ref_start_values, ref_end_values, ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets, haplotype_1_values, haplotype_2_values, bin_size):
-    import statistics
     missing_segments_starts = []
     missing_segments_ends = []
     missing_segments_hp1_value = []
@@ -528,8 +532,6 @@ def add_breakpoints(args, phasesets_segments, breakpoints):
     return bed
 
 def find_peak_median_without_outliers(data):
-    import numpy as np
-    from scipy.stats import gaussian_kde
     # from scipy.signal import find_peaks
     # peaks, _ = find_peaks(data)
     # peak_values = [data[i] for i in peaks]
@@ -541,8 +543,6 @@ def find_peak_median_without_outliers(data):
     else:
         return statistics.median(data)
 
-    from scipy.signal import find_peaks
-    from sklearn.neighbors import KernelDensity
 
     #if len(data) < 5:
     #    return statistics.median(data)

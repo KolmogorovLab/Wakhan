@@ -6,6 +6,7 @@ import os
 import pandas
 from collections import defaultdict
 import logging
+from collections import Counter
 
 from src.utils import csv_df_chromosomes_sorter
 
@@ -258,7 +259,6 @@ def update_coverage_hist(genome_ids, ref_lengths, segments_by_read, min_mapq, ma
     return coverage_histograms
 
 def compute_snp_frequency(bam, region):
-    from collections import Counter
     contig, start, ref, alt, gt = region
     bam = pysam.AlignmentFile(bam, 'rb')
     bases = []

@@ -3,6 +3,8 @@ import plotly
 import numpy as np
 import os
 import itertools
+import ruptures as rpt
+import pandas as pd
 
 import logging
 logger = logging.getLogger()
@@ -102,7 +104,6 @@ def plot_coverage_data_after_correction(html_graphs, args, chrom, ref_start_valu
         "  <object data=\"" + chrom + '_' + sufix + '.html' + "\" width=\"700\" height=\"420\"></object>" + "\n")
 
 def change_point_detection(data, start, ends, args, chrom, html_graphs, hp, color):
-    import ruptures as rpt
     fig = go.Figure()
     #starts = [i for i in range(0, len(data), 50000)]
     add_scatter_trace_coverage(fig, start, data, name='HP-'+str(hp), text=None, yaxis=None,
@@ -141,7 +142,6 @@ def plots_add_markers_lines(fig):
         showlegend=True
     )
 
-import pandas as pd
 
 def calculate_overlap_proportion(df1, df2):
     """

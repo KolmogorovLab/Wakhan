@@ -9,11 +9,13 @@ import math
 import statistics
 import ruptures as rpt
 import logging
+from itertools import takewhile
+from joblib import Parallel, delayed
+from vcf_parser import VCFParser
 
 logger = logging.getLogger()
 
 from src.smoothing import smoothing
-#from hmm import call_copynumbers
 from src.breakpoints import get_contigs_list, sv_vcf_bps_cn_check
 
 def get_chromosomes_regions(args):
@@ -391,7 +393,6 @@ def update_bins_with_bps_new(bed, bps, bps_bnd, args, region):
     return df, df_1
 
 def chromosomes_sorter(label):
-    from itertools import takewhile
     # Strip "chr" prefix
     chrom = (label[3:] if label.lower().startswith('chr')
              else label)
@@ -1219,7 +1220,6 @@ def parallel_regions_in_cpd(signal):
     # Split data into chunks for parallel processing
     chunk_size = len(signal) // n_jobs
     segments = [(signal[i * chunk_size:(i + 1) * chunk_size], i * chunk_size) for i in range(n_jobs)]
-    from joblib import Parallel, delayed
     # Run parallel change point detection
     results = Parallel(n_jobs=n_jobs)(delayed(detect_changes)(seg, start) for seg, start in segments)
 
@@ -1569,7 +1569,6 @@ def get_vafs_from_tumor_phased_vcf(df_snps, df_coverages, chroms, args):
     return pd.concat(df_final)
 
 def parse_sv_vcf(path):
-    from vcf_parser import VCFParser
     my_parser = VCFParser(infile=path, split_variants=True, check_info = True)
     bp_junctions = [[]]
     for variant in my_parser:
@@ -1833,7 +1832,6 @@ def find_optimized_normal_peaks(args, data, n, spacing=1, limit=None):
         ind = ind[data[ind] > limit]
 
     # t = np.linspace(0., n, n)
-    # import matplotlib.pyplot as plt
     # plt.plot(t, data)
     # plt.axhline(limit, color='r')
     # plt.plot(t[ind], data[ind], 'ro')

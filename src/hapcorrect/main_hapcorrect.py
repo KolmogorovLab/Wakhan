@@ -27,6 +27,8 @@ from src.hapcorrect.utils import (get_chromosomes_bins, write_segments_coverage,
 from src.breakpoints import get_contigs_list
 from src.hapcorrect.plots import plot_coverage_data, loh_plots_genome
 from src.hapcorrect.loh import detect_loh_centromere_regions, plot_snps
+from src.hapcorrect.phase_correction import merge_contiguous_indices, find_indices_to_be_merged
+from src.smoothing import smoothing
 
 MIN_SV_SIZE = 50
 
@@ -319,7 +321,6 @@ def main_process(args):
 
                 ###########################################################
                 #merge ps
-                from src.hapcorrect.phase_correction import merge_contiguous_indices, find_indices_to_be_merged
                 indices_merge = find_indices_to_be_merged(mean_cis_trans_ps, ref_start_values_phasesets,
                                                           ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets)
                 ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets = \
@@ -354,7 +355,6 @@ def main_process(args):
             plot_coverage_data(html_graphs, args, chrom, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean,
                                unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets,
                                ref_start_values_phasesets, ref_end_values_phasesets, "phase_correction_1")
-            from src.smoothing import smoothing
             snps_haplotype1_mean_smoothed, snps_haplotype2_mean_smoothed, unphased_reads_values_smoothed = \
                     smoothing(snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values, conv_window_size=5)
             plot_coverage_data(html_graphs, args, chrom, ref_start_values, ref_end_values, snps_haplotype1_mean_smoothed,

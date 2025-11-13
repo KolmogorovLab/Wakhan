@@ -459,7 +459,6 @@ def chunks(lst, n):
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
 
-from collections import Counter
 
 def parse_pileup_line(line):
     chrom, pos, ref, depth, bases, qual = line.strip().split("\t")[:6]
