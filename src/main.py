@@ -14,7 +14,7 @@ from multiprocessing import Pool
 from collections import defaultdict
 from scipy.signal import find_peaks
 
-from src.hapcorrect.src.main_hapcorrect import main_process
+from src.hapcorrect.main_hapcorrect import main_process
 from src.__version__ import __version__
 
 from src.file_tools.process_bam import get_all_reads_parallel, update_coverage_hist, get_segments_coverage, ref_bam_vcfs_nomenclature_check
@@ -28,7 +28,7 @@ from src.plots import coverage_plots_chromosomes, copy_number_plots_genome_detai
     copy_number_plots_genome_breakpoints, copy_number_plots_genome_breakpoints_subclonal, copy_number_plots_genome_subclonal, genes_copy_number_plots_genome, genes_plots_genome, heatmap_copy_number_plots_genome, plot_ploidy_purity_p_values
 from src.file_tools.process_vcf import vcf_parse_to_csv_for_het_phased_snps_phasesets
 from src.snps_loh import plot_snps_frequencies_without_phasing, plot_snps_ratios_genome, snps_df_loh, variation_plots, write_loh_regions
-from src.hapcorrect.src.phase_correction import generate_phasesets_bins
+from src.hapcorrect.phase_correction import generate_phasesets_bins
 from src.optimization import peak_detection_optimization
 from src.file_tools.generate_vcf import read_cn_segments_process_vcf
 
