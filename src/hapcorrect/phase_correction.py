@@ -4,7 +4,8 @@ import numpy as np
 import pandas as pd
 from collections import Counter
 from itertools import groupby
-from src.hapcorrect.utils import csv_df_chromosomes_sorter, df_chromosomes_sorter, write_segments_coverage_snps, merge_regions, get_contigs_list, find_peak_median_without_outliers
+from src.hapcorrect.utils import csv_df_chromosomes_sorter, df_chromosomes_sorter, write_segments_coverage_snps, get_contigs_list, find_peak_median_without_outliers
+from src.coverage.segmentation import merge_regions
 
 import logging
 logger = logging.getLogger()

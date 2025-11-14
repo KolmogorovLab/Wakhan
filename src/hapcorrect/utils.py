@@ -20,6 +20,9 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 from src.breakpoints import get_contigs_list
 from src.file_tools.process_bam import get_segments_coverage
 
+from src.coverage.segmentation import split_regions_by_points
+from src.utils_tmp.chromosome import csv_df_chromosomes_sorter, df_chromosomes_sorter
+
 def get_chromosomes_bins(bam_file, bin_size, args):
     bed=[]
     bam_alignment = pysam.AlignmentFile(bam_file)
@@ -45,39 +48,6 @@ def get_chromosomes_bins(bam_file, bin_size, args):
                 end+=bin_size
     return bed
 
-def chromosomes_sorter(label):
-    # Strip "chr" prefix
-    chrom = (label[3:] if label.lower().startswith('chr')
-             else label)
-    if chrom in ('X', 'Y'):
-        key = (1000, chrom)
-    else:
-        # Separate numeric and special chromosomes
-        nums = ''.join(takewhile(str.isdigit, chrom))
-        chars = chrom[len(nums):]
-        nums = int(nums) if nums else 0
-        if not chars:
-            key = (nums, '')
-        elif len(chars) == 1:
-            key = (2000 + nums, chars)
-        else:
-            key = (3000 + nums, chars)
-    return key
-
-def csv_df_chromosomes_sorter(path, names, sept='\t'):
-    dataframe = pd.read_csv(path, sep=sept, names=names)
-    dataframe['chr'] = dataframe['chr'].astype(str)
-    #if not dataframe['chr'].iloc[0].startswith('chr'):
-    #    dataframe['chr'] = 'chr' + dataframe['chr'].astype(str)
-    dataframe.sort_values(by=['chr', names[1]], ascending=[True, True], inplace=True)
-    return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
-
-def df_chromosomes_sorter(dataframe, names, sept='\t'):
-    dataframe['chr'] = dataframe['chr'].astype(str)
-    #if not dataframe['chr'].iloc[0].startswith('chr'):
-    #    dataframe['chr'] = 'chr' + dataframe['chr'].astype(str)
-    dataframe.sort_values(by=['chr', names[1]], ascending=[True, True], inplace=True)
-    return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
 
 def write_df_csv(df, file_name):
     df.to_csv(file_name, sep='\t', index=False, header=False, mode='w')
@@ -100,29 +70,6 @@ def loh_regions_events(chrom, region_starts, region_ends, hp):
         dict.append((chrom + '\t' + str(region_starts[i]) + '\t' + str(region_ends[i]) + '\t' + str(hp[i])))
     #write_segments_coverage(dict, args.genome_name'] + '_loh_segments.bed')
     return dict
-
-def seperate_dfs_coverage(args, df, haplotype_1_values_updated, haplotype_2_values_updated, unphased):
-    if args.without_phasing:
-        return df[['chr', 'start', 'end', 'coverage']].copy()
-    else:
-        df_hp1 = df[['chr', 'start','end', 'hp1']].copy()
-        df_hp2 = df[['chr', 'start','end', 'hp2']].copy()
-        df_unphased = df[['chr', 'start','end', 'hp3']].copy()
-        df_hp1['hp1'] = haplotype_1_values_updated
-        df_hp2['hp2'] = haplotype_2_values_updated
-        df_unphased['hp3'] = unphased
-        return df_hp1, df_hp2, df_unphased
-
-
-def get_snps_frquncies_coverage_from_bam(df, chrom):
-    df = df[df['chr'] == chrom]
-    #df = dict(tuple(df.groupby('hp')))
-    haplotype_1_position = df.pos.values.tolist()
-    haplotype_1_coverage = df.freq_value_b.values.tolist()
-    haplotype_2_position = df.pos.values.tolist()
-    haplotype_2_coverage = df.freq_value_a.values.tolist()
-
-    return haplotype_1_position, haplotype_1_coverage, haplotype_2_position, haplotype_2_coverage
 
 
 def detect_alter_loh_regions(csv_df_coverage_tumor_chrom, args, event, chrom, ref_ends, haplotype_1_values, haplotype_2_values,
@@ -169,26 +116,6 @@ def detect_alter_loh_regions(csv_df_coverage_tumor_chrom, args, event, chrom, re
                 #     hp.append(2)
 
     return haplotype_1_values, haplotype_2_values, unphased_reads_values, region_starts, region_ends, hp
-
-def split_regions_by_points(starts, ends, values1, values2, split_points):
-    split_points = sorted(set(split_points))
-    new_starts = []
-    new_ends = []
-    new_values1 = []
-    new_values2 = []
-
-    for start, end, val1, val2 in zip(starts, ends, values1, values2):
-        # Get split points within this region
-        internal_splits = [pt for pt in split_points if start < pt < end]
-        boundaries = [start] + internal_splits + [end]
-
-        for i in range(len(boundaries) - 1):
-            new_starts.append(boundaries[i])
-            new_ends.append(boundaries[i + 1])
-            new_values1.append(val1)
-            new_values2.append(val2)
-
-    return new_starts, new_ends, new_values1, new_values2
 
 
 def adjust_loh_cent_phaseblocks(args, loh_region_starts, loh_region_ends, centrom_region, snps_haplotype1_mean, snps_haplotype2_mean,
@@ -459,52 +386,12 @@ def loh_regions_phasesets(haplotype_1_values, haplotype_2_values, loh_region_sta
 
     return haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets
 
+
 def overlap_check(start, end, starts, ends):
   for i in range(len(starts)):
     if (start < ends[i] and end > starts[i]) or (start <= starts[i] and end >= ends[i]):
       return True
   return False
-
-def merge_regions(starts, ends, values, values_next, loh_starts, loh_ends, threshold=3):
-    merged_starts, merged_ends, merged_values, merged_values_2 = [], [], [], []
-    i = 0
-    while i < len(starts):
-        start, end, value = starts[i], ends[i], values[i]
-        j = i + 1
-        while j < len(starts) and abs(value - values[j]) <= threshold and abs(value - values_next[i]) >= threshold:
-            end = max(end, ends[j])
-            j += 1
-        if not overlap_check(start, end, loh_starts, loh_ends):
-            merged_starts.append(start)
-            merged_ends.append(end)
-            merged_values.append(sum(values[i:j]) / (j - i))
-            merged_values_2.append(sum(values_next[i:j]) / (j - i))
-        i = j
-    return merged_starts, merged_ends, merged_values, merged_values_2
-
-def get_chromosomes_regions(args):
-    chroms = get_contigs_list(args.contigs)
-    bam_alignment = pysam.AlignmentFile(args.target_bam[0])
-    headers = bam_alignment.header
-    seq_dict = headers['SQ']
-    region = [''] * len(chroms)
-    for i, seq_elem in enumerate(seq_dict):
-        if seq_elem['SN'] in chroms:
-            region[chroms.index(seq_elem['SN'])] = seq_elem['LN']
-
-    return region
-
-
-def extend_snps_ratios_df(chrom, offset, ref_start_values_updated, snps_het_counts, snps_homo_counts):
-    chr_list = [chrom for ch in range(len(ref_start_values_updated))]
-
-    df_snps_ratios_chrom = pd.DataFrame(
-        list(zip(chr_list, ref_start_values_updated, snps_het_counts, snps_homo_counts)),
-        columns=['chr', 'start', 'hets_ratios', 'homos_ratios'])
-
-    df_snps_ratios_chrom['start_overall'] = df_snps_ratios_chrom['start'].apply(lambda x: x + offset)
-
-    return df_snps_ratios_chrom
 
 
 def add_breakpoints(args, phasesets_segments, breakpoints):

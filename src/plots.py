@@ -18,8 +18,10 @@ logger = logging.getLogger()
 from src.smoothing import smoothing
 from src.file_tools.process_vcf_legacy import get_snps_frquncies_coverage, snps_mean, get_snp_segments
 from src.file_tools.process_vcf import vcf_parse_to_csv_for_snps
-from src.utils import subclonal_values_adjusted, get_chromosomes_bins, csv_df_chromosomes_sorter, detect_alter_loh_regions, change_point_detection_means, \
-    df_chromosomes_sorter, get_chromosomes_regions, adjust_extreme_outliers, genes_phase_correction, write_df_csv, bins_with_copynumber_states
+from src.utils import subclonal_values_adjusted, get_chromosomes_bins, csv_df_chromosomes_sorter, detect_alter_loh_regions, \
+    df_chromosomes_sorter, adjust_extreme_outliers, genes_phase_correction, write_df_csv, bins_with_copynumber_states
+from src.coverage.binning import get_chromosomes_regions
+from src.coverage.segmentation import change_point_detection_means
 from src.breakpoints import get_contigs_list, sv_vcf_bps_cn_check
 from src.breakpoints_arcs import get_all_breakpoints_data
 

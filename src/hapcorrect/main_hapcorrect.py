@@ -22,8 +22,9 @@ from src.hapcorrect.phase_correction import (generate_phasesets_bins, phase_flip
 from src.hapcorrect.utils import (get_chromosomes_bins, write_segments_coverage, csv_df_chromosomes_sorter,
                                       adjust_loh_cent_phaseblocks, extract_centromere_regions, infer_missing_phaseblocks, df_chromosomes_sorter,
                                       is_phasesets_check_simple_heuristics, write_df_csv, loh_regions_events, snps_frequencies_chrom_genes,
-                                      genes_segments_coverage, genes_segments_list, extend_snps_ratios_df, get_chromosomes_regions,
-                                      add_breakpoints, update_hp_assignment_loh_segments)
+                                      genes_segments_coverage, genes_segments_list, add_breakpoints, update_hp_assignment_loh_segments)
+from src.coverage.binning import get_chromosomes_regions
+from src.coverage.processing import extend_snps_ratios_df
 from src.breakpoints import get_contigs_list
 from src.hapcorrect.plots import plot_coverage_data, loh_plots_genome
 from src.hapcorrect.loh import detect_loh_centromere_regions, plot_snps
