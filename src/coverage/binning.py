@@ -3,7 +3,39 @@ import pandas as pd
 import pysam
 import os
 
-from src.breakpoints import get_contigs_list
+from src.utils_tmp.chromosome import get_contigs_list
+from src.breakpoint.breakpoints import sv_vcf_bps_cn_check
+
+
+def get_chromosomes_bins(bam_file, bin_size, args):
+    bed=[]
+    bam_alignment = pysam.AlignmentFile(bam_file)
+    headers = bam_alignment.header
+    seq_dict = headers['SQ']
+    region = [''] * len(seq_dict)
+    chrs = [''] * len(seq_dict)
+    head, tail = os.path.split(bam_file)
+    chroms = get_contigs_list(args.contigs)
+    chroms_without_prefix = [str(i).replace( 'chr', '') for i in chroms]
+    for i, seq_elem in enumerate(seq_dict):
+        region[i] = seq_elem['LN']
+        chrs[i] = seq_elem['SN']
+        start=0
+        end=bin_size
+        if (chrs[i] in chroms) or (chrs[i] in chroms_without_prefix):
+            for c in range(0,region[i],bin_size):
+                if end > region[i]:
+                    bed.append([chrs[i], start, region[i]])
+                else:
+                    bed.append([chrs[i], start, end])
+                start=end+1
+                end+=bin_size
+
+    _,_,_,_, bps, bps_bnd = sv_vcf_bps_cn_check(args.breakpoints, args)
+    bed = update_bins_with_bps(bed, bps, bps_bnd, args, region)
+    _, bed_1 = update_bins_with_bps_new(bed, bps, bps_bnd, args, region)
+
+    return bed, bed_1
 
 
 def get_chromosomes_regions(args):

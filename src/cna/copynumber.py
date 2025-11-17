@@ -4,8 +4,10 @@ import scipy.stats as stats
 import math
 import statistics
 
-from src.breakpoints import get_contigs_list, sv_vcf_bps_cn_check
+from src.breakpoint.breakpoints import sv_vcf_bps_cn_check
+from src.utils_tmp.chromosome import get_contigs_list, overlap_check
 from src.utils_tmp.statistics import remove_outliers_iqr
+
 
 def detect_first_copy_integers_fractional_cluster_means(args, df_segs_hp1, df_segs_hp2, centers):
     haplotype_1_values_copy = df_segs_hp1.state.values.tolist()

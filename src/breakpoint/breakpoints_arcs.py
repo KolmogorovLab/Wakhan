@@ -5,7 +5,8 @@ from vcf_parser import VCFParser
 
 logger = logging.getLogger()
 
-from src.utils import get_contigs_list, df_chromosomes_sorter
+from src.utils import df_chromosomes_sorter
+from src.utils_tmp.chromosome import get_contigs_list
 
 def get_all_breakpoints_data(edges, edges_chr, height, path, args):
     my_parser = VCFParser(infile=path, split_variants=True, check_info=True)

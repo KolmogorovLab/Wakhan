@@ -18,11 +18,13 @@ from src.hapcorrect.main_hapcorrect import main_process
 from src.__version__ import __version__
 
 from src.file_tools.process_bam import get_all_reads_parallel, update_coverage_hist, get_segments_coverage, ref_bam_vcfs_nomenclature_check
-from src.utils import write_segments_coverage_dict, get_contigs_list, write_copynumber_segments_csv, \
-    parse_sv_vcf, collect_loh_centromere_regions, centromere_regions_blacklist, \
-    extract_centromere_regions, update_genes_phase_corrected_coverage, extract_breakpoints_additional, write_df_csv, centromere_regions_blacklist_bins
+from src.utils import write_segments_coverage_dict, collect_loh_centromere_regions, centromere_regions_blacklist, \
+    extract_centromere_regions, centromere_regions_blacklist_bins
+from src.output.genes import update_genes_phase_corrected_coverage
+from src.output.writers import write_copynumber_segments_csv
+from src.utils_tmp.chromosome import get_contigs_list
 from src.utils_tmp.chromosome import csv_df_chromosomes_sorter, df_chromosomes_sorter
-from src.coverage.binning import get_chromosomes_bins_bam
+from src.coverage.binning import get_chromosomes_bins_bam, get_chromosomes_bins
 from src.coverage.processing import seperate_dfs_coverage, flatten_smooth
 from src.coverage.segmentation import adjust_diversified_segments, merge_adjacent_regions_cn, merge_adjacent_regions_cn_unphased, adjust_bps_cn_segments_boundries
 from src.cna.copynumber import integer_fractional_cluster_means, update_subclonal_means_states, adjust_first_copy_mean, add_confidence_score_cn_segemnts
@@ -35,7 +37,7 @@ from src.plots import coverage_plots_chromosomes, copy_number_plots_genome_detai
 from src.file_tools.process_vcf import vcf_parse_to_csv_for_het_phased_snps_phasesets
 from src.snps_loh import plot_snps_frequencies_without_phasing, plot_snps_ratios_genome, snps_df_loh, variation_plots, write_loh_regions
 from src.hapcorrect.phase_correction import generate_phasesets_bins
-from src.optimization import peak_detection_optimization
+from src.cna.optimization import peak_detection_optimization
 from src.file_tools.generate_vcf import read_cn_segments_process_vcf
 
 logger = logging.getLogger()
@@ -690,6 +692,19 @@ def cna_process(args):
     #move_100pct_purity_sol(args)
 
     return 0
+
+
+def extract_breakpoints_additional(args):
+    if args.breakpoints:
+        df_var_bins, df_var_bins_1 = get_chromosomes_bins(args.target_bam[0], args.bin_size, args)
+        return df_var_bins_1
+        # chroms = get_contigs_list(args.contigs)
+        # for index, chrom in enumerate(chroms):
+        #     df_var_bins_chr_1 = df_var_bins_1[df_var_bins_1['chr'] == chrom]
+        #     ref_start_values_1 = df_var_bins_chr_1.start.values.tolist()
+    else:
+        return None
+
 
 
 def test_input_files(args):

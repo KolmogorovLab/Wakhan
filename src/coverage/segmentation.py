@@ -5,9 +5,9 @@ import statistics
 import ruptures as rpt
 from joblib import Parallel, delayed
 
-from src.breakpoints import get_contigs_list, sv_vcf_bps_cn_check
+from src.breakpoint.breakpoints import sv_vcf_bps_cn_check
 from src.coverage.binning import update_bins_with_bps, update_bins_with_bps_new
-from src.utils_tmp.chromosome import csv_df_chromosomes_sorter, df_chromosomes_sorter
+from src.utils_tmp.chromosome import csv_df_chromosomes_sorter, df_chromosomes_sorter, get_contigs_list
 
 
 def update_state_with_loh_overlap(chrom_df, loh_df):
@@ -428,6 +428,15 @@ def split_regions_by_points(starts, ends, values1, values2, split_points):
     return new_starts, new_ends, new_values1, new_values2
 
 
+"""
+#TODO: likely bug in this function
+def _overlap_check(start, end, starts, ends):
+  for i in range(len(starts)):
+    if (start < ends[i] and end > starts[i]) or (start <= starts[i] and end >= ends[i]):
+      return True
+  return False
+
+
 def merge_regions(starts, ends, values, values_next, loh_starts, loh_ends, threshold=3):
     merged_starts, merged_ends, merged_values, merged_values_2 = [], [], [], []
     i = 0
@@ -437,11 +446,12 @@ def merge_regions(starts, ends, values, values_next, loh_starts, loh_ends, thres
         while j < len(starts) and abs(value - values[j]) <= threshold and abs(value - values_next[i]) >= threshold:
             end = max(end, ends[j])
             j += 1
-        if not overlap_check(start, end, loh_starts, loh_ends):
+        if not _overlap_check(start, end, loh_starts, loh_ends):
             merged_starts.append(start)
             merged_ends.append(end)
             merged_values.append(sum(values[i:j]) / (j - i))
             merged_values_2.append(sum(values_next[i:j]) / (j - i))
         i = j
     return merged_starts, merged_ends, merged_values, merged_values_2
+"""
 

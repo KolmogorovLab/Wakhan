@@ -17,13 +17,12 @@ logger = logging.getLogger()
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
-from src.breakpoints import get_contigs_list
 from src.file_tools.process_bam import get_segments_coverage
 
 from src.coverage.segmentation import split_regions_by_points
-from src.utils_tmp.chromosome import csv_df_chromosomes_sorter, df_chromosomes_sorter
+from src.utils_tmp.chromosome import csv_df_chromosomes_sorter, df_chromosomes_sorter, get_contigs_list
 
-def get_chromosomes_bins(bam_file, bin_size, args):
+def get_chromosomes_bins_hapcorrect(bam_file, bin_size, args):
     bed=[]
     bam_alignment = pysam.AlignmentFile(bam_file)
     headers = bam_alignment.header
@@ -48,9 +47,6 @@ def get_chromosomes_bins(bam_file, bin_size, args):
                 end+=bin_size
     return bed
 
-
-def write_df_csv(df, file_name):
-    df.to_csv(file_name, sep='\t', index=False, header=False, mode='w')
 
 def write_segments_coverage(coverage_segments, output, args):
     with open(args.out_dir_plots+'/coverage_data/' + output, 'a') as fp:
@@ -178,123 +174,7 @@ def extract_centromere_regions(args):
 
     return df_centm
 
-def snps_frequencies_chrom_genes(df_snps_frequencies, args):
-    df_chroms = []
 
-    df_genes_all = csv_df_chromosomes_sorter(args.cancer_genes, ['chr', 'start', 'end', 'gene'])
-    df_empty = pd.DataFrame(columns=['chr', 'start', 'end', 'gene', 'hp1', 'hp2'])
-    if args.user_input_genes:
-        with open(args.user_input_genes, 'r') as file:
-            entries = file.readlines()
-        if "\t" in entries[0]:
-            entries = [line.rstrip('\n').split('\t')[3] for line in entries]
-        else:
-            entries = [line.rstrip('\n') for line in entries]
-        if args.reference_name:#not entries[0] in ['chm13','grch38']:
-            ref = args.reference_name #default
-        else:
-            ref = 'grch38'
-        prefix, filename = os.path.split(args.cancer_genes)
-        ref_name = prefix + '/' + ref + '_genes.tsv'
-        chroms = []
-        starts = []
-        ends = []
-        genes = []
-        with open(ref_name, 'r') as file:
-            tsv_reader = csv.reader(file, delimiter='\t')
-            for row in tsv_reader:
-                if row[3] in entries:
-                    chroms.append(row[0])
-                    starts.append(row[1])
-                    ends.append(row[2])
-                    genes.append(row[3])
-
-        data = {"chr": chroms, "start": starts, "end": ends, "gene": genes}
-        df_user_genes = pd.DataFrame(data)
-        if not df_user_genes.empty:
-            write_df_csv(df_user_genes, args.out_dir_plots + '/data_phasing/user_genes.csv')
-            df_genes_all = csv_df_chromosomes_sorter(args.out_dir_plots + '/data_phasing/user_genes.csv', ['chr', 'start', 'end', 'gene'])
-
-    chroms = get_contigs_list(args.contigs)
-    for index, chrom in enumerate(chroms):
-        df = df_snps_frequencies[df_snps_frequencies['chr'] == chrom]
-        df_genes = df_genes_all[df_genes_all['chr'] == chrom]
-
-        if not df_genes.empty:
-
-            # df = dict(tuple(df_snps.groupby('hp')))
-            haplotype_1_position = df.pos.values.tolist()
-            haplotype_1_coverage = df.freq_value_b.values.tolist()
-            haplotype_2_position = df.pos.values.tolist()
-            haplotype_2_coverage = df.freq_value_a.values.tolist()
-
-            snps_haplotype1_mean = []
-            for index, (i,j) in enumerate(zip(df_genes.start.values.tolist(), df_genes.end.values.tolist())):
-                sub_list = []
-                try:
-                    sub_list = haplotype_1_coverage[haplotype_1_position.index(
-                        min(haplotype_1_position, key=lambda x:abs(x-i))):haplotype_1_position.index(
-                        min(haplotype_1_position, key=lambda x:abs(x-j)))]
-                except ValueError:
-                    logger.info('No Hets pileup found!')
-                if sub_list:
-                    snps_haplotype1_mean.append(statistics.mean(sub_list))
-                else:
-                    snps_haplotype1_mean.append(0)
-
-            snps_haplotype2_mean = []
-            for index, (i, j) in enumerate(zip(df_genes.start.values.tolist(), df_genes.end.values.tolist())):
-                sub_list = []
-                try:
-                    sub_list = haplotype_2_coverage[haplotype_2_position.index(
-                        min(haplotype_2_position, key=lambda x: abs(x - i))):haplotype_2_position.index(
-                        min(haplotype_2_position, key=lambda x: abs(x - j)))]
-                except ValueError:
-                    logger.info('No Hets pileup found!')
-                if sub_list:
-                    snps_haplotype2_mean.append(statistics.mean(sub_list))
-                else:
-                    snps_haplotype2_mean.append(0)
-
-            #snps_mean = [round(i + j, 2) for i, j in zip(snps_haplotype1_mean, snps_haplotype2_mean)]
-            if len(snps_haplotype1_mean) == 0:
-                df_chroms.append(df_empty)
-            else:
-                df_chroms.append(pd.DataFrame(list(zip(df_genes.chr.values.tolist(), df_genes.start.values.tolist(), df_genes.end.values.tolist(), \
-                                         df_genes.gene.values.tolist(), snps_haplotype1_mean, snps_haplotype2_mean)),
-                                 columns=['chr', 'start', 'end', 'gene', 'hp1', 'hp2']))
-    if len(df_chroms):
-        return pd.concat(df_chroms)
-    else:
-        return df_empty
-
-def genes_segments_list(bam, args):
-    head, tail = os.path.split(bam)
-
-    df_genes = csv_df_chromosomes_sorter(args.cancer_genes, ['chr', 'start', 'end', 'gene'])
-    starts = df_genes.start.values.tolist()
-    ends = df_genes.end.values.tolist()
-
-    bed = []
-    for ind, chrom in enumerate(df_genes.chr.values.tolist()):
-        bed.append([tail, chrom, starts[ind], ends[ind]])
-
-    return bed
-def genes_segments_coverage(genes_coverage, args):
-
-    df_genes = csv_df_chromosomes_sorter(args.cancer_genes, ['chr', 'start', 'end', 'gene'])
-
-    hp1 = []
-    hp2 = []
-    hp3 = []
-    for items in genes_coverage:
-        hp1.append(round(float(items.split('\t')[3]), 2))
-        hp2.append(round(float(items.split('\t')[4]), 2))
-        #hp3.append(round(float(items.split('\t')[5]), 2))
-
-    return pd.DataFrame(list(zip(df_genes.chr.values.tolist(), df_genes.start.values.tolist(), df_genes.end.values.tolist(),
-                                 df_genes.gene.values.tolist(), hp1, hp2)),
-                         columns=['chr', 'start', 'end', 'gene', 'hp1', 'hp2'])
 
 
 def mean_values(selected_list, start_index, end_index):
@@ -307,55 +187,7 @@ def mean_values(selected_list, start_index, end_index):
     else:
         return 0.0
 
-def infer_missing_phaseblocks(ref_start_values, ref_end_values, ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets, haplotype_1_values, haplotype_2_values, bin_size):
-    missing_segments_starts = []
-    missing_segments_ends = []
-    missing_segments_hp1_value = []
-    missing_segments_hp2_value = []
-    for i in range(len(ref_start_values_phasesets)-1):
-        if ref_start_values_phasesets[i +1] - ref_end_values_phasesets[i] > bin_size * 6:
-            start = ((ref_end_values_phasesets[i]//bin_size) +1) * bin_size + 1
-            end = (ref_start_values_phasesets[i+1]//bin_size) * bin_size
-            missing_segments_starts.append(start)#(ref_end_values_phasesets[i] + 1)
-            missing_segments_ends.append(end)#(ref_start_values_phasesets[i+1] - 1)
-            try:
-                missing_segments_hp1_value.append(statistics.mean(list(filter(lambda zer: zer != 0, haplotype_1_values[ref_start_values.index(start):ref_end_values.index(end)]))))
-            except:
-                missing_segments_hp1_value.append(0)
-            try:
-                missing_segments_hp2_value.append(statistics.mean(list(filter(lambda zer: zer != 0, haplotype_2_values[ref_start_values.index(start):ref_end_values.index(end)]))))
-            except:
-                missing_segments_hp2_value.append(0)
 
-    if len(missing_segments_starts):
-        ref_start_values_phasesets = ref_start_values_phasesets + missing_segments_starts
-        ref_end_values_phasesets = ref_end_values_phasesets + missing_segments_ends
-        haplotype_1_values_phasesets = haplotype_1_values_phasesets + missing_segments_hp1_value
-        haplotype_2_values_phasesets = haplotype_2_values_phasesets + missing_segments_hp2_value
-
-        sort_function = lambda x: x[0]
-        sort_target = list(zip(ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets))
-        sort_target.sort(key=sort_function)
-
-        ref_start_values_phasesets = [a for a, b, c, d in sort_target]
-        ref_end_values_phasesets = [b for a, b, c, d in sort_target]
-        haplotype_1_values_phasesets = [c for a, b, c, d in sort_target]
-        haplotype_2_values_phasesets = [d for a, b, c, d in sort_target]
-
-    return ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets
-
-def is_phasesets_check_simple_heuristics(ref_start_values_phasesets, ref_end_values_phasesets, args):
-    ps_region_starts = []
-    ps_region_ends = []
-    for i, (start, end) in enumerate(zip(ref_start_values_phasesets, ref_end_values_phasesets)):
-        if end - start > 2000000:
-            ps_region_starts.append(start)
-            ps_region_ends.append(end)
-
-    if len(ps_region_starts) < 5:
-        return True
-    else:
-        return False
 
 def loh_regions_phasesets(haplotype_1_values, haplotype_2_values, loh_region_starts, loh_region_ends, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, args):
     indices = []
@@ -386,37 +218,6 @@ def loh_regions_phasesets(haplotype_1_values, haplotype_2_values, loh_region_sta
 
     return haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets
 
-
-def overlap_check(start, end, starts, ends):
-  for i in range(len(starts)):
-    if (start < ends[i] and end > starts[i]) or (start <= starts[i] and end >= ends[i]):
-      return True
-  return False
-
-
-def add_breakpoints(args, phasesets_segments, breakpoints):
-    bed = []
-    head, tail = os.path.split(args.target_bam[0])
-    chroms = get_contigs_list(args.contigs)
-    for index, chrom in enumerate(chroms):
-        original_list_start = []
-        original_list_end = []
-        df_bps_chrom = breakpoints[breakpoints['chr'] == chrom]
-        new_breakpoints = df_bps_chrom.start.values.tolist()
-
-        for k, val in enumerate(phasesets_segments):
-            if val[1] == chrom:
-                original_list_start.append(val[2])
-                original_list_end.append(val[3])
-
-        for i, (start, end) in enumerate(zip(original_list_start, original_list_end)):
-            for breakpoint in new_breakpoints:
-                if start <= breakpoint <= end and (not breakpoint == start and not breakpoint == end) and (breakpoint - start > args.bin_size * 7 and end - breakpoint > args.bin_size * 7):
-                    bed.append([tail, chrom, start, breakpoint])
-                    start = breakpoint + 1
-            bed.append([tail, chrom, start, end])
-
-    return bed
 
 def find_peak_median_without_outliers(data):
     # from scipy.signal import find_peaks

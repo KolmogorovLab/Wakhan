@@ -4,22 +4,10 @@ from intervaltree import IntervalTree, Interval
 from vcf_parser import VCFParser
 from collections import defaultdict
 
+from src.utils_tmp.chromosome import get_contigs_list
+
 logger = logging.getLogger()
 
-def get_contigs_list(contigs):
-    #chrs = ['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','X','Y','M']
-    chroms_list_final = []
-    chroms = contigs.split(',')
-    for chrom in chroms:
-        chrom = chrom[len('chr'):] if chrom.startswith('chr') else chrom
-        chrom = chrom.split('-')
-        if len(chrom) > 1:
-            chroms_list_final.extend(list(range(int(chrom[0]), int(chrom[1]) + 1)))
-        else:
-            chroms_list_final.extend(chrom)
-
-    chroms_list_final = ['chr' + x if chroms[0].startswith('chr') else x for x in map(str, chroms_list_final)]
-    return chroms_list_final
 
 class bps_sample(object):
     __slots__ = ('bp_1_id', 'bp_1_pos', 'bp_1_hp', 'bp_2_id', 'bp_2_pos', 'bp_2_hp', 'bp_dv', 'status')
@@ -180,3 +168,56 @@ def sv_vcf_bps_cn_check(path, args):
         bp_junctions_single_chr.append([dict[1].bp_1_id, dict[1].bp_1_pos, dict[1].bp_2_pos, dict[1].bp_1_hp])
     #print('Total bps:', len(bp_junctions_chr[1:]))
     return bp_junctions_single[1:], bp_junctions_single_chr[1:], bp_junctions_values[1:], bp_junctions_chr[1:], bp_junctions, bp_junctions_bnd
+
+
+def add_breakpoints(args, phasesets_segments, breakpoints):
+    bed = []
+    head, tail = os.path.split(args.target_bam[0])
+    chroms = get_contigs_list(args.contigs)
+    for index, chrom in enumerate(chroms):
+        original_list_start = []
+        original_list_end = []
+        df_bps_chrom = breakpoints[breakpoints['chr'] == chrom]
+        new_breakpoints = df_bps_chrom.start.values.tolist()
+
+        for k, val in enumerate(phasesets_segments):
+            if val[1] == chrom:
+                original_list_start.append(val[2])
+                original_list_end.append(val[3])
+
+        for i, (start, end) in enumerate(zip(original_list_start, original_list_end)):
+            for breakpoint in new_breakpoints:
+                if start <= breakpoint <= end and (not breakpoint == start and not breakpoint == end) and (breakpoint - start > args.bin_size * 7 and end - breakpoint > args.bin_size * 7):
+                    bed.append([tail, chrom, start, breakpoint])
+                    start = breakpoint + 1
+            bed.append([tail, chrom, start, end])
+
+    return bed
+
+
+#def parse_sv_vcf(path):
+#    my_parser = VCFParser(infile=path, split_variants=True, check_info = True)
+#    bp_junctions = [[]]
+#    for variant in my_parser:
+#        if ("INV" in variant['ID'] or "DUP" in variant['ID'] or "INS" in variant['ID'] or "DEL" in variant['ID']) and int(variant['info_dict']['SVLEN'][0]) > 50000:
+#            if int(variant['POS']) < int(variant['POS']) + int(variant['info_dict']['SVLEN'][0]):
+#                bp_junctions.append([variant['CHROM'], int(variant['POS']), variant['CHROM'], int(variant['POS']) + int(variant['info_dict']['SVLEN'][0])])
+#            else:
+#                bp_junctions.append([variant['CHROM'], int(variant['POS']) + int(variant['info_dict']['SVLEN'][0]), variant['CHROM'], int(variant['POS'])])
+#        elif "BND" in variant['ID'] and not "sBND" in variant['ID']:
+#            s = variant['ALT']
+#            for ch in ['[', ']', 'N']:
+#                if ch in s:
+#                    s = s.replace(ch, '')
+#            chr2_id = s.split(':')[0]
+#            chr2_end = int(s.split(':')[1])
+#            if variant['CHROM'] == chr2_id:
+#                if int(variant['POS']) < chr2_end:
+#                    bp_junctions.append([variant['CHROM'], int(variant['POS']), chr2_id, chr2_end])
+#                else:
+#                    bp_junctions.append([variant['CHROM'], chr2_end, chr2_id, int(variant['POS'])])
+#            else:
+#                bp_junctions.append([variant['CHROM'], int(variant['POS']), chr2_id, chr2_end])
+#
+#    df = pd.DataFrame(bp_junctions[1:], columns = ['chr', 'pos', 'chr1', 'pos1'])
+#    return df.drop_duplicates()

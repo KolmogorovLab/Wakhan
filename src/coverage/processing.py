@@ -4,7 +4,7 @@ import logging
 
 logger = logging.getLogger()
 
-from src.smoothing import smoothing
+from src.coverage.smoothing import smoothing
 
 
 """

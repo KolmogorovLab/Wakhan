@@ -19,17 +19,20 @@ from src.hapcorrect.phase_correction import (generate_phasesets_bins, phase_flip
                                                  phaseblock_flipping_simple_heuristics, check_missing_phasesets_original, reintroduce_broken_phasesets,
                                                  update_remaining_phasesets, subtract_intervals, without_phasesets_bins_correction,
                                                  remove_centromere_phaseblocks)
-from src.hapcorrect.utils import (get_chromosomes_bins, write_segments_coverage, csv_df_chromosomes_sorter,
-                                      adjust_loh_cent_phaseblocks, extract_centromere_regions, infer_missing_phaseblocks, df_chromosomes_sorter,
-                                      is_phasesets_check_simple_heuristics, write_df_csv, loh_regions_events, snps_frequencies_chrom_genes,
-                                      genes_segments_coverage, genes_segments_list, add_breakpoints, update_hp_assignment_loh_segments)
+from src.hapcorrect.utils import (get_chromosomes_bins_hapcorrect, write_segments_coverage, csv_df_chromosomes_sorter,
+                                      adjust_loh_cent_phaseblocks, extract_centromere_regions, df_chromosomes_sorter,
+                                      loh_regions_events, update_hp_assignment_loh_segments)
+from src.output.writers import write_df_csv
+from src.output.genes import snps_frequencies_chrom_genes, genes_segments_coverage, genes_segments_list
 from src.coverage.binning import get_chromosomes_regions
 from src.coverage.processing import extend_snps_ratios_df
-from src.breakpoints import get_contigs_list
+from src.breakpoint.breakpoints import add_breakpoints
+from src.utils_tmp.chromosome import get_contigs_list
+from src.cna.phaseblocks import infer_missing_phaseblocks, is_phasesets_check_simple_heuristics
 from src.hapcorrect.plots import plot_coverage_data, loh_plots_genome
 from src.hapcorrect.loh import detect_loh_centromere_regions, plot_snps
 from src.hapcorrect.phase_correction import merge_contiguous_indices, find_indices_to_be_merged
-from src.smoothing import smoothing
+from src.coverage.smoothing import smoothing
 
 MIN_SV_SIZE = 50
 
@@ -92,7 +95,7 @@ def main_process(args):
         del segments_by_read
 
     if args.tumor_phased_vcf and not args.quick_start:
-        segments = get_chromosomes_bins(args.target_bam[0], args.bin_size, args)
+        segments = get_chromosomes_bins_hapcorrect(args.target_bam[0], args.bin_size, args)
         segments_coverage = get_segments_coverage(segments, coverage_histograms)
         logger.info('Writing tumor coverage for bins')
         write_segments_coverage(segments_coverage, 'coverage_tumor.csv', args)
@@ -113,7 +116,7 @@ def main_process(args):
     phasesets_segments = generate_phasesets_bins(args.target_bam[0], output_phasesets_file_path, args.bin_size, args)  # TODO update for multiple bam files
 
     logger.info('Computing coverage for bins')
-    segments = get_chromosomes_bins(args.target_bam[0], args.bin_size, args)
+    segments = get_chromosomes_bins_hapcorrect(args.target_bam[0], args.bin_size, args)
 
     if args.quick_start:
         csv_df_phasesets = csv_df_chromosomes_sorter(args.quick_start_coverage_path + '/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])

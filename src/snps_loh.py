@@ -11,10 +11,11 @@ logger = logging.getLogger()
 from src.file_tools.process_vcf import get_snps_frquncies, vcf_parse_to_csv_for_snps
 from src.file_tools.process_vcf_legacy import snps_mean, get_snp_segments, get_snps_frquncies_coverage, get_snps_counts, get_snps_counts_cn_regions, get_snps_frquncies_genome
 from src.utils import csv_df_chromosomes_sorter
-from src.breakpoints import get_contigs_list
+from src.utils_tmp.chromosome import get_contigs_list
 from src.plots import add_scatter_trace_coverage, print_chromosome_html, plots_add_markers_lines, plots_layout_settings,\
 whole_genome_combined_df, copy_number_plots_per_chromosome, print_genome_pdf, add_annotation
-from src.utils import detect_alter_loh_regions, loh_regions_events, write_segments_coverage, write_header_comments
+from src.utils import detect_alter_loh_regions, loh_regions_events, write_segments_coverage
+from src.output.writers import write_header_comments
 from src.coverage.binning import get_chromosomes_regions
 from src.coverage.processing import get_vafs_from_tumor_phased_vcf, get_vafs_from_normal_phased_vcf
 

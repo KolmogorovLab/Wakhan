@@ -8,8 +8,8 @@ import logging
 
 logger = logging.getLogger()
 
-from src.breakpoints import get_contigs_list, sv_vcf_bps_cn_check
-from src.utils_tmp.chromosome import csv_df_chromosomes_sorter, df_chromosomes_sorter
+from src.breakpoint.breakpoints import sv_vcf_bps_cn_check
+from src.utils_tmp.chromosome import csv_df_chromosomes_sorter, df_chromosomes_sorter, get_contigs_list
 from src.utils_tmp.statistics import remove_outliers_iqr, weighted_means
 
 def normal_genome_proportion(p, l, C):

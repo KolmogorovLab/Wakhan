@@ -9,7 +9,8 @@ import os
 import pandas as pd
 import ast
 
-from src.utils import get_contigs_list, csv_df_chromosomes_sorter
+from src.utils import csv_df_chromosomes_sorter
+from src.utils_tmp.chromosome import get_contigs_list
 from src.coverage.binning import get_chromosomes_regions
 
 class vcf_format(object):

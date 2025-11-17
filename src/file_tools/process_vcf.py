@@ -14,7 +14,7 @@ logger = logging.getLogger()
 
 from src.hapcorrect.utils import write_segments_coverage_snps, csv_df_chromosomes_sorter
 from src.file_tools.process_bam import process_bam_for_snps_freqs
-from src.smoothing import smoothing
+from src.coverage.smoothing import smoothing
 
 import csv
 import multiprocessing
