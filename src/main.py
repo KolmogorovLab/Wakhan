@@ -18,12 +18,11 @@ from src.hapcorrect.main_hapcorrect import main_process
 from src.__version__ import __version__
 
 from src.file_tools.process_bam import get_all_reads_parallel, update_coverage_hist, get_segments_coverage, ref_bam_vcfs_nomenclature_check
-from src.utils import write_segments_coverage_dict, collect_loh_centromere_regions, centromere_regions_blacklist, \
-    extract_centromere_regions, centromere_regions_blacklist_bins
+from src.utils import collect_loh_centromere_regions
 from src.output.genes import update_genes_phase_corrected_coverage
-from src.output.writers import write_copynumber_segments_csv
-from src.utils_tmp.chromosome import get_contigs_list
-from src.utils_tmp.chromosome import csv_df_chromosomes_sorter, df_chromosomes_sorter
+from src.output.writers import write_copynumber_segments_csv, write_segments_coverage_dict
+from src.utils_tmp.chromosome import get_contigs_list, centromere_regions_blacklist, centromere_regions_blacklist_bins, csv_df_chromosomes_sorter, \
+        df_chromosomes_sorter, extract_centromere_regions
 from src.coverage.binning import get_chromosomes_bins_bam, get_chromosomes_bins
 from src.coverage.processing import seperate_dfs_coverage, flatten_smooth
 from src.coverage.segmentation import adjust_diversified_segments, merge_adjacent_regions_cn, merge_adjacent_regions_cn_unphased, adjust_bps_cn_segments_boundries

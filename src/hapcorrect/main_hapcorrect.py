@@ -20,17 +20,16 @@ from src.hapcorrect.phase_correction import (generate_phasesets_bins, phase_flip
                                                  update_remaining_phasesets, subtract_intervals, without_phasesets_bins_correction,
                                                  remove_centromere_phaseblocks)
 from src.hapcorrect.utils import (get_chromosomes_bins_hapcorrect, write_segments_coverage, csv_df_chromosomes_sorter,
-                                      adjust_loh_cent_phaseblocks, extract_centromere_regions, df_chromosomes_sorter,
-                                      loh_regions_events, update_hp_assignment_loh_segments)
+                                  adjust_loh_cent_phaseblocks, df_chromosomes_sorter, loh_regions_events, update_hp_assignment_loh_segments)
 from src.output.writers import write_df_csv
 from src.output.genes import snps_frequencies_chrom_genes, genes_segments_coverage, genes_segments_list
 from src.coverage.binning import get_chromosomes_regions
 from src.coverage.processing import extend_snps_ratios_df
 from src.breakpoint.breakpoints import add_breakpoints
-from src.utils_tmp.chromosome import get_contigs_list
+from src.utils_tmp.chromosome import get_contigs_list, extract_centromere_regions
 from src.cna.phaseblocks import infer_missing_phaseblocks, is_phasesets_check_simple_heuristics
 from src.hapcorrect.plots import plot_coverage_data, loh_plots_genome
-from src.hapcorrect.loh import detect_loh_centromere_regions, plot_snps
+from src.hapcorrect.plot_loh import detect_loh_centromere_regions, plot_snps
 from src.hapcorrect.phase_correction import merge_contiguous_indices, find_indices_to_be_merged
 from src.coverage.smoothing import smoothing
 

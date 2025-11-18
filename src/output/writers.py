@@ -124,3 +124,17 @@ def write_copynumber_segments_csv(df_hp1, df_hp2, haplotype_df_, args, centers, 
 
         haplotype_df.to_csv(fp, sep='\t', index=False, mode='a', header=False)
 
+
+def write_segments_coverage_dict(coverage_segments, output, args):
+    with open(args.out_dir_plots+'/coverage_data/' + output, 'a') as fp:
+        for items in coverage_segments:
+            if not items == None:
+                fp.write("%s\n" % items)
+
+
+def write_segments_coverage_snps(coverage_segments, output, args):
+    with open(args.out_dir_plots+'/data_phasing/' + output, 'a') as fp:
+        for items in coverage_segments:
+            if not items == None:
+                fp.write("%s\n" % items)
+

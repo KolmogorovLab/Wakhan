@@ -22,6 +22,7 @@ from src.file_tools.process_bam import get_segments_coverage
 from src.coverage.segmentation import split_regions_by_points
 from src.utils_tmp.chromosome import csv_df_chromosomes_sorter, df_chromosomes_sorter, get_contigs_list
 
+
 def get_chromosomes_bins_hapcorrect(bam_file, bin_size, args):
     bed=[]
     bam_alignment = pysam.AlignmentFile(bam_file)
@@ -54,11 +55,6 @@ def write_segments_coverage(coverage_segments, output, args):
             if not items == None:
                 fp.write("%s\n" % items)
 
-def write_segments_coverage_snps(coverage_segments, output, args):
-    with open(args.out_dir_plots+'/data_phasing/' + output, 'a') as fp:
-        for items in coverage_segments:
-            if not items == None:
-                fp.write("%s\n" % items)
 
 def loh_regions_events(chrom, region_starts, region_ends, hp):
     dict = []
@@ -166,17 +162,6 @@ def adjust_loh_cent_phaseblocks(args, loh_region_starts, loh_region_ends, centro
     return list(haplotype_1_values_phasesets), list(haplotype_2_values_phasesets), list(ref_start_values_phasesets), list(ref_end_values_phasesets)
 
 
-def extract_centromere_regions(args):
-    #fileDir = args.centromere #os.path.dirname(__file__)
-    #cen_coord = os.path.join(fileDir, args.centromere)
-    df_centm = csv_df_chromosomes_sorter(args.centromere, ['chr', 'start', 'end'])
-    df_centm['start'].mask(df_centm['start'] == 1, 0, inplace=True)
-
-    return df_centm
-
-
-
-
 def mean_values(selected_list, start_index, end_index):
     selected_list = [i for i in selected_list[start_index:end_index] if i > 0]
     if len(selected_list) >= 2:
@@ -186,7 +171,6 @@ def mean_values(selected_list, start_index, end_index):
         return selected_list[0]
     else:
         return 0.0
-
 
 
 def loh_regions_phasesets(haplotype_1_values, haplotype_2_values, loh_region_starts, loh_region_ends, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, args):
@@ -218,42 +202,6 @@ def loh_regions_phasesets(haplotype_1_values, haplotype_2_values, loh_region_sta
 
     return haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets
 
-
-def find_peak_median_without_outliers(data):
-    # from scipy.signal import find_peaks
-    # peaks, _ = find_peaks(data)
-    # peak_values = [data[i] for i in peaks]
-    # peak_index = peaks[np.argmax(peak_values)]
-    # peak_value = data[peak_index]
-
-    if len(data) == 0: #second time almost big bp boundries based PS will be one and will be set to 0, change condition
-        return 0
-    else:
-        return statistics.median(data)
-
-
-    #if len(data) < 5:
-    #    return statistics.median(data)
-
-    # 2. Remove outliers using IQR method
-    # q1 = np.percentile(data, 25)
-    # q3 = np.percentile(data, 75)
-    # iqr = q3 - q1
-    # lower_bound = q1 - 1.5 * iqr
-    # upper_bound = q3 + 1.5 * iqr
-    # filtered_data = data[(data >= lower_bound) & (data <= upper_bound)]
-    def remove_outliers_modified_z(data, peak_value, threshold=3.5):
-        data = np.array(data)
-        median = peak_value #np.median(data)
-        mad = np.median(np.abs(data - median))  # Median Absolute Deviation
-        if mad == 0:
-            return data  # No variation
-        modified_z_scores = 0.6745 * (data - median) / mad
-        return data[np.abs(modified_z_scores) <= threshold]
-
-    filtered_data = remove_outliers_modified_z(data, peak_value)
-    # 3. Compute median of filtered data
-    return np.median(filtered_data)
 
 def update_hp_assignment_loh_segments(args, loh_df, coverage_df):
     updated_loh_segs = []

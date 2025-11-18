@@ -24,20 +24,6 @@ from src.cna.copynumber import subclonal_values_adjusted, integers_values_adjust
 from src.utils_tmp.chromosome import csv_df_chromosomes_sorter, df_chromosomes_sorter, get_contigs_list
 
 
-def adjust_extreme_outliers(hp_data):
-    for j, val in enumerate(hp_data):
-        if val > 500 and j > 0 and j < len(hp_data):
-            hp_data[j] = hp_data[j-1]
-        elif val > 500 and j == 0:
-            hp_data[j] = hp_data[j+1]
-    return hp_data
-
-
-def write_segments_coverage_dict(coverage_segments, output, args):
-    with open(args.out_dir_plots+'/coverage_data/' + output, 'a') as fp:
-        for items in coverage_segments:
-            if not items == None:
-                fp.write("%s\n" % items)
 
 def write_segments_coverage(coverage_segments, output, args):
     with open(args.out_dir_plots + '/bed_output/' + output, 'a') as fp:
@@ -115,23 +101,6 @@ def mean_values(selected_list, start_index, end_index):
         return 0.0
 
 
-def add_intermediaries(numbers, max_difference):
-
-    if len(numbers) < 2:
-        return numbers
-
-    result = [numbers[0]]
-    for i in range(1, len(numbers)):
-        current_diff = numbers[i] - result[-1]
-        if current_diff > max_difference:
-            num_intermediaries = current_diff // max_difference
-            for j in range(1, num_intermediaries + 1):
-                result.append(result[-1] + j + max_difference)
-        result.append(numbers[i])
-
-    return result
-
-
 def collect_loh_centromere_regions(df_segs_hp1_, df_segs_hp2_, centers, integer_fractional_means, args):
     df_segs_hp1 = df_segs_hp1_.copy()
     df_segs_hp2 = df_segs_hp2_.copy()
@@ -199,127 +168,13 @@ def collect_loh_centromere_regions(df_segs_hp1_, df_segs_hp2_, centers, integer_
         return pd.DataFrame(columns=['chr', 'start', 'end'])
 
 
-def move_folder(source, destination):
-    """Moves a folder from the source path to the destination path.
-
-    Args:
-        source: The path of the folder to be moved.
-        destination: The path where the folder should be moved.
-    """
-    try:
-        shutil.move(source, destination)
-        logger.info(f"Folder '{source}' moved successfully to '{destination}'")
-    except FileNotFoundError:
-        logger.info(f"Error: Folder '{source}' not found.")
-    except FileExistsError:
-         logger.info(f"Error: A file or directory with the name '{os.path.basename(source)}' already exists in '{destination}'.")
-    except Exception as e:
-        logger.info(f"An error occurred: {e}")
-
-
-def centromere_regions_blacklist_bins(args, df_hp1_, df_hp2_, df_segs_hp1_updated_, df_segs_hp2_updated_):
-    df_segs_hp1 = df_segs_hp1_updated_.copy()
-    df_segs_hp2 = df_segs_hp2_updated_.copy()
-
-    updated_hp1 = []
-    updated_hp2 = []
-
-    fileDir = os.path.dirname(__file__)  # os.path.dirname(os.path.realpath('__file__'))
-    cen_coord = os.path.join(fileDir, args.centromere)
-    df_centm = csv_df_chromosomes_sorter(cen_coord, ['chr', 'start', 'end'])
-    df_centm['start'].mask(df_centm['start'] == 1, 0, inplace=True)
-
-    chroms = get_contigs_list(args.contigs)
-    for index, chrom in enumerate(chroms):
-        df_centm_chrom = df_centm[df_centm['chr'] == chrom]
-        if not df_centm_chrom.empty:
-            cents = [df_centm_chrom.start.values.tolist()[0], df_centm_chrom.end.values.tolist()[0]]
-        else:
-            cents = [0, 0]
-        df_segs_hp_1_chrom = df_segs_hp1[df_segs_hp1['chromosome'] == chrom]
-        df_segs_hp_2_chrom = df_segs_hp2[df_segs_hp2['chromosome'] == chrom]
-
-        df_hp_1_chrom = df_hp1_[df_hp1_['chr'] == chrom]
-        df_hp_2_chrom = df_hp2_[df_hp2_['chr'] == chrom]
-        df_hp_1_chrom = df_hp_1_chrom.reset_index(drop=True)
-        df_hp_2_chrom = df_hp_2_chrom.reset_index(drop=True)
-
-        ref_start_values = df_hp_1_chrom.start.values.tolist()
-
-        for idx, s1 in df_segs_hp_1_chrom.iterrows():
-            if (df_segs_hp_1_chrom.loc[idx, 'start'] == cents[0] or df_segs_hp_1_chrom.loc[idx, 'start'] == cents[0]+1) and df_segs_hp_1_chrom.loc[idx, 'end'] == cents[1]:# or df_segs_hp_1_chrom.loc[idx+1, 'start'] == cents[0] and df_segs_hp_1_chrom.loc[idx+1, 'end'] == cents[1]:
-                internal_bins = [k for k in ref_start_values if k >= s1['start'] and k <= s1['end']]
-                if internal_bins:
-                    j = ref_start_values.index(internal_bins[0])
-                    for l in range(len(internal_bins)):
-                        df_hp_1_chrom.loc[j, 'hp1'] = 3300
-                        j = j+1
-
-        for idx, s2 in df_segs_hp_2_chrom.iterrows():
-            if (df_segs_hp_2_chrom.loc[idx, 'start'] == cents[0] or df_segs_hp_2_chrom.loc[idx, 'start'] == cents[0]+1) and df_segs_hp_2_chrom.loc[idx, 'end'] == cents[1]:# or df_segs_hp_1_chrom.loc[idx+1, 'start'] == cents[0] and df_segs_hp_1_chrom.loc[idx+1, 'end'] == cents[1]:
-                internal_bins = [k for k in ref_start_values if k >= s2['start'] and k <= s2['end']]
-                if internal_bins:
-                    j = ref_start_values.index(internal_bins[0])
-                    for l in range(len(internal_bins)):
-                        df_hp_2_chrom.loc[j, 'hp2'] = 3300
-                        j = j+1
-
-        updated_hp1.append(df_hp_1_chrom)
-        updated_hp2.append(df_hp_2_chrom)
-
-    segs_hp1 = pd.concat(updated_hp1)
-    segs_hp2 = pd.concat(updated_hp2)
-
-    return segs_hp1, segs_hp2
-
-
-def centromere_regions_blacklist(args, df_segs_hp1_, df_segs_hp2_):
-    df_segs_hp1 = df_segs_hp1_.copy()
-    df_segs_hp2 = df_segs_hp2_.copy()
-
-    updated_hp1_segs = []
-    updated_hp2_segs = []
-
-    fileDir = os.path.dirname(__file__)  # os.path.dirname(os.path.realpath('__file__'))
-    cen_coord = os.path.join(fileDir, args.centromere)
-    df_centm = csv_df_chromosomes_sorter(cen_coord, ['chr', 'start', 'end'])
-    df_centm['start'].mask(df_centm['start'] == 1, 0, inplace=True)
-
-    chroms = get_contigs_list(args.contigs)
-    for index, chrom in enumerate(chroms):
-        df_centm_chrom = df_centm[df_centm['chr'] == chrom]
-        if not df_centm_chrom.empty:
-            cents = [df_centm_chrom.start.values.tolist()[0], df_centm_chrom.end.values.tolist()[0]]
-        else:
-            cents = [0, 0]
-        df_segs_hp_1_chrom = df_segs_hp1[df_segs_hp1['chromosome'] == chrom]
-        df_segs_hp_2_chrom = df_segs_hp2[df_segs_hp2['chromosome'] == chrom]
-
-        for idx, s1 in df_segs_hp_1_chrom.iterrows():
-            if (df_segs_hp_1_chrom.loc[idx, 'start'] == cents[0] or df_segs_hp_1_chrom.loc[idx, 'start'] == cents[0]+1) and df_segs_hp_1_chrom.loc[idx, 'end'] == cents[1]:# or df_segs_hp_1_chrom.loc[idx+1, 'start'] == cents[0] and df_segs_hp_1_chrom.loc[idx+1, 'end'] == cents[1]:
-                df_segs_hp_1_chrom.loc[idx, 'depth'] = 3300
-                df_segs_hp_1_chrom.loc[idx, 'state'] = 3300
-
-        for idx, s2 in df_segs_hp_2_chrom.iterrows():
-            if (df_segs_hp_2_chrom.loc[idx, 'start'] == cents[0] or df_segs_hp_2_chrom.loc[idx, 'start'] == cents[0]+1) and df_segs_hp_2_chrom.loc[idx, 'end'] == cents[1]:# or df_segs_hp_1_chrom.loc[idx+1, 'start'] == cents[0] and df_segs_hp_1_chrom.loc[idx+1, 'end'] == cents[1]:
-                df_segs_hp_2_chrom.loc[idx, 'depth'] = 3300
-                df_segs_hp_2_chrom.loc[idx, 'state'] = 3300
-
-        updated_hp1_segs.append(df_segs_hp_1_chrom)
-        updated_hp2_segs.append(df_segs_hp_2_chrom)
-
-    segs_hp1 = pd.concat(updated_hp1_segs)
-    segs_hp2 = pd.concat(updated_hp2_segs)
-
-    return segs_hp1, segs_hp2
-
-def extract_centromere_regions(args):
-    fileDir = os.path.dirname(__file__)
-    cen_coord = os.path.join(fileDir, args.centromere)
-    df_centm = csv_df_chromosomes_sorter(cen_coord, ['chr', 'start', 'end'])
-    df_centm['start'].mask(df_centm['start'] == 1, 0, inplace=True)
-
-    return df_centm
+#def extract_centromere_regions(args):
+#    fileDir = os.path.dirname(__file__)
+#    cen_coord = os.path.join(fileDir, args.centromere)
+#    df_centm = csv_df_chromosomes_sorter(cen_coord, ['chr', 'start', 'end'])
+#    df_centm['start'].mask(df_centm['start'] == 1, 0, inplace=True)
+#
+#    return df_centm
 
 # def breakpoints_segments_means(args, csv_df_snps_mean):
 #     haplotype_1_segs_dfs = []

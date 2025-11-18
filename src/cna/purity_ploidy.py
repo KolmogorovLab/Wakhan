@@ -426,3 +426,21 @@ def move_100pct_purity_sol(args):
         else:
             logger.info(f"Error: Source folder '{args.out_dir_plots + '/100pct_purity_solution'}' does not exist.")
 
+
+def move_folder(source, destination):
+    """Moves a folder from the source path to the destination path.
+
+    Args:
+        source: The path of the folder to be moved.
+        destination: The path where the folder should be moved.
+    """
+    try:
+        shutil.move(source, destination)
+        logger.info(f"Folder '{source}' moved successfully to '{destination}'")
+    except FileNotFoundError:
+        logger.info(f"Error: Folder '{source}' not found.")
+    except FileExistsError:
+         logger.info(f"Error: A file or directory with the name '{os.path.basename(source)}' already exists in '{destination}'.")
+    except Exception as e:
+        logger.info(f"An error occurred: {e}")
+
