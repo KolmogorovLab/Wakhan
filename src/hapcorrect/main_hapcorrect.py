@@ -27,8 +27,8 @@ from src.coverage.processing import extend_snps_ratios_df
 from src.breakpoint.breakpoints import add_breakpoints
 from src.utils.chromosome import get_contigs_list, extract_centromere_regions, csv_df_chromosomes_sorter, df_chromosomes_sorter
 from src.cna.phaseblocks import infer_missing_phaseblocks, is_phasesets_check_simple_heuristics
-from src.hapcorrect.plots import plot_coverage_data, loh_plots_genome
-from src.hapcorrect.plot_loh import detect_loh_centromere_regions, plot_snps
+from src.plots.phasing_plots import plot_coverage_data, loh_plots_genome
+from src.plots.loh_hapcorrect import detect_loh_centromere_regions, plot_snps
 from src.hapcorrect.phase_correction import merge_contiguous_indices, find_indices_to_be_merged
 from src.coverage.smoothing import smoothing
 

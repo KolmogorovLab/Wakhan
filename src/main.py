@@ -30,11 +30,11 @@ from src.cna.loh import collect_loh_centromere_regions
 from src.cna.purity_ploidy import (normal_genome_proportion, weigted_means_ploidy, average_p_value_genome, dna_purity_to_cell_purity,
         move_100pct_purity_sol, find_p_values_peaks, update_segs_with_normal_optimized)
 from src.utils.statistics import weighted_means
-from src.plots import coverage_plots_chromosomes, copy_number_plots_genome_details, copy_number_plots_genome, breakpoints_segments_means, \
+from src.plots.plots_main import coverage_plots_chromosomes, copy_number_plots_genome_details, copy_number_plots_genome, breakpoints_segments_means, \
     copy_number_plots_genome_breakpoints, copy_number_plots_genome_breakpoints_subclonal, copy_number_plots_genome_subclonal, \
     genes_copy_number_plots_genome, genes_plots_genome, heatmap_copy_number_plots_genome, plot_ploidy_purity_p_values
 from src.file_tools.process_vcf import vcf_parse_to_csv_for_het_phased_snps_phasesets
-from src.snps_loh import plot_snps_frequencies_without_phasing, plot_snps_ratios_genome, snps_df_loh, variation_plots, write_loh_regions
+from src.plots.snps_loh import plot_snps_frequencies_without_phasing, plot_snps_ratios_genome, snps_df_loh, variation_plots, write_loh_regions
 from src.hapcorrect.phase_correction import generate_phasesets_bins
 from src.cna.optimization import peak_detection_optimization
 from src.file_tools.generate_vcf import read_cn_segments_process_vcf
