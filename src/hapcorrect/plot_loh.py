@@ -6,9 +6,9 @@ import logging
 logger = logging.getLogger()
 
 from src.file_tools.process_vcf import get_snps_frquncies, vcf_parse_to_csv_for_het_phased_snps_phasesets, get_snps_frquncies_coverage, vcf_parse_to_csv_for_snps, get_snps_counts
-from src.utils_tmp.chromosome import csv_df_chromosomes_sorter, df_chromosomes_sorter
+from src.utils.chromosome import csv_df_chromosomes_sorter, df_chromosomes_sorter
 from src.cna.loh import loh_regions_phasesets_hapcorrect, detect_alter_loh_regions_hapcorrect
-from src.utils_tmp.chromosome import get_contigs_list
+from src.utils.chromosome import get_contigs_list
 from src.hapcorrect.plots import add_scatter_trace_coverage, print_chromosome_html, plots_add_markers_lines, plots_layout_settings
 
 

@@ -8,7 +8,7 @@ import logging
 logger = logging.getLogger()
 
 from src.coverage.smoothing import smoothing
-from src.utils_tmp.chromosome import csv_df_chromosomes_sorter
+from src.utils.chromosome import csv_df_chromosomes_sorter
 from src.file_tools.process_bam import process_bam_for_snps_freqs
 # Import common VCF utilities from hapcorrect
 from src.file_tools.process_vcf import count_bases, chunks

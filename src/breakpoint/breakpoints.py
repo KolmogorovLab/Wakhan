@@ -4,7 +4,7 @@ from intervaltree import IntervalTree, Interval
 from vcf_parser import VCFParser
 from collections import defaultdict
 
-from src.utils_tmp.chromosome import get_contigs_list
+from src.utils.chromosome import get_contigs_list
 
 logger = logging.getLogger()
 

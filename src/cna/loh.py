@@ -3,7 +3,7 @@ import pandas as pd
 import statistics
 
 from src.coverage.segmentation import merge_adjacent_regions_loh, remove_overlapping_segments
-from src.utils_tmp.chromosome import csv_df_chromosomes_sorter, df_chromosomes_sorter, get_contigs_list
+from src.utils.chromosome import csv_df_chromosomes_sorter, df_chromosomes_sorter, get_contigs_list
 from src.coverage.segmentation import split_regions_by_points
 
 

@@ -25,7 +25,7 @@ from src.output.genes import snps_frequencies_chrom_genes, genes_segments_covera
 from src.coverage.binning import get_chromosomes_regions, get_chromosomes_bins_hapcorrect
 from src.coverage.processing import extend_snps_ratios_df
 from src.breakpoint.breakpoints import add_breakpoints
-from src.utils_tmp.chromosome import get_contigs_list, extract_centromere_regions, csv_df_chromosomes_sorter, df_chromosomes_sorter
+from src.utils.chromosome import get_contigs_list, extract_centromere_regions, csv_df_chromosomes_sorter, df_chromosomes_sorter
 from src.cna.phaseblocks import infer_missing_phaseblocks, is_phasesets_check_simple_heuristics
 from src.hapcorrect.plots import plot_coverage_data, loh_plots_genome
 from src.hapcorrect.plot_loh import detect_loh_centromere_regions, plot_snps

@@ -5,9 +5,9 @@ import pandas as pd
 from collections import Counter
 from itertools import groupby
 
-from src.utils_tmp.chromosome import get_contigs_list, extract_centromere_regions, csv_df_chromosomes_sorter, df_chromosomes_sorter
+from src.utils.chromosome import get_contigs_list, extract_centromere_regions, csv_df_chromosomes_sorter, df_chromosomes_sorter
 from src.output.writers import write_segments_coverage_snps
-from src.utils_tmp.statistics import find_peak_median_without_outliers
+from src.utils.statistics import find_peak_median_without_outliers
 
 import logging
 logger = logging.getLogger()

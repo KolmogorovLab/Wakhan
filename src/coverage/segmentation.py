@@ -7,7 +7,7 @@ from joblib import Parallel, delayed
 
 from src.breakpoint.breakpoints import sv_vcf_bps_cn_check
 from src.coverage.binning import update_bins_with_bps, update_bins_with_bps_new
-from src.utils_tmp.chromosome import csv_df_chromosomes_sorter, df_chromosomes_sorter, get_contigs_list
+from src.utils.chromosome import csv_df_chromosomes_sorter, df_chromosomes_sorter, get_contigs_list
 
 
 def update_state_with_loh_overlap(chrom_df, loh_df):

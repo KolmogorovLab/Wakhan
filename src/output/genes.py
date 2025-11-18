@@ -7,8 +7,8 @@ import logging
 logger = logging.getLogger()
 
 from src.cna.copynumber import subclonal_values_adjusted, integers_values_adjusted, add_confidence_score_cn_segemnts
-from src.utils_tmp.chromosome import csv_df_chromosomes_sorter, df_chromosomes_sorter, overlap_check
-from src.utils_tmp.chromosome import get_contigs_list
+from src.utils.chromosome import csv_df_chromosomes_sorter, df_chromosomes_sorter, overlap_check
+from src.utils.chromosome import get_contigs_list
 
 
 def write_df_csv_header(df, path):

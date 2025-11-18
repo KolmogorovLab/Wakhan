@@ -3,7 +3,7 @@ import pandas as pd
 import pysam
 import os
 
-from src.utils_tmp.chromosome import get_contigs_list
+from src.utils.chromosome import get_contigs_list
 from src.breakpoint.breakpoints import sv_vcf_bps_cn_check
 
 

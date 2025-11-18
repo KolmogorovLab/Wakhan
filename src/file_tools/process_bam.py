@@ -8,7 +8,7 @@ from collections import defaultdict
 import logging
 from collections import Counter
 
-from src.utils_tmp.chromosome import csv_df_chromosomes_sorter, df_chromosomes_sorter
+from src.utils.chromosome import csv_df_chromosomes_sorter, df_chromosomes_sorter
 
 logger = logging.getLogger()
 

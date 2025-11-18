@@ -12,7 +12,7 @@ from collections import  defaultdict, Counter
 
 logger = logging.getLogger()
 
-from src.utils_tmp.chromosome import csv_df_chromosomes_sorter
+from src.utils.chromosome import csv_df_chromosomes_sorter
 from src.output.writers import write_segments_coverage_snps
 from src.file_tools.process_bam import process_bam_for_snps_freqs
 from src.coverage.smoothing import smoothing
