@@ -6,7 +6,8 @@ import logging
 logger = logging.getLogger()
 
 from src.file_tools.process_vcf import get_snps_frquncies, vcf_parse_to_csv_for_het_phased_snps_phasesets, get_snps_frquncies_coverage, vcf_parse_to_csv_for_snps, get_snps_counts
-from src.hapcorrect.utils import csv_df_chromosomes_sorter, loh_regions_phasesets, detect_alter_loh_regions
+from src.utils_tmp.chromosome import csv_df_chromosomes_sorter, df_chromosomes_sorter
+from src.cna.loh import loh_regions_phasesets_hapcorrect, detect_alter_loh_regions_hapcorrect
 from src.utils_tmp.chromosome import get_contigs_list
 from src.hapcorrect.plots import add_scatter_trace_coverage, print_chromosome_html, plots_add_markers_lines, plots_layout_settings
 
@@ -20,25 +21,25 @@ def detect_loh_centromere_regions(csv_df_coverage_tumor_chrom, chrom, args, cent
         values = haplotype_1_values
         if centromere_region_starts:
             _, _, _, centromere_region_starts, centromere_region_ends, hp = \
-                    detect_alter_loh_regions(None, args, 'centromere/no-coverage', chrom, ref_end_values, values, values, values,
-                                             centromere_region_starts, centromere_region_ends, True)
+                    detect_alter_loh_regions_hapcorrect(None, args, 'centromere/no-coverage', chrom, ref_end_values, values, values, values,
+                                                        centromere_region_starts, centromere_region_ends, True)
         if loh_region_starts:
             _, _, _, loh_region_starts, loh_region_ends, hp = \
-                    detect_alter_loh_regions(None, args, 'loss-of-heterozygosity', chrom, ref_end_values, values, values, values,
-                                             loh_region_starts, loh_region_ends, True)
+                    detect_alter_loh_regions_hapcorrect(None, args, 'loss-of-heterozygosity', chrom, ref_end_values, values, values, values,
+                                                        loh_region_starts, loh_region_ends, True)
     else:
         # if centromere_region_starts:
-        #     haplotype_1_values, haplotype_2_values, unphased_reads_values, centromere_region_starts, centromere_region_ends = detect_alter_loh_regions(args, 'centromere/no-coverage', chrom, ref_end_values, haplotype_1_values, haplotype_2_values, unphased_reads_values, centromere_region_starts, centromere_region_ends, True)
-        #     haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets = loh_regions_phasesets(centromere_region_starts, centromere_region_ends, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
+        #     haplotype_1_values, haplotype_2_values, unphased_reads_values, centromere_region_starts, centromere_region_ends = detect_alter_loh_regions_hapcorrect(args, 'centromere/no-coverage', chrom, ref_end_values, haplotype_1_values, haplotype_2_values, unphased_reads_values, centromere_region_starts, centromere_region_ends, True)
+        #     haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets = loh_regions_phasesets_hapcorrect(centromere_region_starts, centromere_region_ends, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets)
 
         if loh_region_starts:
             haplotype_1_values, haplotype_2_values, unphased_reads_values, loh_region_starts, loh_region_ends, hp = \
-                    detect_alter_loh_regions(csv_df_coverage_tumor_chrom, args, 'loss-of-heterozygosity', chrom, ref_end_values,
-                                             haplotype_1_values, haplotype_2_values, unphased_reads_values, loh_region_starts, loh_region_ends, True)
+                    detect_alter_loh_regions_hapcorrect(csv_df_coverage_tumor_chrom, args, 'loss-of-heterozygosity', chrom, ref_end_values,
+                                                        haplotype_1_values, haplotype_2_values, unphased_reads_values, loh_region_starts, loh_region_ends, True)
             haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets = \
-                    loh_regions_phasesets(haplotype_1_values, haplotype_2_values, loh_region_starts, loh_region_ends,
-                                          haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets,
-                                          ref_end_values_phasesets, args)
+                    loh_regions_phasesets_hapcorrect(haplotype_1_values, haplotype_2_values, loh_region_starts, loh_region_ends,
+                                                    haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets,
+                                                    ref_end_values_phasesets, args)
 
         return (haplotype_1_values, haplotype_2_values, unphased_reads_values, haplotype_1_values_phasesets,
                 haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets, loh_region_starts, loh_region_ends, hp)

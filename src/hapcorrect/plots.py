@@ -9,7 +9,7 @@ import pandas as pd
 import logging
 logger = logging.getLogger()
 
-from src.hapcorrect.utils import get_contigs_list
+from src.utils_tmp.chromosome import get_contigs_list
 from src.coverage.binning import get_chromosomes_regions
 
 

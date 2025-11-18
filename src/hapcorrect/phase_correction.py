@@ -5,7 +5,7 @@ import pandas as pd
 from collections import Counter
 from itertools import groupby
 
-from src.hapcorrect.utils import csv_df_chromosomes_sorter, df_chromosomes_sorter, get_contigs_list
+from src.utils_tmp.chromosome import get_contigs_list, extract_centromere_regions, csv_df_chromosomes_sorter, df_chromosomes_sorter
 from src.output.writers import write_segments_coverage_snps
 from src.utils_tmp.statistics import find_peak_median_without_outliers
 
@@ -723,6 +723,7 @@ def phaseblock_flipping_simple_heuristics(chrom, args, is_simple_correction, hap
                 haplotype_2_values[i] = new_hp1
 
     return haplotype_1_values, haplotype_2_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets
+
 def mean_values(selected_list, start_index, end_index):
     result = []
     for i in range(end_index - start_index):

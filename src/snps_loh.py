@@ -10,14 +10,14 @@ logger = logging.getLogger()
 
 from src.file_tools.process_vcf import get_snps_frquncies, vcf_parse_to_csv_for_snps
 from src.file_tools.process_vcf_legacy import snps_mean, get_snp_segments, get_snps_frquncies_coverage, get_snps_counts, get_snps_counts_cn_regions, get_snps_frquncies_genome
-from src.utils import csv_df_chromosomes_sorter
-from src.utils_tmp.chromosome import get_contigs_list
+from src.utils_tmp.chromosome import get_contigs_list, csv_df_chromosomes_sorter
 from src.plots import add_scatter_trace_coverage, print_chromosome_html, plots_add_markers_lines, plots_layout_settings,\
 whole_genome_combined_df, copy_number_plots_per_chromosome, print_genome_pdf, add_annotation
-from src.utils import detect_alter_loh_regions, loh_regions_events, write_segments_coverage
+from src.cna.loh import detect_alter_loh_regions, detect_alter_loh_regions
 from src.output.writers import write_header_comments
 from src.coverage.binning import get_chromosomes_regions
 from src.coverage.processing import get_vafs_from_tumor_phased_vcf, get_vafs_from_normal_phased_vcf
+
 
 def plot_snps_ratios_genome(args, df_snps_in_csv, df_loh_regions):
     if not os.path.isdir(args.out_dir_plots + '/snps_loh_plots'):
@@ -142,7 +142,7 @@ def plot_snps_frequencies_without_phasing(args, df, df_segs_hp1_w, df_segs_hp2_w
 
     write_snps_counts_per_cn_region(pd.concat(df_snps_counts_per_cn_region_all), args)
     write_header_comments('chr\tstart\tend\n', '#chr: chromosome number\n#start: start address for LOH region\n#end: end address for LOH region\n', args.genome_name + '_loh_segments.bed', args)
-    write_segments_coverage(loh_regions_events_all, args.genome_name + '_loh_segments.bed', args)
+    _write_segments_coverage(loh_regions_events_all, args.genome_name + '_loh_segments.bed', args)
 
         #loh_plots_genome(df_snps_in_csv, pd.concat(df_snps_ratios), args)
 
@@ -240,7 +240,7 @@ def plot_snps_frequencies(args, df, df_snps_in_csv):
 
     # write_snps_counts_per_cn_region(pd.concat(df_snps_counts_per_cn_region_all), args)
     write_header_comments('chr\tstart\tend\n', '#chr: chromosome number\n#start: start address for LOH region\n#end: end address for LOH region\n', args.genome_name + '_loh_segments.bed', args)
-    write_segments_coverage(loh_regions_events_all, args.genome_name + '_loh_segments.bed', args)
+    _write_segments_coverage(loh_regions_events_all, args.genome_name + '_loh_segments.bed', args)
 
         #loh_plots_genome(df_snps_in_csv, pd.concat(df_snps_ratios), args)
 
@@ -450,3 +450,11 @@ def loh_plots_genome(df_snps_in_csv, df_snps_ratios, args, df_loh_regions):
         print_genome_pdf(fig, args.genome_name+'_loh', args.out_dir_plots + '/snps_loh_plots')
 
     fig.write_html(args.out_dir_plots + '/snps_loh_plots' +'/'+ args.genome_name + "_genome_snps_ratio_loh.html")
+
+
+def _write_segments_coverage(coverage_segments, output, args):
+    with open(args.out_dir_plots + '/bed_output/' + output, 'a') as fp:
+        for items in coverage_segments:
+            if not items == None:
+                fp.write("%s\n" % items)
+

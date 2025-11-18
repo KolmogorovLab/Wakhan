@@ -18,7 +18,6 @@ from src.hapcorrect.main_hapcorrect import main_process
 from src.__version__ import __version__
 
 from src.file_tools.process_bam import get_all_reads_parallel, update_coverage_hist, get_segments_coverage, ref_bam_vcfs_nomenclature_check
-from src.utils import collect_loh_centromere_regions
 from src.output.genes import update_genes_phase_corrected_coverage
 from src.output.writers import write_copynumber_segments_csv, write_segments_coverage_dict
 from src.utils_tmp.chromosome import get_contigs_list, centromere_regions_blacklist, centromere_regions_blacklist_bins, csv_df_chromosomes_sorter, \
@@ -27,6 +26,7 @@ from src.coverage.binning import get_chromosomes_bins_bam, get_chromosomes_bins
 from src.coverage.processing import seperate_dfs_coverage, flatten_smooth
 from src.coverage.segmentation import adjust_diversified_segments, merge_adjacent_regions_cn, merge_adjacent_regions_cn_unphased, adjust_bps_cn_segments_boundries
 from src.cna.copynumber import integer_fractional_cluster_means, update_subclonal_means_states, adjust_first_copy_mean, add_confidence_score_cn_segemnts
+from src.cna.loh import collect_loh_centromere_regions
 from src.cna.purity_ploidy import (normal_genome_proportion, weigted_means_ploidy, average_p_value_genome, dna_purity_to_cell_purity,
         move_100pct_purity_sol, find_p_values_peaks, update_segs_with_normal_optimized)
 from src.utils_tmp.statistics import weighted_means

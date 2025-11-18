@@ -19,14 +19,13 @@ from src.hapcorrect.phase_correction import (generate_phasesets_bins, phase_flip
                                                  phaseblock_flipping_simple_heuristics, check_missing_phasesets_original, reintroduce_broken_phasesets,
                                                  update_remaining_phasesets, subtract_intervals, without_phasesets_bins_correction,
                                                  remove_centromere_phaseblocks)
-from src.hapcorrect.utils import (get_chromosomes_bins_hapcorrect, write_segments_coverage, csv_df_chromosomes_sorter,
-                                  adjust_loh_cent_phaseblocks, df_chromosomes_sorter, loh_regions_events, update_hp_assignment_loh_segments)
+from src.cna.loh import adjust_loh_cent_phaseblocks, update_hp_assignment_loh_segments
 from src.output.writers import write_df_csv
 from src.output.genes import snps_frequencies_chrom_genes, genes_segments_coverage, genes_segments_list
-from src.coverage.binning import get_chromosomes_regions
+from src.coverage.binning import get_chromosomes_regions, get_chromosomes_bins_hapcorrect
 from src.coverage.processing import extend_snps_ratios_df
 from src.breakpoint.breakpoints import add_breakpoints
-from src.utils_tmp.chromosome import get_contigs_list, extract_centromere_regions
+from src.utils_tmp.chromosome import get_contigs_list, extract_centromere_regions, csv_df_chromosomes_sorter, df_chromosomes_sorter
 from src.cna.phaseblocks import infer_missing_phaseblocks, is_phasesets_check_simple_heuristics
 from src.hapcorrect.plots import plot_coverage_data, loh_plots_genome
 from src.hapcorrect.plot_loh import detect_loh_centromere_regions, plot_snps
@@ -97,7 +96,7 @@ def main_process(args):
         segments = get_chromosomes_bins_hapcorrect(args.target_bam[0], args.bin_size, args)
         segments_coverage = get_segments_coverage(segments, coverage_histograms)
         logger.info('Writing tumor coverage for bins')
-        write_segments_coverage(segments_coverage, 'coverage_tumor.csv', args)
+        _write_segments_coverage(segments_coverage, 'coverage_tumor.csv', args)
 
     #cancer_genes_df_all = []
     #logger.info('Computing coverage for genes')
@@ -123,7 +122,7 @@ def main_process(args):
     elif args.histogram_coverage:
         segments_coverage = get_segments_coverage(segments, coverage_histograms)
         logger.info('Writing coverage for bins')
-        write_segments_coverage(segments_coverage, 'coverage.csv', args)
+        _write_segments_coverage(segments_coverage, 'coverage.csv', args)
 
         #if args.breakpoints:
         #    phasesets_segments = add_breakpoints(args, phasesets_segments, breakpoints_additional)
@@ -131,7 +130,7 @@ def main_process(args):
         phasesets_coverage = get_segments_coverage(phasesets_segments, coverage_histograms)
 
         logger.info('Writing coverage for phaseblocks')
-        write_segments_coverage(phasesets_coverage, 'coverage_ps.csv', args)
+        _write_segments_coverage(phasesets_coverage, 'coverage_ps.csv', args)
 
         logger.info('Loading coverage (bins) and coverage (phaseblocks) files...')
         csv_df_phasesets = csv_df_chromosomes_sorter(args.out_dir_plots+'/coverage_data/coverage_ps.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
@@ -139,7 +138,7 @@ def main_process(args):
 
         #Missing phaseblocks and coverage added
         #phasesets_coverage_missing = update_phasesets_coverage_with_missing_phasesets(chroms, csv_df_phasesets, args.target_bam[0], coverage_histograms)
-        #write_segments_coverage(phasesets_coverage_missing, 'coverage_ps_missing.csv')
+        #_write_segments_coverage(phasesets_coverage_missing, 'coverage_ps_missing.csv')
         #csv_df_phasesets_missing = csv_df_chromosomes_sorter('data/coverage_ps_missing.csv', ['chr', 'start', 'end', 'hp1', 'hp2', 'hp3'])
 
         del coverage_histograms
@@ -441,3 +440,11 @@ def main_process(args):
     if args.tumor_phased_vcf:
         loh_plots_genome(pd.concat(df_snps_ratios),  args, csv_df_loh_regions)
         plot_snps(args, df_snps_in_csv_loh)
+
+
+def _write_segments_coverage(coverage_segments, output, args):
+    with open(args.out_dir_plots+'/coverage_data/' + output, 'a') as fp:
+        for items in coverage_segments:
+            if not items == None:
+                fp.write("%s\n" % items)
+

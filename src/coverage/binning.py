@@ -38,6 +38,33 @@ def get_chromosomes_bins(bam_file, bin_size, args):
     return bed, bed_1
 
 
+def get_chromosomes_bins_hapcorrect(bam_file, bin_size, args):
+    bed=[]
+    bam_alignment = pysam.AlignmentFile(bam_file)
+    headers = bam_alignment.header
+    seq_dict = headers['SQ']
+    region = [''] * len(seq_dict)
+    chrs = [''] * len(seq_dict)
+    head, tail = os.path.split(bam_file)
+    chroms = get_contigs_list(args.contigs)
+    chroms_without_prefix = [str(i).replace( 'chr', '') for i in chroms]
+    for i, seq_elem in enumerate(seq_dict):
+        region[i] = seq_elem['LN']
+        chrs[i] = seq_elem['SN']
+        start=0
+        end=bin_size
+        if (chrs[i] in chroms) or (chrs[i] in chroms_without_prefix):
+            for c in range(0,region[i],bin_size):
+                if end > region[i]:
+                    bed.append([tail, chrs[i], start, region[i]])
+                else:
+                    bed.append([tail, chrs[i], start, end])
+                start=end+1
+                end+=bin_size
+    return bed
+
+
+
 def get_chromosomes_regions(args):
     chroms = get_contigs_list(args.contigs)
     bam_alignment = pysam.AlignmentFile(args.target_bam[0])
