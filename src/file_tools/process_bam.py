@@ -409,32 +409,13 @@ def ref_bam_vcfs_nomenclature_check(args):
     out_fasta = args.out_dir_plots + '/data/fasta_header.tsv'
 
     command_1 = "bcftools view -h " + vcf_check  +" | grep '^##contig' | sed 's/.*ID=\\([^,]*\\).*/\\1/' > " + out_bcftools
-    try:
-        process = subprocess.Popen(command_1, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        stdout, stderr = process.communicate()
-    except FileNotFoundError:
-        print(f"Error: Input file '{vcf_check}' not found.")
-    except Exception as e:
-        print(f"An unexpected error occurred while reading VCF header: {e}")
+    subprocess.check_call(command_1, shell=True)
 
     command_2 = "samtools view -H " +args.target_bam[0]+ " | grep @SQ | awk '{print $2}' | sed 's/SN://' > " + out_bam
-    try:
-        process = subprocess.Popen(command_2, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        stdout, stderr = process.communicate()
-    except FileNotFoundError:
-        print(f"Error: Input file '{args.target_bam[0]}' not found.")
-    except Exception as e:
-        print(f"An unexpected error occurred while reading BAM header: {e}")
+    subprocess.check_call(command_2, shell=True)
 
-    #command_3 = "less " + args.reference+".fai" + " | awk -v OFS='\t' '{print $1}' > " + out_fasta
-    command_3 = "awk -v OFS='\t' '{print $1}' " + args.reference + ".fai" + " > " + out_fasta
-    try:
-        process = subprocess.Popen(command_3, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        stdout, stderr = process.communicate()
-    except FileNotFoundError:
-        print(f"Error: Input file '{args.reference+'.fai'}' not found.")
-    except Exception as e:
-        print(f"An unexpected error occurred while reading FASTA chrom names: {e}")
+    command_3 = "awk '/^>/ {print substr($1, 2)}' " + args.reference + " > " + out_fasta
+    subprocess.check_call(command_3, shell=True)
 
     df_vcf = pandas.read_csv(out_bcftools, sep='\t')
     df_bam = pandas.read_csv(out_bam, sep='\t')
