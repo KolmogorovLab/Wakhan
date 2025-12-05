@@ -23,7 +23,7 @@ setup(name='wakhan',
       author='Tanveer Ahmad',
       author_email = 'tanveer.ahmad@nih.gov',
       license='MIT',
-      packages=['src', 'src.hapcorrect.src'],
+      packages=['src', 'src.hapcorrect'],
       package_data={'src': ['annotations/*']},
       entry_points={'console_scripts': ['wakhan = src.main:main']},
       )
