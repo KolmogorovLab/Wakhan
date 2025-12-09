@@ -42,53 +42,37 @@ def peak_detection_optimization(args, input_segments, input_weights, tumor_cov):
 
     NUM_SAMPLES = 1000
 
-    # observed = simulate(NUM_SAMPLES)
-    # observed = parse_segments_cov(sys.argv[1])
     observed = input_segments
     weights = input_weights
-    #observed, weights = zip(*((x, y) for x, y in zip(observed, weights) if x <= 100))
-    #observed = list(observed)
-    #weights = list(weights)
-
-    # observed = [x1 for x1 in observed if x1 > 250 and x1 < 300]
-    #NUM_SAMPLES = len(observed)
-    #print(observed)
 
     # computing observed histogram + normalization
     hist_bins = range(HIST_RANGE[0], HIST_RANGE[1] + 1)
     hist_scale = NUM_SAMPLES / 50
     observed_hist = np.histogram(observed, weights=weights, bins=hist_bins)[0]
     observed_hist = observed_hist / hist_scale
+
     if args.first_copy == 0:
-        def convolve_sma(x, N):
-            return np.convolve(x, np.ones((N,)) / N)[(N - 1):]
+        # Autocorrelation method
+        corr = scipy.signal.correlate(observed_hist, observed_hist, mode="full")
+        corr = corr[corr.size // 2:]  # autocorrelation, only positive shift, so getting right half of the array
 
-        try:
-            # Autocorrelation method
-            corr = scipy.signal.correlate(observed_hist, observed_hist, mode="full")
-            corr = corr[corr.size // 2:]  # autocorrelation, only positive shift, so getting right half of the array
-            #corr = convolve_sma(corr, 2)
-
-            first_min = scipy.signal.argrelmin(corr)[0][0]
+        minima = scipy.signal.argrelmin(corr)
+        if len(minima[0]) > 0: #at least one local minimum exists -> self-correlation makes sense
+            first_min = minima[0][0]
             corr_max = np.argmax(corr[first_min:]) + first_min
+        else:   #no local minima -> just one coverage peak, likely balanced kariotype. set CN=1 to the peak value
+            first_min = -1
+            corr_max = np.argmax(observed_hist)
 
-            # logger.info("First minimum %s", first_min)
-            # logger.info("Max correlation peak %s", corr_max)
+        # logger.info("First minimum %s", first_min)
+        # logger.info("Max correlation peak %s", corr_max)
 
-            # testing if 1/2 of the highest peak is also a peak. compare it with 1/4 and 3/4 (which should be valleys)
-            half_peak = corr_max // 2  #change to 1 if dodn't want to consider neraset as half peak
-            valley_left, valley_right = corr_max // 4, corr_max * 3 // 4
-            is_half_peak = corr[half_peak] > max(corr[valley_left], corr[valley_right])
-            # print(half_peak, valley_left, valley_right)
-            # logger.info("Half peak: %s", is_half_peak)
-        except IndexError:
-            # Handle the IndexError if it occurs
-            print("Error: List index out of range for Autocorrelation method.")
-            return 0
-        except Exception as e:
-            # Catch any other unexpected exceptions
-            print(f"An unexpected error occurred while using Autocorrelation method: {e}")
-            return 0
+        # testing if 1/2 of the highest peak is also a peak. compare it with 1/4 and 3/4 (which should be valleys)
+        half_peak = corr_max // 2  #change to 1 if dodn't want to consider neraset as half peak
+        valley_left, valley_right = corr_max // 4, corr_max * 3 // 4
+        is_half_peak = corr[half_peak] > max(corr[valley_left], corr[valley_right])
+        # print(half_peak, valley_left, valley_right)
+        # logger.info("Half peak: %s", is_half_peak)
     else:
         corr = observed_hist
         is_half_peak = False
