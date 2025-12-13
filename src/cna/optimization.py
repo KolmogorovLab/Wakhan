@@ -9,6 +9,8 @@ import logging
 import plotly.graph_objects as go
 import plotly
 
+from src.utils.statistics import weighted_means
+
 logger = logging.getLogger()
 
 # parameters for modeling
@@ -44,6 +46,7 @@ def peak_detection_optimization(args, input_segments, input_weights, tumor_cov):
 
     observed = input_segments
     weights = input_weights
+    hist_mean = weighted_means(input_segments, input_weights)
 
     # computing observed histogram + normalization
     hist_bins = range(HIST_RANGE[0], HIST_RANGE[1] + 1)
@@ -57,10 +60,13 @@ def peak_detection_optimization(args, input_segments, input_weights, tumor_cov):
         corr = corr[corr.size // 2:]  # autocorrelation, only positive shift, so getting right half of the array
 
         minima = scipy.signal.argrelmin(corr)
-        if len(minima[0]) > 0: #at least one local minimum exists -> self-correlation makes sense
+        #check that at least one local minimum smaller than mean coverage  exists -> self-correlation makes sense
+        if len(minima[0]) > 0 and minima[0][0] < hist_mean:
             first_min = minima[0][0]
             corr_max = np.argmax(corr[first_min:]) + first_min
-        else:   #no local minima -> just one coverage peak, likely balanced kariotype. set CN=1 to the peak value
+
+        #no good local minima -> just one coverage peak, likely balanced kariotype. set CN=1 to the peak value
+        else:
             first_min = -1
             corr_max = np.argmax(observed_hist)
 
