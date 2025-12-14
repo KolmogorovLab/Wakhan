@@ -245,9 +245,9 @@ def build_parser():
     global_parser.add_argument("--ploidy-range", dest="ploidy_range", default=DEFAULT_PLOIDY, help="Target tumor ploidy range")
 
     #visual options
-    global_parser.add_argument("--centromere-bed", dest="centromere", metavar="path", default='annotations/grch38.cen_coord.curated.bed',
+    global_parser.add_argument("--centromere-bed", dest="centromere", metavar="path", default=None,
                                help="Path to custom centromere annotations BED file")
-    global_parser.add_argument("--cancer-genes", dest="cancer_genes", metavar="path", default='annotations/COSMIC_cancer_genes.tsv',
+    global_parser.add_argument("--cancer-genes", dest="cancer_genes", metavar="path", default=None,
                                help="Path to custom Genes TSV file (e.g. COSMIC)")
     global_parser.add_argument("--reference-name", dest="reference_name", default=DEFAULT_REF, help="Reference name")
     global_parser.add_argument("--genome-name", dest="genome_name", default='Sample', help="Genome sample/cell line name to be displayed on plots")
@@ -401,9 +401,12 @@ def main(argv=None):
     else:
         os.mkdir(args.out_dir_plots+'/data')
 
-    fileDir = os.path.dirname(__file__)
-    args.cancer_genes = os.path.join(fileDir, args.cancer_genes)
-    args.centromere = os.path.join(fileDir, args.centromere)
+    annotations = os.path.join(os.path.dirname(__file__), "annotations")
+    if args.cancer_genes is None:
+        args.cancer_genes = os.path.join(annotations, "COSMIC_cancer_genes.tsv")
+    if args.centromere is None:
+        args.centromere = os.path.join(annotations, "grch38.cen_coord.curated.bed")
+
     test_input_files(args)
 
     #grch37/grch38 chr notations check
