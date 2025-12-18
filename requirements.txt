@@ -9,3 +9,4 @@ scipy
 ruptures
 vcf_parser
 kaleido
+intervaltree

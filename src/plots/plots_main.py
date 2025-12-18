@@ -5127,7 +5127,9 @@ def plots_layout_settings(fig, chrom, args, limit_x, limit_y):
 # 
 #     #fig.write_html("coverage_plots/" + chrom + "_cluster_" + str(len(means)) + ".html")
 
-def plot_ploidy_purity_p_values(args, ploidy_values, purity_values, p_values):
+def plot_ploidy_purity_p_values(args, ploidy_values, purity_values, p_values,
+purity_cutoff_l=None, purity_cutoff_h=None, ploidy_cutoff_l=None,
+ploidy_cutoff_h=None):
     def plot_heatmap_with_nan_fill(p_values, ploidy, purity, title="Heatmap Plot"):
         """
         Plots a heatmap with NaN values in p_values filled with the lowest p_value.
@@ -5247,9 +5249,18 @@ def plot_ploidy_purity_p_values(args, ploidy_values, purity_values, p_values):
             print_genome_pdf(fig, path_set, args.out_dir_plots)
 
         fig.write_html(args.out_dir_plots + '/' + path_set)
-
-    if (purity_values[0] < float(args.purity_range.split('-')[0]) or purity_values[0] > float(args.purity_range.split('-')[1])) or (
-            ploidy_values[0] < float(args.ploidy_range.split('-')[0]) or ploidy_values[0] > float(args.ploidy_range.split('-')[1])):
+    
+    if purity_cutoff_l is None:
+        purity_cutoff_l = float(args.purity_range.split('-')[0])
+    if purity_cutoff_h is None:
+        purity_cutoff_l = float(args.purity_range.split('-')[1])
+    if ploidy_cutoff_l is None:
+        ploidy_cutoff_l = float(args.ploidy_range.split('-')[0])
+    if ploidy_cutoff_h is None:
+        ploidy_cutoff_h = float(args.ploidy_range.split('-')[1])
+    if (purity_values[0] < purity_cutoff_l or
+    purity_values[0] > purity_cutoff_h or ploidy_values[0] < ploidy_cutoff_l or
+    ploidy_values[0] > ploidy_cutoff_h):
         del purity_values[0]
         del ploidy_values[0]
         del p_values[0]
