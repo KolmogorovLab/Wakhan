@@ -166,12 +166,12 @@ def cn_one_inference(input_segments, input_weights, cov_ploidy):
 
     plt.show()
 
-    return cn_one, first_min * HIST_RATE
+    return cn_one, first_min * HIST_RATE, hist_bins, observed_hist
 
 
 def peak_detection_optimization(args, input_segments, input_weights, tumor_cov):
     COV_PLOIDY = 2  #change to 1 if using haploid coverage as input
-    cn_one, first_min, max_coverage = cn_one_inference(input_segments, input_weights, COV_PLOIDY)
+    cn_one, first_min, hist_x, hist_y = cn_one_inference(input_segments, input_weights, COV_PLOIDY)
 
     #overwriting with command line arguments if needed
     is_half_peak = False
@@ -201,8 +201,8 @@ def peak_detection_optimization(args, input_segments, input_weights, tumor_cov):
 
     final_peaks_subclonal = [single_copy_cov//2] + [i * single_copy_cov+(single_copy_cov//2) for i in range(1, last_copy_state)]
 
-    return (scaled_first_min, final_peaks, is_half_peak, final_peaks_half, final_peaks_subclonal,
-            np.arange(0, 500), observed_hist, single_copy_cov, single_copy_cov_half)
+    return (first_min, final_peaks, is_half_peak, final_peaks_half, final_peaks_subclonal,
+            hist_x, hist_y, single_copy_cov, single_copy_cov_half)
 
 
 class Dummy:
