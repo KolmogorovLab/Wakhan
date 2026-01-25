@@ -2,7 +2,9 @@
 
 A tool to analyze haplotype-specific chromosome-scale somatic copy number aberrations and aneuploidy using long reads (Oxford Nanopore, PacBio). 
 Wakhan takes long-read alignment and phased heterozygous variants as input, and first extends the phased blocks and corrects phase-switch errors using [hapcorrect](https://github.com/KolmogorovLab/Wakhan/tree/main/src/hapcorrect) module, taking
-advantage of the copy numbers differences between the haplotypes. Wakhan estimates purity and ploidy of the sample and generates inetractive haplotype-specific copy number and coverage plots.    
+advantage of the copy numbers differences between the haplotypes. Wakhan estimates purity and ploidy of the sample and generates inetractive haplotype-specific copy number and coverage plots.
+
+A detailed algorithm description and evaluation is available in our [preprint](https://www.medrxiv.org/content/10.64898/2025.12.11.25342098v1).
 
 #### Breakpoints/SVs based segmentation and Copy numbers estimation:
 <img width="1373" alt="plots_example" src="examples/images/1437.png">
@@ -287,3 +289,7 @@ clair3 --bam_fn=${BAM} --ref_fn=${REF_FASTA} --threads=${THREADS} --platform=hif
 
 We also recommend to use [structural variants (breakpoints)](https://github.com/KolmogorovLab/Wakhan/tree/main?tab=readme-ov-file#breakpointsstructural-variations-or-change-point-detection-algo-for-copy-number-model) in Wakhan, please refer to [Severus](https://github.com/KolmogorovLab/Severus).
 To used phased SVs/Breakpoints please refer to generating [Severus phased SVs](https://github.com/KolmogorovLab/Wakhan/tree/main?tab=readme-ov-file#phased-breakpointsstructural-variations) section.
+
+### Citation
+
+"Wakhan: reconstruction of chromosome-scale copy number profiles of tumor genomes with long-read sequencing", medRxiv, 2025 https://www.medrxiv.org/content/10.64898/2025.12.11.25342098v1
