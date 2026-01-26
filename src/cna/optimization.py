@@ -3,12 +3,15 @@
 import scipy.stats
 import scipy.optimize
 import scipy.signal
+import scipy.spatial
 import random
 import numpy as np
 import logging
 import plotly.graph_objects as go
 import plotly
 
+import ruptures as rpt
+from collections import defaultdict
 import matplotlib.pyplot as plt
 
 
@@ -83,13 +86,17 @@ def cn_one_inference(input_segments, input_weights, cov_ploidy):
     # computing observed histogram + normalization
     hist_bins = np.arange(hist_range[0], hist_range[1] + 1, HIST_RATE)
     observed_hist = np.histogram(observed, weights=weights, bins=hist_bins)[0]
+    #observed_hist[55:] = 0
+    #observed_hist = [h if h > 6 else 0 for h in observed_hist]
 
     # Autocorrelation method
     corr = scipy.signal.correlate(observed_hist, observed_hist, mode="full")
     corr = corr[corr.size // 2:]  # autocorrelation, only positive shift, so getting right half of the array
+    #corr = _custom_corr(observed_hist)
 
     #smoothing correlation a bit
-    smooth_corr = scipy.signal.savgol_filter(corr, window_length=5, polyorder=3)
+    smooth_corr = corr
+    smooth_corr = scipy.signal.savgol_filter(corr, window_length=5, polyorder=2)
 
     peaks_mixture = None
     first_min = 0
@@ -100,8 +107,8 @@ def cn_one_inference(input_segments, input_weights, cov_ploidy):
         #check that at least one local minimum smaller than mean coverage  exists -> self-correlation makes sense
         #if yes, will find peaks after th minimum. if not, can't infer much from this profile
         minima = scipy.signal.argrelmin(smooth_corr)
-        peaks, stats = scipy.signal.find_peaks(smooth_corr, distance=(5 / HIST_RATE),
-                                               width=1 / HIST_RATE, rel_height=1.0)
+        peaks, stats = scipy.signal.find_peaks(smooth_corr, distance=5,
+                                               width=3, rel_height=1.0)
 
         if len(minima[0]) == 0 or minima[0][0] >= hist_mean:
             cn_one = np.argmax(observed_hist) * HIST_RATE / cov_ploidy
@@ -110,8 +117,6 @@ def cn_one_inference(input_segments, input_weights, cov_ploidy):
         #making sure all peaks are past minima, although it always should be the case
         first_min = minima[0][0]
         peaks = [p for p in peaks if p > first_min]
-        scaled_peaks = [round(hist_bins[p], 1) for p in peaks]
-        print("Correlation peaks", scaled_peaks)
 
         if len(peaks) == 0:
             cn_one = np.argmax(observed_hist) * HIST_RATE / cov_ploidy
@@ -125,6 +130,8 @@ def cn_one_inference(input_segments, input_weights, cov_ploidy):
         #filtering very small peaks
         HEIGHT_RATE = 0.3
         peaks = [p for p in peaks if smooth_corr[p] >= smooth_corr[max_corr_peak] * HEIGHT_RATE]
+        scaled_peaks = [round(hist_bins[p], 1) for p in peaks]
+        print("Correlation peaks", scaled_peaks)
 
         if len(peaks) == 1:
             cn_one = max_corr_peak * HIST_RATE
@@ -136,6 +143,10 @@ def cn_one_inference(input_segments, input_weights, cov_ploidy):
 
         gauss_corr = scipy.signal.correlate(peaks_mixture, peaks_mixture, mode="full")[len(peaks_mixture) - 1:]
         peaks_gauss, stats_gauss = scipy.signal.find_peaks(gauss_corr)
+        if len(peaks_gauss) == 0:
+            cn_one = np.argmax(observed_hist) * HIST_RATE / cov_ploidy
+            peaks_gauss = [max(gauss_corr)]
+            raise ProfileException("No histogram peaks found, defaulting to histogram maximum")
         cn_one = hist_bins[peaks_gauss[0]]
 
     except ProfileException as e:
@@ -148,8 +159,6 @@ def cn_one_inference(input_segments, input_weights, cov_ploidy):
     fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1)
     ax1.bar(hist_bins[:-1], observed_hist, width=HIST_RATE, edgecolor='black')
 
-    #ax2.plot(hist_bins[:-1], corr)
-    #ax2.set_ylim(0, corr[corr_max] * 2)
     ax2.plot(hist_bins[:-1], smooth_corr)
     ax2.set_ylim(0, smooth_corr[max_corr_peak] * 2)
     ax2.plot([first_min * HIST_RATE, first_min * HIST_RATE],
@@ -167,6 +176,26 @@ def cn_one_inference(input_segments, input_weights, cov_ploidy):
     plt.show()
 
     return cn_one, first_min * HIST_RATE, hist_bins, observed_hist
+
+
+def _custom_corr(array):
+    corr = []
+    for i in range(1, len(array) - 1):
+        #shifted = np.roll(array, i)
+        #shifted[:i] = 0
+        part_a = array[:-i]
+        part_b = array[i:]
+
+        #corr.append(scipy.spatial.distance.braycurtis(part_a, part_b))
+        pearson = scipy.stats.pearsonr(part_a, part_b)
+        print(pearson)
+        if not np.isnan(pearson.statistic):
+            corr.append(1 + pearson.statistic)
+        else:
+            corr.append(0)
+    corr = [0] + corr + [0]
+    print(corr)
+    return np.array(corr)
 
 
 def peak_detection_optimization(args, input_segments, input_weights, tumor_cov):
@@ -208,6 +237,130 @@ def peak_detection_optimization(args, input_segments, input_weights, tumor_cov):
 class Dummy:
     pass
 
+
+def parse_coverage_bed(filename, avg_window, phased):
+    """
+    Reading Wakhan bed with phase-corrected binned coverage
+    """
+    bin_size = None
+
+    segments = []
+    weights = []
+
+    raw_segments = []
+    with open(filename, "r") as fin:
+        hp1 = []
+        hp2 = []
+        hp3 = []
+        for line in fin:
+            fields = line.split("\t")
+            if bin_size is None:
+                bin_size = int(fields[2]) - int(fields[1])
+                print("Bin size:", bin_size)
+
+            min_cov, max_cov = float(fields[3]), float(fields[4])   #phased
+            if min_cov + max_cov > 0:
+                hp1.append(min_cov)
+                hp2.append(max_cov)
+                hp3.append(min_cov + max_cov)
+            """
+            if float(fields[3]) > 0:
+                hp1.append(0)
+                hp2.append(0)
+                hp3.append(float(fields[3]))
+            """
+
+            if len(hp1) >= round(avg_window / bin_size):
+                if phased:
+                    raw_segments.append(hp1)
+                    raw_segments.append(hp2)
+                else:
+                    raw_segments.append(hp3)
+                hp1 = []
+                hp2 = []
+                hp3 = []
+
+    std_devs = []
+    for seg in raw_segments:
+        std_devs.append(np.std(seg))
+    max_dev = np.quantile(std_devs, 0.90)
+    print("Std median:", np.median(std_devs))
+    print("Std Q90", max_dev)
+
+    for seg in raw_segments:
+        if np.std(seg) < max_dev:
+            segments.append(np.median(seg))
+
+    #print(len(raw_segments))
+    #for seg in raw_segments:
+    #    print(np.median(seg), np.std(seg))
+
+    weights = [1] * len(segments)
+    return segments, weights
+
+
+def parse_coverage_bed_cpd(filename, phased):
+    cov_by_chrom = defaultdict(list)
+    with open(filename, "r") as fin:
+        for line in fin:
+            fields = line.split("\t")
+            min_cov, max_cov = float(fields[3]), float(fields[4])   #phased
+            if min_cov + max_cov > 0:
+                cov_by_chrom[fields[0]].append(min_cov + max_cov)
+    chroms = ["chr" + str(i) for i in range(1, 23)]
+
+    mean_cov = np.mean(sum(cov_by_chrom.values(), []))
+    print("Mean coverage:", mean_cov)
+
+    raw_segments = []
+    segments = []
+    weights = []
+    MIN_SEG_LEN = 100
+    fig, subplots = plt.subplots(len(chroms) // 2, 2)
+    for i, ch in enumerate(chroms):
+        sp = subplots[i // 2][i % 2]
+        coverage = np.array(cov_by_chrom[ch])
+        y_max = np.quantile(coverage, 0.90)
+
+        #variance = np.var(coverage)
+        pen_auto = np.log(len(coverage)) * mean_cov ** 2
+        print(f"Chr penalty: {pen_auto:.2f}")
+
+        algo_pelt = rpt.Pelt(model="l2", min_size=20, jump=10)
+        algo_pelt.fit(coverage)
+        breakpoints = algo_pelt.predict(pen=1000)
+
+        breakpoints = [0] + breakpoints + [len(coverage)]
+        for start, end in zip(breakpoints[:-1], breakpoints[1:]):
+            segment = coverage[start : end]
+            if len(segment) > MIN_SEG_LEN:
+                segments.append(np.median(segment))
+                #weights.append(len(segment))
+                weights.append(np.log(len(segment)))
+                #raw_segments.append(segment)
+
+        """
+        for seg in raw_segments:
+            if len(seg) > MIN_SEG_LEN:
+                chunk = len(seg) // MIN_SEG_LEN
+                for i in range(0, len(seg) // chunk):
+                    segments.append(np.median(seg[i * chunk : (i + 1) * chunk]))
+                    weights.append(chunk)
+        """
+
+        ###
+        sp.plot(coverage)
+        for bp in breakpoints:
+            sp.plot([bp, bp], [0, y_max], color="red")
+        sp.set_ylim(0, y_max)
+        sp.set_label(ch)
+        ###
+
+    plt.show()
+
+    return segments, weights
+
+
 if __name__ == "__main__":
     segments = []
     weights = []
@@ -220,30 +373,11 @@ if __name__ == "__main__":
             segments.append(float(fields[0]))
             weights.append(int(fields[1]))
             #weights.append(1)
-    """
 
-    #parsing from coverage.ps
-    WINDOW = 100    #5mb with 50kb bins
-    with open(sys.argv[1], "r") as fin:
-        hp1 = []
-        hp2 = []
-        hp3 = []
-        for line in fin:
-            fields = line.split("\t")
-            #min_cov, max_cov = sorted([float(fields[3]), float(fields[4])])
-            min_cov, max_cov = float(fields[3]), float(fields[4])
-            hp1.append(min_cov)
-            hp2.append(max_cov)
-            hp3.append(min_cov + max_cov)
-            #hp1.append(float(fields[3]) + float(fields[4]))
-            if len(hp1) >= WINDOW:
-                #segments.append(np.median(hp1))
-                #segments.append(np.median(hp2))
-                segments.append(np.median(hp3))
-                hp1 = []
-                hp2 = []
-                hp3 = []
-    weights = [1] * len(segments)
+    """
+    WINDOW = 5000000    #5Mb
+    segments, weights = parse_coverage_bed_cpd(sys.argv[1], None)
+    #segments, weights = parse_coverage_bed(sys.argv[1], WINDOW, phased=False)
 
     args = Dummy()
     args.first_copy = 0
