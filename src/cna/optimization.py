@@ -79,7 +79,7 @@ def cn_one_inference(input_segments, input_weights, cov_ploidy):
     hist_mean = weighted_means(input_segments, input_weights)
 
     hist_max = np.quantile(input_segments, 0.50) * 2
-    hist_range = (1, hist_max)
+    hist_range = (0, hist_max)
     HIST_RATE = hist_max / 100
     print("Hist range", hist_range, "rate", HIST_RATE)
 
@@ -95,7 +95,6 @@ def cn_one_inference(input_segments, input_weights, cov_ploidy):
     #corr = _custom_corr(observed_hist)
 
     #smoothing correlation a bit
-    smooth_corr = corr
     smooth_corr = scipy.signal.savgol_filter(corr, window_length=5, polyorder=2)
 
     peaks_mixture = None
@@ -130,7 +129,7 @@ def cn_one_inference(input_segments, input_weights, cov_ploidy):
         #filtering very small peaks
         HEIGHT_RATE = 0.3
         peaks = [p for p in peaks if smooth_corr[p] >= smooth_corr[max_corr_peak] * HEIGHT_RATE]
-        scaled_peaks = [round(hist_bins[p], 1) for p in peaks]
+        scaled_peaks = [round(p * HIST_RATE, 2) for p in peaks]
         print("Correlation peaks", scaled_peaks)
 
         if len(peaks) == 1:
@@ -138,7 +137,7 @@ def cn_one_inference(input_segments, input_weights, cov_ploidy):
             raise ProfileException("Just one correlation peak, using it for CN=1")
 
         #now, we have 2+ peaks, need to find the distance between them
-        peaks_mixture = gaussian_mixture(hist_bins[:-1], scaled_peaks, sigma=1 * HIST_RATE,
+        peaks_mixture = gaussian_mixture(hist_bins[:-1], scaled_peaks, sigma=(1 * HIST_RATE),
                                          amplitudes=[smooth_corr[int(p / HIST_RATE)] for p in scaled_peaks])
 
         gauss_corr = scipy.signal.correlate(peaks_mixture, peaks_mixture, mode="full")[len(peaks_mixture) - 1:]
@@ -147,7 +146,7 @@ def cn_one_inference(input_segments, input_weights, cov_ploidy):
             cn_one = np.argmax(observed_hist) * HIST_RATE / cov_ploidy
             peaks_gauss = [max(gauss_corr)]
             raise ProfileException("No histogram peaks found, defaulting to histogram maximum")
-        cn_one = hist_bins[peaks_gauss[0]]
+        cn_one = peaks_gauss[0] * HIST_RATE
 
     except ProfileException as e:
         print(e)
@@ -156,22 +155,26 @@ def cn_one_inference(input_segments, input_weights, cov_ploidy):
     print("Haploid CN=1 estimate", cn_one)
 
     #some visualization
-    fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1)
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1)
     ax1.bar(hist_bins[:-1], observed_hist, width=HIST_RATE, edgecolor='black')
 
-    ax2.plot(hist_bins[:-1], smooth_corr)
-    ax2.set_ylim(0, smooth_corr[max_corr_peak] * 2)
-    ax2.plot([first_min * HIST_RATE, first_min * HIST_RATE],
+    corr_top = max(smooth_corr[max_corr_peak], smooth_corr[first_min]) * 2
+    ax2.plot(hist_bins[:-1], corr)
+    ax2.set_ylim(0, corr_top)
+
+    ax3.plot(hist_bins[:-1], smooth_corr)
+    ax3.set_ylim(0, corr_top)
+    ax3.plot([first_min * HIST_RATE, first_min * HIST_RATE],
              [0, smooth_corr[first_min]], color="red", linewidth=2)
     for p in scaled_peaks:
         top = smooth_corr[int(p / HIST_RATE)]
-        ax2.plot([p, p], [0, top], color="green", linewidth=2)
+        ax3.plot([p, p], [0, top], color="green", linewidth=2)
 
-    if peaks_mixture is not None:
-        ax3.plot(hist_bins[:-1], peaks_mixture)
+    #if peaks_mixture is not None:
+    #    ax3.plot(hist_bins[:-1], peaks_mixture)
 
-        ax4.plot(hist_bins[:-1], gauss_corr)
-        ax4.plot([cn_one, cn_one], [0, gauss_corr[peaks_gauss[0]]], color="red", linewidth=2)
+    #    ax4.plot(hist_bins[:-1], gauss_corr)
+    #    ax4.plot([cn_one, cn_one], [0, gauss_corr[peaks_gauss[0]]], color="red", linewidth=2)
 
     plt.show()
 
@@ -300,65 +303,82 @@ def parse_coverage_bed(filename, avg_window, phased):
 
 
 def parse_coverage_bed_cpd(filename, phased):
+    bin_size = None
     cov_by_chrom = defaultdict(list)
+
     with open(filename, "r") as fin:
         for line in fin:
             fields = line.split("\t")
+
+            if bin_size is None:
+                bin_size = int(fields[2]) - int(fields[1])
+                print("Bin size:", bin_size)
+
             min_cov, max_cov = float(fields[3]), float(fields[4])   #phased
             if min_cov + max_cov > 0:
                 cov_by_chrom[fields[0]].append(min_cov + max_cov)
+
+    median_cov = np.median(sum(cov_by_chrom.values(), []))
+    #print("Median coverage:", median_cov)
+
+    MIN_SEG_LEN_BP = 5000000
+    MIN_JUMP_BP = 1000000
+    MIN_SEG_LEN = MIN_SEG_LEN_BP // bin_size
+
     chroms = ["chr" + str(i) for i in range(1, 23)]
+    fig, subplots = plt.subplots(len(chroms) // 2, 2, sharey=False)
 
-    mean_cov = np.mean(sum(cov_by_chrom.values(), []))
-    print("Mean coverage:", mean_cov)
-
-    raw_segments = []
-    segments = []
-    weights = []
-    MIN_SEG_LEN = 100
-    fig, subplots = plt.subplots(len(chroms) // 2, 2)
+    all_segments = []
     for i, ch in enumerate(chroms):
         sp = subplots[i // 2][i % 2]
         coverage = np.array(cov_by_chrom[ch])
         y_max = np.quantile(coverage, 0.90)
 
-        #variance = np.var(coverage)
-        pen_auto = np.log(len(coverage)) * mean_cov ** 2
-        print(f"Chr penalty: {pen_auto:.2f}")
+        pen_auto = np.log(len(coverage)) * median_cov ** 2 / 5
+        print(ch + " ", end="", flush=True)
 
-        algo_pelt = rpt.Pelt(model="l2", min_size=20, jump=10)
+        algo_pelt = rpt.Pelt(model="l2", min_size=MIN_SEG_LEN,
+                             jump=(MIN_JUMP_BP // bin_size))
         algo_pelt.fit(coverage)
-        breakpoints = algo_pelt.predict(pen=1000)
+        breakpoints = algo_pelt.predict(pen=pen_auto)
 
         breakpoints = [0] + breakpoints + [len(coverage)]
         for start, end in zip(breakpoints[:-1], breakpoints[1:]):
             segment = coverage[start : end]
             if len(segment) > MIN_SEG_LEN:
-                segments.append(np.median(segment))
-                #weights.append(len(segment))
-                weights.append(np.log(len(segment)))
-                #raw_segments.append(segment)
+                all_segments.append(segment)
 
-        """
-        for seg in raw_segments:
-            if len(seg) > MIN_SEG_LEN:
-                chunk = len(seg) // MIN_SEG_LEN
-                for i in range(0, len(seg) // chunk):
-                    segments.append(np.median(seg[i * chunk : (i + 1) * chunk]))
-                    weights.append(chunk)
-        """
-
-        ###
+        ### visualization
         sp.plot(coverage)
         for bp in breakpoints:
             sp.plot([bp, bp], [0, y_max], color="red")
         sp.set_ylim(0, y_max)
-        sp.set_label(ch)
+        sp.set_ylabel(ch)
         ###
 
+    print("")
+    print("Total cpd fragments:", len(all_segments))
     plt.show()
 
-    return segments, weights
+    """
+    std_devs = []
+    for seg in all_segments:
+        std_devs.append(np.std(seg))
+    max_dev = np.quantile(std_devs, 0.90)
+    print("Std median:", np.median(std_devs))
+    print("Std Q90", max_dev)
+    """
+    max_dev = 9999  #filtering disabled
+
+    filtered_segments = []
+    filtered_weights = []
+    for seg in all_segments:
+        if np.std(seg) < max_dev:
+            filtered_segments.append(np.median(seg))
+            filtered_weights.append(np.log(len(seg)))
+            #filtered_weights.append(len(seg))
+
+    return filtered_segments, filtered_weights
 
 
 if __name__ == "__main__":
