@@ -28,9 +28,8 @@ import sys
 
 logger = logging.getLogger()
 
-# parameters for modeling
-# N_GAUSS = 4
 
+"""
 def smooth_triangle(data, degree):
     triangle=np.concatenate((np.arange(degree + 1), np.arange(degree)[::-1])) # up then down
     smoothed=[]
@@ -46,14 +45,10 @@ def smooth_triangle(data, degree):
         return smoothed
     else:
         return data
-
-# def parse_segments_cov(filename):
-#     cov = []
-#     for line in open(filename, "r"):
-#         cov.extend(map(float, line.strip().split(",")))
-#     return cov
+"""
 
 
+"""
 def gaussian_mixture(x, peak_positions, sigma=1.0, amplitudes=None):
     if amplitudes is None:
         amplitudes = np.ones(len(peak_positions))
@@ -67,6 +62,7 @@ def gaussian_mixture(x, peak_positions, sigma=1.0, amplitudes=None):
         mixture += amp * scipy.stats.norm.pdf(x, loc=pos, scale=sig)
 
     return mixture
+"""
 
 
 class ProfileException(Exception):
@@ -76,28 +72,29 @@ class ProfileException(Exception):
 def cn_one_inference(input_segments, input_weights, cov_ploidy):
     observed = input_segments
     weights = input_weights
-    hist_mean = weighted_means(input_segments, input_weights)
 
+    # computing observed coverage histogram
     hist_max = np.quantile(input_segments, 0.50) * 2
     hist_range = (0, hist_max)
+    hist_mean = weighted_means(input_segments, input_weights)
     HIST_RATE = hist_max / 100
     print("Hist range", hist_range, "rate", HIST_RATE)
 
-    # computing observed histogram + normalization
     hist_bins = np.arange(hist_range[0], hist_range[1] + 1, HIST_RATE)
     observed_hist = np.histogram(observed, weights=weights, bins=hist_bins)[0]
-    #observed_hist[55:] = 0
-    #observed_hist = [h if h > 6 else 0 for h in observed_hist]
 
-    # Autocorrelation method
+    #gentle smoothing
+    raw_hist = np.copy(observed_hist)
+    observed_hist = scipy.signal.savgol_filter(observed_hist, window_length=5, polyorder=3)
+
+    #computing autocorrelation to find modes
     corr = scipy.signal.correlate(observed_hist, observed_hist, mode="full")
     corr = corr[corr.size // 2:]  # autocorrelation, only positive shift, so getting right half of the array
-    #corr = _custom_corr(observed_hist)
 
     #smoothing correlation a bit
-    smooth_corr = scipy.signal.savgol_filter(corr, window_length=5, polyorder=2)
+    smooth_corr = scipy.signal.savgol_filter(corr, window_length=5, polyorder=3)
 
-    peaks_mixture = None
+    #peaks_mixture = None
     first_min = 0
     max_corr_peak = np.argmax(smooth_corr)
     scaled_peaks = []
@@ -123,15 +120,19 @@ def cn_one_inference(input_segments, input_weights, cov_ploidy):
 
         #Have a first local mimima and at least one peak in the correlation spectra
         max_corr_peak = max(peaks, key=lambda p: smooth_corr[p])
-        print("First minimum", first_min * HIST_RATE)
-        print("Max correlation peak", max_corr_peak * HIST_RATE)
 
         #filtering very small peaks
         HEIGHT_RATE = 0.3
         peaks = [p for p in peaks if smooth_corr[p] >= smooth_corr[max_corr_peak] * HEIGHT_RATE]
         scaled_peaks = [round(p * HIST_RATE, 2) for p in peaks]
-        print("Correlation peaks", scaled_peaks)
 
+        print("First minimum", first_min * HIST_RATE)
+        print("Correlation peaks", scaled_peaks)
+        print("Max correlation peak", max_corr_peak * HIST_RATE)
+
+        cn_one = scaled_peaks[0]
+
+        """
         if len(peaks) == 1:
             cn_one = max_corr_peak * HIST_RATE
             raise ProfileException("Just one correlation peak, using it for CN=1")
@@ -147,6 +148,7 @@ def cn_one_inference(input_segments, input_weights, cov_ploidy):
             peaks_gauss = [max(gauss_corr)]
             raise ProfileException("No histogram peaks found, defaulting to histogram maximum")
         cn_one = peaks_gauss[0] * HIST_RATE
+        """
 
     except ProfileException as e:
         print(e)
@@ -155,32 +157,33 @@ def cn_one_inference(input_segments, input_weights, cov_ploidy):
     print("Haploid CN=1 estimate", cn_one)
 
     #some visualization
-    fig, (ax1, ax2, ax3) = plt.subplots(3, 1)
-    ax1.bar(hist_bins[:-1], observed_hist, width=HIST_RATE, edgecolor='black')
+    fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, layout='constrained')
+    ax1.bar(hist_bins[:-1], raw_hist, width=HIST_RATE, edgecolor='black')
+    ax1.set_title("Segment coverage histogram")
+
+    ax2.bar(hist_bins[:-1], observed_hist, width=HIST_RATE, edgecolor='black')
+    ax2.set_title("Smoothed segment coverage histogram")
 
     corr_top = max(smooth_corr[max_corr_peak], smooth_corr[first_min]) * 2
-    ax2.plot(hist_bins[:-1], corr)
-    ax2.set_ylim(0, corr_top)
-
-    ax3.plot(hist_bins[:-1], smooth_corr)
+    ax3.plot(hist_bins[:-1], corr)
     ax3.set_ylim(0, corr_top)
-    ax3.plot([first_min * HIST_RATE, first_min * HIST_RATE],
+    ax3.set_title("Histogram self-correlation")
+
+    ax4.plot(hist_bins[:-1], smooth_corr)
+    ax4.set_ylim(0, corr_top)
+    ax4.set_title("Smoothed self-correlation")
+    ax4.plot([first_min * HIST_RATE, first_min * HIST_RATE],
              [0, smooth_corr[first_min]], color="red", linewidth=2)
     for p in scaled_peaks:
         top = smooth_corr[int(p / HIST_RATE)]
-        ax3.plot([p, p], [0, top], color="green", linewidth=2)
-
-    #if peaks_mixture is not None:
-    #    ax3.plot(hist_bins[:-1], peaks_mixture)
-
-    #    ax4.plot(hist_bins[:-1], gauss_corr)
-    #    ax4.plot([cn_one, cn_one], [0, gauss_corr[peaks_gauss[0]]], color="red", linewidth=2)
+        ax4.plot([p, p], [0, top], color="green", linewidth=2)
 
     plt.show()
 
     return cn_one, first_min * HIST_RATE, hist_bins, observed_hist
 
 
+"""
 def _custom_corr(array):
     corr = []
     for i in range(1, len(array) - 1):
@@ -199,6 +202,7 @@ def _custom_corr(array):
     corr = [0] + corr + [0]
     print(corr)
     return np.array(corr)
+"""
 
 
 def peak_detection_optimization(args, input_segments, input_weights, tumor_cov):
