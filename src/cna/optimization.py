@@ -122,13 +122,13 @@ def cn_one_inference(input_segments, input_weights, cov_ploidy):
         max_corr_peak = max(peaks, key=lambda p: smooth_corr[p])
 
         #filtering very small peaks
-        HEIGHT_RATE = 0.3
-        peaks = [p for p in peaks if smooth_corr[p] >= smooth_corr[max_corr_peak] * HEIGHT_RATE]
+        MIN_PEAK_RATE = 0.5
+        peaks = [p for p in peaks if smooth_corr[p] >= smooth_corr[max_corr_peak] * MIN_PEAK_RATE]
         scaled_peaks = [round(p * HIST_RATE, 2) for p in peaks]
 
         print("First minimum", first_min * HIST_RATE)
-        print("Correlation peaks", scaled_peaks)
         print("Max correlation peak", max_corr_peak * HIST_RATE)
+        print("Correlation peaks", scaled_peaks)
 
         cn_one = scaled_peaks[0]
 
@@ -364,14 +364,12 @@ def parse_coverage_bed_cpd(filename, phased):
     print("Total cpd fragments:", len(all_segments))
     plt.show()
 
-    """
     std_devs = []
     for seg in all_segments:
         std_devs.append(np.std(seg))
     max_dev = np.quantile(std_devs, 0.90)
     print("Std median:", np.median(std_devs))
     print("Std Q90", max_dev)
-    """
     max_dev = 9999  #filtering disabled
 
     filtered_segments = []
@@ -379,8 +377,8 @@ def parse_coverage_bed_cpd(filename, phased):
     for seg in all_segments:
         if np.std(seg) < max_dev:
             filtered_segments.append(np.median(seg))
-            filtered_weights.append(np.log(len(seg)))
-            #filtered_weights.append(len(seg))
+            #filtered_weights.append(np.log(len(seg)))
+            filtered_weights.append(len(seg))
 
     return filtered_segments, filtered_weights
 
