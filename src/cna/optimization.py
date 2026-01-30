@@ -1,21 +1,23 @@
 #!/usr/bin/env python3
 
-import scipy.stats
-import scipy.optimize
 import scipy.signal
-import scipy.spatial
 import random
 import numpy as np
 import logging
-import plotly.graph_objects as go
-import plotly
 
 import ruptures as rpt
 from collections import defaultdict
 import matplotlib.pyplot as plt
 
 
-def weighted_means(vals, weights):
+logger = logging.getLogger()
+
+
+class ProfileException(Exception):
+    pass
+
+
+def _weighted_means(vals, weights):
     if not len(vals) == len(weights) or sum(weights) == 0:
         return 0
     weighted_vals = []
@@ -23,62 +25,23 @@ def weighted_means(vals, weights):
     for tup in vals_n_weights:
         weighted_vals.append(round(tup[0] * tup[1], 3))
     return sum(weighted_vals)/sum(weights)
-import sys
-
-
-logger = logging.getLogger()
-
-
-"""
-def smooth_triangle(data, degree):
-    triangle=np.concatenate((np.arange(degree + 1), np.arange(degree)[::-1])) # up then down
-    smoothed=[]
-
-    for i in range(degree, len(data) - degree * 2):
-        point=data[i:i + len(triangle)] * triangle
-        smoothed.append(np.sum(point)/np.sum(triangle))
-    if len(data) > degree:
-        # Handle boundaries
-        smoothed=[smoothed[0]]*int(degree + degree/2) + smoothed
-        while len(smoothed) < len(data):
-            smoothed.append(smoothed[-1])
-        return smoothed
-    else:
-        return data
-"""
-
-
-"""
-def gaussian_mixture(x, peak_positions, sigma=1.0, amplitudes=None):
-    if amplitudes is None:
-        amplitudes = np.ones(len(peak_positions))
-
-    if np.isscalar(sigma):
-        sigma = np.full(len(peak_positions), sigma)
-
-    mixture = np.zeros_like(x, dtype=float)
-
-    for pos, amp, sig in zip(peak_positions, amplitudes, sigma):
-        mixture += amp * scipy.stats.norm.pdf(x, loc=pos, scale=sig)
-
-    return mixture
-"""
-
-
-class ProfileException(Exception):
-    pass
 
 
 def cn_one_inference(input_segments, input_weights, cov_ploidy):
+    """
+    Input: segments set with given coverage and length. Haploid coverage should use cov_ploidy=1, diploid=2
+    """
     observed = input_segments
     weights = input_weights
 
     # computing observed coverage histogram
     hist_max = np.quantile(input_segments, 0.50) * 2
     hist_range = (0, hist_max)
-    hist_mean = weighted_means(input_segments, input_weights)
+    hist_mean = _weighted_means(input_segments, input_weights)
     HIST_RATE = hist_max / 100
-    print("Hist range", hist_range, "rate", HIST_RATE)
+
+    logger.info("CN=1 inference")
+    logger.info("Hist range {}, rate: {}".format(hist_range, HIST_RATE))
 
     hist_bins = np.arange(hist_range[0], hist_range[1] + 1, HIST_RATE)
     observed_hist = np.histogram(observed, weights=weights, bins=hist_bins)[0]
@@ -87,21 +50,6 @@ def cn_one_inference(input_segments, input_weights, cov_ploidy):
     #gentle smoothing
     raw_hist = np.copy(observed_hist)
     observed_hist = scipy.signal.savgol_filter(observed_hist, window_length=5, polyorder=3)
-
-    """
-    histogram_threshold = 0
-    total_hist = sum(observed_hist)
-    running_sum = 0
-    for val in sorted(observed_hist, reverse=True):
-        running_sum += val
-        if running_sum > 0.70 * total_hist:
-            histogram_threshold = val
-            break
-    print("Histogram threshold", histogram_threshold)
-    observed_hist = [x if x > histogram_threshold else 0 for x in observed_hist]
-    """
-
-    #hist_of_hist, bin_edges = np.histogram(observed_hist[observed_hist > 0], bins=50)
 
     #computing autocorrelation to find modes
     corr = scipy.signal.correlate(observed_hist, observed_hist, mode="full")
@@ -129,25 +77,19 @@ def cn_one_inference(input_segments, input_weights, cov_ploidy):
 
         #making sure all peaks are past minima, although it always should be the case
         first_min = minima[0][0]
-        print("First minimum", first_min * HIST_RATE)
+        logger.info("First minimum {}".format(first_min * HIST_RATE))
         filtered_peak_ids = [i for i in range(len(peaks)) if peaks[i] > first_min]
 
+        #Estimating signal to noise
         snr = max(smooth_corr[first_min:]) / max(smooth_corr[first_min], 0.001)
 
-        #abs_prominence = [peak_prop["prominences"][i] for i in range(len(peaks))]
-        #rel_prominence = [peak_prop["prominences"][i] / smooth_corr[peaks[i]] for i in range(len(peaks))]
-        #rel_to_top = [smooth_corr[p] / smooth_corr[max_corr_peak] for p in peaks]
-        #print("Relative prominence", rel_prominence)
-        #print("Relative height to top", rel_to_top)
-        #max_prom_id = max(range(len(peaks)), key=lambda i: abs_prominence[i])
-
         #Have a first local mimima and at least one peak in the correlation spectra
-        print("Initial peaks", [round(peaks[i] * HIST_RATE, 2) for i in filtered_peak_ids])
+        logger.info("Initial peaks: {}".format([round(peaks[i] * HIST_RATE, 2) for i in filtered_peak_ids]))
 
         #Only keep peaks with relative prominence >0.25
         MIN_REL_PROM = 0.25
         filtered_peak_ids = [i for i in filtered_peak_ids if peak_prop["prominences"][i] / smooth_corr[peaks[i]] > MIN_REL_PROM]
-        print("Peaks w/ prom > 0.25", [round(peaks[i] * HIST_RATE, 2) for i in filtered_peak_ids])
+        logger.info("Peaks w/ prom > 0.25: {}".format([round(peaks[i] * HIST_RATE, 2) for i in filtered_peak_ids]))
 
         if len(filtered_peak_ids) == 0:
             cn_one = np.argmax(observed_hist) * HIST_RATE / cov_ploidy
@@ -158,9 +100,9 @@ def cn_one_inference(input_segments, input_weights, cov_ploidy):
         max_peak_id = max(filtered_peak_ids, key=lambda p: smooth_corr[peaks[p]])
         min_height = max(smooth_corr[peaks[max_peak_id]], smooth_corr[first_min]) * MIN_HEIGHT_TO_TOP
 
-        print("Max peak", peaks[max_peak_id] * HIST_RATE)
+        logger.info("Max peak: {}".format(peaks[max_peak_id] * HIST_RATE))
         filtered_peak_ids = [i for i in filtered_peak_ids if smooth_corr[peaks[i]] > min_height]
-        print("Peaks >0.5 of top/saddle", [round(peaks[i] * HIST_RATE, 2) for i in filtered_peak_ids])
+        logger.info("Peaks >0.5 of top/saddle: {}".format([round(peaks[i] * HIST_RATE, 2) for i in filtered_peak_ids]))
 
         if len(filtered_peak_ids) == 0:
             cn_one = np.argmax(observed_hist) * HIST_RATE / cov_ploidy
@@ -171,27 +113,21 @@ def cn_one_inference(input_segments, input_weights, cov_ploidy):
         cn_one = scaled_peaks[0]
 
     except ProfileException as e:
-        print(e)
+        logger.info(e)
         pass
 
-    print("Signal to noise", snr)
-    print("Haploid CN=1 estimate", cn_one)
+    logger.info("Signal to noise: {}".format(snr))
+    logger.info("Haploid CN=1 estimate: {}".format(cn_one))
 
     #some visualization
     fig, (ax1, ax2) = plt.subplots(2, 1, layout='constrained')
     ax1.bar(hist_bins[:-1], observed_hist, width=HIST_RATE, edgecolor='black')
     ax1.set_title("Segment coverage histogram")
 
-    #ax2.bar(hist_bins[:-1], observed_hist, width=HIST_RATE, edgecolor='black')
-    #ax2.set_title("Smoothed segment coverage histogram")
-
     if max_peak_id is not None:
         corr_top = max(smooth_corr[peaks[max_peak_id]], smooth_corr[first_min]) * 2
     else:
         corr_top = smooth_corr[first_min] * 2
-    #ax3.plot(hist_bins[:-1], corr)
-    #ax3.set_ylim(0, corr_top)
-    #ax3.set_title("Histogram self-correlation")
 
     ax2.plot(hist_bins[:-1], smooth_corr)
     ax2.set_ylim(0, corr_top)
@@ -203,44 +139,26 @@ def cn_one_inference(input_segments, input_weights, cov_ploidy):
         ax2.plot([p, p], [0, top], color="green", linewidth=2)
 
     plt.show()
+    ###
 
     return cn_one, first_min * HIST_RATE, hist_bins, observed_hist
 
 
-"""
-def _custom_corr(array):
-    corr = []
-    for i in range(1, len(array) - 1):
-        #shifted = np.roll(array, i)
-        #shifted[:i] = 0
-        part_a = array[:-i]
-        part_b = array[i:]
-
-        #corr.append(scipy.spatial.distance.braycurtis(part_a, part_b))
-        pearson = scipy.stats.pearsonr(part_a, part_b)
-        print(pearson)
-        if not np.isnan(pearson.statistic):
-            corr.append(1 + pearson.statistic)
-        else:
-            corr.append(0)
-    corr = [0] + corr + [0]
-    print(corr)
-    return np.array(corr)
-"""
-
-
 def peak_detection_optimization(args, input_segments, input_weights, tumor_cov):
+    """
+    Older functions that is called from main
+    """
     COV_PLOIDY = 2  #change to 1 if using haploid coverage as input
     cn_one, first_min, hist_x, hist_y = cn_one_inference(input_segments, input_weights, COV_PLOIDY)
 
     #overwriting with command line arguments if needed
     is_half_peak = False
     if args.consider_wgd:
-        print("CN=1 overwritten by command line argument")
+        logger.info("CN=1 overwritten by command line argument")
         is_half_peak = True
 
     if args.first_copy != 0:
-        print("CN=1 overwritten by command line argument")
+        logger.info("CN=1 overwritten by command line argument")
         is_half_peak = False
         cn_one = args.first_copy
     ###
@@ -265,16 +183,12 @@ def peak_detection_optimization(args, input_segments, input_weights, tumor_cov):
             hist_x, hist_y, single_copy_cov, single_copy_cov_half)
 
 
-class Dummy:
-    pass
-
-
-def parse_coverage_bed(filename, avg_window, phased):
+def parse_coverage_bed_windows(filename, phased):
     """
-    Reading Wakhan bed with phase-corrected binned coverage
+    Reading Wakhan bed with phase-corrected binned coverage, average by larger window
     """
+    WINDOW = 5000000    #5Mb
     bin_size = None
-
     segments = []
     weights = []
 
@@ -287,7 +201,7 @@ def parse_coverage_bed(filename, avg_window, phased):
             fields = line.split("\t")
             if bin_size is None:
                 bin_size = int(fields[2]) - int(fields[1])
-                print("Bin size:", bin_size)
+                logger.info("CPD bin size: {}".format(bin_size))
 
             min_cov, max_cov = float(fields[3]), float(fields[4])   #phased
             if min_cov + max_cov > 0:
@@ -301,7 +215,7 @@ def parse_coverage_bed(filename, avg_window, phased):
                 hp3.append(float(fields[3]))
             """
 
-            if len(hp1) >= round(avg_window / bin_size):
+            if len(hp1) >= round(WINDOW / bin_size):
                 if phased:
                     raw_segments.append(hp1)
                     raw_segments.append(hp2)
@@ -315,22 +229,25 @@ def parse_coverage_bed(filename, avg_window, phased):
     for seg in raw_segments:
         std_devs.append(np.std(seg))
     max_dev = np.quantile(std_devs, 0.90)
-    print("Std median:", np.median(std_devs))
-    print("Std Q90", max_dev)
+    logger.info("Std median: {}".format(np.median(std_devs)))
+    logger.info("Std Q90: {}".format(max_dev))
 
     for seg in raw_segments:
         if np.std(seg) < max_dev:
             segments.append(np.median(seg))
-
-    #print(len(raw_segments))
-    #for seg in raw_segments:
-    #    print(np.median(seg), np.std(seg))
 
     weights = [1] * len(segments)
     return segments, weights
 
 
 def parse_coverage_bed_cpd(filename, phased):
+    """
+    Parses Wakhan phased_coverage file, fragments with CPD and returns segments coverage and weights
+    """
+
+    MIN_SEG_LEN_BP = 5000000
+    MIN_JUMP_BP = 1000000
+
     bin_size = None
     cov_by_chrom = defaultdict(list)
     cov_by_chrom_hp1 = defaultdict(list)
@@ -342,7 +259,7 @@ def parse_coverage_bed_cpd(filename, phased):
 
             if bin_size is None:
                 bin_size = int(fields[2]) - int(fields[1])
-                print("Bin size:", bin_size)
+                logger.info("CPD bin size: {}".format(bin_size))
 
             min_cov, max_cov = float(fields[3]), float(fields[4])   #phased
             #min_cov, max_cov = float(fields[3]), 0
@@ -357,15 +274,13 @@ def parse_coverage_bed_cpd(filename, phased):
             cov_by_chrom[chr] = cov_by_chrom_hp1[chr] + cov_by_chrom_hp2[chr]
 
     median_cov = np.median(sum(cov_by_chrom.values(), []))
-    #print("Median coverage:", median_cov)
 
-    MIN_SEG_LEN_BP = 5000000
-    MIN_JUMP_BP = 1000000
     MIN_SEG_LEN = MIN_SEG_LEN_BP // bin_size
 
     chroms = ["chr" + str(i) for i in range(1, 23)]
     fig, subplots = plt.subplots(len(chroms) // 2, 2, sharey=False)
 
+    logger.info("Segmenting input coverage")
     all_segments = []
     for i, ch in enumerate(chroms):
         sp = subplots[i // 2][i % 2]
@@ -373,8 +288,6 @@ def parse_coverage_bed_cpd(filename, phased):
         y_max = np.quantile(coverage, 0.90)
 
         pen_auto = np.log(len(coverage)) * median_cov ** 2 / 5
-        print(ch + " ", end="", flush=True)
-
         algo_pelt = rpt.Pelt(model="l2", min_size=MIN_SEG_LEN,
                              jump=(MIN_JUMP_BP // bin_size))
         algo_pelt.fit(coverage)
@@ -400,8 +313,7 @@ def parse_coverage_bed_cpd(filename, phased):
                 sp.plot([bp1, bp2], [seg_cov, seg_cov], color="red")
         ###
 
-    print("")
-    print("Total cpd fragments:", len(all_segments))
+    logger.info("Total cpd fragments: {}".format(len(all_segments)))
     plt.show()
 
     """
@@ -425,7 +337,19 @@ def parse_coverage_bed_cpd(filename, phased):
     return filtered_segments, filtered_weights
 
 
+#entry point for debugging
 if __name__ == "__main__":
+    import sys
+
+    log_formatter = logging.Formatter("[%(asctime)s] %(name)s: %(levelname)s: " "%(message)s", "%Y-%m-%d %H:%M:%S")
+    console_formatter = logging.Formatter("[%(asctime)s] %(levelname)s: " "%(message)s", "%Y-%m-%d %H:%M:%S")
+    console_log = logging.StreamHandler()
+    console_log.setFormatter(console_formatter)
+    console_log.setLevel(logging.INFO)
+
+    logger.setLevel(logging.INFO)
+    logger.addHandler(console_log)
+
     segments = []
     weights = []
 
@@ -437,12 +361,13 @@ if __name__ == "__main__":
             segments.append(float(fields[0]))
             weights.append(int(fields[1]))
             #weights.append(1)
-
     """
-    WINDOW = 5000000    #5Mb
-    segments, weights = parse_coverage_bed_cpd(sys.argv[1], phased=False)
-    #segments, weights = parse_coverage_bed(sys.argv[1], WINDOW, phased=False)
 
+    segments, weights = parse_coverage_bed_cpd(sys.argv[1], phased=False)
+    #segments, weights = parse_coverage_bed_windows(sys.argv[1], phased=False)
+
+    class Dummy:
+        pass
     args = Dummy()
     args.first_copy = 0
     args.consider_wgd = False
