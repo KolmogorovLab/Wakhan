@@ -82,10 +82,26 @@ def cn_one_inference(input_segments, input_weights, cov_ploidy):
 
     hist_bins = np.arange(hist_range[0], hist_range[1] + 1, HIST_RATE)
     observed_hist = np.histogram(observed, weights=weights, bins=hist_bins)[0]
+    #observed_hist[0] = 0
 
     #gentle smoothing
     raw_hist = np.copy(observed_hist)
     observed_hist = scipy.signal.savgol_filter(observed_hist, window_length=5, polyorder=3)
+
+    """
+    histogram_threshold = 0
+    total_hist = sum(observed_hist)
+    running_sum = 0
+    for val in sorted(observed_hist, reverse=True):
+        running_sum += val
+        if running_sum > 0.70 * total_hist:
+            histogram_threshold = val
+            break
+    print("Histogram threshold", histogram_threshold)
+    observed_hist = [x if x > histogram_threshold else 0 for x in observed_hist]
+    """
+
+    #hist_of_hist, bin_edges = np.histogram(observed_hist[observed_hist > 0], bins=50)
 
     #computing autocorrelation to find modes
     corr = scipy.signal.correlate(observed_hist, observed_hist, mode="full")
@@ -96,15 +112,16 @@ def cn_one_inference(input_segments, input_weights, cov_ploidy):
 
     #peaks_mixture = None
     first_min = 0
-    max_corr_peak = np.argmax(smooth_corr)
+    max_peak_id = None
     scaled_peaks = []
+    snr = 0
 
     try:
         #check that at least one local minimum smaller than mean coverage  exists -> self-correlation makes sense
         #if yes, will find peaks after th minimum. if not, can't infer much from this profile
         minima = scipy.signal.argrelmin(smooth_corr)
-        peaks, stats = scipy.signal.find_peaks(smooth_corr, distance=5,
-                                               width=3, rel_height=1.0)
+        peaks, peak_prop = scipy.signal.find_peaks(smooth_corr, distance=5,
+                                                   width=1, rel_height=1.0)
 
         if len(minima[0]) == 0 or minima[0][0] >= hist_mean:
             cn_one = np.argmax(observed_hist) * HIST_RATE / cov_ploidy
@@ -112,71 +129,78 @@ def cn_one_inference(input_segments, input_weights, cov_ploidy):
 
         #making sure all peaks are past minima, although it always should be the case
         first_min = minima[0][0]
-        peaks = [p for p in peaks if p > first_min]
+        print("First minimum", first_min * HIST_RATE)
+        filtered_peak_ids = [i for i in range(len(peaks)) if peaks[i] > first_min]
 
-        if len(peaks) == 0:
-            cn_one = np.argmax(observed_hist) * HIST_RATE / cov_ploidy
-            raise ProfileException("No histogram peaks found, defaulting to histogram maximum")
+        snr = max(smooth_corr[first_min:]) / max(smooth_corr[first_min], 0.001)
+
+        #abs_prominence = [peak_prop["prominences"][i] for i in range(len(peaks))]
+        #rel_prominence = [peak_prop["prominences"][i] / smooth_corr[peaks[i]] for i in range(len(peaks))]
+        #rel_to_top = [smooth_corr[p] / smooth_corr[max_corr_peak] for p in peaks]
+        #print("Relative prominence", rel_prominence)
+        #print("Relative height to top", rel_to_top)
+        #max_prom_id = max(range(len(peaks)), key=lambda i: abs_prominence[i])
 
         #Have a first local mimima and at least one peak in the correlation spectra
-        max_corr_peak = max(peaks, key=lambda p: smooth_corr[p])
+        print("Initial peaks", [round(peaks[i] * HIST_RATE, 2) for i in filtered_peak_ids])
 
-        #filtering very small peaks
-        MIN_PEAK_RATE = 0.5
-        peaks = [p for p in peaks if smooth_corr[p] >= smooth_corr[max_corr_peak] * MIN_PEAK_RATE]
-        scaled_peaks = [round(p * HIST_RATE, 2) for p in peaks]
+        #Only keep peaks with relative prominence >0.25
+        MIN_REL_PROM = 0.25
+        filtered_peak_ids = [i for i in filtered_peak_ids if peak_prop["prominences"][i] / smooth_corr[peaks[i]] > MIN_REL_PROM]
+        print("Peaks w/ prom > 0.25", [round(peaks[i] * HIST_RATE, 2) for i in filtered_peak_ids])
 
-        print("First minimum", first_min * HIST_RATE)
-        print("Max correlation peak", max_corr_peak * HIST_RATE)
-        print("Correlation peaks", scaled_peaks)
-
-        cn_one = scaled_peaks[0]
-
-        """
-        if len(peaks) == 1:
-            cn_one = max_corr_peak * HIST_RATE
-            raise ProfileException("Just one correlation peak, using it for CN=1")
-
-        #now, we have 2+ peaks, need to find the distance between them
-        peaks_mixture = gaussian_mixture(hist_bins[:-1], scaled_peaks, sigma=(1 * HIST_RATE),
-                                         amplitudes=[smooth_corr[int(p / HIST_RATE)] for p in scaled_peaks])
-
-        gauss_corr = scipy.signal.correlate(peaks_mixture, peaks_mixture, mode="full")[len(peaks_mixture) - 1:]
-        peaks_gauss, stats_gauss = scipy.signal.find_peaks(gauss_corr)
-        if len(peaks_gauss) == 0:
+        if len(filtered_peak_ids) == 0:
             cn_one = np.argmax(observed_hist) * HIST_RATE / cov_ploidy
-            peaks_gauss = [max(gauss_corr)]
             raise ProfileException("No histogram peaks found, defaulting to histogram maximum")
-        cn_one = peaks_gauss[0] * HIST_RATE
-        """
+
+        #Now, filter peaks that are too small, compared to the top peak
+        MIN_HEIGHT_TO_TOP = 0.5
+        max_peak_id = max(filtered_peak_ids, key=lambda p: smooth_corr[peaks[p]])
+        min_height = max(smooth_corr[peaks[max_peak_id]], smooth_corr[first_min]) * MIN_HEIGHT_TO_TOP
+
+        print("Max peak", peaks[max_peak_id] * HIST_RATE)
+        filtered_peak_ids = [i for i in filtered_peak_ids if smooth_corr[peaks[i]] > min_height]
+        print("Peaks >0.5 of top/saddle", [round(peaks[i] * HIST_RATE, 2) for i in filtered_peak_ids])
+
+        if len(filtered_peak_ids) == 0:
+            cn_one = np.argmax(observed_hist) * HIST_RATE / cov_ploidy
+            max_peak_id = None
+            raise ProfileException("No histogram peaks found, defaulting to histogram maximum")
+
+        scaled_peaks = [round(peaks[p] * HIST_RATE, 2) for p in filtered_peak_ids]
+        cn_one = scaled_peaks[0]
 
     except ProfileException as e:
         print(e)
         pass
 
+    print("Signal to noise", snr)
     print("Haploid CN=1 estimate", cn_one)
 
     #some visualization
-    fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, layout='constrained')
-    ax1.bar(hist_bins[:-1], raw_hist, width=HIST_RATE, edgecolor='black')
+    fig, (ax1, ax2) = plt.subplots(2, 1, layout='constrained')
+    ax1.bar(hist_bins[:-1], observed_hist, width=HIST_RATE, edgecolor='black')
     ax1.set_title("Segment coverage histogram")
 
-    ax2.bar(hist_bins[:-1], observed_hist, width=HIST_RATE, edgecolor='black')
-    ax2.set_title("Smoothed segment coverage histogram")
+    #ax2.bar(hist_bins[:-1], observed_hist, width=HIST_RATE, edgecolor='black')
+    #ax2.set_title("Smoothed segment coverage histogram")
 
-    corr_top = max(smooth_corr[max_corr_peak], smooth_corr[first_min]) * 2
-    ax3.plot(hist_bins[:-1], corr)
-    ax3.set_ylim(0, corr_top)
-    ax3.set_title("Histogram self-correlation")
+    if max_peak_id is not None:
+        corr_top = max(smooth_corr[peaks[max_peak_id]], smooth_corr[first_min]) * 2
+    else:
+        corr_top = smooth_corr[first_min] * 2
+    #ax3.plot(hist_bins[:-1], corr)
+    #ax3.set_ylim(0, corr_top)
+    #ax3.set_title("Histogram self-correlation")
 
-    ax4.plot(hist_bins[:-1], smooth_corr)
-    ax4.set_ylim(0, corr_top)
-    ax4.set_title("Smoothed self-correlation")
-    ax4.plot([first_min * HIST_RATE, first_min * HIST_RATE],
+    ax2.plot(hist_bins[:-1], smooth_corr)
+    ax2.set_ylim(0, corr_top)
+    ax2.set_title("Self-correlation")
+    ax2.plot([first_min * HIST_RATE, first_min * HIST_RATE],
              [0, smooth_corr[first_min]], color="red", linewidth=2)
     for p in scaled_peaks:
         top = smooth_corr[int(p / HIST_RATE)]
-        ax4.plot([p, p], [0, top], color="green", linewidth=2)
+        ax2.plot([p, p], [0, top], color="green", linewidth=2)
 
     plt.show()
 
@@ -309,6 +333,8 @@ def parse_coverage_bed(filename, avg_window, phased):
 def parse_coverage_bed_cpd(filename, phased):
     bin_size = None
     cov_by_chrom = defaultdict(list)
+    cov_by_chrom_hp1 = defaultdict(list)
+    cov_by_chrom_hp2 = defaultdict(list)
 
     with open(filename, "r") as fin:
         for line in fin:
@@ -319,8 +345,16 @@ def parse_coverage_bed_cpd(filename, phased):
                 print("Bin size:", bin_size)
 
             min_cov, max_cov = float(fields[3]), float(fields[4])   #phased
+            #min_cov, max_cov = float(fields[3]), 0
             if min_cov + max_cov > 0:
-                cov_by_chrom[fields[0]].append(min_cov + max_cov)
+                cov_by_chrom_hp1[fields[0]].append(min_cov)
+                cov_by_chrom_hp2[fields[0]].append(max_cov)
+
+    for chr in cov_by_chrom_hp1:
+        if not phased:
+            cov_by_chrom[chr] = [x + y for (x, y) in zip(cov_by_chrom_hp1[chr], cov_by_chrom_hp2[chr])]
+        else:
+            cov_by_chrom[chr] = cov_by_chrom_hp1[chr] + cov_by_chrom_hp2[chr]
 
     median_cov = np.median(sum(cov_by_chrom.values(), []))
     #print("Median coverage:", median_cov)
@@ -358,18 +392,26 @@ def parse_coverage_bed_cpd(filename, phased):
             sp.plot([bp, bp], [0, y_max], color="red")
         sp.set_ylim(0, y_max)
         sp.set_ylabel(ch)
+
+        for bp1, bp2 in zip(breakpoints[:-1], breakpoints[1:]):
+            segment = coverage[bp1 : bp2]
+            if len(segment) > 1:
+                seg_cov = np.median(segment)
+                sp.plot([bp1, bp2], [seg_cov, seg_cov], color="red")
         ###
 
     print("")
     print("Total cpd fragments:", len(all_segments))
     plt.show()
 
+    """
     std_devs = []
     for seg in all_segments:
         std_devs.append(np.std(seg))
     max_dev = np.quantile(std_devs, 0.90)
     print("Std median:", np.median(std_devs))
     print("Std Q90", max_dev)
+    """
     max_dev = 9999  #filtering disabled
 
     filtered_segments = []
@@ -398,7 +440,7 @@ if __name__ == "__main__":
 
     """
     WINDOW = 5000000    #5Mb
-    segments, weights = parse_coverage_bed_cpd(sys.argv[1], None)
+    segments, weights = parse_coverage_bed_cpd(sys.argv[1], phased=False)
     #segments, weights = parse_coverage_bed(sys.argv[1], WINDOW, phased=False)
 
     args = Dummy()
