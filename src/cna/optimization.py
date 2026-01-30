@@ -4,6 +4,7 @@ import scipy.signal
 import random
 import numpy as np
 import logging
+import os
 
 import ruptures as rpt
 from collections import defaultdict

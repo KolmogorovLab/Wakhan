@@ -590,7 +590,7 @@ def cna_process(args):
     ###load coverage from phase_corrected_coverage.ps
     phased_coverage_bed = os.path.join(args.out_dir_plots, 'coverage_data', 'phase_corrected_coverage.csv')
     cn_coverage_plot = os.path.join(args.out_dir_plots, 'coverage_data', 'cn_coverage.png')
-    opt_seg_cov, opt_seg_weights = parse_coverage_bed_cpd(phased_coverage_bed, phased=False, plot_path=cn_peaks_plot)
+    opt_seg_cov, opt_seg_weights = parse_coverage_bed_cpd(phased_coverage_bed, phased=False, plot_path=cn_coverage_plot)
     centers, is_half_peak, centers_half, subclonals, x_axis, observed_hist, single_copy_cov, single_copy_cov_half = \
             peak_detection_optimization(args, opt_seg_cov, opt_seg_weights)
     #logger.info("First minimum %s", first_min)
