@@ -70,7 +70,9 @@ def copy_numbers_assignment_haplotypes(args, tumor_cov, max_limit, single_copy_c
     data = []
     average_p_value = []
     #max_limit = 3/2 #debug
-    for normal_coverage in np.arange(0, max_limit, 0.1):
+    logger.info("Fitting purity via grid search")
+    STEP = 0.1
+    for normal_coverage in np.arange(0, max_limit, STEP):
         if args.tumor_phased_vcf:
             df_hp1, df_hp2, df_segs_hp1, df_segs_hp2 = update_segs_with_normal_optimized(df_hp1_base, df_hp2_base, df_segs_hp1_base, df_segs_hp2_base, normal_coverage, args)
         else:
@@ -108,8 +110,8 @@ def copy_numbers_assignment_haplotypes(args, tumor_cov, max_limit, single_copy_c
         if (float(args.purity_range.split('-')[0]) <= tumor_purity <= float(args.purity_range.split('-')[1])) and (float(args.ploidy_range.split('-')[0]) <= overall_ploidy <= float(args.ploidy_range.split('-')[1])):
             average_p_value.append(p_value)
             data.append([overall_ploidy, tumor_purity, cen_out, p_value, dna_tumor_purity, normal_coverage/2])
-            logger.info("overall_ploidy: %s, dna_tumor_purity: %s, cell_tumor_purity: %s, average_p_value: %s, for i: %s,  centers: %s, norm frac: %s",
-                overall_ploidy, dna_tumor_purity, cellular_tumor_purity, p_value, normal_coverage, cen_out[0:4], normal_fraction)
+            logger.debug("normal_cov: %.2f, ploidy: %.2f, dna_tumor_purity: %.2f, cell_tumor_purity: %.2f, average_p_value: %.4f, centers: %s, norm frac: %s",
+                normal_coverage, overall_ploidy, dna_tumor_purity, cellular_tumor_purity, p_value, cen_out[0:4], normal_fraction)
 
     plot_ploidy_purity_p_values(args, [data[n][0] for n in range(len(data))], [data[n][1] for n in range(len(data))], [data[n][3] for n in range(len(data))])
 
@@ -129,10 +131,10 @@ def copy_numbers_assignment_haplotypes(args, tumor_cov, max_limit, single_copy_c
                 df_segs_hp2 = df_segs_hp2_base.copy()
 
             cen_out = data[j][2]
-            logger.info('Normal optimized clusters means: %s', cen_out)
             integer_fractional_means = sorted([i for i in range(0, len(cen_out))])
             p_value_confidence = round(data[j][3], 2)
             logger.info('Generating coverage/copy numbers plots genome wide for solution with tumor cellular fraction {0}, ploidy {1} and tumor dna fraction {2}'.format(args.tumor_purity, args.tumor_ploidy, dna_tumor_fraction))
+            logger.debug('Normal optimized clusters means: %s', cen_out)
             solutions_df.loc[j] = [str(args.tumor_ploidy)+'_'+str(args.tumor_purity)+'_'+str(p_value_confidence), dna_tumor_fraction, args.tumor_purity, args.tumor_ploidy, p_value_confidence]
 
             #if args.breakpoints:
@@ -665,8 +667,10 @@ def cna_process(args):
                 copy_number_plots_genome_subclonal(cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, None, loh_regions, df_snps_in_csv, False)
     else:
         ################################
+        logging.info("Optmizing for the primary CN=1 peak")
         copy_numbers_assignment_haplotypes(args, tumor_cov, max_limit, single_copy_cov, centers, subclonals, df_hp1, df_hp2, df_segs_hp1, df_segs_hp2, snps_cpd_means_df, csv_df_snps_mean, df_snps_in_csv, df_unphased, x_axis, observed_hist, False)
         if is_half_peak:
+            logging.info("Optmizing for an alternative CN=1 peak")
             copy_numbers_assignment_haplotypes(args, tumor_cov, max_limit, single_copy_cov_half, centers_half, subclonals, df_hp1, df_hp2, df_segs_hp1, df_segs_hp2, snps_cpd_means_df, csv_df_snps_mean, df_snps_in_csv, df_unphased, x_axis, observed_hist, False)
 
         if len(solutions_df):

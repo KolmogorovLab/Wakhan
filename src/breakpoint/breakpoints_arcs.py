@@ -8,7 +8,11 @@ logger = logging.getLogger()
 from src.utils.chromosome import get_contigs_list, df_chromosomes_sorter
 
 def get_all_breakpoints_data(edges, edges_chr, height, path, args):
+    _logging_level = logger.level
+    logger.setLevel(logging.CRITICAL)
     my_parser = VCFParser(infile=path, split_variants=True, check_info=True)
+    logger.setLevel(_logging_level)
+
     chroms = get_contigs_list(args.contigs)
     bp_junctions_inv = [[]]
     bp_junctions_ins = [[]]

@@ -43,7 +43,7 @@ def copy_number_plots_chromosomes(df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_h
 
 def copy_number_plots_per_chromosome(centers, integer_fractional_means, ref_start_values, df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, args, chrom, html_graphs, loh_region_starts, loh_region_ends, p_value, is_half):
 
-    logger.info('Plots generation for ' + chrom)
+    logger.debug('Plots generation for ' + chrom)
     fig = go.Figure()
 
     #df_cnr_hp1_chrom = df_cnr_hp1[df_cnr_hp1['chromosome'] == chrom]
@@ -65,7 +65,7 @@ def copy_number_plots_per_chromosome(centers, integer_fractional_means, ref_star
     haplotype_2_end_values_copyratios = df_segs_hp2_chrom.end.values.tolist()
 
     if not args.copynumbers_disable:
-        logger.info('copynumbers plots module')
+        #logger.info('copynumbers plots module')
         OFFSET=0
         #haplotype_1_values_cnr = list(np.asarray(haplotype_1_values_cnr) + OFFSET)
         #haplotype_2_values_cnr = list(np.asarray(haplotype_2_values_cnr) - OFFSET)
@@ -218,7 +218,7 @@ def coverage_plots_chromosomes(df, df_phasesets, args, thread_pool):
 
     for index, chrom in enumerate(chroms):
         if chrom in chroms:# and (chrom == '1' or chrom == '18'):# and (chrom == 'chr5' or chrom == 'chr16'):
-            logger.info('Plots generation for ' + chrom)
+            logger.debug('Plots generation for ' + chrom)
             fig = go.Figure()
 
             df_chrom = df[df['chr'] == chrom]
@@ -342,7 +342,7 @@ def coverage_plots_chromosomes(df, df_phasesets, args, thread_pool):
             #plots_add_markers_lines(fig)
             ################################################################################
             if args.phaseblocks_enable:
-                logger.info('phaseblocks plots module')
+                #logger.info('phaseblocks plots module')
                 gaps_values = np.full(len(haplotype_1_values_phasesets), 'None')
                 haplotype_1_phaseblocks_values = list(itertools.chain.from_iterable(zip(haplotype_1_values_phasesets, haplotype_1_values_phasesets, gaps_values)))
                 haplotype_2_phaseblocks_values = list(itertools.chain.from_iterable(zip(haplotype_2_values_phasesets, haplotype_2_values_phasesets, gaps_values)))
@@ -492,7 +492,7 @@ def breakpoints_segments_means(df, df_phasesets, args, thread_pool):
 
     for index, chrom in enumerate(chroms):
         if chrom in chroms:# and (chrom == '1' or chrom == '18'):# and (chrom == 'chr5' or chrom == 'chr16'):
-            logger.info('Mean segmentation for ' + chrom)
+            logger.debug('Mean segmentation for ' + chrom)
             fig = go.Figure()
 
             df_chrom = df[df['chr'] == chrom]
@@ -621,7 +621,7 @@ def plot_coverage_raw(args, chrom, html_graphs, ref_start_values, ref_end_values
     #plots_add_markers_lines(fig)
 
     if args.phaseblocks_enable:
-        logger.info('phaseblocks plots module')
+        #logger.info('phaseblocks plots module')
         gaps_values = np.full(len(haplotype_1_values_phasesets), 'None')
         haplotype_1_phaseblocks_values = list(itertools.chain.from_iterable(zip(haplotype_1_values_phasesets, haplotype_1_values_phasesets, gaps_values)))
         haplotype_2_phaseblocks_values = list(itertools.chain.from_iterable(zip(haplotype_2_values_phasesets, haplotype_2_values_phasesets, gaps_values)))
@@ -1081,16 +1081,16 @@ def copy_number_plots_genome_breakpoints_cytos(centers, integer_fractional_cente
     custom_text_data_hp1 = df_cnr_hp1.start.values.tolist()
     custom_text_data_hp2 = df_cnr_hp2.start.values.tolist()
     if args.without_phasing:
-        add_scatter_trace_coverage(fig, df_1['start'], df_cnr_hp1.coverage.values.tolist(), name='Unphased',
+        add_scatter_trace_coverage(fig, df_1['start'], df_cnr_hp1.coverage.values.tolist(), name='Unphased coverage',
                                    text=custom_text_data_hp1,
-                                   yaxis="y2", opacity=0.7, color='olive', visibility='legendonly', mul_cols=True)
+                                   yaxis="y2", opacity=0.7, color='olive', visibility=True, mul_cols=True)
     else:
-        add_scatter_trace_coverage(fig, df_1['start'], df_cnr_hp1.hp1.values.tolist(), name='HP-1',
+        add_scatter_trace_coverage(fig, df_1['start'], df_cnr_hp1.hp1.values.tolist(), name='HP-1 coverage',
                                    text=custom_text_data_hp1,
-                                   yaxis=None, opacity=0.7, color='firebrick', visibility='legendonly', mul_cols=True)
-        add_scatter_trace_coverage(fig, df_1['start'], [-x for x in df_cnr_hp2.hp2.values.tolist()], name='HP-2',
+                                   yaxis=None, opacity=0.7, color='firebrick', visibility=True, mul_cols=True)
+        add_scatter_trace_coverage(fig, df_1['start'], [-x for x in df_cnr_hp2.hp2.values.tolist()], name='HP-2 coverage',
                                    text=custom_text_data_hp2,
-                                   yaxis=None, opacity=0.7, color='steelblue', visibility='legendonly', mul_cols=True)
+                                   yaxis=None, opacity=0.7, color='steelblue', visibility=True, mul_cols=True)
 
     add_scatter_trace_coverage(fig, df_1['start'], het_snps_bafs_means.vaf.values.tolist(), name='BAF',
                                    text=het_snps_bafs_means.pos.values.tolist(),
@@ -1506,16 +1506,16 @@ def copy_number_plots_genome_breakpoints(centers, integer_fractional_centers, df
     custom_text_data_hp1 = df_cnr_hp1.start.values.tolist()
     custom_text_data_hp2 = df_cnr_hp2.start.values.tolist()
     if args.without_phasing:
-        add_scatter_trace_coverage(fig, df_1['start'], df_cnr_hp1.coverage.values.tolist(), name='Unphased',
+        add_scatter_trace_coverage(fig, df_1['start'], df_cnr_hp1.coverage.values.tolist(), name='Unphased coverage',
                                    text=custom_text_data_hp1,
-                                   yaxis="y2", opacity=0.7, color='olive', visibility='legendonly', mul_cols=True)
+                                   yaxis="y2", opacity=0.7, color='olive', visibility=True, mul_cols=True)
     else:
-        add_scatter_trace_coverage(fig, df_1['start'], df_cnr_hp1.hp1.values.tolist(), name='HP-1',
+        add_scatter_trace_coverage(fig, df_1['start'], df_cnr_hp1.hp1.values.tolist(), name='HP-1 coverage',
                                    text=custom_text_data_hp1,
-                                   yaxis=None, opacity=0.7, color='firebrick', visibility='legendonly', mul_cols=True)
-        add_scatter_trace_coverage(fig, df_1['start'], [-x for x in df_cnr_hp2.hp2.values.tolist()], name='HP-2',
+                                   yaxis=None, opacity=0.7, color='firebrick', visibility=True, mul_cols=True)
+        add_scatter_trace_coverage(fig, df_1['start'], [-x for x in df_cnr_hp2.hp2.values.tolist()], name='HP-2 coverage',
                                    text=custom_text_data_hp2,
-                                   yaxis=None, opacity=0.7, color='steelblue', visibility='legendonly', mul_cols=True)
+                                   yaxis=None, opacity=0.7, color='steelblue', visibility=True, mul_cols=True)
 
     add_scatter_trace_coverage(fig, df_1['start'], het_snps_bafs_means.vaf.values.tolist(), name='BAF',
                                    text=het_snps_bafs_means.pos.values.tolist(),
@@ -1876,16 +1876,16 @@ def copy_number_plots_genome(centers, integer_fractional_centers, df_cnr_hp1, df
     custom_text_data_hp1 = df_cnr_hp1.start.values.tolist()
     custom_text_data_hp2 = df_cnr_hp2.start.values.tolist()
     if args.without_phasing:
-        add_scatter_trace_coverage(fig, df_1['start'], df_cnr_hp1.coverage.values.tolist(), name='Unphased',
+        add_scatter_trace_coverage(fig, df_1['start'], df_cnr_hp1.coverage.values.tolist(), name='Unphased coverage',
                                    text=custom_text_data_hp1,
-                                   yaxis="y", opacity=0.7, color='olive', visibility='legendonly', mul_cols=True, row=1)
+                                   yaxis="y", opacity=0.7, color='olive', visibility=True, mul_cols=True, row=1)
     else:
-        add_scatter_trace_coverage(fig, df_1['start'], df_cnr_hp1.hp1.values.tolist(), name='HP-1',
+        add_scatter_trace_coverage(fig, df_1['start'], df_cnr_hp1.hp1.values.tolist(), name='HP-1 coverage',
                                    text=custom_text_data_hp1,
-                                   yaxis="y", opacity=0.7, color='firebrick', visibility='legendonly', mul_cols=True, row=1)
-        add_scatter_trace_coverage(fig, df_1['start'], [-x for x in df_cnr_hp2.hp2.values.tolist()], name='HP-2',
+                                   yaxis="y", opacity=0.7, color='firebrick', visibility=True, mul_cols=True, row=1)
+        add_scatter_trace_coverage(fig, df_1['start'], [-x for x in df_cnr_hp2.hp2.values.tolist()], name='HP-2 coverage',
                                    text=custom_text_data_hp2,
-                                   yaxis="y", opacity=0.7, color='steelblue', visibility='legendonly', mul_cols=True, row=1)
+                                   yaxis="y", opacity=0.7, color='steelblue', visibility=True, mul_cols=True, row=1)
 
     add_scatter_trace_coverage(fig, df_1['start'], het_snps_bafs_means.vaf.values.tolist(), name='BAF',
                                    text=het_snps_bafs_means.pos.values.tolist(),
@@ -2293,16 +2293,16 @@ def copy_number_plots_genome_breakpoints_subclonal_cytos(centers, integer_fracti
     custom_text_data_hp1 = df_cnr_hp1.start.values.tolist()
     custom_text_data_hp2 = df_cnr_hp2.start.values.tolist()
     if args.without_phasing:
-        add_scatter_trace_coverage(fig, df_1['start'], df_cnr_hp1.coverage.values.tolist(), name='Unphased',
+        add_scatter_trace_coverage(fig, df_1['start'], df_cnr_hp1.coverage.values.tolist(), name='Unphased coverage',
                                    text=custom_text_data_hp1,
-                                   yaxis="y2", opacity=0.7, color='olive', visibility='legendonly', mul_cols=True)
+                                   yaxis="y2", opacity=0.7, color='olive', visibility=True, mul_cols=True)
     else:
-        add_scatter_trace_coverage(fig, df_1['start'], df_cnr_hp1.hp1.values.tolist(), name='HP-1',
+        add_scatter_trace_coverage(fig, df_1['start'], df_cnr_hp1.hp1.values.tolist(), name='HP-1 coverage',
                                    text=custom_text_data_hp1,
-                                   yaxis=None, opacity=0.7, color='firebrick', visibility='legendonly', mul_cols=True)
-        add_scatter_trace_coverage(fig, df_1['start'], [-x for x in df_cnr_hp2.hp2.values.tolist()], name='HP-2',
+                                   yaxis=None, opacity=0.7, color='firebrick', visibility=True, mul_cols=True)
+        add_scatter_trace_coverage(fig, df_1['start'], [-x for x in df_cnr_hp2.hp2.values.tolist()], name='HP-2 coverage',
                                    text=custom_text_data_hp2,
-                                   yaxis=None, opacity=0.7, color='steelblue', visibility='legendonly', mul_cols=True)
+                                   yaxis=None, opacity=0.7, color='steelblue', visibility=True, mul_cols=True)
         # if not args.unphased_reads_coverage_disable:
         #     add_scatter_trace_coverage(fig, indices, df_unphased.hp3.values.tolist(), name='Unphased', text=None,
         #                                yaxis=None, opacity=0.7, color='olive', visibility='legendonly', mul_cols=True)
@@ -2808,16 +2808,16 @@ def copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_c
     custom_text_data_hp1 = df_cnr_hp1.start.values.tolist()
     custom_text_data_hp2 = df_cnr_hp2.start.values.tolist()
     if args.without_phasing:
-        add_scatter_trace_coverage(fig, df_1['start'], df_cnr_hp1.coverage.values.tolist(), name='Unphased',
+        add_scatter_trace_coverage(fig, df_1['start'], df_cnr_hp1.coverage.values.tolist(), name='Unphased coverage',
                                    text=custom_text_data_hp1,
-                                   yaxis="y2", opacity=0.7, color='olive', visibility='legendonly', mul_cols=True)
+                                   yaxis="y2", opacity=0.7, color='olive', visibility=True, mul_cols=True)
     else:
-        add_scatter_trace_coverage(fig, df_1['start'], df_cnr_hp1.hp1.values.tolist(), name='HP-1',
+        add_scatter_trace_coverage(fig, df_1['start'], df_cnr_hp1.hp1.values.tolist(), name='HP-1 coverage',
                                    text=custom_text_data_hp1,
-                                   yaxis=None, opacity=0.7, color='firebrick', visibility='legendonly', mul_cols=True)
-        add_scatter_trace_coverage(fig, df_1['start'], [-x for x in df_cnr_hp2.hp2.values.tolist()], name='HP-2',
+                                   yaxis=None, opacity=0.7, color='firebrick', visibility=True, mul_cols=True)
+        add_scatter_trace_coverage(fig, df_1['start'], [-x for x in df_cnr_hp2.hp2.values.tolist()], name='HP-2 coverage',
                                    text=custom_text_data_hp2,
-                                   yaxis=None, opacity=0.7, color='steelblue', visibility='legendonly', mul_cols=True)
+                                   yaxis=None, opacity=0.7, color='steelblue', visibility=True, mul_cols=True)
         # if not args.unphased_reads_coverage_disable:
         #     add_scatter_trace_coverage(fig, indices, df_unphased.hp3.values.tolist(), name='Unphased', text=None,
         #                                yaxis=None, opacity=0.7, color='olive', visibility='legendonly', mul_cols=True)
@@ -3253,16 +3253,16 @@ def copy_number_plots_genome_subclonal(centers, integer_fractional_centers, df_c
     custom_text_data_hp1 = df_cnr_hp1.start.values.tolist()
     custom_text_data_hp2 = df_cnr_hp2.start.values.tolist()
     if args.without_phasing:
-        add_scatter_trace_coverage(fig, df_1['start'], df_cnr_hp1.coverage.values.tolist(), name='Unphased',
+        add_scatter_trace_coverage(fig, df_1['start'], df_cnr_hp1.coverage.values.tolist(), name='Unphased coverage',
                                    text=custom_text_data_hp1,
-                                   yaxis="y", opacity=0.7, color='olive', visibility='legendonly', mul_cols=True, row=1)
+                                   yaxis="y", opacity=0.7, color='olive', visibility=True, mul_cols=True, row=1)
     else:
-        add_scatter_trace_coverage(fig, df_1['start'], df_cnr_hp1.hp1.values.tolist(), name='HP-1',
+        add_scatter_trace_coverage(fig, df_1['start'], df_cnr_hp1.hp1.values.tolist(), name='HP-1 coverage',
                                    text=custom_text_data_hp1,
-                                   yaxis="y", opacity=0.7, color='firebrick', visibility='legendonly', mul_cols=True, row=1)
-        add_scatter_trace_coverage(fig, df_1['start'], [-x for x in df_cnr_hp2.hp2.values.tolist()], name='HP-2',
+                                   yaxis="y", opacity=0.7, color='firebrick', visibility=True, mul_cols=True, row=1)
+        add_scatter_trace_coverage(fig, df_1['start'], [-x for x in df_cnr_hp2.hp2.values.tolist()], name='HP-2 coverage',
                                    text=custom_text_data_hp2,
-                                   yaxis="y", opacity=0.7, color='steelblue', visibility='legendonly', mul_cols=True, row=1)
+                                   yaxis="y", opacity=0.7, color='steelblue', visibility=True, mul_cols=True, row=1)
         # if not args.unphased_reads_coverage_disable:
         #     add_scatter_trace_coverage(fig, indices, df_unphased.hp3.values.tolist(), name='Unphased', text=None,
         #                                yaxis=None, opacity=0.7, color='olive', visibility='legendonly', mul_cols=True)
@@ -3631,16 +3631,16 @@ def genes_copy_number_plots_genome(df_genes, centers, integer_fractional_centers
     custom_text_data_hp1 = df_cnr_hp1.start.values.tolist()
     custom_text_data_hp2 = df_cnr_hp2.start.values.tolist()
     if args.without_phasing:
-        add_scatter_trace_coverage(fig, df_1['start'], df_cnr_hp1.coverage.values.tolist(), name='Unphased',
+        add_scatter_trace_coverage(fig, df_1['start'], df_cnr_hp1.coverage.values.tolist(), name='Unphased coverage',
                                    text=custom_text_data_hp1,
-                                   yaxis="y", opacity=0.7, color='olive', visibility='legendonly', mul_cols=True, row=1)
+                                   yaxis="y", opacity=0.7, color='olive', visibility=True, mul_cols=True, row=1)
     else:
-        add_scatter_trace_coverage(fig, df_1['start'], df_cnr_hp1.hp1.values.tolist(), name='HP-1',
+        add_scatter_trace_coverage(fig, df_1['start'], df_cnr_hp1.hp1.values.tolist(), name='HP-1 coverage',
                                    text=custom_text_data_hp1,
-                                   yaxis="y", opacity=0.7, color='firebrick', visibility='legendonly', mul_cols=True, row=1)
-        add_scatter_trace_coverage(fig, df_1['start'],[-x for x in df_cnr_hp2.hp2.values.tolist()], name='HP-2',
+                                   yaxis="y", opacity=0.7, color='firebrick', visibility=True, mul_cols=True, row=1)
+        add_scatter_trace_coverage(fig, df_1['start'],[-x for x in df_cnr_hp2.hp2.values.tolist()], name='HP-2 coverage',
                                    text=custom_text_data_hp2,
-                                   yaxis="y", opacity=0.7, color='steelblue', visibility='legendonly', mul_cols=True, row=1)
+                                   yaxis="y", opacity=0.7, color='steelblue', visibility=True, mul_cols=True, row=1)
 
     # add_scatter_trace_coverage(fig, df_1['start'], het_snps_bafs_means.vaf.values.tolist(), name='BAF',
     #                                text=het_snps_bafs_means.pos.values.tolist(),
@@ -4049,17 +4049,17 @@ def genes_plots_genome(df_genes, centers, integer_fractional_centers, df_cnr_hp1
     custom_text_data_hp1 = df_cnr_hp1.start.values.tolist()
     custom_text_data_hp2 = df_cnr_hp2.start.values.tolist()
     if args.without_phasing:
-        add_scatter_trace_coverage(fig, df_1['start'], df_cnr_hp1.coverage.values.tolist(), name='Unphased',
+        add_scatter_trace_coverage(fig, df_1['start'], df_cnr_hp1.coverage.values.tolist(), name='Unphased coverage',
                                    text=custom_text_data_hp1,
-                                   yaxis="y", opacity=0.7, color='olive', visibility='legendonly', mul_cols=True, row=1)
+                                   yaxis="y", opacity=0.7, color='olive', visibility=True, mul_cols=True, row=1)
     else:
-        add_scatter_trace_coverage(fig, df_1['start'], df_cnr_hp1.hp1.values.tolist(), name='HP-1',
+        add_scatter_trace_coverage(fig, df_1['start'], df_cnr_hp1.hp1.values.tolist(), name='HP-1 coverage',
                                    text=custom_text_data_hp1,
-                                   yaxis="y", opacity=0.7, color='firebrick', visibility='legendonly', mul_cols=True,
+                                   yaxis="y", opacity=0.7, color='firebrick', visibility=True, mul_cols=True,
                                    row=1)
-        add_scatter_trace_coverage(fig, df_1['start'], [x for x in df_cnr_hp2.hp2.values.tolist()], name='HP-2',
+        add_scatter_trace_coverage(fig, df_1['start'], [x for x in df_cnr_hp2.hp2.values.tolist()], name='HP-2 coverage',
                                    text=custom_text_data_hp2,
-                                   yaxis="y", opacity=0.7, color='steelblue', visibility='legendonly', mul_cols=True,
+                                   yaxis="y", opacity=0.7, color='steelblue', visibility=True, mul_cols=True,
                                    row=1)
 
     # add_scatter_trace_coverage(fig, df_1['start'], het_snps_bafs_means.vaf.values.tolist(), name='BAF',
@@ -4685,7 +4685,7 @@ def add_scatter_trace_copyratios(args, fig, colors, name, haplotype_1_copyratios
         if args.without_phasing:
             name_leg = 'Unphased'
         else:
-            name_leg = 'HP-1'
+            name_leg = 'HP-1 CNA'
         fig.add_trace(go.Scatter(
             #legendgroup="group2",
             #legendgrouptitle_text=name,
@@ -4715,7 +4715,7 @@ def add_scatter_trace_copyratios(args, fig, colors, name, haplotype_1_copyratios
                 hovertemplate= ht,
                 x=haplotype_2_copyratios_positions,
                 y=haplotype_2_copyratios_values,
-                name='HP-2',
+                name='HP-2 CNA',
                 text=hp2_chr_info,
                 yaxis="y3",
                 line = dict(shape = 'spline', color = colors[1], width= 5, dash = 'solid'),
@@ -4733,7 +4733,7 @@ def add_scatter_trace_copyratios(args, fig, colors, name, haplotype_1_copyratios
         if args.without_phasing:
             name_leg = 'Unphased'
         else:
-            name_leg = 'HP-1'
+            name_leg = 'HP-1 CNA'
         fig.add_trace(go.Scatter(
             #legendgroup="group2",
             #legendgrouptitle_text=name,
@@ -4765,7 +4765,7 @@ def add_scatter_trace_copyratios(args, fig, colors, name, haplotype_1_copyratios
                 '<br><b>CN</b>: %{y}<br>',
                 x=haplotype_2_copyratios_positions,
                 y=haplotype_2_copyratios_values,
-                name='HP-2',
+                name='HP-2 CNA',
                 text=hp2_chr_info,
                 yaxis="y2",
                 visible=visibility,

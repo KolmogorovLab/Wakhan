@@ -44,7 +44,10 @@ def sv_vcf_bps_cn_check(path, args):
     bp_cov_threshold = max(args.first_copy_breakpoints_filter * BP_RELIABLE_COV_RATE, BP_MIN_COV)
 
     #########################################
+    _logging_level = logger.level
+    logger.setLevel(logging.CRITICAL)
     my_parser = VCFParser(infile=path, split_variants=True, check_info=True)
+    logger.setLevel(_logging_level)
 
     #Coverage of phase blocks to check if we are in balanced region
     chr_phaseblocks = defaultdict(IntervalTree)
