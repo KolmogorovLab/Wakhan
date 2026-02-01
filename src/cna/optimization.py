@@ -74,7 +74,7 @@ def cn_one_inference(input_segments, input_weights, cov_ploidy, plot_path):
                                                    width=1, rel_height=1.0)
 
         if len(minima[0]) == 0 or minima[0][0] >= hist_mean:
-            cn_one_best = np.argmax(observed_hist) * HIST_RATE / cov_ploidy
+            cn_one = np.argmax(observed_hist) * HIST_RATE / cov_ploidy
             raise ProfileException("No local minima, likely a single peak. Setting CN=1 to histogram maximum")
 
         #making sure all peaks are past minima, although it always should be the case
