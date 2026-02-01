@@ -116,7 +116,7 @@ def cn_one_inference(input_segments, input_weights, cov_ploidy, plot_path):
         if max_peak_id == filtered_peak_ids[0]:
             cn_one = peaks[filtered_peak_ids[0]] * HIST_RATE
         else:
-            cn_one = peaks[filtered_peak_ids[max_peak_id]] * HIST_RATE
+            cn_one = peaks[max_peak_id] * HIST_RATE
             cn_one_alt = peaks[filtered_peak_ids[0]] * HIST_RATE
 
     except ProfileException as e:
