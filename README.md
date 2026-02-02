@@ -75,12 +75,12 @@ Please refer to [prerequisite](https://github.com/KolmogorovLab/Wakhan/tree/main
 
 ### Tumor-Normal Mode (requires tumor BAM and normal phased VCF)
 ```
-python wakhan.py --threads <24> --reference <ref.fa>  --target-bam <tumor.bam>  --normal-phased-vcf <normal_phased.vcf.gz>  --genome-name <cellline/dataset name> --out-dir-plots <genome_abc_output> --breakpoints <severus-sv-VCF>
+python wakhan.py all --threads <24> --reference <ref.fa>  --target-bam <tumor.bam>  --normal-phased-vcf <normal_phased.vcf.gz>  --genome-name <cellline/dataset name> --out-dir-plots <genome_abc_output> --breakpoints <severus-sv-VCF>
 ```
 
 ### Tumor-only (requires tumor BAM and tumor phased VCF)
 ```
-python wakhan.py --threads <24> --reference <ref.fa>  --target-bam <tumor.bam>  --tumor-phased-vcf <tumor_phased.vcf.gz> --genome-name <cellline/dataset name> --out-dir-plots <genome_abc_output> --breakpoints <severus-sv-VCF>
+python wakhan.py all --threads <24> --reference <ref.fa>  --target-bam <tumor.bam>  --tumor-phased-vcf <tumor_phased.vcf.gz> --genome-name <cellline/dataset name> --out-dir-plots <genome_abc_output> --breakpoints <severus-sv-VCF>
 ```
 
 ## 2. Phased SVs/Breakpoints pipeline mode

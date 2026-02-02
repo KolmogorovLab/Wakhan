@@ -221,7 +221,7 @@ def build_parser():
     global_parser = argparse.ArgumentParser(prog="wakhan", description="Wakhan plots coverage and copy number profiles from a bam and phased VCF files",
                                             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     ###################################################################################
-    global_parser.add_argument("command", nargs="?", choices=["cna", "hapcorrect"], help="Optional cna or hapcorrect modes. If omitted, runs default mode with both modes." )
+    global_parser.add_argument("command", choices=["all", "cna", "hapcorrect"], help="Run full pipeline, cna or hapcorrect modes" )
     ###################################################################################
 
     global_parser.add_argument("--target-bam", dest="target_bam", required=True, metavar="path", default=None, nargs="+",
@@ -424,7 +424,7 @@ def main(argv=None):
         main_process(args)  # hapcorrect()
         logger.info('hapcorrect() module finished successfully.')
         return 0
-    elif args.command is None:
+    elif args.command == 'all':
         wakhan_all(args) #hapcorrect + cna
 
 def safe_rmtree(path):
