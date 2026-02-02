@@ -180,7 +180,7 @@ def main_process(args):
     for index, chrom in enumerate(chroms):
         if chrom in chroms:
             regions = get_chromosomes_regions(args)
-            logger.info('Loading coverage (bins) and coverage (phaseblocks) datasets for ' + chrom)
+            logger.debug('Loading coverage (bins) and coverage (phaseblocks) datasets for ' + chrom)
             csv_df_phaseset = csv_df_phasesets[csv_df_phasesets['chr'] == chrom]
             ref_start_values_phasesets = csv_df_phaseset.start.values.tolist()
             ref_end_values_phasesets = csv_df_phaseset.end.values.tolist()

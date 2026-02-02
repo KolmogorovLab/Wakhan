@@ -48,8 +48,8 @@ def seperate_dfs_coverage(args, df, haplotype_1_values_updated, haplotype_2_valu
 
 def get_vafs_from_normal_phased_vcf(df_snps, df_coverages, chroms, args):
     df_final = []
+    logger.info('Generating BAFs')
     for index, chrom in enumerate(chroms):
-        logger.info('Generating BAFs for %s', chrom)
         df = df_snps[df_snps['chr'] == chrom]
         df_coverage = df_coverages[df_coverages['chr'] == chrom]
         starts_pos = df_coverage.start.values.tolist()
