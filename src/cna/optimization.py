@@ -28,12 +28,13 @@ def _weighted_means(vals, weights):
     return sum(weighted_vals)/sum(weights)
 
 
-def cn_one_inference(input_segments, input_weights, cov_ploidy, plot_path):
+def cn_one_inference(input_segments, input_weights, phased, plot_path):
     """
     Input: segments set with given coverage and length. Haploid coverage should use cov_ploidy=1, diploid=2
     """
     observed = input_segments
     weights = input_weights
+    cov_ploidy = 1 if phased else 2
 
     # computing observed coverage histogram
     hist_max = np.quantile(input_segments, 0.50) * 2
@@ -46,7 +47,7 @@ def cn_one_inference(input_segments, input_weights, cov_ploidy, plot_path):
 
     hist_bins = np.arange(hist_range[0], hist_range[1] + 1, HIST_RATE)
     observed_hist = np.histogram(observed, weights=weights, bins=hist_bins)[0]
-    #observed_hist[0] = 0
+    observed_hist[0] = 0
 
     #gentle smoothing
     raw_hist = np.copy(observed_hist)
@@ -156,13 +157,12 @@ def cn_one_inference(input_segments, input_weights, cov_ploidy, plot_path):
     return cn_one, cn_one_alt, first_min * HIST_RATE, hist_bins, observed_hist
 
 
-def peak_detection_optimization(args, input_segments, input_weights):
+def peak_detection_optimization(args, input_segments, input_weights, phased):
     """
     Older functions that is called from main
     """
-    COV_PLOIDY = 2  #change to 1 if using haploid coverage as input
     cn_peaks_plot = os.path.join(args.out_dir_plots, 'coverage_data', 'cn_peaks.png')
-    cn_one, cn_one_alt, first_min, hist_x, hist_y = cn_one_inference(input_segments, input_weights, COV_PLOIDY, plot_path=cn_peaks_plot)
+    cn_one, cn_one_alt, first_min, hist_x, hist_y = cn_one_inference(input_segments, input_weights, phased, plot_path=cn_peaks_plot)
     is_half_peak = (cn_one_alt is not None)
 
     #overwriting with command line arguments if needed
@@ -298,7 +298,7 @@ def parse_coverage_bed_cpd(filename, phased, plot_path):
         coverage = np.array(cov_by_chrom[ch])
         y_max = np.quantile(coverage, 0.90)
 
-        pen_auto = np.log(len(coverage)) * median_cov ** 2 / 5
+        pen_auto = np.log(len(coverage)) * median_cov ** 2 / 1
         algo_pelt = rpt.Pelt(model="l2", min_size=MIN_SEG_LEN,
                              jump=(MIN_JUMP_BP // bin_size))
         algo_pelt.fit(coverage)
@@ -352,6 +352,7 @@ def parse_coverage_bed_cpd(filename, phased, plot_path):
             filtered_segments.append(np.median(seg))
             #filtered_weights.append(np.log(len(seg)))
             filtered_weights.append(len(seg))
+            #filtered_weights.append(len(seg) ** 2)
 
     return filtered_segments, filtered_weights
 
@@ -379,7 +380,7 @@ if __name__ == "__main__":
             #weights.append(1)
     """
 
-    COV_PLOIDY = 2
-    #segments, weights = parse_coverage_bed_windows(sys.argv[1], phased=False, plot_path=None)
-    segments, weights = parse_coverage_bed_cpd(sys.argv[1], phased=False, plot_path="show")
-    cn_one_inference(segments, weights, COV_PLOIDY, plot_path="show")
+    PHASED = True
+    #segments, weights = parse_coverage_bed_windows(sys.argv[1], phased=PHASED)
+    segments, weights = parse_coverage_bed_cpd(sys.argv[1], phased=PHASED, plot_path="show")
+    cn_one_inference(segments, weights, phased=PHASED, plot_path="show")
