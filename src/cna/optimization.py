@@ -74,7 +74,7 @@ def cn_one_inference(input_segments, input_weights, phased, plot_path):
         peaks, peak_prop = scipy.signal.find_peaks(smooth_corr, distance=5,
                                                    width=1, rel_height=1.0)
 
-        if len(minima[0]) == 0 or minima[0][0] >= hist_mean:
+        if len(minima[0]) == 0 or minima[0][0] * HIST_RATE >= hist_mean:
             cn_one = np.argmax(observed_hist) * HIST_RATE / cov_ploidy
             raise ProfileException("No local minima, likely a single peak. Setting CN=1 to histogram maximum")
 
