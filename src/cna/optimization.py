@@ -101,8 +101,8 @@ def cn_one_inference(input_segments, input_weights, phased, plot_path):
         #Now, filter peaks that are too small, compared to the top peak
         MIN_HEIGHT_TO_TOP = 0.5
         max_peak_id = max(filtered_peak_ids, key=lambda p: smooth_corr[peaks[p]])
-        #min_height = max(smooth_corr[peaks[max_peak_id]], smooth_corr[first_min]) * MIN_HEIGHT_TO_TOP
-        min_height = smooth_corr[peaks[max_peak_id]] * MIN_HEIGHT_TO_TOP
+        min_height = max(smooth_corr[peaks[max_peak_id]], smooth_corr[first_min]) * MIN_HEIGHT_TO_TOP
+        #min_height = smooth_corr[peaks[max_peak_id]] * MIN_HEIGHT_TO_TOP
 
         logger.info("Max peak: {}".format(peaks[max_peak_id] * HIST_RATE))
         filtered_peak_ids = [i for i in filtered_peak_ids if smooth_corr[peaks[i]] > min_height]
