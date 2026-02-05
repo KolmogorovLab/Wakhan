@@ -5248,11 +5248,13 @@ def plot_ploidy_purity_p_values(args, ploidy_values, purity_values, p_values):
 
         fig.write_html(args.out_dir_plots + '/' + path_set)
 
+    """
     if (purity_values[0] < float(args.purity_range.split('-')[0]) or purity_values[0] > float(args.purity_range.split('-')[1])) or (
             ploidy_values[0] < float(args.ploidy_range.split('-')[0]) or ploidy_values[0] > float(args.ploidy_range.split('-')[1])):
         del purity_values[0]
         del ploidy_values[0]
         del p_values[0]
+    """
 
     purity = [round(num, 4) for num in purity_values]
     ploidy = [round(num, 4) for num in ploidy_values]
