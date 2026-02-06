@@ -340,12 +340,10 @@ def process_bam_for_snps_freqs(args, thread_pool):
     output_vcf = f"{os.path.join(args.out_dir_plots+'/data', output_vcf)}"
 
     cmd = ['bcftools', 'view', '--threads', str(args.threads),  '--phased', '-g', 'het', '--types', 'snps', vcf_input, '-o', output_vcf]
-    process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    process.wait()
+    subprocess.check_call(cmd)
 
     cmd = ['bcftools', 'query', '-i', 'GT="het"', '-f',  '%CHROM\t%POS\n', output_vcf,  '-o', output_csv]
-    process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    process.wait()
+    subprocess.check_call(cmd)
 
     beds = split_file(output_csv, args.threads, args)
     pileups_outputs = process_pileups(output_bam, args.reference, beds, thread_pool, args)
@@ -392,9 +390,8 @@ def process_pileups_parallel(bam, ref, bed, args):
         for chrom in chromosomes:
             cmd = ['samtools', 'mpileup', '-l', bed, '-f', ref, '-r', chrom, bam, '--no-BAQ', '-q', '5', '-Q', '1',
                    '--no-output-ins', '--no-output-ins', '--no-output-del', '--no-output-del', '--no-output-ends']
+            subprocess.check_call(cmd, stdout=samtools_out, stderr=open(os.devnull, "w"))
             #print(cmd)
-            process = subprocess.Popen(cmd, stdout=samtools_out, stderr=open(os.devnull, "w"))
-            process.wait()
 
     return output_csv
 
