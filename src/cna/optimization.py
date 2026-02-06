@@ -64,7 +64,6 @@ def cn_one_inference(input_segments, input_weights, phased, plot_path):
     first_min = 0
     max_peak_id = None
     scaled_peaks = []
-    snr = 0
     cn_one_alt = None
 
     try:
@@ -78,13 +77,14 @@ def cn_one_inference(input_segments, input_weights, phased, plot_path):
             cn_one = np.argmax(observed_hist) * HIST_RATE / cov_ploidy
             raise ProfileException("No local minima, likely a single peak. Setting CN=1 to histogram maximum")
 
-        #making sure all peaks are past minima, although it always should be the case
+        MIN_COV_TO_CORR = 0.25
+        min_corr = np.argmax(observed_hist) * MIN_COV_TO_CORR
+        logger.info("Minimum correlation %4.2f", min_corr * HIST_RATE)
+
+        #making sure all peaks are past minima and minimum correlation (that depends on coverage)
         first_min = minima[0][0]
         logger.info("First minimum {}".format(first_min * HIST_RATE))
-        filtered_peak_ids = [i for i in range(len(peaks)) if peaks[i] > first_min]
-
-        #Estimating signal to noise
-        snr = max(smooth_corr[first_min:]) / max(smooth_corr[first_min], 0.001)
+        filtered_peak_ids = [i for i in range(len(peaks)) if peaks[i] > max(first_min, min_corr)]
 
         #Have a first local mimima and at least one peak in the correlation spectra
         logger.info("Initial peaks: {}".format([round(peaks[i] * HIST_RATE, 2) for i in filtered_peak_ids]))
@@ -98,13 +98,19 @@ def cn_one_inference(input_segments, input_weights, phased, plot_path):
             cn_one = np.argmax(observed_hist) * HIST_RATE / cov_ploidy
             raise ProfileException("No histogram peaks found, defaulting to histogram maximum")
 
-        #Now, filter peaks that are too small, compared to the top peak
-        MIN_HEIGHT_TO_TOP = 0.5
         max_peak_id = max(filtered_peak_ids, key=lambda p: smooth_corr[peaks[p]])
-        min_height = max(smooth_corr[peaks[max_peak_id]], smooth_corr[first_min]) * MIN_HEIGHT_TO_TOP
-        #min_height = smooth_corr[peaks[max_peak_id]] * MIN_HEIGHT_TO_TOP
-
         logger.info("Max peak: {}".format(peaks[max_peak_id] * HIST_RATE))
+
+        #Now, filter peaks that are too small, compared to the top peak
+        MIN_TO_PEAK = 0.5
+        MIN_TO_MAX = 0.2
+        min_height = max(smooth_corr[peaks[max_peak_id]] * MIN_TO_PEAK,
+                         max(smooth_corr[first_min:]) * MIN_TO_MAX)
+        #min_height = max(smooth_corr[peaks[max_peak_id]], smooth_corr[first_min]) * MIN_HEIGHT_TO_TOP
+        #min_height = smooth_corr[peaks[max_peak_id]] * MIN_HEIGHT_TO_TOP
+        #min_height = max(smooth_corr[first_min:]) * MIN_HEIGHT_TO_TOP
+
+
         filtered_peak_ids = [i for i in filtered_peak_ids if smooth_corr[peaks[i]] > min_height]
         logger.info("Peaks >0.5 of top/saddle: {}".format([round(peaks[i] * HIST_RATE, 2) for i in filtered_peak_ids]))
 
@@ -125,7 +131,6 @@ def cn_one_inference(input_segments, input_weights, phased, plot_path):
         logger.info(e)
         pass
 
-    logger.info("Signal to noise: {}".format(snr))
     logger.info("Best CN=1 estimate: {}".format(cn_one))
     logger.info("Alt CN=1 estimate: {}".format(cn_one_alt))
 
@@ -135,16 +140,19 @@ def cn_one_inference(input_segments, input_weights, phased, plot_path):
         ax1.bar(hist_bins[:-1], observed_hist, width=HIST_RATE, edgecolor='black')
         ax1.set_title("Segment coverage histogram")
 
-        if max_peak_id is not None:
-            corr_top = max(smooth_corr[peaks[max_peak_id]], smooth_corr[first_min]) * 2
-        else:
-            corr_top = smooth_corr[first_min] * 2
+        #if max_peak_id is not None:
+        #    corr_top = max(smooth_corr[peaks[max_peak_id]], smooth_corr[first_min]) * 2
+        #else:
+        #    corr_top = smooth_corr[first_min] * 2
+        corr_top = max(smooth_corr[first_min:]) * 2
 
         ax2.plot(hist_bins[:-1], smooth_corr)
         ax2.set_ylim(0, corr_top)
         ax2.set_title("Self-correlation")
         ax2.plot([first_min * HIST_RATE, first_min * HIST_RATE],
-                 [0, smooth_corr[first_min]], color="red", linewidth=2)
+                 [0, corr_top], color="red", linewidth=2)
+        ax2.plot([min_corr * HIST_RATE, min_corr * HIST_RATE],
+                 [0, corr_top], color="orange", linewidth=2)
         for p in scaled_peaks:
             top = smooth_corr[int(p / HIST_RATE)]
             ax2.plot([p, p], [0, top], color="green", linewidth=2)
