@@ -721,8 +721,10 @@ def test_input_files(args):
                 args.user_input_genes, args.breakpoints]
     if args.target_bam is not None:
         filelist.extend(args.target_bam)
+        filelist.extend([x + ".bai" for x in args.target_bam])
     if args.control_bam is not None:
         filelist.extend(args.control_bam)
+        filelist.extend([x + ".bai" for x in args.control_bam])
     for file in filelist:
         if file is not None and not os.path.exists(file):
             logger.error(f"Input file does not exist: {file}")
