@@ -135,6 +135,9 @@ def sv_vcf_bps_cn_check(path, args):
             for ch in ['[', ']', 'N']:
                 if ch in s:
                     s = s.replace(ch, '')
+
+            if len(s.split(':')) < 2:
+                continue
             chr2_id = s.split(':')[0]
             chr2_end = int(s.split(':')[1])
 
