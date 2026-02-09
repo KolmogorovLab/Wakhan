@@ -4,8 +4,10 @@ pyfaidx
 numpy
 pandas
 plotly
-scikit-learn
-scipy
+scikit-learn==1.2.0
+scipy==1.9.2
 ruptures
 vcf_parser
 kaleido
+intervaltree
+matplotlib
