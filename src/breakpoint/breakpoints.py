@@ -39,12 +39,15 @@ class bps_sample(object):
 #def sv_vcf_bps_cn_check(path, df_segs_hp1, df_segs_hp2):
 def sv_vcf_bps_cn_check(path, args):
     HP_BALANCE_RATE = 0.3
-    BP_RELIABLE_COV_RATE = 0.5
+    BP_RELIABLE_COV_RATE = 0.2
     BP_MIN_COV = 3
     bp_cov_threshold = max(args.first_copy_breakpoints_filter * BP_RELIABLE_COV_RATE, BP_MIN_COV)
 
     #########################################
+    _logging_level = logger.level
+    logger.setLevel(logging.CRITICAL)
     my_parser = VCFParser(infile=path, split_variants=True, check_info=True)
+    logger.setLevel(_logging_level)
 
     #Coverage of phase blocks to check if we are in balanced region
     chr_phaseblocks = defaultdict(IntervalTree)
@@ -132,6 +135,9 @@ def sv_vcf_bps_cn_check(path, args):
             for ch in ['[', ']', 'N']:
                 if ch in s:
                     s = s.replace(ch, '')
+
+            if len(s.split(':')) < 2:
+                continue
             chr2_id = s.split(':')[0]
             chr2_end = int(s.split(':')[1])
 

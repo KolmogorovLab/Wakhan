@@ -374,12 +374,10 @@ def get_snp_segments(args, target_bam, thread_pool):
     logger.info('bcftools -> Query for het SNPs and creating a %s CSV file', output_csv)
     # bcftools query for phasesets and GT,DP,VAF
     cmd = ['bcftools', 'query', '-i', 'GT="het"', '-f',  '%CHROM\t%POS\t%REF\t%ALT\t[%GT]\n', normal_vcf, '-o', output_csv] #
-    process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    process.wait()
+    subprocess.check_call(cmd)
 
     cmd = ['bcftools', 'query', '-i', 'GT="het"', '-f',  '%CHROM\t%POS\n', normal_vcf, '-o', output_bed] #
-    process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    process.wait()
+    subprocess.check_call(cmd)
 
     logger.info('SNPs frequency -> CSV to dataframe conversion')
     dataframe_snps = csv_df_chromosomes_sorter(output_csv, ['chr', 'start', 'ref', 'alt', 'gt'])

@@ -36,7 +36,7 @@ from src.plots.plots_main import coverage_plots_chromosomes, copy_number_plots_g
 from src.file_tools.process_vcf import vcf_parse_to_csv_for_het_phased_snps_phasesets
 from src.plots.snps_loh import plot_snps_frequencies_without_phasing, plot_snps_ratios_genome, snps_df_loh, variation_plots, write_loh_regions
 from src.hapcorrect.phase_correction import generate_phasesets_bins
-from src.cna.optimization import peak_detection_optimization
+from src.cna.optimization import peak_detection_optimization, parse_coverage_bed_cpd
 from src.file_tools.generate_vcf import read_cn_segments_process_vcf
 
 logger = logging.getLogger()
@@ -70,11 +70,11 @@ def copy_numbers_assignment_haplotypes(args, tumor_cov, max_limit, single_copy_c
     data = []
     average_p_value = []
     #max_limit = 3/2 #debug
-    for normal_coverage in np.arange(0, max_limit, 0.1):
+    logger.info("Fitting purity via grid search")
+    STEP = 0.1
+    for normal_coverage in np.arange(0, max_limit, STEP):
         if args.tumor_phased_vcf:
             df_hp1, df_hp2, df_segs_hp1, df_segs_hp2 = update_segs_with_normal_optimized(df_hp1_base, df_hp2_base, df_segs_hp1_base, df_segs_hp2_base, normal_coverage, args)
-            #_, centers, is_half_peak, centers_half, subclonals, x_axis, observed_hist, single_copy_cov, single_copy_cov_half = \
-            #    peak_detection_optimization(args, df_segs_hp1.state.values.tolist() + df_segs_hp2.state.values.tolist(), [x - y for x, y in zip(df_segs_hp1.end.values.tolist(), df_segs_hp1.start.values.tolist())]  + [x - y for x, y in zip(df_segs_hp2.end.values.tolist(), df_segs_hp2.start.values.tolist())], tumor_cov)
         else:
             df_hp1 = df_hp1_base.copy()
             df_hp2 = df_hp2_base.copy()
@@ -110,8 +110,8 @@ def copy_numbers_assignment_haplotypes(args, tumor_cov, max_limit, single_copy_c
         if (float(args.purity_range.split('-')[0]) <= tumor_purity <= float(args.purity_range.split('-')[1])) and (float(args.ploidy_range.split('-')[0]) <= overall_ploidy <= float(args.ploidy_range.split('-')[1])):
             average_p_value.append(p_value)
             data.append([overall_ploidy, tumor_purity, cen_out, p_value, dna_tumor_purity, normal_coverage/2])
-            logger.info("overall_ploidy: %s, dna_tumor_purity: %s, cell_tumor_purity: %s, average_p_value: %s, for i: %s,  centers: %s, norm frac: %s",
-                overall_ploidy, dna_tumor_purity, cellular_tumor_purity, p_value, normal_coverage, cen_out[0:4], normal_fraction)
+            logger.debug("normal_cov: %.2f, ploidy: %.2f, dna_tumor_purity: %.2f, cell_tumor_purity: %.2f, average_p_value: %.4f, centers: %s, norm frac: %s",
+                normal_coverage, overall_ploidy, dna_tumor_purity, cellular_tumor_purity, p_value, cen_out[0:4], normal_fraction)
 
     plot_ploidy_purity_p_values(args, [data[n][0] for n in range(len(data))], [data[n][1] for n in range(len(data))], [data[n][3] for n in range(len(data))])
 
@@ -131,10 +131,10 @@ def copy_numbers_assignment_haplotypes(args, tumor_cov, max_limit, single_copy_c
                 df_segs_hp2 = df_segs_hp2_base.copy()
 
             cen_out = data[j][2]
-            logger.info('Normal optimized clusters means: %s', cen_out)
             integer_fractional_means = sorted([i for i in range(0, len(cen_out))])
             p_value_confidence = round(data[j][3], 2)
             logger.info('Generating coverage/copy numbers plots genome wide for solution with tumor cellular fraction {0}, ploidy {1} and tumor dna fraction {2}'.format(args.tumor_purity, args.tumor_ploidy, dna_tumor_fraction))
+            logger.debug('Normal optimized clusters means: %s', cen_out)
             solutions_df.loc[j] = [str(args.tumor_ploidy)+'_'+str(args.tumor_purity)+'_'+str(p_value_confidence), dna_tumor_fraction, args.tumor_purity, args.tumor_ploidy, p_value_confidence]
 
             #if args.breakpoints:
@@ -221,7 +221,7 @@ def build_parser():
     global_parser = argparse.ArgumentParser(prog="wakhan", description="Wakhan plots coverage and copy number profiles from a bam and phased VCF files",
                                             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     ###################################################################################
-    global_parser.add_argument("command", nargs="?", choices=["cna", "hapcorrect"], help="Optional cna or hapcorrect modes. If omitted, runs default mode with both modes." )
+    global_parser.add_argument("command", choices=["all", "cna", "hapcorrect"], help="Run full pipeline, cna or hapcorrect modes" )
     ###################################################################################
 
     global_parser.add_argument("--target-bam", dest="target_bam", required=True, metavar="path", default=None, nargs="+",
@@ -266,8 +266,8 @@ def build_parser():
                                help="bin size for LOH detection")
     global_parser.add_argument("--hets-ratio", "--hets_ratio", dest="hets_ratio", default=HETS_RATIO_LOH, metavar="float", type=float,
                                help="Hetrozygous SNPs ratio threshold for LOH detection")
-    global_parser.add_argument('--force-wgd', action="store_true", dest="consider_wgd", default=False,
-                               help="Force WGD in CNA inference")
+    #global_parser.add_argument('--force-wgd', action="store_true", dest="consider_wgd", default=False,
+    #                           help="Force WGD in CNA inference")
     global_parser.add_argument("--confidence-subclonal-score", dest="confidence_subclonal_score", default=0.6, metavar="float", type=float,
                                help="user input p-value to detect if a segment is subclonal/off to integer copynumber")
     global_parser.add_argument("--breakpoints-min-length", dest="breakpoints_min_length", default=BP_MIN_LENGTH, metavar="int",
@@ -424,7 +424,7 @@ def main(argv=None):
         main_process(args)  # hapcorrect()
         logger.info('hapcorrect() module finished successfully.')
         return 0
-    elif args.command is None:
+    elif args.command == 'all':
         wakhan_all(args) #hapcorrect + cna
 
 def safe_rmtree(path):
@@ -589,11 +589,16 @@ def cna_process(args):
         tumor_cov = statistics.mean([sum(x) for x in zip(haplotype_1_values_updated, haplotype_2_values_updated)])
     logger.info('Tumor coverage: %s', tumor_cov)
 
-    first_min, centers, is_half_peak, centers_half, subclonals, x_axis, observed_hist, single_copy_cov, single_copy_cov_half = \
-            peak_detection_optimization(args, snps_cpd_means, snps_cpd_points_weights, tumor_cov)
-    logger.info("First minimum %s", first_min)
-    logger.info("Max correlation peak/Estimated single copy coverage: %s", single_copy_cov)
-    logger.info("Half peak: %s", is_half_peak)
+    ###load coverage from phase_corrected_coverage.ps
+    phased_coverage_bed = os.path.join(args.out_dir_plots, 'coverage_data', 'phase_corrected_coverage.csv')
+    cn_coverage_plot = os.path.join(args.out_dir_plots, 'coverage_data', 'cn_coverage.png')
+    PHASED_COV = True
+    opt_seg_cov, opt_seg_weights = parse_coverage_bed_cpd(phased_coverage_bed, phased=PHASED_COV, plot_path=cn_coverage_plot)
+    centers, is_half_peak, centers_half, subclonals, x_axis, observed_hist, single_copy_cov, single_copy_cov_half = \
+            peak_detection_optimization(args, opt_seg_cov, opt_seg_weights, phased=PHASED_COV)
+    #logger.info("First minimum %s", first_min)
+    #logger.info("Max correlation peak/Estimated single copy coverage: %s", single_copy_cov)
+    #logger.info("Half peak: %s", is_half_peak)
 
     args.first_copy_breakpoints_filter = single_copy_cov if not is_half_peak else single_copy_cov // 2
 
@@ -663,8 +668,10 @@ def cna_process(args):
                 copy_number_plots_genome_subclonal(cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, None, loh_regions, df_snps_in_csv, False)
     else:
         ################################
+        logging.info("Optmizing for the primary CN=1 peak")
         copy_numbers_assignment_haplotypes(args, tumor_cov, max_limit, single_copy_cov, centers, subclonals, df_hp1, df_hp2, df_segs_hp1, df_segs_hp2, snps_cpd_means_df, csv_df_snps_mean, df_snps_in_csv, df_unphased, x_axis, observed_hist, False)
         if is_half_peak:
+            logging.info("Optmizing for an alternative CN=1 peak")
             copy_numbers_assignment_haplotypes(args, tumor_cov, max_limit, single_copy_cov_half, centers_half, subclonals, df_hp1, df_hp2, df_segs_hp1, df_segs_hp2, snps_cpd_means_df, csv_df_snps_mean, df_snps_in_csv, df_unphased, x_axis, observed_hist, False)
 
         if len(solutions_df):
@@ -714,8 +721,10 @@ def test_input_files(args):
                 args.user_input_genes, args.breakpoints]
     if args.target_bam is not None:
         filelist.extend(args.target_bam)
+        filelist.extend([x + ".bai" for x in args.target_bam])
     if args.control_bam is not None:
         filelist.extend(args.control_bam)
+        filelist.extend([x + ".bai" for x in args.control_bam])
     for file in filelist:
         if file is not None and not os.path.exists(file):
             logger.error(f"Input file does not exist: {file}")

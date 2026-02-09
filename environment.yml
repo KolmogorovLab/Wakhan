@@ -17,6 +17,7 @@ dependencies:
   - ruptures
   - intervaltree
   - pip
+  - matplotlib-base
   - pip:
     - vcf_parser
     - kaleido
