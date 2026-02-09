@@ -47,7 +47,6 @@ def sv_vcf_bps_cn_check(path, args):
     _logging_level = logger.level
     logger.setLevel(logging.CRITICAL)
     my_parser = VCFParser(infile=path, split_variants=True, check_info=True)
-    logger.setLevel(_logging_level)
 
     #Coverage of phase blocks to check if we are in balanced region
     chr_phaseblocks = defaultdict(IntervalTree)
@@ -173,6 +172,9 @@ def sv_vcf_bps_cn_check(path, args):
         bp_junctions_single.append([dict[1].bp_1_id, dict[1].bp_1_pos, dict[1].bp_2_pos])
         bp_junctions_single_chr.append([dict[1].bp_1_id, dict[1].bp_1_pos, dict[1].bp_2_pos, dict[1].bp_1_hp])
     #print('Total bps:', len(bp_junctions_chr[1:]))
+
+    logger.setLevel(_logging_level)
+
     return bp_junctions_single[1:], bp_junctions_single_chr[1:], bp_junctions_values[1:], bp_junctions_chr[1:], bp_junctions, bp_junctions_bnd
 
 

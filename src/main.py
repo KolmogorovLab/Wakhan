@@ -59,7 +59,7 @@ def _enable_logging(log_file, debug, overwrite):
     file_handler = logging.FileHandler(log_file, mode="a")
     file_handler.setFormatter(log_formatter)
 
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
     logger.addHandler(console_log)
     logger.addHandler(file_handler)
 

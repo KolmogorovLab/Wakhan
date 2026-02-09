@@ -11,7 +11,6 @@ def get_all_breakpoints_data(edges, edges_chr, height, path, args):
     _logging_level = logger.level
     logger.setLevel(logging.CRITICAL)
     my_parser = VCFParser(infile=path, split_variants=True, check_info=True)
-    logger.setLevel(_logging_level)
 
     chroms = get_contigs_list(args.contigs)
     bp_junctions_inv = [[]]
@@ -34,6 +33,8 @@ def get_all_breakpoints_data(edges, edges_chr, height, path, args):
             bp_junctions_ins.append([variant['CHROM'], int(variant['POS'])])
         elif variant['info_dict']['SVTYPE'][0] == 'DEL' and int(variant['info_dict']['SVLEN'][0]) > args.breakpoints_min_length:
             bp_junctions_del.append([variant['CHROM'], int(variant['POS'])])
+
+    logger.setLevel(_logging_level)
 
     #keys = sorted(set(interact_strength))
     #widths = [0.5 + k * 0.25 for k in range(5)] + [2 + k * 0.25 for k in range(4)] + [3, 3.25, 3.75, 4.25, 5, 5.25, 7]

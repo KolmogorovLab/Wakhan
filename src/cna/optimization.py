@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 
 
 logger = logging.getLogger()
+logging.getLogger('matplotlib').setLevel(logging.WARNING)
 
 
 class ProfileException(Exception):
