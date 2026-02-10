@@ -437,8 +437,8 @@ def main(argv=None):
 
     #grch37/grch38 chr notations check
     if ref_bam_vcfs_nomenclature_check(args) == False:
-       logger.info('Prefix notation/nomenclature in any/all Reference (.fasta/.fa), tumor BAM and phased VCF (normal/tumor) and/or in cancer_genes/centrmore file(s) are different than those used in --contigs param. --contigs chr1-22,chrX if chr1,chr2..chrX else --contigs 1-22,X if 1,2,..X')
-       return 0
+       logger.error('Inconsistent chromosome naming convention (chr1 vs 1) between input bam, reference, vcf, cancer_genes, centrmore files or --contigs param.')
+       return 1
 
     if args.command == 'cna':
         logger.info('Starting cna() module...')
