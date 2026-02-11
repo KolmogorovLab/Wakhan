@@ -297,10 +297,13 @@ def parse_coverage_bed_cpd(filename, phased, plot_path):
 
     median_cov = np.median(sum(cov_by_chrom.values(), []))
     MIN_SEG_LEN = MIN_SEG_LEN_BP // bin_size
-    chroms = ["chr" + str(i) for i in range(1, 23)]
+    chroms = sorted(cov_by_chrom.keys())
+
+    #TODO: removing sex chromosomes for backward compatability, will need to add back in the next release
+    chroms = [c for c in chroms if c not in ["chrX", "chrY", "X", "Y"]]
 
     if plot_path is not None:
-        fig, subplots = plt.subplots(len(chroms) // 2, 2, sharey=False)
+        fig, subplots = plt.subplots((len(chroms) + 1) // 2, 2, sharey=False)
 
     logger.info("Segmenting input coverage")
     all_segments = []
