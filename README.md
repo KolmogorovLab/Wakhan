@@ -3,8 +3,9 @@
 ### Version 0.4.0
 
 A tool to analyze haplotype-specific chromosome-scale somatic copy number aberrations and aneuploidy using long reads (Oxford Nanopore, PacBio). 
-Wakhan takes long-read alignment and phased heterozygous variants as input, and first extends the phased blocks and corrects phase-switch errors using [hapcorrect](https://github.com/KolmogorovLab/Wakhan/tree/main/src/hapcorrect) module, taking
-advantage of the copy numbers differences between the haplotypes. Wakhan estimates purity and ploidy of the sample and generates inetractive haplotype-specific copy number and coverage plots.
+Wakhan takes long-read alignment and phased heterozygous variants as input, and first extends the phased blocks and corrects phase-switch errors, taking
+advantage of the copy numbers differences between the haplotypes. Wakhan estimates purity and ploidy of the sample and generates inetractive 
+haplotype-specific copy number and coverage plots.
 
 A detailed algorithm description and evaluation is available in our [preprint](https://www.medrxiv.org/content/10.64898/2025.12.11.25342098v1).
 
@@ -68,14 +69,17 @@ conda activate wakhan_env
 
 ## Usage
 
-Wakhan can be run as a standalone [phase-correction](https://github.com/KolmogorovLab/Wakhan/tree/main/src/hapcorrect) and copy number profiling tool using below [1] tumor-only and tumor/normal pair commands.
-In case phased SVs/breakpoints, Long-Read Somatic Variant Calling pipeline mode [2] is recommended.
+## Prerequisites
 
+Wakhan takes tumor alignment (in bam format), a phased germline variant calls (in vcf format) and somatic SV calls (in vcf format). 
+Please refer to [prerequisite](https://github.com/KolmogorovLab/Wakhan/tree/main?tab=readme-ov-file#prerequisite) section to generate the required inputs.
 
+Alternatively, you can use the [Lumos pipeline](https://github.com/KolmogorovLab/Lumos) that generates all prerequisites and runs Wakhan.
+
+Note that if the organism has low-to-zero heterozygosity (e.g. mouse models), you should use the unphased input mode.
 
 ## 1. Standalone mode
 
-Please refer to [prerequisite](https://github.com/KolmogorovLab/Wakhan/tree/main?tab=readme-ov-file#prerequisite) section to generate required phased VCF and breakpoints VCF.
 
 ### Tumor-Normal Mode (requires tumor BAM and normal phased VCF)
 ```
@@ -195,13 +199,13 @@ python wakhan.py cna --threads 16 --reference  ${REF_FASTA}  --target-bam ${BAM_
 
 
 ## 3. Unphased mode 
-Wakhan can also be used in case phasing is not good in input tumor or analysis is being performed without considering phasing:
+Wakhan can also be used in unphased mode, in case the phasing quality is low or genome is effectively haploid (e.g. mouse models).
+Use the `--without-phasing` to enable unphased mode. 
 
-* `--without-phasing` Enable it if CNA analysis is being performed without phasing in conjunction with `--phaseblock-flipping-disable` and `--histogram-coverage` with all other required parameters as mentioned in example command
+A sample command-line for running a mouse genome analysis in unphased mode (note additional argument for centromere annotation)
 
-A sample command-line for running unphased mode (Mouse WGS data) could be:
 ```
-python wakhan.py --threads <> --reference <mouse_ref>  --target-bam <tumor_bam>  --cut-threshold 75  --normal-phased-vcf <phased_normal.vcf.gz> --out-dir-plots <mouse_output> --genome-name mouse --copynumbers-subclonal-enable --loh-enable --breakpoints <severus_somatic.vcf> --contigs <chr1-19,chrX> --without-phasing --phaseblock-flipping-disable --histogram-coverage  --centromere <annotations/mouse_chr.bed> --cpd-internal-segments  --hets-ratio 0.4  --hets-smooth-window 10
+python wakhan.py all --threads 16 --reference MM_10  --target-bam TUMOR.bam --tumor-phased-vcf TUMOR.vcf --out-dir-plots OUT_DIR --genome-name SAMPLE --breakpoints SEVERUS_SOMATIC.vcf --without-phasing --centromere WAKHAN_DIR/annotations/mouse_chr.bed> [--contigs chr1-19,chrX]
 ```
 
 Here is a sample copy number/breakpoints output plot without phasing for a mouse subline dataset.

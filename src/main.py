@@ -302,10 +302,10 @@ def build_parser():
     #FOR UNPHASED MODE
     global_parser.add_argument('--without-phasing', action="store_true", dest="without_phasing", default=False,
                                help="Enabling coverage and copynumbers without phasing in plots")
+    #these options are needed to unphased mode, but enabled automatically and should not be exposed
     global_parser.add_argument('--phaseblock-flipping-disable', action="store_true",  dest="phaseblock_flipping_disable", default=False,
-                               help="Disabling phaseblock flipping in coverage plots")
-    #unused now, not recommended for users. Needed for unphased mode, but better to consilidate in one option
-    global_parser.add_argument("--histogram-coverage", dest="histogram_coverage", action="store_true", help="use histogram coverage instead of SNPs pileup")
+                               help=argparse.SUPPRESS)
+    global_parser.add_argument("--histogram-coverage", dest="histogram_coverage", action="store_true", help=argparse.SUPPRESS)
 
     #CPD arguments (???)
     global_parser.add_argument("--cpd-internal-segments", dest="cpd_internal_segments", action="store_true",
@@ -439,6 +439,12 @@ def main(argv=None):
     if ref_bam_vcfs_nomenclature_check(args) == False:
        logger.error('Inconsistent chromosome naming convention (chr1 vs 1) between input bam, reference, vcf, cancer_genes, centrmore files or --contigs param.')
        return 1
+
+    #unphased mode parameters
+    if args.without_phasing:
+        args.phaseblocks_enable = False
+        args.phaseblock_flipping_disable = True
+        args.histogram_coverage = True
 
     if args.command == 'cna':
         logger.info('Starting cna() module...')
@@ -615,16 +621,17 @@ def cna_process(args):
         tumor_cov = statistics.mean([sum(x) for x in zip(haplotype_1_values_updated, haplotype_2_values_updated)])
     logger.info('Tumor coverage: %s', tumor_cov)
 
-    ###load coverage from phase_corrected_coverage.ps
-    phased_coverage_bed = os.path.join(args.out_dir_plots, 'coverage_data', 'phase_corrected_coverage.csv')
+    ###CN=1 optimization
+    is_phased_cov = not args.without_phasing
+    if is_phased_cov:
+        coverage_bed = os.path.join(args.out_dir_plots, 'coverage_data', 'phase_corrected_coverage.csv')
+    else:
+        coverage_bed = os.path.join(args.out_dir_plots, 'coverage_data', 'coverage.csv')
     cn_coverage_plot = os.path.join(args.out_dir_plots, 'coverage_data', 'cn_coverage.png')
-    PHASED_COV = True
-    opt_seg_cov, opt_seg_weights = parse_coverage_bed_cpd(phased_coverage_bed, phased=PHASED_COV, plot_path=cn_coverage_plot)
+
+    opt_seg_cov, opt_seg_weights = parse_coverage_bed_cpd(coverage_bed, is_phased_cov, plot_path=cn_coverage_plot)
     centers, is_half_peak, centers_half, subclonals, x_axis, observed_hist, single_copy_cov, single_copy_cov_half = \
-            peak_detection_optimization(args, opt_seg_cov, opt_seg_weights, phased=PHASED_COV)
-    #logger.info("First minimum %s", first_min)
-    #logger.info("Max correlation peak/Estimated single copy coverage: %s", single_copy_cov)
-    #logger.info("Half peak: %s", is_half_peak)
+            peak_detection_optimization(args, opt_seg_cov, opt_seg_weights, is_phased_cov)
 
     args.first_copy_breakpoints_filter = single_copy_cov if not is_half_peak else single_copy_cov // 2
 

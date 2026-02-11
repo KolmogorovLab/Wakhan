@@ -48,22 +48,27 @@ def sv_vcf_bps_cn_check(path, args):
     logger.setLevel(logging.CRITICAL)
     my_parser = VCFParser(infile=path, split_variants=True, check_info=True)
 
-    #Coverage of phase blocks to check if we are in balanced region
     chr_phaseblocks = defaultdict(IntervalTree)
-    csv_df_phaseblocks_coverage = pd.read_csv(args.out_dir_plots + '/coverage_data/coverage_ps.csv',
-                                              sep="\t", names=['chr', 'start', 'end', 'hp1', 'hp2'], header=None)
-    for index, row in csv_df_phaseblocks_coverage.iterrows():
-        chr_phaseblocks[row['chr']].add(Interval(row['start'], row['end'], (row['hp1'], row['hp2'])))
-
-    #Also LOH coverage, if it's tumor-only
     chr_loh = defaultdict(IntervalTree)
-    if args.tumor_phased_vcf:
-        csv_df_loh = pd.read_csv(args.out_dir_plots + '/coverage_data/' + args.genome_name + '_loh_segments.csv',
-                                 sep="\t", names=['chr', 'start', 'end', 'hp'], header=None)
-        for index, row in csv_df_loh.iterrows():
-            chr_loh[row['chr']].add(Interval(row['start'], row['end']))
+
+    #Coverage of phase blocks to check if we are in balanced region
+    if not args.without_phasing:
+        csv_df_phaseblocks_coverage = pd.read_csv(args.out_dir_plots + '/coverage_data/coverage_ps.csv',
+                                                  sep="\t", names=['chr', 'start', 'end', 'hp1', 'hp2'], header=None)
+        for index, row in csv_df_phaseblocks_coverage.iterrows():
+            chr_phaseblocks[row['chr']].add(Interval(row['start'], row['end'], (row['hp1'], row['hp2'])))
+
+        #Also LOH coverage, if it's tumor-only
+        if args.tumor_phased_vcf:
+            csv_df_loh = pd.read_csv(args.out_dir_plots + '/coverage_data/' + args.genome_name + '_loh_segments.csv',
+                                     sep="\t", names=['chr', 'start', 'end', 'hp'], header=None)
+            for index, row in csv_df_loh.iterrows():
+                chr_loh[row['chr']].add(Interval(row['start'], row['end']))
 
     def different_hp_coverage(chrom, pos):
+        if args.without_phasing:
+            return False
+
         ovlps_ps = chr_phaseblocks[chrom][pos]
         ovlps_loh = chr_loh[chrom][pos]
         if ovlps_loh:

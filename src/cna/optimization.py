@@ -79,7 +79,7 @@ def cn_one_inference(input_segments, input_weights, phased, plot_path):
             raise ProfileException("No local minima, likely a single peak. Setting CN=1 to histogram maximum")
 
         MIN_COV_TO_CORR = 0.25
-        min_corr = np.argmax(observed_hist) * MIN_COV_TO_CORR
+        min_corr = np.argmax(observed_hist) / cov_ploidy * MIN_COV_TO_CORR
         logger.info("Minimum correlation %4.2f", min_corr * HIST_RATE)
 
         #making sure all peaks are past minima and minimum correlation (that depends on coverage)
@@ -283,8 +283,11 @@ def parse_coverage_bed_cpd(filename, phased, plot_path):
                 bin_size = int(fields[2]) - int(fields[1])
                 logger.info("CPD bin size: {}".format(bin_size))
 
-            min_cov, max_cov = float(fields[3]), float(fields[4])   #phased
-            #min_cov, max_cov = float(fields[3]), 0
+            if phased:
+                min_cov, max_cov = float(fields[3]), float(fields[4])
+            else:
+                min_cov, max_cov = float(fields[3]), 0
+
             if min_cov + max_cov > 0:
                 cov_by_chrom_hp1[fields[0]].append(min_cov)
                 cov_by_chrom_hp2[fields[0]].append(max_cov)
