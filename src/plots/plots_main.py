@@ -198,9 +198,9 @@ def coverage_plots_chromosomes(df, df_phasesets, args, thread_pool):
         df_var_bins, df_var_bins_1 = get_chromosomes_bins(args.target_bam[0], args.bin_size, args)
 
     chroms = get_contigs_list(args.contigs)
-    fileDir = os.path.dirname(__file__) #os.path.dirname(os.path.realpath('__file__'))
-    cen_coord = os.path.join(fileDir, args.centromere)
-    df_centm = csv_df_chromosomes_sorter(cen_coord, ['chr', 'start', 'end'])
+    #fileDir = os.path.dirname(__file__) #os.path.dirname(os.path.realpath('__file__'))
+    #cen_coord = os.path.join(fileDir, args.centromere)
+    df_centm = csv_df_chromosomes_sorter(args.centromere, ['chr', 'start', 'end'])
     df_centm['start'].mask(df_centm['start'] == 1, 0, inplace=True)
 
     if args.quick_start:
@@ -472,9 +472,9 @@ def breakpoints_segments_means(df, df_phasesets, args, thread_pool):
         df_var_bins, df_var_bins_1 = get_chromosomes_bins(args.target_bam[0], args.bin_size, args)
 
     chroms = get_contigs_list(args.contigs)
-    fileDir = os.path.dirname(__file__) #os.path.dirname(os.path.realpath('__file__'))
-    cen_coord = os.path.join(fileDir, args.centromere)
-    df_centm = csv_df_chromosomes_sorter(cen_coord, ['chr', 'start', 'end'])
+    #fileDir = os.path.dirname(__file__) #os.path.dirname(os.path.realpath('__file__'))
+    #cen_coord = os.path.join(fileDir, args.centromere)
+    df_centm = csv_df_chromosomes_sorter(args.centromere, ['chr', 'start', 'end'])
     df_centm['start'].mask(df_centm['start'] == 1, 0, inplace=True)
 
     if args.quick_start:
@@ -1135,9 +1135,9 @@ def copy_number_plots_genome_breakpoints_cytos(centers, integer_fractional_cente
     offset_chroms = 0
     offset_chroms_1 = 0
     chroms = get_contigs_list(args.contigs)
-    fileDir = os.path.dirname(__file__) #os.path.dirname(os.path.realpath('__file__'))
-    cen_coord = os.path.join(fileDir, args.centromere)
-    df_centm = csv_df_chromosomes_sorter(cen_coord, ['chr', 'start', 'end'])
+    #fileDir = os.path.dirname(__file__) #os.path.dirname(os.path.realpath('__file__'))
+    #cen_coord = os.path.join(fileDir, args.centromere)
+    df_centm = csv_df_chromosomes_sorter(args.centromere, ['chr', 'start', 'end'])
 
     for index, chrom in enumerate(chroms):
         loh_starts = []
@@ -1550,9 +1550,9 @@ def copy_number_plots_genome_breakpoints(centers, integer_fractional_centers, df
     offset_chroms = 0
     offset_chroms_1 = 0
     chroms = get_contigs_list(args.contigs)
-    fileDir = os.path.dirname(__file__) #os.path.dirname(os.path.realpath('__file__'))
-    cen_coord = os.path.join(fileDir, args.centromere)
-    df_centm = csv_df_chromosomes_sorter(cen_coord, ['chr', 'start', 'end'])
+    #fileDir = os.path.dirname(__file__) #os.path.dirname(os.path.realpath('__file__'))
+    #cen_coord = os.path.join(fileDir, args.centromere)
+    df_centm = csv_df_chromosomes_sorter(args.centromere, ['chr', 'start', 'end'])
 
     for index, chrom in enumerate(chroms):
         loh_starts = []
@@ -1920,9 +1920,9 @@ def copy_number_plots_genome(centers, integer_fractional_centers, df_cnr_hp1, df
     offset_chroms = 0
     offset_chroms_1 = 0
     chroms = get_contigs_list(args.contigs)
-    fileDir = os.path.dirname(__file__) #os.path.dirname(os.path.realpath('__file__'))
-    cen_coord = os.path.join(fileDir, args.centromere)
-    df_centm = csv_df_chromosomes_sorter(cen_coord, ['chr', 'start', 'end'])
+    #fileDir = os.path.dirname(__file__) #os.path.dirname(os.path.realpath('__file__'))
+    #cen_coord = os.path.join(fileDir, args.centromere)
+    df_centm = csv_df_chromosomes_sorter(args.centromere, ['chr', 'start', 'end'])
 
     for index, chrom in enumerate(chroms):
         loh_starts = []
@@ -2398,9 +2398,9 @@ def copy_number_plots_genome_breakpoints_subclonal_cytos(centers, integer_fracti
     offset_chroms = 0
     offset_chroms_1 = 0
     chroms = get_contigs_list(args.contigs)
-    fileDir = os.path.dirname(__file__) #os.path.dirname(os.path.realpath('__file__'))
-    cen_coord = os.path.join(fileDir, args.centromere)
-    df_centm = csv_df_chromosomes_sorter(cen_coord, ['chr', 'start', 'end'])
+    #fileDir = os.path.dirname(__file__) #os.path.dirname(os.path.realpath('__file__'))
+    #cen_coord = os.path.join(fileDir, args.centromere)
+    df_centm = csv_df_chromosomes_sorter(args.centromere, ['chr', 'start', 'end'])
 
     for index, chrom in enumerate(chroms):
         loh_starts = []
@@ -2900,9 +2900,9 @@ def copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_c
     offset_chroms = 0
     offset_chroms_1 = 0
     chroms = get_contigs_list(args.contigs)
-    fileDir = os.path.dirname(__file__) #os.path.dirname(os.path.realpath('__file__'))
-    cen_coord = os.path.join(fileDir, args.centromere)
-    df_centm = csv_df_chromosomes_sorter(cen_coord, ['chr', 'start', 'end'])
+    #fileDir = os.path.dirname(__file__) #os.path.dirname(os.path.realpath('__file__'))
+    #cen_coord = os.path.join(fileDir, args.centromere)
+    df_centm = csv_df_chromosomes_sorter(args.centromere, ['chr', 'start', 'end'])
 
     for index, chrom in enumerate(chroms):
         loh_starts = []
@@ -3296,9 +3296,9 @@ def copy_number_plots_genome_subclonal(centers, integer_fractional_centers, df_c
     offset_chroms = 0
     offset_chroms_1 = 0
     chroms = get_contigs_list(args.contigs)
-    fileDir = os.path.dirname(__file__) #os.path.dirname(os.path.realpath('__file__'))
-    cen_coord = os.path.join(fileDir, args.centromere)
-    df_centm = csv_df_chromosomes_sorter(cen_coord, ['chr', 'start', 'end'])
+    #fileDir = os.path.dirname(__file__) #os.path.dirname(os.path.realpath('__file__'))
+    #cen_coord = os.path.join(fileDir, args.centromere)
+    df_centm = csv_df_chromosomes_sorter(args.centromere, ['chr', 'start', 'end'])
 
     for index, chrom in enumerate(chroms):
         loh_starts = []
@@ -3675,9 +3675,9 @@ def genes_copy_number_plots_genome(df_genes, centers, integer_fractional_centers
     offset_chroms = 0
     offset_chroms_1 = 0
     chroms = get_contigs_list(args.contigs)
-    fileDir = os.path.dirname(__file__) #os.path.dirname(os.path.realpath('__file__'))
-    cen_coord = os.path.join(fileDir, args.centromere)
-    df_centm = csv_df_chromosomes_sorter(cen_coord, ['chr', 'start', 'end'])
+    #fileDir = os.path.dirname(__file__) #os.path.dirname(os.path.realpath('__file__'))
+    #cen_coord = os.path.join(fileDir, args.centromere)
+    df_centm = csv_df_chromosomes_sorter(args.centromere, ['chr', 'start', 'end'])
 
     fig.add_trace(go.Bar(x=df_genes_1['start'], y=[x for x in df_genes.hp1.values.tolist()], name='HP-1', marker={'color': '#E3B448'}, width=2000000), row = 1, col = 1)
     #fig.add_bar(x=df_genes_1['start'], y=[-(x/2) for x in df_genes.hp2.values.tolist()], name='HP-2', marker={'color': '#3A6B35'}, width=2000000)
@@ -4096,9 +4096,9 @@ def genes_plots_genome(df_genes, centers, integer_fractional_centers, df_cnr_hp1
     offset_chroms = 0
     offset_chroms_1 = 0
     chroms = get_contigs_list(args.contigs)
-    fileDir = os.path.dirname(__file__)  # os.path.dirname(os.path.realpath('__file__'))
-    cen_coord = os.path.join(fileDir, args.centromere)
-    df_centm = csv_df_chromosomes_sorter(cen_coord, ['chr', 'start', 'end'])
+    #fileDir = os.path.dirname(__file__)  # os.path.dirname(os.path.realpath('__file__'))
+    #cen_coord = os.path.join(fileDir, args.centromere)
+    df_centm = csv_df_chromosomes_sorter(args.centromere, ['chr', 'start', 'end'])
 
     fig.add_trace(go.Bar(x=df_genes_1['start'], y=[x for x in df_genes.adjusted_coverage_hp1.values.tolist()], text=genename_1,
                    customdata=gene_cn_hp1,

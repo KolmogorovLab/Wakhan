@@ -30,9 +30,9 @@ def weigted_means_ploidy(args, df_hp_1, df_hp_2, centers, integer_fractional_mea
     df_1 = df_hp_1.copy()
     df_2 = df_hp_2.copy()
 
-    fileDir = os.path.dirname(__file__)  # os.path.dirname(os.path.realpath('__file__'))
-    cen_coord = os.path.join(fileDir, args.centromere)
-    df_centm = csv_df_chromosomes_sorter(cen_coord, ['chr', 'start', 'end'])
+    #fileDir = os.path.dirname(__file__)  # os.path.dirname(os.path.realpath('__file__'))
+    #cen_coord = os.path.join(fileDir, args.centromere)
+    df_centm = csv_df_chromosomes_sorter(args.centromere, ['chr', 'start', 'end'])
     df_centm['start'].mask(df_centm['start'] == 1, 0, inplace=True)
 
     for i in range(len(integer_fractional_means)):

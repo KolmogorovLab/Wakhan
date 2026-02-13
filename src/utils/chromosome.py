@@ -10,9 +10,9 @@ def centromere_regions_blacklist(args, df_segs_hp1_, df_segs_hp2_):
     updated_hp1_segs = []
     updated_hp2_segs = []
 
-    fileDir = os.path.dirname(__file__)  # os.path.dirname(os.path.realpath('__file__'))
-    cen_coord = os.path.join(fileDir, args.centromere)
-    df_centm = csv_df_chromosomes_sorter(cen_coord, ['chr', 'start', 'end'])
+    #fileDir = os.path.dirname(__file__)  # os.path.dirname(os.path.realpath('__file__'))
+    #cen_coord = os.path.join(fileDir, args.centromere)
+    df_centm = csv_df_chromosomes_sorter(args.centromere, ['chr', 'start', 'end'])
     df_centm['start'].mask(df_centm['start'] == 1, 0, inplace=True)
 
     chroms = get_contigs_list(args.contigs)
@@ -51,9 +51,9 @@ def centromere_regions_blacklist_bins(args, df_hp1_, df_hp2_, df_segs_hp1_update
     updated_hp1 = []
     updated_hp2 = []
 
-    fileDir = os.path.dirname(__file__)  # os.path.dirname(os.path.realpath('__file__'))
-    cen_coord = os.path.join(fileDir, args.centromere)
-    df_centm = csv_df_chromosomes_sorter(cen_coord, ['chr', 'start', 'end'])
+    #fileDir = os.path.dirname(__file__)  # os.path.dirname(os.path.realpath('__file__'))
+    #cen_coord = os.path.join(fileDir, args.centromere)
+    df_centm = csv_df_chromosomes_sorter(args.centromere, ['chr', 'start', 'end'])
     df_centm['start'].mask(df_centm['start'] == 1, 0, inplace=True)
 
     chroms = get_contigs_list(args.contigs)
@@ -101,9 +101,9 @@ def centromere_regions_blacklist_bins(args, df_hp1_, df_hp2_, df_segs_hp1_update
 
 
 def extract_centromere_regions(args):
-    fileDir = os.path.dirname(__file__)  # os.path.dirname(os.path.realpath('__file__'))
-    cen_coord = os.path.join(fileDir, args.centromere)
-    df_centm = csv_df_chromosomes_sorter(cen_coord, ['chr', 'start', 'end'])
+    #fileDir = os.path.dirname(__file__)  # os.path.dirname(os.path.realpath('__file__'))
+    #cen_coord = os.path.join(fileDir, args.centromere)
+    df_centm = csv_df_chromosomes_sorter(args.centromere, ['chr', 'start', 'end'])
     df_centm['start'].mask(df_centm['start'] == 1, 0, inplace=True)
     return df_centm
 
