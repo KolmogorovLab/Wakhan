@@ -1,6 +1,6 @@
 # Wakhan
 
-### Version 0.4.0
+### Version 0.4.1
 
 A tool to analyze haplotype-specific chromosome-scale somatic copy number aberrations and aneuploidy using long reads (Oxford Nanopore, PacBio). 
 Wakhan takes long-read alignment and phased heterozygous variants as input, and first extends the phased blocks and corrects phase-switch errors, taking
@@ -53,18 +53,18 @@ A detailed algorithm description and evaluation is available in our [preprint](h
 
 [//]: # (```)
 
-## Installation (enabling through conda environment)
+## Bioconda installation 
+```
+conda create -n wakhan_env wakhan
+conda activate wakhan_env
+```
+
+## Source installation 
 ```
 git clone https://github.com/KolmogorovLab/Wakhan.git
 cd Wakhan/
 conda env create -f environment.yml -n wakhan
 conda activate wakhan
-```
-
-## Conda recipe installation 
-```
-conda create -n wakhan_env wakhan
-conda activate wakhan_env
 ```
 
 ## Usage
