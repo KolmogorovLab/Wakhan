@@ -752,13 +752,30 @@ def extract_breakpoints_additional(args):
 def test_input_files(args):
     filelist = [args.reference, args.tumor_phased_vcf, args.normal_phased_vcf, args.centromere, args.cancer_genes,
                 args.user_input_genes, args.breakpoints]
+
+    aln_files = args.target_bam
+    if args.control_bam is not None:
+        aln_files.extend(args.control_bam)
+    filelist.extend(aln_files)
+
+    """
     if args.target_bam is not None:
         filelist.extend(args.target_bam)
-        filelist.extend([x + ".bai" for x in args.target_bam])
+        #filelist.extend([x + ".bai" for x in args.target_bam])
     if args.control_bam is not None:
         filelist.extend(args.control_bam)
-        filelist.extend([x + ".bai" for x in args.control_bam])
+        #filelist.extend([x + ".bai" for x in args.control_bam])
+    """
+
     for file in filelist:
         if file is not None and not os.path.exists(file):
             logger.error(f"Input file does not exist: {file}")
+            raise Exception("Input error")
+
+    for aln in aln_files:
+        try:
+            with pysam.AlignmentFile(aln, 'rb') as f:
+                f.check_index()
+        except:
+            logger.error("No index or corrupted file: %s", aln)
             raise Exception("Input error")
