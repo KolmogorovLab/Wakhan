@@ -88,7 +88,10 @@ def genes_phase_correction(df_genes, df_segs_hp1, df_segs_hp2, args, centers, in
                      df_gene.gene.values.tolist(), [round(l,2) for l in df_gene.hp1.values.tolist()], [round(l,2) for l in df_gene.hp2.values.tolist()], [round(l,2) for l in genes_coverage_hp1], [round(l,2) for l in genes_coverage_hp2], gene_hp1_state, gene_hp2_state)),
             columns=['chr', 'start', 'end', 'gene', 'actual_coverage_hp1', 'actual_coverage_hp2', 'adjusted_coverage_hp1', 'adjusted_coverage_hp2', 'copynumber_hp1_state', 'copynumber_hp2_state']))
 
-    return pd.concat(df_genes_updated)
+    df_genes_updated_filtered = [df for df in df_genes_updated if not df.empty]
+    if df_genes_updated_filtered:
+        return pd.concat(df_genes_updated_filtered)
+    return pd.DataFrame()
 
 
 def update_genes_phase_corrected_coverage(args, df_segs_hp1, df_segs_hp2, p_value, centers, integer_fractional_centers, is_half):

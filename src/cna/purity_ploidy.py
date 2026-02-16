@@ -33,10 +33,10 @@ def weigted_means_ploidy(args, df_hp_1, df_hp_2, centers, integer_fractional_mea
     #fileDir = os.path.dirname(__file__)  # os.path.dirname(os.path.realpath('__file__'))
     #cen_coord = os.path.join(fileDir, args.centromere)
     df_centm = csv_df_chromosomes_sorter(args.centromere, ['chr', 'start', 'end'])
-    df_centm['start'].mask(df_centm['start'] == 1, 0, inplace=True)
+    df_centm['start'] = df_centm['start'].mask(df_centm['start'] == 1, 0)
 
     for i in range(len(integer_fractional_means)):
-        df_1['state'].mask(df_1['state'] == centers[i], integer_fractional_means[i], inplace=True)
+        df_1['state'] = df_1['state'].mask(df_1['state'] == centers[i], integer_fractional_means[i])
 
     vals = df_1.state.values.tolist()
     weights = [i - j for i, j in zip(df_1.end.values.tolist(), df_1.start.values.tolist())]
@@ -46,7 +46,7 @@ def weigted_means_ploidy(args, df_hp_1, df_hp_2, centers, integer_fractional_mea
     df.to_csv(args.out_dir_plots + '/data/hp1_weights.tsv', sep='\t', index=False)
 
     for i in range(len(integer_fractional_means)):
-        df_2['state'].mask(df_2['state'] == centers[i], integer_fractional_means[i], inplace=True)
+        df_2['state'] = df_2['state'].mask(df_2['state'] == centers[i], integer_fractional_means[i])
 
     vals = df_2.state.values.tolist()
     weights = [i - j for i, j in zip(df_2.end.values.tolist(), df_2.start.values.tolist())]

@@ -13,7 +13,7 @@ def centromere_regions_blacklist(args, df_segs_hp1_, df_segs_hp2_):
     #fileDir = os.path.dirname(__file__)  # os.path.dirname(os.path.realpath('__file__'))
     #cen_coord = os.path.join(fileDir, args.centromere)
     df_centm = csv_df_chromosomes_sorter(args.centromere, ['chr', 'start', 'end'])
-    df_centm['start'].mask(df_centm['start'] == 1, 0, inplace=True)
+    df_centm['start'] = df_centm['start'].mask(df_centm['start'] == 1, 0)
 
     chroms = get_contigs_list(args.contigs)
     for index, chrom in enumerate(chroms):
@@ -54,7 +54,7 @@ def centromere_regions_blacklist_bins(args, df_hp1_, df_hp2_, df_segs_hp1_update
     #fileDir = os.path.dirname(__file__)  # os.path.dirname(os.path.realpath('__file__'))
     #cen_coord = os.path.join(fileDir, args.centromere)
     df_centm = csv_df_chromosomes_sorter(args.centromere, ['chr', 'start', 'end'])
-    df_centm['start'].mask(df_centm['start'] == 1, 0, inplace=True)
+    df_centm['start'] = df_centm['start'].mask(df_centm['start'] == 1, 0)
 
     chroms = get_contigs_list(args.contigs)
     for index, chrom in enumerate(chroms):
@@ -104,7 +104,7 @@ def extract_centromere_regions(args):
     #fileDir = os.path.dirname(__file__)  # os.path.dirname(os.path.realpath('__file__'))
     #cen_coord = os.path.join(fileDir, args.centromere)
     df_centm = csv_df_chromosomes_sorter(args.centromere, ['chr', 'start', 'end'])
-    df_centm['start'].mask(df_centm['start'] == 1, 0, inplace=True)
+    df_centm['start'] = df_centm['start'].mask(df_centm['start'] == 1, 0)
     return df_centm
 
 
@@ -147,13 +147,13 @@ def chromosomes_sorter(label):
 def csv_df_chromosomes_sorter(path, names, sept='\t'):
     dataframe = pd.read_csv(path, sep=sept, names=names, header=None)
     dataframe['chr'] = dataframe['chr'].astype(str)
-    dataframe.sort_values(by=['chr', names[1]], ascending=[True, True], inplace=True)
+    dataframe = dataframe.sort_values(by=['chr', names[1]], ascending=[True, True])
     return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
 
 
 def df_chromosomes_sorter(dataframe, names, sept='\t'):
     dataframe['chr'] = dataframe['chr'].astype(str)
-    dataframe.sort_values(by=['chr', names[1]], ascending=[True, True], inplace=True)
+    dataframe = dataframe.sort_values(by=['chr', names[1]], ascending=[True, True])
     return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
 
 

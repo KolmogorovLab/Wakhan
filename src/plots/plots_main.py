@@ -201,7 +201,7 @@ def coverage_plots_chromosomes(df, df_phasesets, args, thread_pool):
     #fileDir = os.path.dirname(__file__) #os.path.dirname(os.path.realpath('__file__'))
     #cen_coord = os.path.join(fileDir, args.centromere)
     df_centm = csv_df_chromosomes_sorter(args.centromere, ['chr', 'start', 'end'])
-    df_centm['start'].mask(df_centm['start'] == 1, 0, inplace=True)
+    df_centm['start'] = df_centm['start'].mask(df_centm['start'] == 1, 0)
 
     if args.quick_start:
         loh_path = args.quick_start_coverage_path + '/'
@@ -475,7 +475,7 @@ def breakpoints_segments_means(df, df_phasesets, args, thread_pool):
     #fileDir = os.path.dirname(__file__) #os.path.dirname(os.path.realpath('__file__'))
     #cen_coord = os.path.join(fileDir, args.centromere)
     df_centm = csv_df_chromosomes_sorter(args.centromere, ['chr', 'start', 'end'])
-    df_centm['start'].mask(df_centm['start'] == 1, 0, inplace=True)
+    df_centm['start'] = df_centm['start'].mask(df_centm['start'] == 1, 0)
 
     if args.quick_start:
         loh_path = args.quick_start_coverage_path + '/'

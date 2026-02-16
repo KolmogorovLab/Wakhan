@@ -321,7 +321,7 @@ def read_cn_segments_process_vcf(args, repo, type):
     #fileDir = os.path.dirname(__file__)  # os.path.dirname(os.path.realpath('__file__'))
     #cen_coord = os.path.join(fileDir, args.centromere)
     df_centm = csv_df_chromosomes_sorter(args.centromere, ['chr', 'start', 'end'])
-    df_centm['start'].mask(df_centm['start'] == 1, 0, inplace=True)
+    df_centm['start'] = df_centm['start'].mask(df_centm['start'] == 1, 0)
 
     chroms = get_contigs_list(args.contigs)
     for index, chrom in enumerate(chroms):

@@ -65,7 +65,7 @@ def remove_overlapping_and_small_phasesets(df):
     )
 
     # Step 2: Sort by chr, then start position
-    intervals.sort_values(['chr', 'start'], inplace=True)
+    intervals = intervals.sort_values(['chr', 'start'])
 
     # Step 3: Process each chromosome separately
     result = []
@@ -73,7 +73,7 @@ def remove_overlapping_and_small_phasesets(df):
         # Sort by start position, then by longest duration (end - start) descending
         group = group.copy()
         group['length'] = group['end'] - group['start']
-        group.sort_values(by=['start', 'length'], ascending=[True, False], inplace=True)
+        group = group.sort_values(by=['start', 'length'], ascending=[True, False])
 
         merged = []
         for _, row in group.iterrows():

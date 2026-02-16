@@ -117,7 +117,7 @@ def change_point_detection_means(args, chrom, bps_ids_all, df_chrom, ref_start_v
         #fileDir = os.path.dirname(__file__)  # os.path.dirname(os.path.realpath('__file__'))
         #cen_coord = os.path.join(fileDir, args.centromere)
         df_centm = csv_df_chromosomes_sorter(args.centromere, ['chr', 'start', 'end'])
-        df_centm['start'].mask(df_centm['start'] == 1, 0, inplace=True)
+        df_centm['start'] = df_centm['start'].mask(df_centm['start'] == 1, 0)
 
         indices_cent_hp1 = update_state_with_loh_overlap(df_means_chr[0], df_centm)
         indices_cent_hp2 = update_state_with_loh_overlap(df_means_chr[1], df_centm)
@@ -371,7 +371,7 @@ def adjust_bps_cn_segments_boundries(args, haplotype_df):
     #fileDir = os.path.dirname(__file__) #os.path.dirname(os.path.realpath('__file__'))
     #cen_coord = os.path.join(fileDir, args.centromere)
     df_centm = csv_df_chromosomes_sorter(args.centromere, ['chr', 'start', 'end'])
-    df_centm['start'].mask(df_centm['start'] == 1, 0, inplace=True)
+    df_centm['start'] = df_centm['start'].mask(df_centm['start'] == 1, 0)
     cent_starts = df_centm.start.values.tolist()
     cent_ends = df_centm.end.values.tolist()
     cent_chr = df_centm.chr.values.tolist()

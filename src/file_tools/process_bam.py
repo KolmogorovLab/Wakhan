@@ -419,7 +419,7 @@ def ref_bam_vcfs_nomenclature_check(args):
     df_fasta = pandas.read_csv(out_fasta, sep='\t')
 
     df_centm = csv_df_chromosomes_sorter(args.centromere, ['chr', 'start', 'end'])
-    df_centm['start'].mask(df_centm['start'] == 1, 0, inplace=True)
+    df_centm['start'] = df_centm['start'].mask(df_centm['start'] == 1, 0)
 
     df_genes = csv_df_chromosomes_sorter(args.cancer_genes, ['chr', 'start', 'end', 'gene'])
 

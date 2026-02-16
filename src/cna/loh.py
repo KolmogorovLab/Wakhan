@@ -98,8 +98,8 @@ def collect_loh_centromere_regions(df_segs_hp1_, df_segs_hp2_, centers, integer_
     df_segs_hp1 = df_segs_hp1_.copy()
     df_segs_hp2 = df_segs_hp2_.copy()
     for i in range(len(integer_fractional_means)):
-        df_segs_hp1['state'].mask(df_segs_hp1['state'] == centers[i], integer_fractional_means[i], inplace=True)
-        df_segs_hp2['state'].mask(df_segs_hp2['state'] == centers[i], integer_fractional_means[i], inplace=True)
+        df_segs_hp1['state'] = df_segs_hp1['state'].mask(df_segs_hp1['state'] == centers[i], integer_fractional_means[i])
+        df_segs_hp2['state'] = df_segs_hp2['state'].mask(df_segs_hp2['state'] == centers[i], integer_fractional_means[i])
 
     chroms = get_contigs_list(args.contigs)
     loh_regions_all = []

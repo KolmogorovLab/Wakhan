@@ -328,13 +328,6 @@ def integers_values_adjusted(x, centers):
     return len(centers)-1 #round((len(centers) - 1) + ((x - centers[-1]) / ((centers[-1] + (centers[-1] - centers[-2])) - centers[-1])), 2)
 
 
-#def mask_df_states(haplotype_df, centers, integer_fractional_means):
-#    for i in range(len(integer_fractional_means)):
-#        haplotype_df['state'].mask(haplotype_df['state'] == centers[i], integer_fractional_means[i], inplace=True)
-#
-#    return haplotype_df
-
-
 def bins_with_copynumber_states(df_segs_hp1, df_segs_hp2, df_hp1, df_hp2, args, centers, integer_fractional_centers):
     chroms = get_contigs_list(args.contigs)
     df_hp1_updated = []

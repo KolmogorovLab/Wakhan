@@ -227,7 +227,7 @@ def update_bins_with_bps(bed, bps, bps_bnd, args, region):
         #########################################################################
 
     df  = pd.concat(df_bps_segs)
-    df.drop_duplicates(subset=['chr', 'start', 'end'], keep=False, inplace=True)
+    df = df.drop_duplicates(subset=['chr', 'start', 'end'], keep=False)
     return df
 
 
@@ -379,6 +379,6 @@ def update_bins_with_bps_new(bed, bps, bps_bnd, args, region):
 
     df  = pd.concat(df_bps_segs)
     df_1 = pd.concat(df_bps_segs_1)
-    df.drop_duplicates(subset=['chr', 'start', 'end'], keep=False, inplace=True)
-    df_1.drop_duplicates(subset=['chr', 'start', 'end'], keep=False, inplace=True)
+    df = df.drop_duplicates(subset=['chr', 'start', 'end'], keep=False)
+    df_1 = df_1.drop_duplicates(subset=['chr', 'start', 'end'], keep=False)
     return df, df_1

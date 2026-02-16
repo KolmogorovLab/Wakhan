@@ -22,7 +22,7 @@ def write_copynumber_segments_csv(df_hp1, df_hp2, haplotype_df_, args, centers, 
     #integer_fractional_means = sorted([i for i in range(0, len(uniques))])
     if not "subclonal" in filename:
         for i in range(len(integer_fractional_means)):
-            haplotype_df['state'].mask(haplotype_df['state'] == centers[i], integer_fractional_means[i], inplace=True)
+            haplotype_df['state'] = haplotype_df['state'].mask(haplotype_df['state'] == centers[i], integer_fractional_means[i])
     #haplotype_df = mask_df_states(haplotype_df_copy, centers, integer_fractional_means)
 
     if 'p_value' in haplotype_df.columns:
