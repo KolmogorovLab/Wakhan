@@ -90,6 +90,7 @@ def main_process(args):
         logger.info('Computing coverage histogram')
         coverage_histograms = update_coverage_hist(genome_ids, ref_lengths, segments_by_read, args.min_mapping_quality,
                                                    args.max_read_error, args)
+        del segments_by_read_bam
         del segments_by_read
 
     if args.tumor_phased_vcf and not args.quick_start:

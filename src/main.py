@@ -41,7 +41,6 @@ from src.file_tools.generate_vcf import read_cn_segments_process_vcf
 
 logger = logging.getLogger()
 
-solutions_df = pd.DataFrame(columns=['repository_name', 'dna_purity', 'cell_purity', 'ploidy', 'confidence'])
 
 def _enable_logging(log_file, debug, overwrite):
     """
@@ -66,7 +65,7 @@ def _enable_logging(log_file, debug, overwrite):
 def _version():
     return __version__
 
-def copy_numbers_assignment_haplotypes(args, tumor_cov, max_limit, single_copy_cov, centers, subclonals, df_hp1_base, df_hp2_base, df_segs_hp1_base, df_segs_hp2_base, snps_cpd_means_df, csv_df_snps_mean, df_snps_in_csv, df_unphased, x_axis, observed_hist, is_half):
+def copy_numbers_assignment_haplotypes(args, solutions_df, tumor_cov, max_limit, single_copy_cov, centers, subclonals, df_hp1_base, df_hp2_base, df_segs_hp1_base, df_segs_hp2_base, snps_cpd_means_df, csv_df_snps_mean, df_snps_in_csv, df_unphased, x_axis, observed_hist, is_half):
     data = []
     average_p_value = []
     #max_limit = 3/2 #debug
@@ -158,8 +157,6 @@ def copy_numbers_assignment_haplotypes(args, tumor_cov, max_limit, single_copy_c
         p_value_confidence = round(solution[3], 2)
         logger.info('Generating coverage/copy numbers plots genome wide for solution with tumor cellular fraction {0}, ploidy {1} and tumor dna fraction {2}'.format(args.tumor_purity, args.tumor_ploidy, dna_tumor_fraction))
         logger.debug('Normal optimized clusters means: %s', cen_out)
-        #solutions_df.loc[j] = [str(args.tumor_ploidy)+'_'+str(args.tumor_purity)+'_'+str(p_value_confidence),
-        #                          dna_tumor_fraction, args.tumor_purity, args.tumor_ploidy, p_value_confidence]
         solutions_df.loc[len(solutions_df)] = [str(args.tumor_ploidy)+'_'+str(args.tumor_purity)+'_'+str(p_value_confidence),
                                                dna_tumor_fraction, args.tumor_purity, args.tumor_ploidy, p_value_confidence]
 
@@ -484,6 +481,8 @@ def cna_process(args):
     BCFTOOLS_BIN = "bcftools"
     MIN_SV_SIZE = 50
 
+    solutions_df = pd.DataFrame(columns=['repository_name', 'dna_purity', 'cell_purity', 'ploidy', 'confidence'])
+
     if not args.quick_start:# and not args.without_phasing and not args.phaseblock_flipping_disable and not args.histogram_coverage:
         args.quick_start = True
         args.quick_start_coverage_path = args.out_dir_plots+'/coverage_data'
@@ -702,20 +701,22 @@ def cna_process(args):
     else:
         ################################
         logging.info("Optmizing for the primary CN=1 peak")
-        copy_numbers_assignment_haplotypes(args, tumor_cov, max_limit, single_copy_cov, centers, subclonals, df_hp1, df_hp2, df_segs_hp1, df_segs_hp2, snps_cpd_means_df, csv_df_snps_mean, df_snps_in_csv, df_unphased, x_axis, observed_hist, False)
+        copy_numbers_assignment_haplotypes(args, solutions_df, tumor_cov, max_limit, single_copy_cov, centers, subclonals, df_hp1, df_hp2, df_segs_hp1, df_segs_hp2, snps_cpd_means_df, csv_df_snps_mean, df_snps_in_csv, df_unphased, x_axis, observed_hist, False)
         if is_half_peak:
             logging.info("Optmizing for an alternative CN=1 peak")
-            copy_numbers_assignment_haplotypes(args, tumor_cov, max_limit, single_copy_cov_half, centers_half, subclonals, df_hp1, df_hp2, df_segs_hp1, df_segs_hp2, snps_cpd_means_df, csv_df_snps_mean, df_snps_in_csv, df_unphased, x_axis, observed_hist, False)
+            copy_numbers_assignment_haplotypes(args, solutions_df, tumor_cov, max_limit, single_copy_cov_half, centers_half, subclonals, df_hp1, df_hp2, df_segs_hp1, df_segs_hp2, snps_cpd_means_df, csv_df_snps_mean, df_snps_in_csv, df_unphased, x_axis, observed_hist, False)
 
         if len(solutions_df):
             solutions_df['solution_rank'] = solutions_df['confidence'].rank(method='first', ascending=False).astype(int)
-            solutions_df.sort_values(by='solution_rank', inplace=True)
+            solutions_df = solutions_df.sort_values(by='solution_rank')
             solutions_df.to_csv(args.out_dir_plots+'/solutions_ranks.tsv', sep='\t', header=True, index=False, mode='w')
 
             for index, link_info in solutions_df.iterrows():
                 target_folder = os.path.abspath(args.out_dir_plots) + '/' + link_info['repository_name']
                 link_path = os.path.abspath(args.out_dir_plots) + '/' + 'solution_' + str(link_info['solution_rank'])
                 try:
+                    if os.path.islink(link_path):
+                        os.unlink(link_path)
                     os.symlink(target_folder, link_path, target_is_directory=True)
                     logger.info(f"Solution symbolic link created: {link_path} -> {target_folder}")
                 except OSError as e:
@@ -752,6 +753,11 @@ def extract_breakpoints_additional(args):
 def test_input_files(args):
     filelist = [args.reference, args.tumor_phased_vcf, args.normal_phased_vcf, args.centromere, args.cancer_genes,
                 args.user_input_genes, args.breakpoints]
+
+    if len(args.target_bam) > 1:
+        raise Exception("More than 1 input bam currently not supported")
+    if args.control_bam is not None:
+        raise Exception("Control bam currently not supported")
 
     aln_files = args.target_bam
     if args.control_bam is not None:
