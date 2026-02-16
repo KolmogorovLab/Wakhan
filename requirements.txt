@@ -1,7 +1,7 @@
-setuptools
+setuptools<81
 pysam
 pyfaidx
-numpy
+numpy<1.26.0
 pandas
 plotly
 scikit-learn==1.2.0

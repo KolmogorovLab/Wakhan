@@ -2,14 +2,14 @@ name: Wakhan
 channels:
   - conda-forge
   - bioconda
-  - defaults
 dependencies:
-  - python==3.8
+  - python==3.10
+  - setuptools<81
   - samtools>=1.14
   - bcftools>=1.14
   - pysam
   - pyfaidx
-  - numpy
+  - numpy<1.26.0
   - pandas
   - plotly
   - scikit-learn==1.2.0
