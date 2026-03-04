@@ -1053,9 +1053,9 @@ def copy_number_plots_genome_breakpoints_cytos(centers, integer_fractional_cente
 
     ###########################################################
     if args.without_phasing:
-        row_heights = [220, 160, 150, 20, 40]
+        row_heights = [110, 120, 150, 4, 80]
     else:
-        row_heights = [220, 320, 20, 150, 40]
+        row_heights = [110, 240, 20, 30, 80]
 
     #fig = make_subplots(rows=2, cols=1, shared_yaxes=False, shared_xaxes=True, vertical_spacing=0.02, horizontal_spacing=0.02)
     fig = make_subplots(rows=5, cols=1, shared_yaxes=False, shared_xaxes='columns',  vertical_spacing=0.01, row_heights=row_heights,
@@ -1225,25 +1225,25 @@ def copy_number_plots_genome_breakpoints_cytos(centers, integer_fractional_cente
         tickvals = [i for i in range(0, 1000, 25)]
         ticktext = [str(abs(i)) for i in range(0, 1000, 25)]
         yaxis2_3_range = [0, args.cut_threshold + 5]
-        plot_height = 850 + 150 + 20
-        legend_y = 1.090
+        plot_height = 850 + 150 + 20 - 110 - 40
+        legend_y = 1.135
     else:
         tick_vals = centers_rev + centers
         tickt_ext = integer_fractional_means_rev + integer_fractional_centers
         tickvals = [i for i in range(-1000, 1000, 25)]
         ticktext = [str(abs(i)) for i in range(-1000, 1000, 25)]
         yaxis2_3_range = [-(args.cut_threshold + 5), args.cut_threshold + 5]
-        plot_height = 850 + 150 + 130 + 40 + 20
-        legend_y = 1.05
+        plot_height = 850 + 150 + 130 + 40 + 20 - 110 - 80
+        legend_y = 1.075
     # #############################################################
     # #############################################################
     #fig.update_yaxes(range=[-1, args.cut_threshold])
-    fig.update_layout(yaxis=dict(title="<b>Breakpoints</b>", range=[0, 75], showticklabels = False, showgrid=False, zeroline=False),
+    fig.update_layout(yaxis=dict(title=dict(text="Structural variants", font=dict(size=16)), range=[0, 75], showticklabels = False, showgrid=False, zeroline=False),
                       yaxis2=dict(range=yaxis2_3_range, showgrid=False,),
                       yaxis3=dict(range=yaxis2_3_range, showgrid=False,),
-                      yaxis5=dict(title="<b>B-allele frequency</b>", range=[0, 0.6], showticklabels=True, showgrid=False, zeroline=False),
-                      yaxis6=dict(title="<b>Genes</b>", range=[0, 1], showticklabels = False, showgrid=False, zeroline=True, zerolinewidth=2, zerolinecolor='black'),
-                      yaxis4=dict(title="<b>Cytos</b>", range=[0, 1], showticklabels=False, showgrid=False, zeroline=True, zerolinewidth=2, zerolinecolor='black'),
+                      yaxis5=dict(title=dict(text="B-allele frequency", font=dict(size=16)), range=[0, 0.6], showticklabels=True, showgrid=False, zeroline=False),
+                      yaxis6=dict(title=dict(text="Genes", font=dict(size=16)), range=[0, 1], showticklabels = False, showgrid=False, zeroline=True, zerolinewidth=2, zerolinecolor='black'),
+                      yaxis4=dict(title=dict(text="Cytos", font=dict(size=16)), range=[0, 1], showticklabels=False, showgrid=False, zeroline=True, zerolinewidth=2, zerolinecolor='black'),
 
                       xaxis=dict(showspikes=True, tick0=0.0, rangemode="nonnegative", range=[0, len(df_cnr_hp1.start.values.tolist())*args.bin_size], showticklabels = False, showgrid=False, zeroline=False),
                       xaxis2=dict(tick0=0.0, rangemode="nonnegative", range=[0, len(df_cnr_hp1.start.values.tolist())*args.bin_size], zeroline=True, zerolinewidth=1, zerolinecolor='black', showgrid=False,),
@@ -1252,15 +1252,20 @@ def copy_number_plots_genome_breakpoints_cytos(centers, integer_fractional_cente
                       xaxis6=dict(tick0=0.0, rangemode="nonnegative", range=[0, len(df_cnr_hp1.start.values.tolist())*args.bin_size], showgrid=False, zeroline=True, zerolinewidth=1, zerolinecolor='black'),
                       xaxis4=dict(tick0=0.0, rangemode="nonnegative", range=[0, len(df_cnr_hp1.start.values.tolist())*args.bin_size], showgrid=False, zeroline=True, zerolinewidth=1, zerolinecolor='black'))
 
+    # Swap Genes and B-allele frequency panel positions
+    baf_domain = list(fig.layout.yaxis5.domain)
+    genes_domain = list(fig.layout.yaxis6.domain)
+    fig.update_layout(yaxis5=dict(domain=genes_domain), yaxis6=dict(domain=baf_domain))
+
     fig.update_layout(
         yaxis2=dict(
-            title="<b>Coverage depth</b> (per bin)",
+            title=dict(text="Binned sequencing depth", font=dict(size=16)),
             tickmode='array',
             tickvals=tickvals,
             ticktext=ticktext
         ),
         yaxis3=dict(
-            title="<b>Copies</b> (integers)",
+            title=dict(text="Copy numbers", font=dict(size=16)),
             zeroline=True, zerolinewidth=1, zerolinecolor='black',
             tickmode='array',
             tickvals=tick_vals,
@@ -1278,30 +1283,26 @@ def copy_number_plots_genome_breakpoints_cytos(centers, integer_fractional_cente
     #     legend_traceorder="normal")
 
     fig.update_xaxes(
-        #xaxis2=dict(
-            tickangle=90,
-            tickmode='array',  # change 1
-            tickvals=label_pos,  # change 2
-            ticktext=chroms,  # change 3
-        #),
-        #font=dict(size=18, color="black")
+        tickmode='array',
+        tickvals=label_pos,
+        ticktext=chroms,
+        showticklabels=False,
+        tickfont=dict(size=16),
     )
-    ax = 20
-    ay = -30
-    add_annotation(fig, 960000000, 75, ax, ay, "DEL", '#CF0759')
-    add_annotation(fig, 960000000+250000000, 75, ax, ay, "INV", '#2830DE')
-    add_annotation(fig, 960000000 + 250000000 + 250000000, 75, ax, ay, "INS", '#e0cf03')
-    add_annotation(fig, 960000000 + 250000000 + 250000000 + 250000000, 75, ax, ay, "BND", '#737373')
-    add_annotation(fig, 960000000 + 250000000 + 250000000 + 250000000 + 250000000, 75, ax, ay, "DUP", '#178117')
-
-    if args.loh_enable:
-        add_annotation(fig, 960000000 + 250000000 + 250000000, 0, ax, ay, "LOH", '#2980b9')
-        #fig.add_annotation(text="Het SNPs ratio threshold: " + str(args.hets_ratio) , x = 960000000 + 250000000 + 250000000, y=args.cut_threshold, showarrow=False, row=2, col=1)
+    fig.update_layout(xaxis=dict(showticklabels=True, tickangle=45, side='top'))
+    fig.update_yaxes(tickfont=dict(size=16))
+    fig.add_annotation(
+        text="<br>".join(f"<span style='color:{c}'>{l}</span>" for l, c in [("DEL", '#CF0759'), ("INV", '#2830DE'), ("INS", '#e0cf03'), ("BND", '#737373'), ("DUP", '#178117')]),
+        xref="x domain", yref="y domain", x=1.02, y=0.95,
+        showarrow=False, xanchor="left", yanchor="top",
+        font=dict(size=11, family="Arial"),
+        bgcolor="white", bordercolor="#c7c7c7", borderwidth=1, borderpad=4, align="left",
+    )
 
     # Update layout
     fig.update_layout(
         template="plotly_white",
-        font_family="Times New Roman"
+        font_family="Arial"
     )
 
     fig.update_layout(
@@ -1309,32 +1310,34 @@ def copy_number_plots_genome_breakpoints_cytos(centers, integer_fractional_cente
     )
     # Legend
     fig.update_layout(legend=dict(
-        orientation='h', xanchor="center", x=0.475, y=legend_y,  # orientation = 'v', xanchor = "center", x = 1.08, y= .5
+        orientation='h', xanchor="center", x=0.475, y=legend_y, font=dict(size=16),
     ))
-    fig.update_layout(margin=dict(l=5, r=5, b=5, pad=1))
+    fig.update_layout(margin=dict(l=5, r=80, b=5, t=140, pad=1))
     #fig.update_xaxes(tick0=0.0, rangemode="nonnegative")
     fig.update_xaxes(spikedash='dashdot', spikemode='across', spikesnap='cursor', showspikes=True)
 
 
     fig.update_layout(legend={'itemsizing': 'constant'})
 
-    fig.update_layout(font_family="Times New Roman")
+    fig.update_layout(font_family="Arial")
     if args.without_phasing:
         genome_tile = args.genome_name
     else:
-        genome_tile = args.genome_name + "<br>" + "<span style='color:blue'>Ploidy: </span>" + str(args.tumor_ploidy) + "     " + "<span style='color:blue'>Cellular tumor fraction: </span>" + str(args.tumor_purity) + "     " + "<span style='color:blue'>Confidence: </span>" + str(p_value)
+        genome_tile = args.genome_name + "<br>" + "<span style='color:black'>Ploidy: </span>" + str(args.tumor_ploidy) + "     " + "<span style='color:black'>Cellular tumor fraction: </span>" + str(args.tumor_purity) + "     " + "<span style='color:black'>Confidence: </span>" + str(p_value)
     fig.update_layout(
         title={
             'text': genome_tile,
             'y': 0.98,
             'x': 0.5,
             'xanchor': 'center',
-            'yanchor': 'top'},
+            'yanchor': 'top',
+            'font': {'size': 16, 'family': 'Arial', 'color': 'black'}},
 
-        font_family="Courier New",
+        font_family="Arial",
+        font_size=24,
         font_color="dimgray",
-        title_font_family="Times New Roman",
-        title_font_color="red",
+        title_font_family="Arial",
+        title_font_color="black",
         legend_title_font_color="green",
     )
     fig.update_layout(
@@ -1478,9 +1481,9 @@ def copy_number_plots_genome_breakpoints(centers, integer_fractional_centers, df
 
     ###########################################################
     if args.without_phasing:
-        row_heights = [220, 160, 150, 40]
+        row_heights = [110, 120, 30, 80]
     else:
-        row_heights = [220, 320, 150, 40]
+        row_heights = [110, 240, 30, 80]
 
     #fig = make_subplots(rows=2, cols=1, shared_yaxes=False, shared_xaxes=True, vertical_spacing=0.02, horizontal_spacing=0.02)
     fig = make_subplots(rows=4, cols=1, shared_yaxes=False, shared_xaxes='columns',  vertical_spacing=0.01, row_heights=row_heights,
@@ -1648,24 +1651,24 @@ def copy_number_plots_genome_breakpoints(centers, integer_fractional_centers, df
         tickvals = [i for i in range(0, 1000, 25)]
         ticktext = [str(abs(i)) for i in range(0, 1000, 25)]
         yaxis2_3_range = [0, args.cut_threshold + 5]
-        plot_height = 850 + 150 + 20 + 20
-        legend_y = 1.085
+        plot_height = 850 + 150 + 20 + 20 - 110 - 40
+        legend_y = 1.13
     else:
         tick_vals = centers_rev + centers
         tickt_ext = integer_fractional_means_rev + integer_fractional_centers
         tickvals = [i for i in range(-1000, 1000, 25)]
         ticktext = [str(abs(i)) for i in range(-1000, 1000, 25)]
         yaxis2_3_range = [-(args.cut_threshold + 5), args.cut_threshold + 5]
-        plot_height = 850 + 150 + 130+ 10
-        legend_y = 1.06
+        plot_height = 850 + 150 + 130 + 10 - 110 - 80
+        legend_y = 1.09
     # #############################################################
     # #############################################################
     #fig.update_yaxes(range=[-1, args.cut_threshold])
-    fig.update_layout(yaxis=dict(title="<b>Breakpoints</b>", range=[0, 75], showticklabels = False, showgrid=False, zeroline=False),
+    fig.update_layout(yaxis=dict(title=dict(text="Structural variants", font=dict(size=16)), range=[0, 75], showticklabels = False, showgrid=False, zeroline=False),
                       yaxis2=dict(range=yaxis2_3_range, showgrid=False,),
                       yaxis3=dict(range=yaxis2_3_range, showgrid=False,),
-                      yaxis4=dict(title="<b>B-allele frequency</b>", range=[0, 0.6], showticklabels=True, showgrid=False, zeroline=False),
-                      yaxis5=dict(title="<b>Genes</b>", range=[0, 1], showticklabels = False, showgrid=False, zeroline=True, zerolinewidth=2, zerolinecolor='black'),
+                      yaxis4=dict(title=dict(text="B-allele frequency", font=dict(size=16)), range=[0, 0.6], showticklabels=True, showgrid=False, zeroline=False),
+                      yaxis5=dict(title=dict(text="Genes", font=dict(size=16)), range=[0, 1], showticklabels = False, showgrid=False, zeroline=True, zerolinewidth=2, zerolinecolor='black'),
 
                       xaxis=dict(showspikes=True, tick0=0.0, rangemode="nonnegative", range=[0, len(df_cnr_hp1.start.values.tolist())*args.bin_size], showticklabels = False, showgrid=False, zeroline=False),
                       xaxis2=dict(tick0=0.0, rangemode="nonnegative", range=[0, len(df_cnr_hp1.start.values.tolist())*args.bin_size], zeroline=True, zerolinewidth=1, zerolinecolor='black', showgrid=False,),
@@ -1673,15 +1676,20 @@ def copy_number_plots_genome_breakpoints(centers, integer_fractional_centers, df
                       xaxis4=dict(tick0=0.0, rangemode="nonnegative", range=[0, len(df_cnr_hp1.start.values.tolist()) * args.bin_size], showgrid=False,),
                       xaxis5=dict(tick0=0.0, rangemode="nonnegative", range=[0, len(df_cnr_hp1.start.values.tolist())*args.bin_size], showgrid=False, zeroline=True, zerolinewidth=1, zerolinecolor='black'))
 
+    # Swap Genes and B-allele frequency panel positions
+    baf_domain = list(fig.layout.yaxis4.domain)
+    genes_domain = list(fig.layout.yaxis5.domain)
+    fig.update_layout(yaxis4=dict(domain=genes_domain), yaxis5=dict(domain=baf_domain))
+
     fig.update_layout(
         yaxis2=dict(
-            title="<b>Coverage depth</b> (per bin)",
+            title=dict(text="Binned sequencing depth", font=dict(size=16)),
             tickmode='array',
             tickvals=tickvals,
             ticktext=ticktext
         ),
         yaxis3=dict(
-            title="<b>Copies</b> (integers/fractions)",
+            title=dict(text="Copy numbers", font=dict(size=16)),
             zeroline=True, zerolinewidth=1, zerolinecolor='black',
             tickmode='array',
             tickvals=tick_vals,
@@ -1699,28 +1707,26 @@ def copy_number_plots_genome_breakpoints(centers, integer_fractional_centers, df
     #     legend_traceorder="normal")
 
     fig.update_xaxes(
-        #xaxis2=dict(
-            tickangle=90,
-            tickmode='array',  # change 1
-            tickvals=label_pos,  # change 2
-            ticktext=chroms,  # change 3
-        #),
-        #font=dict(size=18, color="black")
+        tickmode='array',
+        tickvals=label_pos,
+        ticktext=chroms,
+        showticklabels=False,
+        tickfont=dict(size=16),
     )
-
-    fig.add_annotation(text="DEL",xref="paper",yref="paper",x=0.25,y=1.03,showarrow=False,font=dict(size=17, color="white"),bgcolor='#CF0759',bordercolor="#c7c7c7",borderwidth=2,borderpad=4, opacity=0.7,)
-    fig.add_annotation(text="INV",xref="paper",yref="paper",x=0.30,y=1.03,showarrow=False,font=dict(size=17, color="white"),bgcolor='#2830DE',bordercolor="#c7c7c7",borderwidth=2,borderpad=4, opacity=0.7,)
-    fig.add_annotation(text="INS",xref="paper",yref="paper",x=0.36,y=1.03,showarrow=False,font=dict(size=17, color="white"),bgcolor='#e0cf03',bordercolor="#c7c7c7",borderwidth=2,borderpad=4, opacity=0.7,)
-    fig.add_annotation(text="BND",xref="paper",yref="paper",x=0.42,y=1.03,showarrow=False,font=dict(size=17, color="white"),bgcolor='#737373',bordercolor="#c7c7c7",borderwidth=2,borderpad=4, opacity=0.7,)
-    fig.add_annotation(text="DUP",xref="paper",yref="paper",x=0.47,y=1.03,showarrow=False,font=dict(size=17, color="white"),bgcolor='#178117',bordercolor="#c7c7c7",borderwidth=2,borderpad=4, opacity=0.7,)
-
-    fig.add_annotation(text="LOH Regions",xref="paper",yref="paper",x=0.60,y=1.03,showarrow=False,font=dict(size=17, color="white"),bgcolor='#2980b9',bordercolor="#c7c7c7",borderwidth=2,borderpad=4, opacity=0.7,)
-    fig.add_annotation(text="Centromeres",xref="paper",yref="paper",x=0.75,y=1.03,showarrow=False,font=dict(size=17, color="white"),bgcolor='#7e1f14',bordercolor="#c7c7c7",borderwidth=2,borderpad=4, opacity=0.7,)
+    fig.update_layout(xaxis=dict(showticklabels=True, tickangle=45, side='top'))
+    fig.update_yaxes(tickfont=dict(size=16))
+    fig.add_annotation(
+        text="<br>".join(f"<span style='color:{c}'>{l}</span>" for l, c in [("DEL", '#CF0759'), ("INV", '#2830DE'), ("INS", '#e0cf03'), ("BND", '#737373'), ("DUP", '#178117')]),
+        xref="x domain", yref="y domain", x=1.02, y=0.95,
+        showarrow=False, xanchor="left", yanchor="top",
+        font=dict(size=11, family="Arial"),
+        bgcolor="white", bordercolor="#c7c7c7", borderwidth=1, borderpad=4, align="left",
+    )
 
     # Update layout
     fig.update_layout(
         template="plotly_white",
-        font_family="Times New Roman"
+        font_family="Arial"
     )
 
     fig.update_layout(
@@ -1728,31 +1734,33 @@ def copy_number_plots_genome_breakpoints(centers, integer_fractional_centers, df
     )
     # Legend
     fig.update_layout(legend=dict(
-        orientation='h', xanchor="center", x=0.475, y=legend_y,  # orientation = 'v', xanchor = "center", x = 1.08, y= .5
+        orientation='h', xanchor="center", x=0.475, y=legend_y, font=dict(size=16),
     ))
-    fig.update_layout(margin=dict(l=5, r=5, b=5, pad=1))
+    fig.update_layout(margin=dict(l=5, r=80, b=5, t=140, pad=1))
     #fig.update_xaxes(tick0=0.0, rangemode="nonnegative")
 
 
     fig.update_layout(legend={'itemsizing': 'constant'})
 
-    fig.update_layout(font_family="Times New Roman")
+    fig.update_layout(font_family="Arial")
     if args.without_phasing:
         genome_tile = args.genome_name
     else:
-        genome_tile = args.genome_name + "<br>" + "<span style='color:blue'>Ploidy: </span>" + str(args.tumor_ploidy) + "     " + "<span style='color:blue'>Cellular tumor fraction: </span>" + str(args.tumor_purity) + "     " + "<span style='color:blue'>Confidence: </span>" + str(p_value)
+        genome_tile = args.genome_name + "<br>" + "<span style='color:black'>Ploidy: </span>" + str(args.tumor_ploidy) + "     " + "<span style='color:black'>Cellular tumor fraction: </span>" + str(args.tumor_purity) + "     " + "<span style='color:black'>Confidence: </span>" + str(p_value)
     fig.update_layout(
         title={
             'text': genome_tile,
             'y': 0.98,
             'x': 0.5,
             'xanchor': 'center',
-            'yanchor': 'top'},
+            'yanchor': 'top',
+            'font': {'size': 16, 'family': 'Arial', 'color': 'black'}},
 
-        font_family="Courier New",
+        font_family="Arial",
+        font_size=24,
         font_color="dimgray",
-        title_font_family="Times New Roman",
-        title_font_color="red",
+        title_font_family="Arial",
+        title_font_color="black",
         legend_title_font_color="green",
     )
     fig.update_layout(
@@ -2267,9 +2275,9 @@ def copy_number_plots_genome_breakpoints_subclonal_cytos(centers, integer_fracti
     #fig = go.Figure()
     #fig = go.Figure().set_subplots(rows=2, cols=1)
     if args.without_phasing:
-        row_heights = [220, 160, 150, 40]
+        row_heights = [110, 120, 150, 8, 80]
     else:
-        row_heights = [220, 320, 20, 150, 40]
+        row_heights = [110, 240, 20, 30, 80]
 
     #fig = make_subplots(rows=2, cols=1, shared_yaxes=False, shared_xaxes=True, vertical_spacing=0.02, horizontal_spacing=0.02)
     fig = make_subplots(rows=5, cols=1, shared_yaxes=False, shared_xaxes='columns',  vertical_spacing=0.01, row_heights=row_heights,
@@ -2524,25 +2532,25 @@ def copy_number_plots_genome_breakpoints_subclonal_cytos(centers, integer_fracti
         tickvals = [i for i in range(0, 1000, 25)]
         ticktext = [str(abs(i)) for i in range(0, 1000, 25)]
         yaxis2_3_range = [0, args.cut_threshold + 5]
-        plot_height = 850 + 150 + 20
-        legend_y = 1.085
+        plot_height = 850 + 150 + 20 - 110 - 40
+        legend_y = 1.13
     else:
         tick_vals = centers_rev + centers
         tickt_ext = integer_fractional_means_rev + integer_fractional_centers
         tickvals = [i for i in range(-1000, 1000, 25)]
         ticktext = [str(abs(i)) for i in range(-1000, 1000, 25)]
         yaxis2_3_range = [-(args.cut_threshold + 5), args.cut_threshold + 5]
-        plot_height = 850 + 150 + 130 + 40 + 20
-        legend_y = 1.05
+        plot_height = 850 + 150 + 130 + 40 + 20 - 110 - 80
+        legend_y = 1.075
     # #############################################################
     # #############################################################
     #fig.update_yaxes(range=[-1, args.cut_threshold])
-    fig.update_layout(yaxis=dict(title="<b>Breakpoints</b>", range=[0, 75], showticklabels = False, showgrid=False, zeroline=False),
+    fig.update_layout(yaxis=dict(title=dict(text="Structural variants", font=dict(size=16)), range=[0, 75], showticklabels = False, showgrid=False, zeroline=False),
                       yaxis2=dict(range=yaxis2_3_range, showgrid=False,),
                       yaxis3=dict(range=yaxis2_3_range, showgrid=False,),
-                      yaxis5=dict(title="<b>B-allele frequency</b>", range=[0, 0.6], showticklabels=True, showgrid=False, zeroline=False),
-                      yaxis6=dict(title="<b>Genes</b>", range=[0, 1], showticklabels = False, showgrid=False, zeroline=True, zerolinewidth=2, zerolinecolor='black'),
-                      yaxis4=dict(title="<b>Cytos</b>", range=[0, 1], showticklabels=False, showgrid=False, zeroline=True, zerolinewidth=2, zerolinecolor='black'),
+                      yaxis5=dict(title=dict(text="B-allele frequency", font=dict(size=16)), range=[0, 0.6], showticklabels=True, showgrid=False, zeroline=False),
+                      yaxis6=dict(title=dict(text="Genes", font=dict(size=16)), range=[0, 1], showticklabels = False, showgrid=False, zeroline=True, zerolinewidth=2, zerolinecolor='black'),
+                      yaxis4=dict(title=dict(text="Cytos", font=dict(size=16)), range=[0, 1], showticklabels=False, showgrid=False, zeroline=True, zerolinewidth=2, zerolinecolor='black'),
 
                       xaxis=dict(showspikes=True, tick0=0.0, rangemode="nonnegative", range=[0, len(df_cnr_hp1.start.values.tolist())*args.bin_size], showticklabels = False, showgrid=False, zeroline=False),
                       xaxis2=dict(tick0=0.0, rangemode="nonnegative", range=[0, len(df_cnr_hp1.start.values.tolist())*args.bin_size], zeroline=True, zerolinewidth=1, zerolinecolor='black', showgrid=False,),
@@ -2551,15 +2559,20 @@ def copy_number_plots_genome_breakpoints_subclonal_cytos(centers, integer_fracti
                       xaxis6=dict(tick0=0.0, rangemode="nonnegative", range=[0, len(df_cnr_hp1.start.values.tolist())*args.bin_size], showgrid=False, zeroline=True, zerolinewidth=1, zerolinecolor='black'),
                       xaxis4=dict(tick0=0.0, rangemode="nonnegative", range=[0, len(df_cnr_hp1.start.values.tolist()) * args.bin_size], showgrid=False, zeroline=True, zerolinewidth=1, zerolinecolor='black'))
 
+    # Swap Genes and B-allele frequency panel positions
+    baf_domain = list(fig.layout.yaxis5.domain)
+    genes_domain = list(fig.layout.yaxis6.domain)
+    fig.update_layout(yaxis5=dict(domain=genes_domain), yaxis6=dict(domain=baf_domain))
+
     fig.update_layout(
         yaxis2=dict(
-            title="<b>Coverage depth</b> (per bin)",
+            title=dict(text="Binned sequencing depth", font=dict(size=16)),
             tickmode='array',
             tickvals=tickvals,
             ticktext=ticktext
         ),
         yaxis3=dict(
-            title="<b>Copies</b> (integers/fractions)",
+            title=dict(text="Copy numbers", font=dict(size=16)),
             zeroline=True, zerolinewidth=1, zerolinecolor='black',
             tickmode='array',
             tickvals=tick_vals,
@@ -2568,30 +2581,26 @@ def copy_number_plots_genome_breakpoints_subclonal_cytos(centers, integer_fracti
     )
 
     fig.update_xaxes(
-        #xaxis2=dict(
-            tickangle=90,
-            tickmode='array',  # change 1
-            tickvals=label_pos,  # change 2
-            ticktext=chroms,  # change 3
-        #),
-        #font=dict(size=18, color="black")
+        tickmode='array',
+        tickvals=label_pos,
+        ticktext=chroms,
+        showticklabels=False,
+        tickfont=dict(size=16),
     )
-    ax = 20
-    ay = -30
-    add_annotation(fig, 960000000, 75, ax, ay, "DEL", '#CF0759')
-    add_annotation(fig, 960000000 + 250000000, 75, ax, ay, "INV", '#2830DE')
-    add_annotation(fig, 960000000 + 250000000 + 250000000, 75, ax, ay, "INS", '#e0cf03')
-    add_annotation(fig, 960000000 + 250000000 + 250000000 + 250000000, 75, ax, ay, "BND", '#737373')
-    add_annotation(fig, 960000000 + 250000000 + 250000000 + 250000000 + 250000000, 75, ax, ay, "DUP", '#178117')
-
-    if args.loh_enable:
-        add_annotation(fig, 960000000 + 250000000 + 250000000, 0, ax, ay, "LOH", '#2980b9')
-        #fig.add_annotation(text="Het SNPs ratio threshold: " + str(args.hets_ratio), x=960000000 + 250000000 + 250000000, y=args.cut_threshold, showarrow=False, row=2, col=1)
+    fig.update_layout(xaxis=dict(showticklabels=True, tickangle=45, side='top'))
+    fig.update_yaxes(tickfont=dict(size=16))
+    fig.add_annotation(
+        text="<br>".join(f"<span style='color:{c}'>{l}</span>" for l, c in [("DEL", '#CF0759'), ("INV", '#2830DE'), ("INS", '#e0cf03'), ("BND", '#737373'), ("DUP", '#178117')]),
+        xref="x domain", yref="y domain", x=1.02, y=0.95,
+        showarrow=False, xanchor="left", yanchor="top",
+        font=dict(size=11, family="Arial"),
+        bgcolor="white", bordercolor="#c7c7c7", borderwidth=1, borderpad=4, align="left",
+    )
 
     # Update layout
     fig.update_layout(
         template="plotly_white",
-        font_family="Times New Roman"
+        font_family="Arial"
     )
 
     fig.update_layout(
@@ -2599,34 +2608,36 @@ def copy_number_plots_genome_breakpoints_subclonal_cytos(centers, integer_fracti
     )
     # Legend
     fig.update_layout(legend=dict(
-        orientation='h', xanchor="center", x=0.45, y=legend_y,  # orientation = 'v', xanchor = "center", x = 1.08, y= .5
+        orientation='h', xanchor="center", x=0.45, y=legend_y, font=dict(size=16),
     ))
-    fig.update_layout(margin=dict(l=5, r=5, b=5, pad=1))
+    fig.update_layout(margin=dict(l=5, r=80, b=5, t=140, pad=1))
     #fig.update_xaxes(tick0=0.0, rangemode="nonnegative")
     fig.update_xaxes(spikedash='longdashdot', spikemode='across', spikesnap='cursor', showspikes=True)
 
     fig.update_layout(legend={'itemsizing': 'constant'})
 
-    fig.update_layout(font_family="Times New Roman")
+    fig.update_layout(font_family="Arial")
 
     if args.without_phasing:
         genome_tile = args.genome_name
     else:
-        genome_tile = args.genome_name + "<br>" + "<span style='color:blue'>Ploidy: </span>" + str(
-            args.tumor_ploidy) + "     " + "<span style='color:blue'>Cellular tumor fraction: </span>" + str(
-            args.tumor_purity) + "     " + "<span style='color:blue'>Confidence: </span>" + str(p_value)
+        genome_tile = args.genome_name + "<br>" + "<span style='color:black'>Ploidy: </span>" + str(
+            args.tumor_ploidy) + "     " + "<span style='color:black'>Cellular tumor fraction: </span>" + str(
+            args.tumor_purity) + "     " + "<span style='color:black'>Confidence: </span>" + str(p_value)
     fig.update_layout(
         title={
             'text': genome_tile,
             'y': 0.98,
             'x': 0.5,
             'xanchor': 'center',
-            'yanchor': 'top'},
+            'yanchor': 'top',
+            'font': {'size': 16, 'family': 'Arial', 'color': 'black'}},
 
-        font_family="Courier New",
+        font_family="Arial",
+        font_size=24,
         font_color="dimgray",
-        title_font_family="Times New Roman",
-        title_font_color="red",
+        title_font_family="Arial",
+        title_font_color="black",
         legend_title_font_color="green",
     )
     fig.update_layout(
@@ -2782,9 +2793,9 @@ def copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_c
     #fig = go.Figure()
     #fig = go.Figure().set_subplots(rows=2, cols=1)
     if args.without_phasing:
-        row_heights = [220, 160, 150, 40]
+        row_heights = [110, 120, 30, 80]
     else:
-        row_heights = [220, 320, 150, 40]
+        row_heights = [110, 240, 30, 80]
 
     #fig = make_subplots(rows=2, cols=1, shared_yaxes=False, shared_xaxes=True, vertical_spacing=0.02, horizontal_spacing=0.02)
     fig = make_subplots(rows=4, cols=1, shared_yaxes=False, shared_xaxes='columns',  vertical_spacing=0.01, row_heights=row_heights,
@@ -3026,24 +3037,24 @@ def copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_c
         tickvals = [i for i in range(0, 1000, 25)]
         ticktext = [str(abs(i)) for i in range(0, 1000, 25)]
         yaxis2_3_range = [0, args.cut_threshold + 5]
-        plot_height = 850 + 150 + 20 + 20
-        legend_y = 1.085
+        plot_height = 850 + 150 + 20 + 20 - 110 - 40
+        legend_y = 1.13
     else:
         tick_vals = centers_rev + centers
         tickt_ext = integer_fractional_means_rev + integer_fractional_centers
         tickvals = [i for i in range(-1000, 1000, 25)]
         ticktext = [str(abs(i)) for i in range(-1000, 1000, 25)]
         yaxis2_3_range = [-(args.cut_threshold + 5), args.cut_threshold + 5]
-        plot_height = 850 + 150 + 130 + 20
-        legend_y = 1.06
+        plot_height = 850 + 150 + 130 + 20 - 110 - 80
+        legend_y = 1.09
     # #############################################################
     # #############################################################
     #fig.update_yaxes(range=[-1, args.cut_threshold])
-    fig.update_layout(yaxis=dict(title="<b>Breakpoints</b>", range=[0, 75], showticklabels = False, showgrid=False, zeroline=False),
+    fig.update_layout(yaxis=dict(title=dict(text="Structural variants", font=dict(size=16)), range=[0, 75], showticklabels = False, showgrid=False, zeroline=False),
                       yaxis2=dict(range=yaxis2_3_range, showgrid=False,),
                       yaxis3=dict(range=yaxis2_3_range, showgrid=False,),
-                      yaxis4=dict(title="<b>B-allele frequency</b>", range=[0, 0.6], showticklabels=True, showgrid=False, zeroline=False),
-                      yaxis5=dict(title="<b>Genes</b>", range=[0, 1], showticklabels = False, showgrid=False, zeroline=True, zerolinewidth=2, zerolinecolor='black'),
+                      yaxis4=dict(title=dict(text="B-allele frequency", font=dict(size=16)), range=[0, 0.6], showticklabels=True, showgrid=False, zeroline=False),
+                      yaxis5=dict(title=dict(text="Genes", font=dict(size=16)), range=[0, 1], showticklabels = False, showgrid=False, zeroline=True, zerolinewidth=2, zerolinecolor='black'),
 
                       xaxis=dict(showspikes=True, tick0=0.0, rangemode="nonnegative", range=[0, len(df_cnr_hp1.start.values.tolist())*args.bin_size], showticklabels = False, showgrid=False, zeroline=False),
                       xaxis2=dict(tick0=0.0, rangemode="nonnegative", range=[0, len(df_cnr_hp1.start.values.tolist())*args.bin_size], zeroline=True, zerolinewidth=1, zerolinecolor='black', showgrid=False,),
@@ -3051,15 +3062,20 @@ def copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_c
                       xaxis4=dict(tick0=0.0, rangemode="nonnegative", range=[0, len(df_cnr_hp1.start.values.tolist()) * args.bin_size], showgrid=False,),
                       xaxis5=dict(tick0=0.0, rangemode="nonnegative", range=[0, len(df_cnr_hp1.start.values.tolist())*args.bin_size], showgrid=False, zeroline=True, zerolinewidth=1, zerolinecolor='black'))
 
+    # Swap Genes and B-allele frequency panel positions
+    baf_domain = list(fig.layout.yaxis4.domain)
+    genes_domain = list(fig.layout.yaxis5.domain)
+    fig.update_layout(yaxis4=dict(domain=genes_domain), yaxis5=dict(domain=baf_domain))
+
     fig.update_layout(
         yaxis2=dict(
-            title="<b>Coverage depth</b> (per bin)",
+            title=dict(text="Binned sequencing depth", font=dict(size=16)),
             tickmode='array',
             tickvals=tickvals,
             ticktext=ticktext
         ),
         yaxis3=dict(
-            title="<b>Copies</b> (integers/fractions)",
+            title=dict(text="Copy numbers", font=dict(size=16)),
             zeroline=True, zerolinewidth=1, zerolinecolor='black',
             tickmode='array',
             tickvals=tick_vals,
@@ -3068,27 +3084,26 @@ def copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_c
     )
 
     fig.update_xaxes(
-        #xaxis2=dict(
-            tickangle=90,
-            tickmode='array',  # change 1
-            tickvals=label_pos,  # change 2
-            ticktext=chroms,  # change 3
-        #),
-        #font=dict(size=18, color="black")
+        tickmode='array',
+        tickvals=label_pos,
+        ticktext=chroms,
+        showticklabels=False,
+        tickfont=dict(size=16),
     )
-    fig.add_annotation(text="DEL",xref="paper",yref="paper",x=0.25,y=1.03,showarrow=False,font=dict(size=17, color="white"),bgcolor='#CF0759',bordercolor="#c7c7c7",borderwidth=2,borderpad=4, opacity=0.7,)
-    fig.add_annotation(text="INV",xref="paper",yref="paper",x=0.30,y=1.03,showarrow=False,font=dict(size=17, color="white"),bgcolor='#2830DE',bordercolor="#c7c7c7",borderwidth=2,borderpad=4, opacity=0.7,)
-    fig.add_annotation(text="INS",xref="paper",yref="paper",x=0.36,y=1.03,showarrow=False,font=dict(size=17, color="white"),bgcolor='#e0cf03',bordercolor="#c7c7c7",borderwidth=2,borderpad=4, opacity=0.7,)
-    fig.add_annotation(text="BND",xref="paper",yref="paper",x=0.42,y=1.03,showarrow=False,font=dict(size=17, color="white"),bgcolor='#737373',bordercolor="#c7c7c7",borderwidth=2,borderpad=4, opacity=0.7,)
-    fig.add_annotation(text="DUP",xref="paper",yref="paper",x=0.47,y=1.03,showarrow=False,font=dict(size=17, color="white"),bgcolor='#178117',bordercolor="#c7c7c7",borderwidth=2,borderpad=4, opacity=0.7,)
-
-    fig.add_annotation(text="LOH Regions",xref="paper",yref="paper",x=0.60,y=1.03,showarrow=False,font=dict(size=17, color="white"),bgcolor='#2980b9',bordercolor="#c7c7c7",borderwidth=2,borderpad=4, opacity=0.7,)
-    fig.add_annotation(text="Centromeres",xref="paper",yref="paper",x=0.75,y=1.03,showarrow=False,font=dict(size=17, color="white"),bgcolor='#7e1f14',bordercolor="#c7c7c7",borderwidth=2,borderpad=4, opacity=0.7,)
+    fig.update_layout(xaxis=dict(showticklabels=True, tickangle=45, side='top'))
+    fig.update_yaxes(tickfont=dict(size=16))
+    fig.add_annotation(
+        text="<br>".join(f"<span style='color:{c}'>{l}</span>" for l, c in [("DEL", '#CF0759'), ("INV", '#2830DE'), ("INS", '#e0cf03'), ("BND", '#737373'), ("DUP", '#178117')]),
+        xref="x domain", yref="y domain", x=1.02, y=0.95,
+        showarrow=False, xanchor="left", yanchor="top",
+        font=dict(size=11, family="Arial"),
+        bgcolor="white", bordercolor="#c7c7c7", borderwidth=1, borderpad=4, align="left",
+    )
 
     # Update layout
     fig.update_layout(
         template="plotly_white",
-        font_family="Times New Roman"
+        font_family="Arial"
     )
 
     fig.update_layout(
@@ -3096,33 +3111,35 @@ def copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_c
     )
     # Legend
     fig.update_layout(legend=dict(
-        orientation='h', xanchor="center", x=0.45, y=legend_y,  # orientation = 'v', xanchor = "center", x = 1.08, y= .5
+        orientation='h', xanchor="center", x=0.45, y=legend_y, font=dict(size=16),
     ))
-    fig.update_layout(margin=dict(l=5, r=5, b=5, pad=1))
+    fig.update_layout(margin=dict(l=5, r=80, b=5, t=140, pad=1))
     #fig.update_xaxes(tick0=0.0, rangemode="nonnegative")
 
     fig.update_layout(legend={'itemsizing': 'constant'})
 
-    fig.update_layout(font_family="Times New Roman")
+    fig.update_layout(font_family="Arial")
 
     if args.without_phasing:
         genome_tile = args.genome_name
     else:
-        genome_tile = args.genome_name + "<br>" + "<span style='color:blue'>Ploidy: </span>" + str(
-            args.tumor_ploidy) + "     " + "<span style='color:blue'>Cellular tumor fraction: </span>" + str(
-            args.tumor_purity) + "     " + "<span style='color:blue'>Confidence: </span>" + str(p_value)
+        genome_tile = args.genome_name + "<br>" + "<span style='color:black'>Ploidy: </span>" + str(
+            args.tumor_ploidy) + "     " + "<span style='color:black'>Cellular tumor fraction: </span>" + str(
+            args.tumor_purity) + "     " + "<span style='color:black'>Confidence: </span>" + str(p_value)
     fig.update_layout(
         title={
             'text': genome_tile,
             'y': 0.98,
             'x': 0.5,
             'xanchor': 'center',
-            'yanchor': 'top'},
+            'yanchor': 'top',
+            'font': {'size': 16, 'family': 'Arial', 'color': 'black'}},
 
-        font_family="Courier New",
+        font_family="Arial",
+        font_size=24,
         font_color="dimgray",
-        title_font_family="Times New Roman",
-        title_font_color="red",
+        title_font_family="Arial",
+        title_font_color="black",
         legend_title_font_color="green",
     )
     fig.update_layout(
