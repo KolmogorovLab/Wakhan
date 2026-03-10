@@ -306,7 +306,7 @@ def parse_coverage_bed_cpd(filename, phased, plot_path):
     chroms = [c for c in chroms if c not in ["chrX", "chrY", "X", "Y"]]
 
     if plot_path is not None:
-        fig, subplots = plt.subplots((len(chroms) + 1) // 2, 2, sharey=False)
+        fig, subplots = plt.subplots((len(chroms) + 1) // 2, 2, sharey=False, squeeze=False)
 
     logger.info("Segmenting input coverage")
     all_segments = []
