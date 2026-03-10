@@ -16,6 +16,9 @@ if script_dir != os.getcwd():
 
 from src.__version__ import __version__
 
+with open('requirements.txt') as f:
+        install_requires = f.read().splitlines()
+
 setup(name='wakhan',
       version=__version__,
       description='A tool for haplotype-specific somatic copy number aberrations/profiling from long reads sequencing data',
@@ -23,6 +26,8 @@ setup(name='wakhan',
       author='Tanveer Ahmad',
       author_email = 'tahashmipk@gmail.com',
       license='MIT',
+      install_requires=install_requires,
+      python_requires='>=3.8',
       packages=['src', 'src.hapcorrect', 'src.breakpoint', 'src.cna', 'src.coverage', 'src.file_tools', 'src.output', 'src.plots', 'src.utils'],
       package_data={'src': ['annotations/*']},
       entry_points={'console_scripts': ['wakhan = src.main:main']},
