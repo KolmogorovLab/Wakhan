@@ -38,13 +38,24 @@ def add_intermediaries(numbers, max_difference):
     return result
 
 
-def adjust_extreme_outliers(hp_data):
-    for j, val in enumerate(hp_data):
-        if val > 500 and j > 0 and j < len(hp_data):
-            hp_data[j] = hp_data[j-1]
-        elif val > 500 and j == 0:
-            hp_data[j] = hp_data[j+1]
-    return hp_data
+def adjust_extreme_outliers(hp_data, fold_threshold=10.0):
+    """Replace isolated single-bin spikes with the mean of their neighbors.
+
+    A bin is only replaced if its value exceeds fold_threshold times the
+    mean of its two immediate neighbors. This preserves true multi-bin
+    amplifications (where neighbors are also high) while suppressing
+    single-bin mapping artifacts.
+    """
+    if len(hp_data) < 3:
+        return hp_data
+    result = list(hp_data)
+    for j in range(len(hp_data)):
+        left  = hp_data[j - 1] if j > 0             else hp_data[j + 1]
+        right = hp_data[j + 1] if j < len(hp_data) - 1 else hp_data[j - 1]
+        local_mean = (left + right) / 2.0
+        if local_mean > 0 and hp_data[j] > fold_threshold * local_mean:
+            result[j] = local_mean
+    return result
 
 
 def find_peak_median_without_outliers(data):

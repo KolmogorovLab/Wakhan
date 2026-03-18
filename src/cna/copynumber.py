@@ -311,7 +311,10 @@ def subclonal_values_adjusted(x, centers):
             return round(i + ((x - centers[i]) / (centers[i + 1] - centers[i])), 2)
         elif x < centers[0]:
             return 0
-    return len(centers)-1 #round((len(centers) - 1) + ((x - centers[-1]) / ((centers[-1] + (centers[-1] - centers[-2])) - centers[-1])), 2)
+    if len(centers) >= 2:
+        spacing = centers[-1] - centers[-2]
+        return round((len(centers) - 1) + (x - centers[-1]) / spacing, 2)
+    return len(centers) - 1
 
 
 def integers_values_adjusted(x, centers):
@@ -325,7 +328,10 @@ def integers_values_adjusted(x, centers):
             return math.ceil(round(i + ((x - centers[i]) / (centers[i + 1] - centers[i])), 2))
         elif x < centers[0]:
             return 0
-    return len(centers)-1 #round((len(centers) - 1) + ((x - centers[-1]) / ((centers[-1] + (centers[-1] - centers[-2])) - centers[-1])), 2)
+    if len(centers) >= 2:
+        spacing = centers[-1] - centers[-2]
+        return math.ceil(round((len(centers) - 1) + (x - centers[-1]) / spacing, 2))
+    return len(centers) - 1
 
 
 def bins_with_copynumber_states(df_segs_hp1, df_segs_hp2, df_hp1, df_hp2, args, centers, integer_fractional_centers):

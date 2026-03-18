@@ -326,14 +326,23 @@ def adjust_diversified_segments(centers, snps_cpd_means_df, df_segs_hp1, df_segs
         haplotype_2_start_values_copyrnumbers = df_chrom_segs_hp2.start.values.tolist()
         haplotype_2_end_values_copyrnumbers = df_chrom_segs_hp2.end.values.tolist()
 
+        _spacing = (centers[-1] - centers[-2]) if len(centers) >= 2 else centers[-1]
         for i, (start,end) in enumerate(zip(haplotype_1_start_values_copyrnumbers, haplotype_1_end_values_copyrnumbers)):
-            haplotype_1_values_copyrnumbers[i] = min(centers, key=lambda x:abs(x - haplotype_1_values_copyrnumbers[i]))
+            val = haplotype_1_values_copyrnumbers[i]
+            if val > centers[-1]:
+                haplotype_1_values_copyrnumbers[i] = centers[-1] + round((val - centers[-1]) / _spacing) * _spacing
+            else:
+                haplotype_1_values_copyrnumbers[i] = min(centers, key=lambda x: abs(x - val))
 
         updated_df_segs_hp1.append(pd.DataFrame(list(zip(df_chrom_segs_hp1.chromosome.values.tolist(), df_chrom_segs_hp1.start.values.tolist(),
                 df_chrom_segs_hp1.end.values.tolist(),  df_chrom_segs_hp1.state.values.tolist(), haplotype_1_values_copyrnumbers)), columns=['chromosome', 'start', 'end', 'depth', 'state']))
 
         for i, (start, end) in enumerate(zip(haplotype_2_start_values_copyrnumbers, haplotype_2_end_values_copyrnumbers)):
-            haplotype_2_values_copyrnumbers[i] = min(centers, key=lambda x: abs(x - haplotype_2_values_copyrnumbers[i]))
+            val = haplotype_2_values_copyrnumbers[i]
+            if val > centers[-1]:
+                haplotype_2_values_copyrnumbers[i] = centers[-1] + round((val - centers[-1]) / _spacing) * _spacing
+            else:
+                haplotype_2_values_copyrnumbers[i] = min(centers, key=lambda x: abs(x - val))
 
         updated_df_segs_hp2.append(pd.DataFrame(list(zip(df_chrom_segs_hp2.chromosome.values.tolist(), df_chrom_segs_hp2.start.values.tolist(),
                 df_chrom_segs_hp2.end.values.tolist(), df_chrom_segs_hp2.state.values.tolist(), haplotype_2_values_copyrnumbers)), columns=['chromosome', 'start', 'end', 'depth', 'state']))
