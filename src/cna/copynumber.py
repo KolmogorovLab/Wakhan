@@ -334,6 +334,15 @@ def integers_values_adjusted(x, centers):
     return len(centers) - 1
 
 
+def center_from_state(x, centers):
+    """Convert a coverage value to its snapped center coverage, extrapolating beyond the last center."""
+    idx = integers_values_adjusted(x, centers)
+    if idx < len(centers):
+        return centers[idx]
+    spacing = centers[-1] - centers[-2]
+    return centers[-1] + (idx - (len(centers) - 1)) * spacing
+
+
 def bins_with_copynumber_states(df_segs_hp1, df_segs_hp2, df_hp1, df_hp2, args, centers, integer_fractional_centers):
     chroms = get_contigs_list(args.contigs)
     df_hp1_updated = []

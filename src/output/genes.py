@@ -6,7 +6,7 @@ import logging
 
 logger = logging.getLogger()
 
-from src.cna.copynumber import subclonal_values_adjusted, integers_values_adjusted, add_confidence_score_cn_segemnts
+from src.cna.copynumber import subclonal_values_adjusted, integers_values_adjusted, center_from_state, add_confidence_score_cn_segemnts
 from src.utils.chromosome import csv_df_chromosomes_sorter, df_chromosomes_sorter, overlap_check
 from src.utils.chromosome import get_contigs_list
 from src.output.writers import write_df_csv
@@ -57,11 +57,11 @@ def genes_phase_correction(df_genes, df_segs_hp1, df_segs_hp2, args, centers, in
             hp_2_val = 0
             check, index = overlap_check(start_b, end_b, df_seg_hp1.start.values.tolist(), df_seg_hp1.end.values.tolist())
             if check:
-                hp_1_val = centers[integers_values_adjusted(seg_state_hp1[index], centers)]
+                hp_1_val = center_from_state(seg_state_hp1[index], centers)
                 #gene_hp1_state[i] = integer_fractional_centers[centers.index(min(centers, key=lambda x:abs(x - seg_coverage_hp1[index])))]  #(integer_fractional_centers[centers.index(seg_coverage_hp1[index])])
             check, index = overlap_check(start_b, end_b, df_seg_hp2.start.values.tolist(), df_seg_hp2.end.values.tolist())
             if check:
-                hp_2_val = centers[integers_values_adjusted(seg_state_hp2[index], centers)]
+                hp_2_val = center_from_state(seg_state_hp2[index], centers)
                 #gene_hp2_state[i] = integer_fractional_centers[centers.index(min(centers, key=lambda x:abs(x - seg_coverage_hp2[index])))]
 
             # if hp_1_val == 0 and hp_2_val == 0:
