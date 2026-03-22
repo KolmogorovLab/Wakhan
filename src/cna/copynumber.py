@@ -336,6 +336,9 @@ def integers_values_adjusted(x, centers):
 
 def center_from_state(x, centers):
     """Convert a coverage value to its snapped center coverage, extrapolating beyond the last center."""
+    if len(centers) >= 2 and x > centers[-1]:
+        spacing = centers[-1] - centers[-2]
+        return centers[-1] + round((x - centers[-1]) / spacing) * spacing
     idx = integers_values_adjusted(x, centers)
     if idx < len(centers):
         return centers[idx]
