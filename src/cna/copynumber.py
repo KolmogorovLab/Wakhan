@@ -325,12 +325,12 @@ def integers_values_adjusted(x, centers):
     #centers = centers + [centers[-1] + centers[1]]
     for i in range(len(centers) - 1):
         if centers[i + 1] >= x >= centers[i]:
-            return math.ceil(round(i + ((x - centers[i]) / (centers[i + 1] - centers[i])), 2))
+            return round(i + ((x - centers[i]) / (centers[i + 1] - centers[i])))
         elif x < centers[0]:
             return 0
     if len(centers) >= 2:
         spacing = centers[-1] - centers[-2]
-        return math.ceil(round((len(centers) - 1) + (x - centers[-1]) / spacing, 2))
+        return round((len(centers) - 1) + (x - centers[-1]) / spacing)
     return len(centers) - 1
 
 
