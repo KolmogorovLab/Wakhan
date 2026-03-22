@@ -861,15 +861,28 @@ def copy_number_plots_genome_details(centers, integer_fractional_centers, df_cnr
 
     centers_rev = [-x for x in centers[1:]]
     centers_rev.reverse()
-    tick_vals = centers
+
+    # Extend tick_vals beyond known centers for high CN segments
+    tick_vals = list(centers)
+    tickt_ext = list(integer_fractional_centers)
+    max_state_d = centers[-1]
+    all_states_d = df_segs_hp1.state.values.tolist() + df_segs_hp2.state.values.tolist()
+    if all_states_d:
+        max_state_d = max(max_state_d, max(all_states_d))
+    if len(centers) >= 2:
+        _sp = centers[-1] - centers[-2]
+        _ex = 1
+        while centers[-1] + _ex * _sp <= max_state_d + _sp:
+            tick_vals.append(centers[-1] + _ex * _sp)
+            tickt_ext.append(integer_fractional_centers[-1] + _ex)
+            _ex += 1
+        _cn_axis_max = max_state_d + _sp
+    else:
+        _cn_axis_max = centers[-1] + 5
 
     integer_fractional_means_rev = [x for x in integer_fractional_centers[1:]]
     integer_fractional_means_rev.reverse()
-    tickt_ext = integer_fractional_centers
-    if args.without_phasing:
-        fig.update_yaxes(range=[-1, args.cut_threshold])
-    else:
-        fig.update_yaxes(range=[-1, args.cut_threshold])
+    fig.update_layout(yaxis=dict(range=[-1, args.cut_threshold]))
     fig.update_layout(
         yaxis=dict(
             tickmode='array',
@@ -879,10 +892,8 @@ def copy_number_plots_genome_details(centers, integer_fractional_centers, df_cnr
         yaxis2=dict(
             tickmode='array',
             tickvals=tick_vals,
-            # [i for i in range(-1000, 1000, 25)],#sorted(integer_centers + fractional_centers),#[0, 6,12,18], #13,26,39,5
-            # [-99, -33, 0, 33, 99],#[i for i in range(-1000, 1000, 50)],
-            ticktext=tickt_ext  # ['loss'] + [str(i) + '_copy' for i in range(1,len(centers))]
-            # [str(abs(i)) for i in range(-1000, 1000, 50)]
+            ticktext=tickt_ext,
+            range=[-1, _cn_axis_max]
         )
     )
     #fig.update_yaxes(title='coverge (mean depth)')
@@ -2012,28 +2023,48 @@ def copy_number_plots_genome(centers, integer_fractional_centers, df_cnr_hp1, df
     centers_rev.reverse()
     integer_fractional_means_rev = [x for x in integer_fractional_centers]
     integer_fractional_means_rev.reverse()
+
+    # Extend tick_vals beyond known centers for high CN segments
+    max_state = centers[-1]
+    all_states = df_segs_hp1.state.values.tolist() + df_segs_hp2.state.values.tolist()
+    if all_states:
+        max_state = max(max_state, max(all_states))
+    ext_pos_ticks = []
+    ext_pos_labels = []
+    if len(centers) >= 2:
+        _spacing = centers[-1] - centers[-2]
+        _extra = 1
+        while centers[-1] + _extra * _spacing <= max_state + _spacing:
+            ext_pos_ticks.append(centers[-1] + _extra * _spacing)
+            ext_pos_labels.append(integer_fractional_centers[-1] + _extra)
+            _extra += 1
+
     if args.without_phasing:
-        tick_vals = centers
-        tickt_ext = integer_fractional_centers
+        tick_vals = list(centers) + ext_pos_ticks
+        tickt_ext = list(integer_fractional_centers) + ext_pos_labels
         tickvals = [i for i in range(0, 1000, 25)]
         ticktext = [str(abs(i)) for i in range(0, 1000, 25)]
         yaxis2_3_range = [0, args.cut_threshold + 5]
+        yaxis2_range = [0, max_state + (_spacing if len(centers) >= 2 else 5)]
         plot_height = 630 + 150 + 20
         legend_y = 1.085
     else:
-        tick_vals = centers_rev + centers
-        tickt_ext = integer_fractional_means_rev + integer_fractional_centers
+        ext_neg_ticks = [-v for v in reversed(ext_pos_ticks)]
+        ext_neg_labels = [-l for l in reversed(ext_pos_labels)]
+        tick_vals = ext_neg_ticks + centers_rev + list(centers) + ext_pos_ticks
+        tickt_ext = ext_neg_labels + integer_fractional_means_rev + list(integer_fractional_centers) + ext_pos_labels
         tickvals = [i for i in range(-1000, 1000, 25)]
         ticktext = [str(abs(i)) for i in range(-1000, 1000, 25)]
         yaxis2_3_range = [-(args.cut_threshold + 5), args.cut_threshold + 5]
+        _range_max = max_state + (_spacing if len(centers) >= 2 else 5)
+        yaxis2_range = [-_range_max, _range_max]
         plot_height = 630 + 150 + 130
         legend_y = 1.06
     # #############################################################
     # #############################################################
-    #fig.update_yaxes(range=[-1, args.cut_threshold])
     fig.update_layout(
                       yaxis=dict(range=yaxis2_3_range, showgrid=False,),
-                      yaxis2=dict(showgrid=False,),
+                      yaxis2=dict(range=yaxis2_range, showgrid=False,),
                       yaxis3=dict(title="<b>B-allele frequency</b>", range=[0, 0.6], showticklabels=True, showgrid=False, zeroline=False),
                       yaxis4=dict(title="<b>Genes</b>", range=[0, 1], showticklabels = False, showgrid=False, zeroline=True, zerolinewidth=2, zerolinecolor='black'),
 
