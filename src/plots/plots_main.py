@@ -1239,8 +1239,8 @@ def copy_number_plots_genome_breakpoints_cytos(centers, integer_fractional_cente
     # #############################################################
     #fig.update_yaxes(range=[-1, args.cut_threshold])
     fig.update_layout(yaxis=dict(title=dict(text="Structural variants", font=dict(size=16)), range=[0, 75], showticklabels = False, showgrid=False, zeroline=False),
-                      yaxis2=dict(range=yaxis2_3_range, showgrid=False,),
-                      yaxis3=dict(range=yaxis2_3_range, showgrid=False,),
+                      yaxis2=dict(showgrid=False,),
+                      yaxis3=dict(showgrid=False,),
                       yaxis5=dict(title=dict(text="B-allele frequency", font=dict(size=16)), range=[0, 0.6], showticklabels=True, showgrid=False, zeroline=False),
                       yaxis6=dict(title=dict(text="Genes", font=dict(size=16)), range=[0, 1], showticklabels = False, showgrid=False, zeroline=True, zerolinewidth=2, zerolinecolor='black'),
                       yaxis4=dict(title=dict(text="Cytos", font=dict(size=16)), range=[0, 1], showticklabels=False, showgrid=False, zeroline=True, zerolinewidth=2, zerolinecolor='black'),
@@ -1665,8 +1665,8 @@ def copy_number_plots_genome_breakpoints(centers, integer_fractional_centers, df
     # #############################################################
     #fig.update_yaxes(range=[-1, args.cut_threshold])
     fig.update_layout(yaxis=dict(title=dict(text="Structural variants", font=dict(size=16)), range=[0, 75], showticklabels = False, showgrid=False, zeroline=False),
-                      yaxis2=dict(range=yaxis2_3_range, showgrid=False,),
-                      yaxis3=dict(range=yaxis2_3_range, showgrid=False,),
+                      yaxis2=dict(showgrid=False,),
+                      yaxis3=dict(showgrid=False,),
                       yaxis4=dict(title=dict(text="B-allele frequency", font=dict(size=16)), range=[0, 0.6], showticklabels=True, showgrid=False, zeroline=False),
                       yaxis5=dict(title=dict(text="Genes", font=dict(size=16)), range=[0, 1], showticklabels = False, showgrid=False, zeroline=True, zerolinewidth=2, zerolinecolor='black'),
 
@@ -2033,7 +2033,7 @@ def copy_number_plots_genome(centers, integer_fractional_centers, df_cnr_hp1, df
     #fig.update_yaxes(range=[-1, args.cut_threshold])
     fig.update_layout(
                       yaxis=dict(range=yaxis2_3_range, showgrid=False,),
-                      yaxis2=dict(range=yaxis2_3_range, showgrid=False,),
+                      yaxis2=dict(showgrid=False,),
                       yaxis3=dict(title="<b>B-allele frequency</b>", range=[0, 0.6], showticklabels=True, showgrid=False, zeroline=False),
                       yaxis4=dict(title="<b>Genes</b>", range=[0, 1], showticklabels = False, showgrid=False, zeroline=True, zerolinewidth=2, zerolinecolor='black'),
 
@@ -2546,8 +2546,8 @@ def copy_number_plots_genome_breakpoints_subclonal_cytos(centers, integer_fracti
     # #############################################################
     #fig.update_yaxes(range=[-1, args.cut_threshold])
     fig.update_layout(yaxis=dict(title=dict(text="Structural variants", font=dict(size=16)), range=[0, 75], showticklabels = False, showgrid=False, zeroline=False),
-                      yaxis2=dict(range=yaxis2_3_range, showgrid=False,),
-                      yaxis3=dict(range=yaxis2_3_range, showgrid=False,),
+                      yaxis2=dict(showgrid=False,),
+                      yaxis3=dict(showgrid=False,),
                       yaxis5=dict(title=dict(text="B-allele frequency", font=dict(size=16)), range=[0, 0.6], showticklabels=True, showgrid=False, zeroline=False),
                       yaxis6=dict(title=dict(text="Genes", font=dict(size=16)), range=[0, 1], showticklabels = False, showgrid=False, zeroline=True, zerolinewidth=2, zerolinecolor='black'),
                       yaxis4=dict(title=dict(text="Cytos", font=dict(size=16)), range=[0, 1], showticklabels=False, showgrid=False, zeroline=True, zerolinewidth=2, zerolinecolor='black'),
@@ -3051,8 +3051,8 @@ def copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_c
     # #############################################################
     #fig.update_yaxes(range=[-1, args.cut_threshold])
     fig.update_layout(yaxis=dict(title=dict(text="Structural variants", font=dict(size=16)), range=[0, 75], showticklabels = False, showgrid=False, zeroline=False),
-                      yaxis2=dict(range=yaxis2_3_range, showgrid=False,),
-                      yaxis3=dict(range=yaxis2_3_range, showgrid=False,),
+                      yaxis2=dict(showgrid=False,),
+                      yaxis3=dict(showgrid=False,),
                       yaxis4=dict(title=dict(text="B-allele frequency", font=dict(size=16)), range=[0, 0.6], showticklabels=True, showgrid=False, zeroline=False),
                       yaxis5=dict(title=dict(text="Genes", font=dict(size=16)), range=[0, 1], showticklabels = False, showgrid=False, zeroline=True, zerolinewidth=2, zerolinecolor='black'),
 
@@ -3451,7 +3451,7 @@ def copy_number_plots_genome_subclonal(centers, integer_fractional_centers, df_c
     # fig.update_yaxes(range=[-1, args.cut_threshold])
     fig.update_layout(
                       yaxis=dict(range=yaxis2_3_range, showgrid=False,),
-                      yaxis2=dict(range=yaxis2_3_range, showgrid=False,),
+                      yaxis2=dict(showgrid=False,),
                       yaxis3=dict(title="<b>B-allele frequency</b>", range=[0, 0.6], showticklabels=True, showgrid=False, zeroline=False),
                       yaxis4=dict(title="<b>Genes</b>", range=[0, 1], showticklabels = False, showgrid=False, zeroline=True, zerolinewidth=2, zerolinecolor='black'),
 
@@ -3850,7 +3850,7 @@ def genes_copy_number_plots_genome(df_genes, centers, integer_fractional_centers
     #fig.update_yaxes(range=[-1, args.cut_threshold])
     fig.update_layout(
                       yaxis=dict(range=yaxis2_3_range, showgrid=False,),
-                      yaxis2=dict(range=yaxis2_3_range, showgrid=False,),
+                      yaxis2=dict(showgrid=False,),
                       yaxis3=dict(title="<b>Genes</b>", range=[0, 1], showticklabels = False, showgrid=False, zeroline=True, zerolinewidth=2, zerolinecolor='black'),
 
                       xaxis=dict(tick0=0.0, rangemode="nonnegative", range=[0, len(df_cnr_hp1.start.values.tolist())*args.bin_size], zeroline=True, zerolinewidth=1, zerolinecolor='black', showgrid=False,),
@@ -4287,7 +4287,7 @@ def genes_plots_genome(df_genes, centers, integer_fractional_centers, df_cnr_hp1
     # fig.update_yaxes(range=[-1, args.cut_threshold])
     fig.update_layout(
         yaxis=dict(range=yaxis2_3_range, showgrid=False, ),
-        yaxis2=dict(range=yaxis2_3_range, showgrid=False, ),
+        yaxis2=dict(showgrid=False, ),
         yaxis3=dict(title="<b>Genes</b>", range=[0, 1], showticklabels=False, showgrid=False, zeroline=True,
                     zerolinewidth=2, zerolinecolor='black'),
 
