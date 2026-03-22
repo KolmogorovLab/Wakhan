@@ -834,8 +834,6 @@ def copy_number_plots_genome_details(centers, integer_fractional_centers, df_cnr
         else:
             OFFSET = args.cut_threshold/150
             colors = ['firebrick', 'steelblue']
-        haplotype_1_copyratios_values = [x if x == 'None' else x  for x in haplotype_1_copyratios_values]
-        haplotype_2_copyratios_values = [x if x == 'None' else x  for x in haplotype_2_copyratios_values]
         name = "Copynumbers"
 
         add_scatter_trace_copyratios(args, fig, colors, name, haplotype_1_copyratios_positions,
@@ -1220,8 +1218,7 @@ def copy_number_plots_genome_breakpoints_cytos(centers, integer_fractional_cente
         else:
             OFFSET = args.cut_threshold/150
             colors = ['firebrick', 'steelblue']
-        haplotype_1_copyratios_values = [x if x == 'None' else x  for x in haplotype_1_copyratios_values]
-        haplotype_2_copyratios_values = [x if x == 'None' else -(x) for x in haplotype_2_copyratios_values]
+        haplotype_2_copyratios_values = [-x if x != 'None' else x for x in haplotype_2_copyratios_values]
         name = "Copynumbers"
 
         add_scatter_trace_copyratios(args, fig, colors, name, haplotype_1_copyratios_positions, haplotype_2_copyratios_positions, haplotype_1_copyratios_values, haplotype_2_copyratios_values, df_segs_hp1, df_segs_hp2, mul_cols=True)
@@ -1639,15 +1636,8 @@ def copy_number_plots_genome_breakpoints(centers, integer_fractional_centers, df
             OFFSET = args.cut_threshold/150
             colors = ['firebrick', 'steelblue']
 
-        search_list = centers
-        haplotype_1_copyratios_values = [-3300.0 if element not in search_list else element for element in haplotype_1_copyratios_values]
-        haplotype_1_copyratios_values = [x if x == 'None' else x for x in haplotype_1_copyratios_values]
-
-        haplotype_2_copyratios_values = [-3300.0 if element not in search_list else element for element in haplotype_2_copyratios_values]
         haplotype_2_copyratios_values = [x if x == 'None' else -x for x in haplotype_2_copyratios_values]
 
-        #haplotype_1_copyratios_values = [x if x == 'None' else x  for x in haplotype_1_copyratios_values]
-        #haplotype_2_copyratios_values = [x if x == 'None' else -(x) for x in haplotype_2_copyratios_values]
         name = "Copynumbers"
 
         add_scatter_trace_copyratios(args, fig, colors, name, haplotype_1_copyratios_positions, haplotype_2_copyratios_positions, haplotype_1_copyratios_values, haplotype_2_copyratios_values, df_segs_hp1, df_segs_hp2, mul_cols=True, centers=centers)
@@ -1656,28 +1646,48 @@ def copy_number_plots_genome_breakpoints(centers, integer_fractional_centers, df
     centers_rev.reverse()
     integer_fractional_means_rev = [x for x in integer_fractional_centers]
     integer_fractional_means_rev.reverse()
+
+    # Extend tick_vals beyond known centers for high CN segments
+    max_state = centers[-1]
+    all_states = df_segs_hp1.state.values.tolist() + df_segs_hp2.state.values.tolist()
+    if all_states:
+        max_state = max(max_state, max(all_states))
+    ext_pos_ticks = []
+    ext_pos_labels = []
+    if len(centers) >= 2:
+        _spacing = centers[-1] - centers[-2]
+        _extra = 1
+        while centers[-1] + _extra * _spacing <= max_state + _spacing:
+            ext_pos_ticks.append(centers[-1] + _extra * _spacing)
+            ext_pos_labels.append(integer_fractional_centers[-1] + _extra)
+            _extra += 1
+
     if args.without_phasing:
-        tick_vals = centers
-        tickt_ext = integer_fractional_centers
+        tick_vals = list(centers) + ext_pos_ticks
+        tickt_ext = list(integer_fractional_centers) + ext_pos_labels
         tickvals = [i for i in range(0, 1000, 25)]
         ticktext = [str(abs(i)) for i in range(0, 1000, 25)]
         yaxis2_3_range = [0, args.cut_threshold + 5]
+        yaxis3_range = [0, max_state + (_spacing if len(centers) >= 2 else 5)]
         plot_height = 850 + 150 + 20 + 20 - 110 - 40
         legend_y = 1.13
     else:
-        tick_vals = centers_rev + centers
-        tickt_ext = integer_fractional_means_rev + integer_fractional_centers
+        ext_neg_ticks = [-v for v in reversed(ext_pos_ticks)]
+        ext_neg_labels = [-l for l in reversed(ext_pos_labels)]
+        tick_vals = ext_neg_ticks + centers_rev + list(centers) + ext_pos_ticks
+        tickt_ext = ext_neg_labels + integer_fractional_means_rev + list(integer_fractional_centers) + ext_pos_labels
         tickvals = [i for i in range(-1000, 1000, 25)]
         ticktext = [str(abs(i)) for i in range(-1000, 1000, 25)]
         yaxis2_3_range = [-(args.cut_threshold + 5), args.cut_threshold + 5]
+        _range_max = max_state + (_spacing if len(centers) >= 2 else 5)
+        yaxis3_range = [-_range_max, _range_max]
         plot_height = 850 + 150 + 130 + 10 - 110 - 80
         legend_y = 1.09
     # #############################################################
     # #############################################################
-    #fig.update_yaxes(range=[-1, args.cut_threshold])
     fig.update_layout(yaxis=dict(title=dict(text="Structural variants", font=dict(size=16)), range=[0, 75], showticklabels = False, showgrid=False, zeroline=False),
                       yaxis2=dict(showgrid=False,),
-                      yaxis3=dict(showgrid=False,),
+                      yaxis3=dict(range=yaxis3_range, showgrid=False,),
                       yaxis4=dict(title=dict(text="B-allele frequency", font=dict(size=16)), range=[0, 0.6], showticklabels=True, showgrid=False, zeroline=False),
                       yaxis5=dict(title=dict(text="Genes", font=dict(size=16)), range=[0, 1], showticklabels = False, showgrid=False, zeroline=True, zerolinewidth=2, zerolinecolor='black'),
 
@@ -2013,8 +2023,7 @@ def copy_number_plots_genome(centers, integer_fractional_centers, df_cnr_hp1, df
         else:
             OFFSET = args.cut_threshold/150
             colors = ['firebrick', 'steelblue']
-        haplotype_1_copyratios_values = [x if x == 'None' else x  for x in haplotype_1_copyratios_values]
-        haplotype_2_copyratios_values = [x if x == 'None' else -(x) for x in haplotype_2_copyratios_values]
+        haplotype_2_copyratios_values = [-x if x != 'None' else x for x in haplotype_2_copyratios_values]
         name = "Copynumbers"
 
         add_scatter_trace_copyratios(args, fig, colors, name, haplotype_1_copyratios_positions, haplotype_2_copyratios_positions, haplotype_1_copyratios_values, haplotype_2_copyratios_values, df_segs_hp1, df_segs_hp2, mul_cols=True, row=1)
@@ -2519,10 +2528,8 @@ def copy_number_plots_genome_breakpoints_subclonal_cytos(centers, integer_fracti
             haplotype_2_copyratios_values_sub = [element if element not in search_list_none else -3300.0 for element in haplotype_2_copyratios_values]
             OFFSET = args.cut_threshold/150
 
-            haplotype_1_copyratios_values_normal = [x if x == 'None' else x  for x in haplotype_1_copyratios_values_normal]
-            haplotype_2_copyratios_values_normal = [x if x == 'None' else -x  for x in haplotype_2_copyratios_values_normal]
-            haplotype_1_copyratios_values_sub = [x if (x == 'None' or x == -3300.0) else  x for x in haplotype_1_copyratios_values_sub]
-            haplotype_2_copyratios_values_sub = [x if (x == 'None' or x == -3300.0) else  -x  for x in haplotype_2_copyratios_values_sub]
+            haplotype_2_copyratios_values_normal = [-x if x != 'None' else x for x in haplotype_2_copyratios_values_normal]
+            haplotype_2_copyratios_values_sub = [-x if x not in ('None', -3300.0) else x for x in haplotype_2_copyratios_values_sub]
 
             if args.without_phasing:
                 colors_cn = ['darkolivegreen']
@@ -2545,8 +2552,7 @@ def copy_number_plots_genome_breakpoints_subclonal_cytos(centers, integer_fracti
             else:
                 OFFSET = args.cut_threshold/150
                 colors = ['firebrick', 'steelblue']
-            haplotype_1_copyratios_values = [x if x == 'None' else x  for x in haplotype_1_copyratios_values]
-            haplotype_2_copyratios_values = [x if x == 'None' else -(x) for x in haplotype_2_copyratios_values]
+            haplotype_2_copyratios_values = [-x if x != 'None' else x for x in haplotype_2_copyratios_values]
             name = "Copynumbers"
 
             add_scatter_trace_copyratios(args, fig, colors, name, haplotype_1_copyratios_positions, haplotype_2_copyratios_positions, haplotype_1_copyratios_values, haplotype_2_copyratios_values, df_segs_hp1.start.values.tolist(), df_segs_hp1.end.values.tolist(), df_segs_hp2.start.values.tolist(), df_segs_hp2.end.values.tolist(), mul_cols=True)
@@ -3024,10 +3030,8 @@ def copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_c
             haplotype_2_copyratios_values_sub = [element if element not in search_list_none else -3300.0 for element in haplotype_2_copyratios_values]
             OFFSET = args.cut_threshold/150
 
-            haplotype_1_copyratios_values_normal = [x if x == 'None' else x  for x in haplotype_1_copyratios_values_normal]
-            haplotype_2_copyratios_values_normal = [x if x == 'None' else -x  for x in haplotype_2_copyratios_values_normal]
-            haplotype_1_copyratios_values_sub = [x if (x == 'None' or x == -3300.0) else  x for x in haplotype_1_copyratios_values_sub]
-            haplotype_2_copyratios_values_sub = [x if (x == 'None' or x == -3300.0) else  -x  for x in haplotype_2_copyratios_values_sub]
+            haplotype_2_copyratios_values_normal = [-x if x != 'None' else x for x in haplotype_2_copyratios_values_normal]
+            haplotype_2_copyratios_values_sub = [-x if x not in ('None', -3300.0) else x for x in haplotype_2_copyratios_values_sub]
 
             if args.without_phasing:
                 colors_cn = ['darkolivegreen']
@@ -3050,8 +3054,7 @@ def copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_c
             else:
                 OFFSET = args.cut_threshold/150
                 colors = ['firebrick', 'steelblue']
-            haplotype_1_copyratios_values = [x if x == 'None' else x  for x in haplotype_1_copyratios_values]
-            haplotype_2_copyratios_values = [x if x == 'None' else -(x) for x in haplotype_2_copyratios_values]
+            haplotype_2_copyratios_values = [-x if x != 'None' else x for x in haplotype_2_copyratios_values]
             name = "Copynumbers"
 
             add_scatter_trace_copyratios(args, fig, colors, name, haplotype_1_copyratios_positions, haplotype_2_copyratios_positions, haplotype_1_copyratios_values, haplotype_2_copyratios_values, df_segs_hp1.start.values.tolist(), df_segs_hp1.end.values.tolist(), df_segs_hp2.start.values.tolist(), df_segs_hp2.end.values.tolist(), mul_cols=True)
@@ -3423,10 +3426,8 @@ def copy_number_plots_genome_subclonal(centers, integer_fractional_centers, df_c
             haplotype_2_copyratios_values_sub = [element if element not in search_list_none else -3300.0 for element in haplotype_2_copyratios_values]
             OFFSET = args.cut_threshold/150
 
-            haplotype_1_copyratios_values_normal = [x if x == 'None' else x  for x in haplotype_1_copyratios_values_normal]
-            haplotype_2_copyratios_values_normal = [x if x == 'None' else -x  for x in haplotype_2_copyratios_values_normal]
-            haplotype_1_copyratios_values_sub = [x if x == 'None' else x  for x in haplotype_1_copyratios_values_sub]
-            haplotype_2_copyratios_values_sub = [x if x == 'None' else -x  for x in haplotype_2_copyratios_values_sub]
+            haplotype_2_copyratios_values_normal = [-x if x != 'None' else x for x in haplotype_2_copyratios_values_normal]
+            haplotype_2_copyratios_values_sub = [-x if x != 'None' else x for x in haplotype_2_copyratios_values_sub]
 
             if args.without_phasing:
                 colors_cn = ['darkolivegreen']
@@ -3449,8 +3450,7 @@ def copy_number_plots_genome_subclonal(centers, integer_fractional_centers, df_c
             else:
                 OFFSET = args.cut_threshold/150
                 colors = ['firebrick', 'steelblue']
-            haplotype_1_copyratios_values = [x if x == 'None' else x  for x in haplotype_1_copyratios_values]
-            haplotype_2_copyratios_values = [x if x == 'None' else -(x) for x in haplotype_2_copyratios_values]
+            haplotype_2_copyratios_values = [-x if x != 'None' else x for x in haplotype_2_copyratios_values]
             name = "Copynumbers"
 
             add_scatter_trace_copyratios(args, fig, colors, name, haplotype_1_copyratios_positions, haplotype_2_copyratios_positions, haplotype_1_copyratios_values, haplotype_2_copyratios_values, df_segs_hp1.start.values.tolist(), df_segs_hp1.end.values.tolist(), df_segs_hp2.start.values.tolist(), df_segs_hp2.end.values.tolist(), mul_cols=True, row=1)
@@ -3857,8 +3857,7 @@ def genes_copy_number_plots_genome(df_genes, centers, integer_fractional_centers
         else:
             OFFSET = args.cut_threshold/150
             colors = ['firebrick', 'steelblue']
-        haplotype_1_copyratios_values = [x if x == 'None' else x  for x in haplotype_1_copyratios_values]
-        haplotype_2_copyratios_values = [x if x == 'None' else -x for x in haplotype_2_copyratios_values]
+        haplotype_2_copyratios_values = [-x if x != 'None' else x for x in haplotype_2_copyratios_values]
         name = "Copynumbers"
 
         add_scatter_trace_copyratios(args, fig, colors, name, haplotype_1_copyratios_positions, haplotype_2_copyratios_positions, haplotype_1_copyratios_values, haplotype_2_copyratios_values, df_segs_hp1, df_segs_hp2, mul_cols=True, row=1, visibility='legendonly')
@@ -4291,8 +4290,6 @@ def genes_plots_genome(df_genes, centers, integer_fractional_centers, df_cnr_hp1
         else:
             OFFSET = args.cut_threshold / 150
             colors = ['firebrick', 'steelblue']
-        haplotype_1_copyratios_values = [x if x == 'None' else x for x in haplotype_1_copyratios_values]
-        haplotype_2_copyratios_values = [x if x == 'None' else x for x in haplotype_2_copyratios_values]
         name = "Copynumbers"
 
         add_scatter_trace_copyratios(args, fig, colors, name, haplotype_1_copyratios_positions,

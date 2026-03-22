@@ -301,6 +301,8 @@ def update_subclonal_means_states(centers, subclonals, df_segs_hp1_updated, df_s
 
 
 def subclonal_values_adjusted(x, centers):
+    if x == 'None' or x is None:
+        return x
     if x == -3300.0:
         return x
     if x < 0:
