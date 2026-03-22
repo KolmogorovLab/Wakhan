@@ -276,8 +276,8 @@ def build_parser():
     global_parser.add_argument("--genome-name", dest="genome_name", default='Sample', help="Genome sample/cell line name to be displayed on plots")
     global_parser.add_argument("--contigs", dest="contigs", default=DEFAULT_CONTIGS,
                                help="List of contigs to be included in the plots, default chr1-22,chrX [e.g., chr1-22,X,Y], Must be consistent with chr/nochr notation in input files")
-    global_parser.add_argument("--cut-threshold", "--cut_threshold", dest="cut_threshold", default=MAX_CUT_THRESHOLD, metavar="int", type=int,
-                               help="Plotting threshold for coverage")
+    global_parser.add_argument("--cut-threshold", "--cut_threshold", dest="cut_threshold", default=None, metavar="int", type=int,
+                               help="Plotting threshold for coverage (default: auto-inferred from longest segments)")
     global_parser.add_argument('--pdf-enable', action="store_true",  dest="pdf_enable", default=False, help="Enabling PDF output coverage plots")
 
     #parameters tuning, normally not needed
@@ -635,7 +635,9 @@ def cna_process(args):
     args.first_copy_breakpoints_filter = single_copy_cov if not is_half_peak else single_copy_cov // 2
 
     logger.info('Initial detected clusters means: %s', centers)
-    args.cut_threshold = single_copy_cov * len(centers)
+    args._cut_threshold_user_set = args.cut_threshold is not None
+    if not args._cut_threshold_user_set:
+        args.cut_threshold = single_copy_cov * len(centers)  # provisional; plot functions refine from segment data
 
     #df_segs_hp1, df_segs_hp2 = breakpoints_segments_means(args, csv_df_snps_mean)
     haplotype_1_values_updated, haplotype_2_values_updated, unphased, csv_df_snps_mean, snps_cpd_means, snps_cpd_points_weights, snps_cpd_means_df = breakpoints_segments_means(csv_df_coverage, csv_df_phasesets, args, thread_pool)

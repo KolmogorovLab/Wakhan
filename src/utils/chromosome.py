@@ -2,6 +2,8 @@ import os
 import pandas as pd
 from itertools import takewhile
 
+CENTROMERE_SENTINEL = 3300  # Magic value marking centromeric/blacklisted segments; replaced with None at plotting layer
+
 
 def centromere_regions_blacklist(args, df_segs_hp1_, df_segs_hp2_):
     df_segs_hp1 = df_segs_hp1_.copy()
@@ -27,13 +29,13 @@ def centromere_regions_blacklist(args, df_segs_hp1_, df_segs_hp2_):
 
         for idx, s1 in df_segs_hp_1_chrom.iterrows():
             if (df_segs_hp_1_chrom.loc[idx, 'start'] == cents[0] or df_segs_hp_1_chrom.loc[idx, 'start'] == cents[0]+1) and df_segs_hp_1_chrom.loc[idx, 'end'] == cents[1]:# or df_segs_hp_1_chrom.loc[idx+1, 'start'] == cents[0] and df_segs_hp_1_chrom.loc[idx+1, 'end'] == cents[1]:
-                df_segs_hp_1_chrom.loc[idx, 'depth'] = 3300
-                df_segs_hp_1_chrom.loc[idx, 'state'] = 3300
+                df_segs_hp_1_chrom.loc[idx, 'depth'] = CENTROMERE_SENTINEL
+                df_segs_hp_1_chrom.loc[idx, 'state'] = CENTROMERE_SENTINEL
 
         for idx, s2 in df_segs_hp_2_chrom.iterrows():
             if (df_segs_hp_2_chrom.loc[idx, 'start'] == cents[0] or df_segs_hp_2_chrom.loc[idx, 'start'] == cents[0]+1) and df_segs_hp_2_chrom.loc[idx, 'end'] == cents[1]:# or df_segs_hp_1_chrom.loc[idx+1, 'start'] == cents[0] and df_segs_hp_1_chrom.loc[idx+1, 'end'] == cents[1]:
-                df_segs_hp_2_chrom.loc[idx, 'depth'] = 3300
-                df_segs_hp_2_chrom.loc[idx, 'state'] = 3300
+                df_segs_hp_2_chrom.loc[idx, 'depth'] = CENTROMERE_SENTINEL
+                df_segs_hp_2_chrom.loc[idx, 'state'] = CENTROMERE_SENTINEL
 
         updated_hp1_segs.append(df_segs_hp_1_chrom)
         updated_hp2_segs.append(df_segs_hp_2_chrom)
@@ -79,7 +81,7 @@ def centromere_regions_blacklist_bins(args, df_hp1_, df_hp2_, df_segs_hp1_update
                 if internal_bins:
                     j = ref_start_values.index(internal_bins[0])
                     for l in range(len(internal_bins)):
-                        df_hp_1_chrom.loc[j, 'hp1'] = 3300
+                        df_hp_1_chrom.loc[j, 'hp1'] = CENTROMERE_SENTINEL
                         j = j+1
 
         for idx, s2 in df_segs_hp_2_chrom.iterrows():
@@ -88,7 +90,7 @@ def centromere_regions_blacklist_bins(args, df_hp1_, df_hp2_, df_segs_hp1_update
                 if internal_bins:
                     j = ref_start_values.index(internal_bins[0])
                     for l in range(len(internal_bins)):
-                        df_hp_2_chrom.loc[j, 'hp2'] = 3300
+                        df_hp_2_chrom.loc[j, 'hp2'] = CENTROMERE_SENTINEL
                         j = j+1
 
         updated_hp1.append(df_hp_1_chrom)

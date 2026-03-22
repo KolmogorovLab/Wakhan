@@ -5,7 +5,7 @@ import math
 import statistics
 
 from src.breakpoint.breakpoints import sv_vcf_bps_cn_check
-from src.utils.chromosome import get_contigs_list, overlap_check
+from src.utils.chromosome import get_contigs_list, overlap_check, CENTROMERE_SENTINEL
 from src.utils.statistics import remove_outliers_iqr
 
 
@@ -303,7 +303,7 @@ def update_subclonal_means_states(centers, subclonals, df_segs_hp1_updated, df_s
 def subclonal_values_adjusted(x, centers):
     if x == 'None' or x is None:
         return x
-    if x == -3300.0:
+    if abs(x) == CENTROMERE_SENTINEL:
         return x
     if x < 0:
         x = -x
@@ -320,7 +320,7 @@ def subclonal_values_adjusted(x, centers):
 
 
 def integers_values_adjusted(x, centers):
-    if x == -3300.0:
+    if abs(x) == CENTROMERE_SENTINEL:
         return x
     if x < 0:
         x = -x

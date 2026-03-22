@@ -20,7 +20,7 @@ from src.file_tools.process_vcf_legacy import get_snps_frquncies_coverage, snps_
 from src.file_tools.process_vcf import vcf_parse_to_csv_for_snps
 #from src.utils import subclonal_values_adjusted, csv_df_chromosomes_sorter, df_chromosomes_sorter
 from src.cna.copynumber import subclonal_values_adjusted
-from src.utils.chromosome import csv_df_chromosomes_sorter, df_chromosomes_sorter, get_contigs_list
+from src.utils.chromosome import csv_df_chromosomes_sorter, df_chromosomes_sorter, get_contigs_list, CENTROMERE_SENTINEL
 from src.cna.loh import detect_alter_loh_regions
 from src.coverage.binning import get_chromosomes_regions, get_chromosomes_bins
 from src.coverage.segmentation import change_point_detection_means
@@ -30,6 +30,32 @@ from src.breakpoint.breakpoints_arcs import get_all_breakpoints_data
 from src.utils.statistics import adjust_extreme_outliers
 
 pd.options.mode.chained_assignment = None
+
+
+def _sentinel_to_none(states):
+    """Replace centromere sentinel values with 'None' so Plotly renders them as gaps."""
+    return ['None' if (isinstance(v, (int, float)) and abs(v) == CENTROMERE_SENTINEL) else v for v in states]
+
+
+def _compute_zoom_max(df_segs_hp1, df_segs_hp2, spacing, args):
+    """Return the y-axis upper bound (coverage scale).
+
+    Auto-inferred as: max depth among segments >= 10 bins long, plus one CN step.
+    If the user explicitly set --cut-threshold, that value is used instead.
+    """
+    if getattr(args, '_cut_threshold_user_set', False):
+        return args.cut_threshold
+    min_len = 10 * args.bin_size
+    depths = []
+    for df in [df_segs_hp1, df_segs_hp2]:
+        long_segs = df[(df['end'] - df['start']) >= min_len]
+        valid = long_segs[long_segs['depth'].apply(lambda v: abs(v) != CENTROMERE_SENTINEL)]
+        if not valid.empty:
+            depths.append(valid['depth'].max())
+    if depths:
+        return max(depths) + spacing
+    return args.cut_threshold + spacing  # fallback if no long segments
+
 
 def copy_number_plots_chromosomes(df_cnr_hp1, df_segs_hp1, df_cnr_hp2, df_segs_hp2, args, loh_region_starts, loh_region_ends, is_half):
     filename = f"{os.path.join(args.out_dir_plots, 'COPY_NUMBERS.html')}"
@@ -819,12 +845,14 @@ def copy_number_plots_genome_details(centers, integer_fractional_centers, df_cnr
                 haplotype_2_end_values.extend([x + offset_start for x in haplotype_2_end_values_copyratios])
                 #offset_start += regions[index-1]
 
-        haplotype_1_gaps_values = np.full(len(df_segs_hp1.state.values.tolist()), 'None')
-        haplotype_1_copyratios_values = list(itertools.chain.from_iterable(zip(df_segs_hp1.state.values.tolist(), df_segs_hp1.state.values.tolist(), haplotype_1_gaps_values)))
+        _hp1_states = _sentinel_to_none(df_segs_hp1.state.values.tolist())
+        haplotype_1_gaps_values = np.full(len(_hp1_states), 'None')
+        haplotype_1_copyratios_values = list(itertools.chain.from_iterable(zip(_hp1_states, _hp1_states, haplotype_1_gaps_values)))
         haplotype_1_copyratios_positions = list(itertools.chain.from_iterable(zip(haplotype_1_start_values, haplotype_1_end_values, haplotype_1_gaps_values)))
 
-        haplotype_2_gaps_values = np.full(len(df_segs_hp2.state.values.tolist()), 'None')
-        haplotype_2_copyratios_values = list(itertools.chain.from_iterable(zip(df_segs_hp2.state.values.tolist(), df_segs_hp2.state.values.tolist(), haplotype_2_gaps_values)))
+        _hp2_states = _sentinel_to_none(df_segs_hp2.state.values.tolist())
+        haplotype_2_gaps_values = np.full(len(_hp2_states), 'None')
+        haplotype_2_copyratios_values = list(itertools.chain.from_iterable(zip(_hp2_states, _hp2_states, haplotype_2_gaps_values)))
         haplotype_2_copyratios_positions = list(itertools.chain.from_iterable(zip(haplotype_2_start_values, haplotype_2_end_values, haplotype_2_gaps_values)))
 
 
@@ -832,7 +860,7 @@ def copy_number_plots_genome_details(centers, integer_fractional_centers, df_cnr
             OFFSET = 0
             colors = ['darkolivegreen']
         else:
-            OFFSET = args.cut_threshold/150
+            OFFSET = 0  # computed after zoom_max is available; kept for compatibility
             colors = ['firebrick', 'steelblue']
         name = "Copynumbers"
 
@@ -860,38 +888,34 @@ def copy_number_plots_genome_details(centers, integer_fractional_centers, df_cnr
     centers_rev = [-x for x in centers[1:]]
     centers_rev.reverse()
 
-    # Extend tick_vals beyond known centers for high CN segments
+    _spacing = (centers[-1] - centers[-2]) if len(centers) >= 2 else 5
+    zoom_max = _compute_zoom_max(df_segs_hp1, df_segs_hp2, _spacing, args)
+
+    # Extend CN tick labels up to zoom_max (but not beyond)
     tick_vals = list(centers)
     tickt_ext = list(integer_fractional_centers)
-    max_state_d = centers[-1]
-    all_states_d = df_segs_hp1.state.values.tolist() + df_segs_hp2.state.values.tolist()
-    if all_states_d:
-        max_state_d = max(max_state_d, max(all_states_d))
     if len(centers) >= 2:
-        _sp = centers[-1] - centers[-2]
         _ex = 1
-        while centers[-1] + _ex * _sp <= max_state_d + _sp:
-            tick_vals.append(centers[-1] + _ex * _sp)
+        while centers[-1] + _ex * _spacing <= zoom_max:
+            tick_vals.append(centers[-1] + _ex * _spacing)
             tickt_ext.append(integer_fractional_centers[-1] + _ex)
             _ex += 1
-        _cn_axis_max = max_state_d + _sp
-    else:
-        _cn_axis_max = centers[-1] + 5
 
     integer_fractional_means_rev = [x for x in integer_fractional_centers[1:]]
     integer_fractional_means_rev.reverse()
-    fig.update_layout(yaxis=dict(range=[-1, args.cut_threshold]))
+    _tick_upper = int(zoom_max) + 26
+    fig.update_layout(yaxis=dict(range=[-1, zoom_max]))
     fig.update_layout(
         yaxis=dict(
             tickmode='array',
-            tickvals=[i for i in range(0, 1000, 25)],
-            ticktext=[str(abs(i)) for i in range(0, 1000, 25)]
+            tickvals=[i for i in range(0, _tick_upper, 25)],
+            ticktext=[str(i) for i in range(0, _tick_upper, 25)]
         ),
         yaxis2=dict(
             tickmode='array',
             tickvals=tick_vals,
             ticktext=tickt_ext,
-            range=[-1, _cn_axis_max]
+            range=[-1, zoom_max]
         )
     )
     #fig.update_yaxes(title='coverge (mean depth)')
@@ -1126,8 +1150,6 @@ def copy_number_plots_genome_breakpoints_cytos(centers, integer_fractional_cente
                              name= 'GeneInfo',
                              showlegend=False,), row=5, col=1,)
 
-    fig.add_hline(y=2,  line_width=1, line_dash="solid", line_color="black", row=3, col=1,)
-    fig.add_hline(y=-(args.cut_threshold + 5),  line_width=1, line_dash="solid", line_color="black", row=2, col=1,)
 
     #cytobands
     fileDir = os.path.dirname(__file__)
@@ -1203,12 +1225,14 @@ def copy_number_plots_genome_breakpoints_cytos(centers, integer_fractional_cente
                 haplotype_2_start_values.extend([x + offset_start for x in haplotype_2_start_values_copyratios])
                 haplotype_2_end_values.extend([x + offset_start for x in haplotype_2_end_values_copyratios])
 
-        haplotype_1_gaps_values = np.full(len(df_segs_hp1.state.values.tolist()), 'None')
-        haplotype_1_copyratios_values = list(itertools.chain.from_iterable(zip(df_segs_hp1.state.values.tolist(), df_segs_hp1.state.values.tolist(), haplotype_1_gaps_values)))
+        _hp1_states = _sentinel_to_none(df_segs_hp1.state.values.tolist())
+        haplotype_1_gaps_values = np.full(len(_hp1_states), 'None')
+        haplotype_1_copyratios_values = list(itertools.chain.from_iterable(zip(_hp1_states, _hp1_states, haplotype_1_gaps_values)))
         haplotype_1_copyratios_positions = list(itertools.chain.from_iterable(zip(haplotype_1_start_values, haplotype_1_end_values, haplotype_1_gaps_values)))
 
-        haplotype_2_gaps_values = np.full(len(df_segs_hp2.state.values.tolist()), 'None')
-        haplotype_2_copyratios_values = list(itertools.chain.from_iterable(zip(df_segs_hp2.state.values.tolist(), df_segs_hp2.state.values.tolist(), haplotype_2_gaps_values)))
+        _hp2_states = _sentinel_to_none(df_segs_hp2.state.values.tolist())
+        haplotype_2_gaps_values = np.full(len(_hp2_states), 'None')
+        haplotype_2_copyratios_values = list(itertools.chain.from_iterable(zip(_hp2_states, _hp2_states, haplotype_2_gaps_values)))
         haplotype_2_copyratios_positions = list(itertools.chain.from_iterable(zip(haplotype_2_start_values, haplotype_2_end_values, haplotype_2_gaps_values)))
 
 
@@ -1216,7 +1240,7 @@ def copy_number_plots_genome_breakpoints_cytos(centers, integer_fractional_cente
             OFFSET = 0
             colors = ['darkolivegreen']
         else:
-            OFFSET = args.cut_threshold/150
+            OFFSET = 0  # computed after zoom_max is available; kept for compatibility
             colors = ['firebrick', 'steelblue']
         haplotype_2_copyratios_values = [-x if x != 'None' else x for x in haplotype_2_copyratios_values]
         name = "Copynumbers"
@@ -1227,28 +1251,46 @@ def copy_number_plots_genome_breakpoints_cytos(centers, integer_fractional_cente
     centers_rev.reverse()
     integer_fractional_means_rev = [x for x in integer_fractional_centers]
     integer_fractional_means_rev.reverse()
+
+    _spacing = (centers[-1] - centers[-2]) if len(centers) >= 2 else 5
+    zoom_max = _compute_zoom_max(df_segs_hp1, df_segs_hp2, _spacing, args)
+
+    # Extend CN tick labels up to zoom_max (but not beyond)
+    ext_pos_ticks = []
+    ext_pos_labels = []
+    if len(centers) >= 2:
+        _extra = 1
+        while centers[-1] + _extra * _spacing <= zoom_max:
+            ext_pos_ticks.append(centers[-1] + _extra * _spacing)
+            ext_pos_labels.append(integer_fractional_centers[-1] + _extra)
+            _extra += 1
+
     if args.without_phasing:
-        tick_vals = centers
-        tickt_ext = integer_fractional_centers
-        tickvals = [i for i in range(0, 1000, 25)]
-        ticktext = [str(abs(i)) for i in range(0, 1000, 25)]
-        yaxis2_3_range = [0, args.cut_threshold + 5]
+        tick_vals = list(centers) + ext_pos_ticks
+        tickt_ext = list(integer_fractional_centers) + ext_pos_labels
+        _tick_upper = int(zoom_max) + 26
+        tickvals = [i for i in range(0, _tick_upper, 25)]
+        ticktext = [str(i) for i in range(0, _tick_upper, 25)]
+        yaxis2_3_range = [0, zoom_max]
         plot_height = 850 + 150 + 20 - 110 - 40
         legend_y = 1.135
     else:
-        tick_vals = centers_rev + centers
-        tickt_ext = integer_fractional_means_rev + integer_fractional_centers
-        tickvals = [i for i in range(-1000, 1000, 25)]
-        ticktext = [str(abs(i)) for i in range(-1000, 1000, 25)]
-        yaxis2_3_range = [-(args.cut_threshold + 5), args.cut_threshold + 5]
+        ext_neg_ticks = [-v for v in reversed(ext_pos_ticks)]
+        ext_neg_labels = [-l for l in reversed(ext_pos_labels)]
+        tick_vals = ext_neg_ticks + centers_rev + list(centers) + ext_pos_ticks
+        tickt_ext = ext_neg_labels + integer_fractional_means_rev + list(integer_fractional_centers) + ext_pos_labels
+        _tick_upper = int(zoom_max) + 26
+        tickvals = [-i for i in range(_tick_upper, 0, -25)] + [i for i in range(0, _tick_upper, 25)]
+        ticktext = [str(i) for i in range(_tick_upper, 0, -25)] + [str(i) for i in range(0, _tick_upper, 25)]
+        yaxis2_3_range = [-zoom_max, zoom_max]
         plot_height = 850 + 150 + 130 + 40 + 20 - 110 - 80
         legend_y = 1.075
     # #############################################################
     # #############################################################
     #fig.update_yaxes(range=[-1, args.cut_threshold])
     fig.update_layout(yaxis=dict(title=dict(text="Structural variants", font=dict(size=16)), range=[0, 75], showticklabels = False, showgrid=False, zeroline=False),
-                      yaxis2=dict(showgrid=False,),
-                      yaxis3=dict(showgrid=False,),
+                      yaxis2=dict(range=yaxis2_3_range, showgrid=False,),
+                      yaxis3=dict(range=yaxis2_3_range, showgrid=False,),
                       yaxis5=dict(title=dict(text="B-allele frequency", font=dict(size=16)), range=[0, 0.6], showticklabels=True, showgrid=False, zeroline=False),
                       yaxis6=dict(title=dict(text="Genes", font=dict(size=16)), range=[0, 1], showticklabels = False, showgrid=False, zeroline=True, zerolinewidth=2, zerolinecolor='black'),
                       yaxis4=dict(title=dict(text="Cytos", font=dict(size=16)), range=[0, 1], showticklabels=False, showgrid=False, zeroline=True, zerolinewidth=2, zerolinecolor='black'),
@@ -1268,6 +1310,7 @@ def copy_number_plots_genome_breakpoints_cytos(centers, integer_fractional_cente
     fig.update_layout(
         yaxis2=dict(
             title=dict(text="Binned sequencing depth", font=dict(size=16)),
+            range=yaxis2_3_range,
             tickmode='array',
             tickvals=tickvals,
             ticktext=ticktext
@@ -1553,8 +1596,6 @@ def copy_number_plots_genome_breakpoints(centers, integer_fractional_centers, df
                              name= 'GeneInfo',
                              showlegend=False,), row=4, col=1,)
 
-    fig.add_hline(y=2,  line_width=1, line_dash="solid", line_color="black", row=3, col=1,)
-    fig.add_hline(y=-(args.cut_threshold + 5),  line_width=1, line_dash="solid", line_color="black", row=2, col=1,)
 
     current = 0
     label_pos = []
@@ -1620,12 +1661,14 @@ def copy_number_plots_genome_breakpoints(centers, integer_fractional_centers, df
                 haplotype_2_start_values.extend([x + offset_start for x in haplotype_2_start_values_copyratios])
                 haplotype_2_end_values.extend([x + offset_start for x in haplotype_2_end_values_copyratios])
 
-        haplotype_1_gaps_values = np.full(len(df_segs_hp1.state.values.tolist()), 'None')
-        haplotype_1_copyratios_values = list(itertools.chain.from_iterable(zip(df_segs_hp1.state.values.tolist(), df_segs_hp1.state.values.tolist(), haplotype_1_gaps_values)))
+        _hp1_states = _sentinel_to_none(df_segs_hp1.state.values.tolist())
+        haplotype_1_gaps_values = np.full(len(_hp1_states), 'None')
+        haplotype_1_copyratios_values = list(itertools.chain.from_iterable(zip(_hp1_states, _hp1_states, haplotype_1_gaps_values)))
         haplotype_1_copyratios_positions = list(itertools.chain.from_iterable(zip(haplotype_1_start_values, haplotype_1_end_values, haplotype_1_gaps_values)))
 
-        haplotype_2_gaps_values = np.full(len(df_segs_hp2.state.values.tolist()), 'None')
-        haplotype_2_copyratios_values = list(itertools.chain.from_iterable(zip(df_segs_hp2.state.values.tolist(), df_segs_hp2.state.values.tolist(), haplotype_2_gaps_values)))
+        _hp2_states = _sentinel_to_none(df_segs_hp2.state.values.tolist())
+        haplotype_2_gaps_values = np.full(len(_hp2_states), 'None')
+        haplotype_2_copyratios_values = list(itertools.chain.from_iterable(zip(_hp2_states, _hp2_states, haplotype_2_gaps_values)))
         haplotype_2_copyratios_positions = list(itertools.chain.from_iterable(zip(haplotype_2_start_values, haplotype_2_end_values, haplotype_2_gaps_values)))
 
 
@@ -1633,7 +1676,7 @@ def copy_number_plots_genome_breakpoints(centers, integer_fractional_centers, df
             OFFSET = 0
             colors = ['darkolivegreen']
         else:
-            OFFSET = args.cut_threshold/150
+            OFFSET = 0  # computed after zoom_max is available; kept for compatibility
             colors = ['firebrick', 'steelblue']
 
         haplotype_2_copyratios_values = [x if x == 'None' else -x for x in haplotype_2_copyratios_values]
@@ -1647,17 +1690,15 @@ def copy_number_plots_genome_breakpoints(centers, integer_fractional_centers, df
     integer_fractional_means_rev = [x for x in integer_fractional_centers]
     integer_fractional_means_rev.reverse()
 
-    # Extend tick_vals beyond known centers for high CN segments
-    max_state = centers[-1]
-    all_states = df_segs_hp1.state.values.tolist() + df_segs_hp2.state.values.tolist()
-    if all_states:
-        max_state = max(max_state, max(all_states))
+    _spacing = (centers[-1] - centers[-2]) if len(centers) >= 2 else 5
+    zoom_max = _compute_zoom_max(df_segs_hp1, df_segs_hp2, _spacing, args)
+
+    # Extend CN tick labels up to zoom_max (but not beyond)
     ext_pos_ticks = []
     ext_pos_labels = []
     if len(centers) >= 2:
-        _spacing = centers[-1] - centers[-2]
         _extra = 1
-        while centers[-1] + _extra * _spacing <= max_state + _spacing:
+        while centers[-1] + _extra * _spacing <= zoom_max:
             ext_pos_ticks.append(centers[-1] + _extra * _spacing)
             ext_pos_labels.append(integer_fractional_centers[-1] + _extra)
             _extra += 1
@@ -1665,10 +1706,11 @@ def copy_number_plots_genome_breakpoints(centers, integer_fractional_centers, df
     if args.without_phasing:
         tick_vals = list(centers) + ext_pos_ticks
         tickt_ext = list(integer_fractional_centers) + ext_pos_labels
-        tickvals = [i for i in range(0, 1000, 25)]
-        ticktext = [str(abs(i)) for i in range(0, 1000, 25)]
-        yaxis2_3_range = [0, args.cut_threshold + 5]
-        yaxis3_range = [0, max_state + (_spacing if len(centers) >= 2 else 5)]
+        _tick_upper = int(zoom_max) + 26
+        tickvals = [i for i in range(0, _tick_upper, 25)]
+        ticktext = [str(i) for i in range(0, _tick_upper, 25)]
+        yaxis2_3_range = [0, zoom_max]
+        yaxis3_range = yaxis2_3_range
         plot_height = 850 + 150 + 20 + 20 - 110 - 40
         legend_y = 1.13
     else:
@@ -1676,11 +1718,11 @@ def copy_number_plots_genome_breakpoints(centers, integer_fractional_centers, df
         ext_neg_labels = [-l for l in reversed(ext_pos_labels)]
         tick_vals = ext_neg_ticks + centers_rev + list(centers) + ext_pos_ticks
         tickt_ext = ext_neg_labels + integer_fractional_means_rev + list(integer_fractional_centers) + ext_pos_labels
-        tickvals = [i for i in range(-1000, 1000, 25)]
-        ticktext = [str(abs(i)) for i in range(-1000, 1000, 25)]
-        yaxis2_3_range = [-(args.cut_threshold + 5), args.cut_threshold + 5]
-        _range_max = max_state + (_spacing if len(centers) >= 2 else 5)
-        yaxis3_range = [-_range_max, _range_max]
+        _tick_upper = int(zoom_max) + 26
+        tickvals = [-i for i in range(_tick_upper, 0, -25)] + [i for i in range(0, _tick_upper, 25)]
+        ticktext = [str(i) for i in range(_tick_upper, 0, -25)] + [str(i) for i in range(0, _tick_upper, 25)]
+        yaxis2_3_range = [-zoom_max, zoom_max]
+        yaxis3_range = yaxis2_3_range
         plot_height = 850 + 150 + 130 + 10 - 110 - 80
         legend_y = 1.09
     # #############################################################
@@ -1705,6 +1747,7 @@ def copy_number_plots_genome_breakpoints(centers, integer_fractional_centers, df
     fig.update_layout(
         yaxis2=dict(
             title=dict(text="Binned sequencing depth", font=dict(size=16)),
+            range=yaxis2_3_range,
             tickmode='array',
             tickvals=tickvals,
             ticktext=ticktext
@@ -1941,8 +1984,6 @@ def copy_number_plots_genome(centers, integer_fractional_centers, df_cnr_hp1, df
                              name= 'GeneInfo',
                              showlegend=False,), row=3, col=1,)
 
-    fig.add_hline(y=2,  line_width=1, line_dash="solid", line_color="black", row=2, col=1,)
-    fig.add_hline(y=-(args.cut_threshold + 5),  line_width=1, line_dash="solid", line_color="black", row=1, col=1,)
 
     current = 0
     label_pos = []
@@ -2008,12 +2049,14 @@ def copy_number_plots_genome(centers, integer_fractional_centers, df_cnr_hp1, df
                 haplotype_2_start_values.extend([x + offset_start for x in haplotype_2_start_values_copyratios])
                 haplotype_2_end_values.extend([x + offset_start for x in haplotype_2_end_values_copyratios])
 
-        haplotype_1_gaps_values = np.full(len(df_segs_hp1.state.values.tolist()), 'None')
-        haplotype_1_copyratios_values = list(itertools.chain.from_iterable(zip(df_segs_hp1.state.values.tolist(), df_segs_hp1.state.values.tolist(), haplotype_1_gaps_values)))
+        _hp1_states = _sentinel_to_none(df_segs_hp1.state.values.tolist())
+        haplotype_1_gaps_values = np.full(len(_hp1_states), 'None')
+        haplotype_1_copyratios_values = list(itertools.chain.from_iterable(zip(_hp1_states, _hp1_states, haplotype_1_gaps_values)))
         haplotype_1_copyratios_positions = list(itertools.chain.from_iterable(zip(haplotype_1_start_values, haplotype_1_end_values, haplotype_1_gaps_values)))
 
-        haplotype_2_gaps_values = np.full(len(df_segs_hp2.state.values.tolist()), 'None')
-        haplotype_2_copyratios_values = list(itertools.chain.from_iterable(zip(df_segs_hp2.state.values.tolist(), df_segs_hp2.state.values.tolist(), haplotype_2_gaps_values)))
+        _hp2_states = _sentinel_to_none(df_segs_hp2.state.values.tolist())
+        haplotype_2_gaps_values = np.full(len(_hp2_states), 'None')
+        haplotype_2_copyratios_values = list(itertools.chain.from_iterable(zip(_hp2_states, _hp2_states, haplotype_2_gaps_values)))
         haplotype_2_copyratios_positions = list(itertools.chain.from_iterable(zip(haplotype_2_start_values, haplotype_2_end_values, haplotype_2_gaps_values)))
 
 
@@ -2021,7 +2064,7 @@ def copy_number_plots_genome(centers, integer_fractional_centers, df_cnr_hp1, df
             OFFSET = 0
             colors = ['darkolivegreen']
         else:
-            OFFSET = args.cut_threshold/150
+            OFFSET = 0  # computed after zoom_max is available; kept for compatibility
             colors = ['firebrick', 'steelblue']
         haplotype_2_copyratios_values = [-x if x != 'None' else x for x in haplotype_2_copyratios_values]
         name = "Copynumbers"
@@ -2033,17 +2076,15 @@ def copy_number_plots_genome(centers, integer_fractional_centers, df_cnr_hp1, df
     integer_fractional_means_rev = [x for x in integer_fractional_centers]
     integer_fractional_means_rev.reverse()
 
-    # Extend tick_vals beyond known centers for high CN segments
-    max_state = centers[-1]
-    all_states = df_segs_hp1.state.values.tolist() + df_segs_hp2.state.values.tolist()
-    if all_states:
-        max_state = max(max_state, max(all_states))
+    _spacing = (centers[-1] - centers[-2]) if len(centers) >= 2 else 5
+    zoom_max = _compute_zoom_max(df_segs_hp1, df_segs_hp2, _spacing, args)
+
+    # Extend CN tick labels up to zoom_max (but not beyond)
     ext_pos_ticks = []
     ext_pos_labels = []
     if len(centers) >= 2:
-        _spacing = centers[-1] - centers[-2]
         _extra = 1
-        while centers[-1] + _extra * _spacing <= max_state + _spacing:
+        while centers[-1] + _extra * _spacing <= zoom_max:
             ext_pos_ticks.append(centers[-1] + _extra * _spacing)
             ext_pos_labels.append(integer_fractional_centers[-1] + _extra)
             _extra += 1
@@ -2051,10 +2092,11 @@ def copy_number_plots_genome(centers, integer_fractional_centers, df_cnr_hp1, df
     if args.without_phasing:
         tick_vals = list(centers) + ext_pos_ticks
         tickt_ext = list(integer_fractional_centers) + ext_pos_labels
-        tickvals = [i for i in range(0, 1000, 25)]
-        ticktext = [str(abs(i)) for i in range(0, 1000, 25)]
-        yaxis2_3_range = [0, args.cut_threshold + 5]
-        yaxis2_range = [0, max_state + (_spacing if len(centers) >= 2 else 5)]
+        _tick_upper = int(zoom_max) + 26
+        tickvals = [i for i in range(0, _tick_upper, 25)]
+        ticktext = [str(i) for i in range(0, _tick_upper, 25)]
+        yaxis2_3_range = [0, zoom_max]
+        yaxis2_range = yaxis2_3_range
         plot_height = 630 + 150 + 20
         legend_y = 1.085
     else:
@@ -2062,11 +2104,11 @@ def copy_number_plots_genome(centers, integer_fractional_centers, df_cnr_hp1, df
         ext_neg_labels = [-l for l in reversed(ext_pos_labels)]
         tick_vals = ext_neg_ticks + centers_rev + list(centers) + ext_pos_ticks
         tickt_ext = ext_neg_labels + integer_fractional_means_rev + list(integer_fractional_centers) + ext_pos_labels
-        tickvals = [i for i in range(-1000, 1000, 25)]
-        ticktext = [str(abs(i)) for i in range(-1000, 1000, 25)]
-        yaxis2_3_range = [-(args.cut_threshold + 5), args.cut_threshold + 5]
-        _range_max = max_state + (_spacing if len(centers) >= 2 else 5)
-        yaxis2_range = [-_range_max, _range_max]
+        _tick_upper = int(zoom_max) + 26
+        tickvals = [-i for i in range(_tick_upper, 0, -25)] + [i for i in range(0, _tick_upper, 25)]
+        ticktext = [str(i) for i in range(_tick_upper, 0, -25)] + [str(i) for i in range(0, _tick_upper, 25)]
+        yaxis2_3_range = [-zoom_max, zoom_max]
+        yaxis2_range = yaxis2_3_range
         plot_height = 630 + 150 + 130
         legend_y = 1.06
     # #############################################################
@@ -2422,8 +2464,6 @@ def copy_number_plots_genome_breakpoints_subclonal_cytos(centers, integer_fracti
 
         #fig.add_vline(x=co,  line_width=1, line_dash="solid", opacity=0.3, line_color="#2B40A0", row=1, col=1,)
 
-    fig.add_hline(y=2,  line_width=1, line_dash="solid", line_color="black", row=3, col=1,)
-    fig.add_hline(y=-(args.cut_threshold + 5),  line_width=1, line_dash="solid", line_color="black", row=2, col=1,)
 
     # for index, chrom in enumerate(chroms):
     #     current += lengths[index]
@@ -2508,12 +2548,14 @@ def copy_number_plots_genome_breakpoints_subclonal_cytos(centers, integer_fracti
                 haplotype_2_start_values.extend([x + offset_start for x in haplotype_2_start_values_copyratios])
                 haplotype_2_end_values.extend([x + offset_start for x in haplotype_2_end_values_copyratios])
 
-        haplotype_1_gaps_values = np.full(len(df_segs_hp1.state.values.tolist()), 'None')
-        haplotype_1_copyratios_values = list(itertools.chain.from_iterable(zip(df_segs_hp1.state.values.tolist(), df_segs_hp1.state.values.tolist(), haplotype_1_gaps_values)))
+        _hp1_states = _sentinel_to_none(df_segs_hp1.state.values.tolist())
+        haplotype_1_gaps_values = np.full(len(_hp1_states), 'None')
+        haplotype_1_copyratios_values = list(itertools.chain.from_iterable(zip(_hp1_states, _hp1_states, haplotype_1_gaps_values)))
         haplotype_1_copyratios_positions = list(itertools.chain.from_iterable(zip(haplotype_1_start_values, haplotype_1_end_values, haplotype_1_gaps_values)))
 
-        haplotype_2_gaps_values = np.full(len(df_segs_hp2.state.values.tolist()), 'None')
-        haplotype_2_copyratios_values = list(itertools.chain.from_iterable(zip(df_segs_hp2.state.values.tolist(), df_segs_hp2.state.values.tolist(), haplotype_2_gaps_values)))
+        _hp2_states = _sentinel_to_none(df_segs_hp2.state.values.tolist())
+        haplotype_2_gaps_values = np.full(len(_hp2_states), 'None')
+        haplotype_2_copyratios_values = list(itertools.chain.from_iterable(zip(_hp2_states, _hp2_states, haplotype_2_gaps_values)))
         haplotype_2_copyratios_positions = list(itertools.chain.from_iterable(zip(haplotype_2_start_values, haplotype_2_end_values, haplotype_2_gaps_values)))
 
         if args.copynumbers_subclonal_enable:
@@ -2521,15 +2563,15 @@ def copy_number_plots_genome_breakpoints_subclonal_cytos(centers, integer_fracti
             search_list = centers #[centers[i] for i in [integer_fractional_centers.index(x) for x in integer_fractional_centers if not float(x).is_integer()]] #[27.025, 42.025]
             search_list_none = search_list + ['None']
 
-            haplotype_1_copyratios_values_normal = [-3300.0 if element not in search_list else element for element in haplotype_1_copyratios_values]
-            haplotype_1_copyratios_values_sub = [element if element not in search_list_none else -3300.0 for element in haplotype_1_copyratios_values]
+            haplotype_1_copyratios_values_normal = [element if element in search_list else 'None' for element in haplotype_1_copyratios_values]
+            haplotype_1_copyratios_values_sub = [element if element not in search_list_none else 'None' for element in haplotype_1_copyratios_values]
 
-            haplotype_2_copyratios_values_normal = [-3300.0 if element not in search_list else element for element in haplotype_2_copyratios_values]
-            haplotype_2_copyratios_values_sub = [element if element not in search_list_none else -3300.0 for element in haplotype_2_copyratios_values]
-            OFFSET = args.cut_threshold/150
+            haplotype_2_copyratios_values_normal = [element if element in search_list else 'None' for element in haplotype_2_copyratios_values]
+            haplotype_2_copyratios_values_sub = [element if element not in search_list_none else 'None' for element in haplotype_2_copyratios_values]
+            OFFSET = 0  # computed after zoom_max is available; kept for compatibility
 
             haplotype_2_copyratios_values_normal = [-x if x != 'None' else x for x in haplotype_2_copyratios_values_normal]
-            haplotype_2_copyratios_values_sub = [-x if x not in ('None', -3300.0) else x for x in haplotype_2_copyratios_values_sub]
+            haplotype_2_copyratios_values_sub = [-x if x != 'None' else x for x in haplotype_2_copyratios_values_sub]
 
             if args.without_phasing:
                 colors_cn = ['darkolivegreen']
@@ -2550,7 +2592,7 @@ def copy_number_plots_genome_breakpoints_subclonal_cytos(centers, integer_fracti
                 OFFSET = 0
                 colors = ['darkolivegreen']
             else:
-                OFFSET = args.cut_threshold/150
+                OFFSET = 0  # computed after zoom_max is available; kept for compatibility
                 colors = ['firebrick', 'steelblue']
             haplotype_2_copyratios_values = [-x if x != 'None' else x for x in haplotype_2_copyratios_values]
             name = "Copynumbers"
@@ -2563,28 +2605,46 @@ def copy_number_plots_genome_breakpoints_subclonal_cytos(centers, integer_fracti
     centers_rev.reverse()
     integer_fractional_means_rev = [x for x in integer_fractional_centers]
     integer_fractional_means_rev.reverse()
+
+    _spacing = (centers[-1] - centers[-2]) if len(centers) >= 2 else 5
+    zoom_max = _compute_zoom_max(df_segs_hp1, df_segs_hp2, _spacing, args)
+
+    # Extend CN tick labels up to zoom_max (but not beyond)
+    ext_pos_ticks = []
+    ext_pos_labels = []
+    if len(centers) >= 2:
+        _extra = 1
+        while centers[-1] + _extra * _spacing <= zoom_max:
+            ext_pos_ticks.append(centers[-1] + _extra * _spacing)
+            ext_pos_labels.append(integer_fractional_centers[-1] + _extra)
+            _extra += 1
+
     if args.without_phasing:
-        tick_vals = centers
-        tickt_ext = integer_fractional_centers
-        tickvals = [i for i in range(0, 1000, 25)]
-        ticktext = [str(abs(i)) for i in range(0, 1000, 25)]
-        yaxis2_3_range = [0, args.cut_threshold + 5]
+        tick_vals = list(centers) + ext_pos_ticks
+        tickt_ext = list(integer_fractional_centers) + ext_pos_labels
+        _tick_upper = int(zoom_max) + 26
+        tickvals = [i for i in range(0, _tick_upper, 25)]
+        ticktext = [str(i) for i in range(0, _tick_upper, 25)]
+        yaxis2_3_range = [0, zoom_max]
         plot_height = 850 + 150 + 20 - 110 - 40
         legend_y = 1.13
     else:
-        tick_vals = centers_rev + centers
-        tickt_ext = integer_fractional_means_rev + integer_fractional_centers
-        tickvals = [i for i in range(-1000, 1000, 25)]
-        ticktext = [str(abs(i)) for i in range(-1000, 1000, 25)]
-        yaxis2_3_range = [-(args.cut_threshold + 5), args.cut_threshold + 5]
+        ext_neg_ticks = [-v for v in reversed(ext_pos_ticks)]
+        ext_neg_labels = [-l for l in reversed(ext_pos_labels)]
+        tick_vals = ext_neg_ticks + centers_rev + list(centers) + ext_pos_ticks
+        tickt_ext = ext_neg_labels + integer_fractional_means_rev + list(integer_fractional_centers) + ext_pos_labels
+        _tick_upper = int(zoom_max) + 26
+        tickvals = [-i for i in range(_tick_upper, 0, -25)] + [i for i in range(0, _tick_upper, 25)]
+        ticktext = [str(i) for i in range(_tick_upper, 0, -25)] + [str(i) for i in range(0, _tick_upper, 25)]
+        yaxis2_3_range = [-zoom_max, zoom_max]
         plot_height = 850 + 150 + 130 + 40 + 20 - 110 - 80
         legend_y = 1.075
     # #############################################################
     # #############################################################
     #fig.update_yaxes(range=[-1, args.cut_threshold])
     fig.update_layout(yaxis=dict(title=dict(text="Structural variants", font=dict(size=16)), range=[0, 75], showticklabels = False, showgrid=False, zeroline=False),
-                      yaxis2=dict(showgrid=False,),
-                      yaxis3=dict(showgrid=False,),
+                      yaxis2=dict(range=yaxis2_3_range, showgrid=False,),
+                      yaxis3=dict(range=yaxis2_3_range, showgrid=False,),
                       yaxis5=dict(title=dict(text="B-allele frequency", font=dict(size=16)), range=[0, 0.6], showticklabels=True, showgrid=False, zeroline=False),
                       yaxis6=dict(title=dict(text="Genes", font=dict(size=16)), range=[0, 1], showticklabels = False, showgrid=False, zeroline=True, zerolinewidth=2, zerolinecolor='black'),
                       yaxis4=dict(title=dict(text="Cytos", font=dict(size=16)), range=[0, 1], showticklabels=False, showgrid=False, zeroline=True, zerolinewidth=2, zerolinecolor='black'),
@@ -2604,12 +2664,14 @@ def copy_number_plots_genome_breakpoints_subclonal_cytos(centers, integer_fracti
     fig.update_layout(
         yaxis2=dict(
             title=dict(text="Binned sequencing depth", font=dict(size=16)),
+            range=yaxis2_3_range,
             tickmode='array',
             tickvals=tickvals,
             ticktext=ticktext
         ),
         yaxis3=dict(
             title=dict(text="Copy numbers", font=dict(size=16)),
+            range=yaxis2_3_range,
             zeroline=True, zerolinewidth=1, zerolinecolor='black',
             tickmode='array',
             tickvals=tick_vals,
@@ -2924,8 +2986,6 @@ def copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_c
 
         #fig.add_vline(x=co,  line_width=1, line_dash="solid", opacity=0.3, line_color="#2B40A0", row=1, col=1,)
 
-    fig.add_hline(y=2,  line_width=1, line_dash="solid", line_color="black", row=3, col=1,)
-    fig.add_hline(y=-(args.cut_threshold + 5),  line_width=1, line_dash="solid", line_color="black", row=2, col=1,)
 
     # for index, chrom in enumerate(chroms):
     #     current += lengths[index]
@@ -3010,12 +3070,14 @@ def copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_c
                 haplotype_2_start_values.extend([x + offset_start for x in haplotype_2_start_values_copyratios])
                 haplotype_2_end_values.extend([x + offset_start for x in haplotype_2_end_values_copyratios])
 
-        haplotype_1_gaps_values = np.full(len(df_segs_hp1.state.values.tolist()), 'None')
-        haplotype_1_copyratios_values = list(itertools.chain.from_iterable(zip(df_segs_hp1.state.values.tolist(), df_segs_hp1.state.values.tolist(), haplotype_1_gaps_values)))
+        _hp1_states = _sentinel_to_none(df_segs_hp1.state.values.tolist())
+        haplotype_1_gaps_values = np.full(len(_hp1_states), 'None')
+        haplotype_1_copyratios_values = list(itertools.chain.from_iterable(zip(_hp1_states, _hp1_states, haplotype_1_gaps_values)))
         haplotype_1_copyratios_positions = list(itertools.chain.from_iterable(zip(haplotype_1_start_values, haplotype_1_end_values, haplotype_1_gaps_values)))
 
-        haplotype_2_gaps_values = np.full(len(df_segs_hp2.state.values.tolist()), 'None')
-        haplotype_2_copyratios_values = list(itertools.chain.from_iterable(zip(df_segs_hp2.state.values.tolist(), df_segs_hp2.state.values.tolist(), haplotype_2_gaps_values)))
+        _hp2_states = _sentinel_to_none(df_segs_hp2.state.values.tolist())
+        haplotype_2_gaps_values = np.full(len(_hp2_states), 'None')
+        haplotype_2_copyratios_values = list(itertools.chain.from_iterable(zip(_hp2_states, _hp2_states, haplotype_2_gaps_values)))
         haplotype_2_copyratios_positions = list(itertools.chain.from_iterable(zip(haplotype_2_start_values, haplotype_2_end_values, haplotype_2_gaps_values)))
 
         if args.copynumbers_subclonal_enable:
@@ -3023,15 +3085,15 @@ def copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_c
             search_list = centers #[centers[i] for i in [integer_fractional_centers.index(x) for x in integer_fractional_centers if not float(x).is_integer()]] #[27.025, 42.025]
             search_list_none = search_list + ['None']
 
-            haplotype_1_copyratios_values_normal = [-3300.0 if element not in search_list else element for element in haplotype_1_copyratios_values]
-            haplotype_1_copyratios_values_sub = [element if element not in search_list_none else -3300.0 for element in haplotype_1_copyratios_values]
+            haplotype_1_copyratios_values_normal = [element if element in search_list else 'None' for element in haplotype_1_copyratios_values]
+            haplotype_1_copyratios_values_sub = [element if element not in search_list_none else 'None' for element in haplotype_1_copyratios_values]
 
-            haplotype_2_copyratios_values_normal = [-3300.0 if element not in search_list else element for element in haplotype_2_copyratios_values]
-            haplotype_2_copyratios_values_sub = [element if element not in search_list_none else -3300.0 for element in haplotype_2_copyratios_values]
-            OFFSET = args.cut_threshold/150
+            haplotype_2_copyratios_values_normal = [element if element in search_list else 'None' for element in haplotype_2_copyratios_values]
+            haplotype_2_copyratios_values_sub = [element if element not in search_list_none else 'None' for element in haplotype_2_copyratios_values]
+            OFFSET = 0  # computed after zoom_max is available; kept for compatibility
 
             haplotype_2_copyratios_values_normal = [-x if x != 'None' else x for x in haplotype_2_copyratios_values_normal]
-            haplotype_2_copyratios_values_sub = [-x if x not in ('None', -3300.0) else x for x in haplotype_2_copyratios_values_sub]
+            haplotype_2_copyratios_values_sub = [-x if x != 'None' else x for x in haplotype_2_copyratios_values_sub]
 
             if args.without_phasing:
                 colors_cn = ['darkolivegreen']
@@ -3052,7 +3114,7 @@ def copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_c
                 OFFSET = 0
                 colors = ['darkolivegreen']
             else:
-                OFFSET = args.cut_threshold/150
+                OFFSET = 0  # computed after zoom_max is available; kept for compatibility
                 colors = ['firebrick', 'steelblue']
             haplotype_2_copyratios_values = [-x if x != 'None' else x for x in haplotype_2_copyratios_values]
             name = "Copynumbers"
@@ -3065,20 +3127,38 @@ def copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_c
     centers_rev.reverse()
     integer_fractional_means_rev = [x for x in integer_fractional_centers]
     integer_fractional_means_rev.reverse()
+
+    _spacing = (centers[-1] - centers[-2]) if len(centers) >= 2 else 5
+    zoom_max = _compute_zoom_max(df_segs_hp1, df_segs_hp2, _spacing, args)
+
+    # Extend CN tick labels up to zoom_max (but not beyond)
+    ext_pos_ticks = []
+    ext_pos_labels = []
+    if len(centers) >= 2:
+        _extra = 1
+        while centers[-1] + _extra * _spacing <= zoom_max:
+            ext_pos_ticks.append(centers[-1] + _extra * _spacing)
+            ext_pos_labels.append(integer_fractional_centers[-1] + _extra)
+            _extra += 1
+
     if args.without_phasing:
-        tick_vals = centers
-        tickt_ext = integer_fractional_centers
-        tickvals = [i for i in range(0, 1000, 25)]
-        ticktext = [str(abs(i)) for i in range(0, 1000, 25)]
-        yaxis2_3_range = [0, args.cut_threshold + 5]
+        tick_vals = list(centers) + ext_pos_ticks
+        tickt_ext = list(integer_fractional_centers) + ext_pos_labels
+        _tick_upper = int(zoom_max) + 26
+        tickvals = [i for i in range(0, _tick_upper, 25)]
+        ticktext = [str(i) for i in range(0, _tick_upper, 25)]
+        yaxis2_3_range = [0, zoom_max]
         plot_height = 850 + 150 + 20 + 20 - 110 - 40
         legend_y = 1.13
     else:
-        tick_vals = centers_rev + centers
-        tickt_ext = integer_fractional_means_rev + integer_fractional_centers
-        tickvals = [i for i in range(-1000, 1000, 25)]
-        ticktext = [str(abs(i)) for i in range(-1000, 1000, 25)]
-        yaxis2_3_range = [-(args.cut_threshold + 5), args.cut_threshold + 5]
+        ext_neg_ticks = [-v for v in reversed(ext_pos_ticks)]
+        ext_neg_labels = [-l for l in reversed(ext_pos_labels)]
+        tick_vals = ext_neg_ticks + centers_rev + list(centers) + ext_pos_ticks
+        tickt_ext = ext_neg_labels + integer_fractional_means_rev + list(integer_fractional_centers) + ext_pos_labels
+        _tick_upper = int(zoom_max) + 26
+        tickvals = [-i for i in range(_tick_upper, 0, -25)] + [i for i in range(0, _tick_upper, 25)]
+        ticktext = [str(i) for i in range(_tick_upper, 0, -25)] + [str(i) for i in range(0, _tick_upper, 25)]
+        yaxis2_3_range = [-zoom_max, zoom_max]
         plot_height = 850 + 150 + 130 + 20 - 110 - 80
         legend_y = 1.09
     # #############################################################
@@ -3104,12 +3184,14 @@ def copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_c
     fig.update_layout(
         yaxis2=dict(
             title=dict(text="Binned sequencing depth", font=dict(size=16)),
+            range=yaxis2_3_range,
             tickmode='array',
             tickvals=tickvals,
             ticktext=ticktext
         ),
         yaxis3=dict(
             title=dict(text="Copy numbers", font=dict(size=16)),
+            range=yaxis2_3_range,
             zeroline=True, zerolinewidth=1, zerolinecolor='black',
             tickmode='array',
             tickvals=tick_vals,
@@ -3339,8 +3421,6 @@ def copy_number_plots_genome_subclonal(centers, integer_fractional_centers, df_c
                              name= 'GeneInfo',
                              showlegend=False,), row=3, col=1,)
 
-    fig.add_hline(y=2,  line_width=1, line_dash="solid", line_color="black", row=2, col=1,)
-    fig.add_hline(y=-(args.cut_threshold + 5),  line_width=1, line_dash="solid", line_color="black", row=1, col=1,)
 
     current = 0
     label_pos = []
@@ -3406,12 +3486,14 @@ def copy_number_plots_genome_subclonal(centers, integer_fractional_centers, df_c
                 haplotype_2_start_values.extend([x + offset_start for x in haplotype_2_start_values_copyratios])
                 haplotype_2_end_values.extend([x + offset_start for x in haplotype_2_end_values_copyratios])
 
-        haplotype_1_gaps_values = np.full(len(df_segs_hp1.state.values.tolist()), 'None')
-        haplotype_1_copyratios_values = list(itertools.chain.from_iterable(zip(df_segs_hp1.state.values.tolist(), df_segs_hp1.state.values.tolist(), haplotype_1_gaps_values)))
+        _hp1_states = _sentinel_to_none(df_segs_hp1.state.values.tolist())
+        haplotype_1_gaps_values = np.full(len(_hp1_states), 'None')
+        haplotype_1_copyratios_values = list(itertools.chain.from_iterable(zip(_hp1_states, _hp1_states, haplotype_1_gaps_values)))
         haplotype_1_copyratios_positions = list(itertools.chain.from_iterable(zip(haplotype_1_start_values, haplotype_1_end_values, haplotype_1_gaps_values)))
 
-        haplotype_2_gaps_values = np.full(len(df_segs_hp2.state.values.tolist()), 'None')
-        haplotype_2_copyratios_values = list(itertools.chain.from_iterable(zip(df_segs_hp2.state.values.tolist(), df_segs_hp2.state.values.tolist(), haplotype_2_gaps_values)))
+        _hp2_states = _sentinel_to_none(df_segs_hp2.state.values.tolist())
+        haplotype_2_gaps_values = np.full(len(_hp2_states), 'None')
+        haplotype_2_copyratios_values = list(itertools.chain.from_iterable(zip(_hp2_states, _hp2_states, haplotype_2_gaps_values)))
         haplotype_2_copyratios_positions = list(itertools.chain.from_iterable(zip(haplotype_2_start_values, haplotype_2_end_values, haplotype_2_gaps_values)))
 
         if args.copynumbers_subclonal_enable:
@@ -3419,12 +3501,12 @@ def copy_number_plots_genome_subclonal(centers, integer_fractional_centers, df_c
             search_list = centers #[centers[i] for i in [integer_fractional_centers.index(x) for x in integer_fractional_centers if not float(x).is_integer()]] #[27.025, 42.025]
             search_list_none = search_list + ['None']
 
-            haplotype_1_copyratios_values_normal = [-3300.0 if element not in search_list else element for element in haplotype_1_copyratios_values]
-            haplotype_1_copyratios_values_sub = [element if element not in search_list_none else -3300.0 for element in haplotype_1_copyratios_values]
+            haplotype_1_copyratios_values_normal = [element if element in search_list else 'None' for element in haplotype_1_copyratios_values]
+            haplotype_1_copyratios_values_sub = [element if element not in search_list_none else 'None' for element in haplotype_1_copyratios_values]
 
-            haplotype_2_copyratios_values_normal = [-3300.0 if element not in search_list else element for element in haplotype_2_copyratios_values]
-            haplotype_2_copyratios_values_sub = [element if element not in search_list_none else -3300.0 for element in haplotype_2_copyratios_values]
-            OFFSET = args.cut_threshold/150
+            haplotype_2_copyratios_values_normal = [element if element in search_list else 'None' for element in haplotype_2_copyratios_values]
+            haplotype_2_copyratios_values_sub = [element if element not in search_list_none else 'None' for element in haplotype_2_copyratios_values]
+            OFFSET = 0  # computed after zoom_max is available; kept for compatibility
 
             haplotype_2_copyratios_values_normal = [-x if x != 'None' else x for x in haplotype_2_copyratios_values_normal]
             haplotype_2_copyratios_values_sub = [-x if x != 'None' else x for x in haplotype_2_copyratios_values_sub]
@@ -3448,7 +3530,7 @@ def copy_number_plots_genome_subclonal(centers, integer_fractional_centers, df_c
                 OFFSET = 0
                 colors = ['darkolivegreen']
             else:
-                OFFSET = args.cut_threshold/150
+                OFFSET = 0  # computed after zoom_max is available; kept for compatibility
                 colors = ['firebrick', 'steelblue']
             haplotype_2_copyratios_values = [-x if x != 'None' else x for x in haplotype_2_copyratios_values]
             name = "Copynumbers"
@@ -3461,20 +3543,38 @@ def copy_number_plots_genome_subclonal(centers, integer_fractional_centers, df_c
     centers_rev.reverse()
     integer_fractional_means_rev = [x for x in integer_fractional_centers]
     integer_fractional_means_rev.reverse()
+
+    _spacing = (centers[-1] - centers[-2]) if len(centers) >= 2 else 5
+    zoom_max = _compute_zoom_max(df_segs_hp1, df_segs_hp2, _spacing, args)
+
+    # Extend CN tick labels up to zoom_max (but not beyond)
+    ext_pos_ticks = []
+    ext_pos_labels = []
+    if len(centers) >= 2:
+        _extra = 1
+        while centers[-1] + _extra * _spacing <= zoom_max:
+            ext_pos_ticks.append(centers[-1] + _extra * _spacing)
+            ext_pos_labels.append(integer_fractional_centers[-1] + _extra)
+            _extra += 1
+
     if args.without_phasing:
-        tick_vals = centers
-        tickt_ext = integer_fractional_centers
-        tickvals = [i for i in range(0, 1000, 25)]
-        ticktext = [str(abs(i)) for i in range(0, 1000, 25)]
-        yaxis2_3_range = [0, args.cut_threshold + 5]
+        tick_vals = list(centers) + ext_pos_ticks
+        tickt_ext = list(integer_fractional_centers) + ext_pos_labels
+        _tick_upper = int(zoom_max) + 26
+        tickvals = [i for i in range(0, _tick_upper, 25)]
+        ticktext = [str(i) for i in range(0, _tick_upper, 25)]
+        yaxis2_3_range = [0, zoom_max]
         plot_height = 630 + 150 + 20
         legend_y = 1.085
     else:
-        tick_vals = centers_rev + centers
-        tickt_ext = integer_fractional_means_rev + integer_fractional_centers
-        tickvals = [i for i in range(-1000, 1000, 25)]
-        ticktext = [str(abs(i)) for i in range(-1000, 1000, 25)]
-        yaxis2_3_range = [-(args.cut_threshold + 5), args.cut_threshold + 5]
+        ext_neg_ticks = [-v for v in reversed(ext_pos_ticks)]
+        ext_neg_labels = [-l for l in reversed(ext_pos_labels)]
+        tick_vals = ext_neg_ticks + centers_rev + list(centers) + ext_pos_ticks
+        tickt_ext = ext_neg_labels + integer_fractional_means_rev + list(integer_fractional_centers) + ext_pos_labels
+        _tick_upper = int(zoom_max) + 26
+        tickvals = [-i for i in range(_tick_upper, 0, -25)] + [i for i in range(0, _tick_upper, 25)]
+        ticktext = [str(i) for i in range(_tick_upper, 0, -25)] + [str(i) for i in range(0, _tick_upper, 25)]
+        yaxis2_3_range = [-zoom_max, zoom_max]
         plot_height = 630 + 150 + 130
         legend_y = 1.06
     # #############################################################
@@ -3715,8 +3815,6 @@ def genes_copy_number_plots_genome(df_genes, centers, integer_fractional_centers
                              name= 'GeneInfo',
                              showlegend=False,), row=2, col=1,)
 
-    fig.add_hline(y=2,  line_width=1, line_dash="solid", line_color="black", row=2, col=1,)
-    fig.add_hline(y=-(args.cut_threshold + 5),  line_width=1, line_dash="solid", line_color="black", row=1, col=1,)
 
     current = 0
     label_pos = []
@@ -3842,12 +3940,14 @@ def genes_copy_number_plots_genome(df_genes, centers, integer_fractional_centers
                 haplotype_2_start_values.extend([x + offset_start for x in haplotype_2_start_values_copyratios])
                 haplotype_2_end_values.extend([x + offset_start for x in haplotype_2_end_values_copyratios])
 
-        haplotype_1_gaps_values = np.full(len(df_segs_hp1.state.values.tolist()), 'None')
-        haplotype_1_copyratios_values = list(itertools.chain.from_iterable(zip(df_segs_hp1.state.values.tolist(), df_segs_hp1.state.values.tolist(), haplotype_1_gaps_values)))
+        _hp1_states = _sentinel_to_none(df_segs_hp1.state.values.tolist())
+        haplotype_1_gaps_values = np.full(len(_hp1_states), 'None')
+        haplotype_1_copyratios_values = list(itertools.chain.from_iterable(zip(_hp1_states, _hp1_states, haplotype_1_gaps_values)))
         haplotype_1_copyratios_positions = list(itertools.chain.from_iterable(zip(haplotype_1_start_values, haplotype_1_end_values, haplotype_1_gaps_values)))
 
-        haplotype_2_gaps_values = np.full(len(df_segs_hp2.state.values.tolist()), 'None')
-        haplotype_2_copyratios_values = list(itertools.chain.from_iterable(zip(df_segs_hp2.state.values.tolist(), df_segs_hp2.state.values.tolist(), haplotype_2_gaps_values)))
+        _hp2_states = _sentinel_to_none(df_segs_hp2.state.values.tolist())
+        haplotype_2_gaps_values = np.full(len(_hp2_states), 'None')
+        haplotype_2_copyratios_values = list(itertools.chain.from_iterable(zip(_hp2_states, _hp2_states, haplotype_2_gaps_values)))
         haplotype_2_copyratios_positions = list(itertools.chain.from_iterable(zip(haplotype_2_start_values, haplotype_2_end_values, haplotype_2_gaps_values)))
 
 
@@ -3855,7 +3955,7 @@ def genes_copy_number_plots_genome(df_genes, centers, integer_fractional_centers
             OFFSET = 0
             colors = ['darkolivegreen']
         else:
-            OFFSET = args.cut_threshold/150
+            OFFSET = 0  # computed after zoom_max is available; kept for compatibility
             colors = ['firebrick', 'steelblue']
         haplotype_2_copyratios_values = [-x if x != 'None' else x for x in haplotype_2_copyratios_values]
         name = "Copynumbers"
@@ -3867,11 +3967,14 @@ def genes_copy_number_plots_genome(df_genes, centers, integer_fractional_centers
     integer_fractional_means_rev = [x for x in integer_fractional_centers]
     integer_fractional_means_rev.reverse()
 
+    _spacing = (centers[-1] - centers[-2]) if len(centers) >= 2 else 5
+    zoom_max = _compute_zoom_max(df_segs_hp1, df_segs_hp2, _spacing, args)
+    _tick_upper = int(zoom_max) + 26
     tick_vals = centers + centers_rev
     tickt_ext = integer_fractional_centers + integer_fractional_means_rev
-    tickvals = [i for i in range(-1000, 1000, 25)]
-    ticktext = [str(abs(i)) for i in range(-1000, 1000, 25)]
-    yaxis2_3_range = [-(args.cut_threshold + 5), args.cut_threshold + 5]
+    tickvals = [-i for i in range(_tick_upper, 0, -25)] + [i for i in range(0, _tick_upper, 25)]
+    ticktext = [str(i) for i in range(_tick_upper, 0, -25)] + [str(i) for i in range(0, _tick_upper, 25)]
+    yaxis2_3_range = [-zoom_max, zoom_max]
     plot_height = 420 + 40 + 15
     legend_y = 1.12
 
@@ -3880,7 +3983,7 @@ def genes_copy_number_plots_genome(df_genes, centers, integer_fractional_centers
     #fig.update_yaxes(range=[-1, args.cut_threshold])
     fig.update_layout(
                       yaxis=dict(range=yaxis2_3_range, showgrid=False,),
-                      yaxis2=dict(showgrid=False,),
+                      yaxis2=dict(range=yaxis2_3_range, showgrid=False,),
                       yaxis3=dict(title="<b>Genes</b>", range=[0, 1], showticklabels = False, showgrid=False, zeroline=True, zerolinewidth=2, zerolinecolor='black'),
 
                       xaxis=dict(tick0=0.0, rangemode="nonnegative", range=[0, len(df_cnr_hp1.start.values.tolist())*args.bin_size], zeroline=True, zerolinewidth=1, zerolinecolor='black', showgrid=False,),
@@ -3896,6 +3999,7 @@ def genes_copy_number_plots_genome(df_genes, centers, integer_fractional_centers
         ),
         yaxis2=dict(
             title="<b>Copies</b> (integers/fractions)",
+            range=yaxis2_3_range,
             zeroline=True, zerolinewidth=1, zerolinecolor='black',
             tickmode='array',
             tickvals=tick_vals,
@@ -4135,8 +4239,6 @@ def genes_plots_genome(df_genes, centers, integer_fractional_centers, df_cnr_hp1
                    name='GeneInfo',
                    showlegend=False, ), row=2, col=1, )
 
-    fig.add_hline(y=2, line_width=1, line_dash="solid", line_color="black", row=2, col=1, )
-    fig.add_hline(y=-(args.cut_threshold + 5), line_width=1, line_dash="solid", line_color="black", row=1, col=1, )
 
     current = 0
     label_pos = []
@@ -4272,15 +4374,15 @@ def genes_plots_genome(df_genes, centers, integer_fractional_centers, df_cnr_hp1
                 haplotype_2_start_values.extend([x + offset_start for x in haplotype_2_start_values_copyratios])
                 haplotype_2_end_values.extend([x + offset_start for x in haplotype_2_end_values_copyratios])
 
-        haplotype_1_gaps_values = np.full(len(df_segs_hp1.state.values.tolist()), 'None')
-        haplotype_1_copyratios_values = list(itertools.chain.from_iterable(
-            zip(df_segs_hp1.state.values.tolist(), df_segs_hp1.state.values.tolist(), haplotype_1_gaps_values)))
+        _hp1_states = _sentinel_to_none(df_segs_hp1.state.values.tolist())
+        haplotype_1_gaps_values = np.full(len(_hp1_states), 'None')
+        haplotype_1_copyratios_values = list(itertools.chain.from_iterable(zip(_hp1_states, _hp1_states, haplotype_1_gaps_values)))
         haplotype_1_copyratios_positions = list(itertools.chain.from_iterable(
             zip(haplotype_1_start_values, haplotype_1_end_values, haplotype_1_gaps_values)))
 
-        haplotype_2_gaps_values = np.full(len(df_segs_hp2.state.values.tolist()), 'None')
-        haplotype_2_copyratios_values = list(itertools.chain.from_iterable(
-            zip(df_segs_hp2.state.values.tolist(), df_segs_hp2.state.values.tolist(), haplotype_2_gaps_values)))
+        _hp2_states = _sentinel_to_none(df_segs_hp2.state.values.tolist())
+        haplotype_2_gaps_values = np.full(len(_hp2_states), 'None')
+        haplotype_2_copyratios_values = list(itertools.chain.from_iterable(zip(_hp2_states, _hp2_states, haplotype_2_gaps_values)))
         haplotype_2_copyratios_positions = list(itertools.chain.from_iterable(
             zip(haplotype_2_start_values, haplotype_2_end_values, haplotype_2_gaps_values)))
 
@@ -4288,7 +4390,7 @@ def genes_plots_genome(df_genes, centers, integer_fractional_centers, df_cnr_hp1
             OFFSET = 0
             colors = ['darkolivegreen']
         else:
-            OFFSET = args.cut_threshold / 150
+            OFFSET = 0  # computed after zoom_max is available; kept for compatibility
             colors = ['firebrick', 'steelblue']
         name = "Copynumbers"
 
@@ -4302,11 +4404,14 @@ def genes_plots_genome(df_genes, centers, integer_fractional_centers, df_cnr_hp1
     integer_fractional_means_rev = [x for x in integer_fractional_centers]
     integer_fractional_means_rev.reverse()
 
+    _spacing = (centers[-1] - centers[-2]) if len(centers) >= 2 else 5
+    zoom_max = _compute_zoom_max(df_segs_hp1, df_segs_hp2, _spacing, args)
+    _tick_upper = int(zoom_max) + 26
     tick_vals = centers
     tickt_ext = integer_fractional_centers
-    tickvals = [i for i in range(0, 1000, 25)]
-    ticktext = [str(abs(i)) for i in range(0, 1000, 25)]
-    yaxis2_3_range = [0, args.cut_threshold + 5]
+    tickvals = [i for i in range(0, _tick_upper, 25)]
+    ticktext = [str(i) for i in range(0, _tick_upper, 25)]
+    yaxis2_3_range = [0, zoom_max]
     plot_height = 420 + 40 + 15
     legend_y = 1.12
 
@@ -4315,7 +4420,7 @@ def genes_plots_genome(df_genes, centers, integer_fractional_centers, df_cnr_hp1
     # fig.update_yaxes(range=[-1, args.cut_threshold])
     fig.update_layout(
         yaxis=dict(range=yaxis2_3_range, showgrid=False, ),
-        yaxis2=dict(showgrid=False, ),
+        yaxis2=dict(range=yaxis2_3_range, showgrid=False, ),
         yaxis3=dict(title="<b>Genes</b>", range=[0, 1], showticklabels=False, showgrid=False, zeroline=True,
                     zerolinewidth=2, zerolinecolor='black'),
 
@@ -4336,6 +4441,7 @@ def genes_plots_genome(df_genes, centers, integer_fractional_centers, df_cnr_hp1
         ),
         yaxis2=dict(
             title="<b>Copies</b> (integers/fractions)",
+            range=yaxis2_3_range,
             zeroline=True, zerolinewidth=1, zerolinecolor='black',
             tickmode='array',
             tickvals=tick_vals,
@@ -4609,10 +4715,11 @@ def plots_add_markers_lines(fig):
     )
 
 def add_scatter_trace_coverage(fig, x, y, name, text, yaxis, opacity, color, visibility=True, mul_cols=False, row=2, baf=None):
-    if any(value < 0 for value in y):
-        xy = [round(-y2, 2) for y2 in y]
+    y = [None if (isinstance(v, (int, float)) and abs(v) == CENTROMERE_SENTINEL) else v for v in y]
+    if any(v is not None and v < 0 for v in y):
+        xy = [round(-v, 2) if v is not None else None for v in y]
     else:
-        xy = [round(y2, 2) for y2 in y]
+        xy = [round(v, 2) if v is not None else None for v in y]
     if baf:
         ht = '<br><b>Position</b>: %{text}' + '<br><b>BAF</b>: %{customdata}<br>'
     else:
@@ -4840,6 +4947,7 @@ def add_scatter_trace_breakpoints(fig, break_points):
     ))
 
 def plots_layout_settings(fig, chrom, args, limit_x, limit_y):
+    _limit_y = limit_y if limit_y is not None else 100
     # Update axes
     fig.update_layout(
         xaxis=dict(
@@ -4852,7 +4960,7 @@ def plots_layout_settings(fig, chrom, args, limit_x, limit_y):
         ),
         yaxis=dict(
             linecolor="dimgray",
-            range=[0, limit_y+1],
+            range=[0, _limit_y+1],
             side="left",
             tickfont={"color": "dimgray"},
             tickmode="auto",
@@ -4866,7 +4974,7 @@ def plots_layout_settings(fig, chrom, args, limit_x, limit_y):
         ),
         yaxis2=dict(
             linecolor="dimgray",
-            range=[1, args.cut_threshold + 5],
+            range=[1, _limit_y + 5],
             side="right",
             tickfont={"color": "dimgray"},
             tickmode="auto",
