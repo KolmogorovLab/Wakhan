@@ -224,6 +224,7 @@ def add_scatter_trace_coverage(fig, x, y, name, text, yaxis, opacity, color, vis
 
 
 def plots_layout_settings(fig, chrom, args, limit_x, limit_y):
+    _limit_y = limit_y if limit_y is not None else 100
     # Update axes
     fig.update_layout(
         xaxis=dict(
@@ -236,7 +237,7 @@ def plots_layout_settings(fig, chrom, args, limit_x, limit_y):
         ),
         yaxis=dict(
             linecolor="dimgray",
-            range=[0, limit_y+1],
+            range=[0, _limit_y+1],
             side="left",
             tickfont={"color": "dimgray"},
             tickmode="auto",
@@ -250,7 +251,7 @@ def plots_layout_settings(fig, chrom, args, limit_x, limit_y):
         ),
         yaxis2=dict(
             linecolor="dimgray",
-            range=[1, args.cut_threshold + 5],
+            range=[1, _limit_y + 5],
             side="right",
             tickfont={"color": "dimgray"},
             tickmode="auto",
