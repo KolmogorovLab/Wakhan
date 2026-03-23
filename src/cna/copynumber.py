@@ -222,6 +222,12 @@ def update_subclonal_means_states(centers, subclonals, df_segs_hp1_updated, df_s
         df_segs_hp_2_updated_subclonal_check = []
 
         for i, (start,end) in enumerate(zip(df_segs_hp_1_updated_start, df_segs_hp_1_updated_end)):
+            # High-CN states (extrapolated above last center) are valid CN states, not subclonal
+            if df_segs_hp_1_updated_state[i] > centers[-1]:
+                df_segs_hp_1_updated_p_score.append(1.0)
+                df_segs_hp_2_updated_subclonal_check.append('N')
+                df_segs_hp_1_updated_depth.append(df_segs_hp_1_updated_state[i])
+                continue
             if len(df_hp_1_val[start//args.bin_size:end//args.bin_size]) > 0:
                 seg_mean = statistics.median(remove_outliers_iqr(np.array(df_hp_1_val[start//args.bin_size:end//args.bin_size])))
             else:
@@ -241,7 +247,7 @@ def update_subclonal_means_states(centers, subclonals, df_segs_hp1_updated, df_s
 
         indices = []
         for i, value in enumerate(df_segs_hp_1_updated_state):
-            if value not in centers:
+            if value not in centers and value <= centers[-1]:
                 indices.append(i)
         slices = list(slice_lists(lambda x, y: y - x > 1, sorted(indices)))
         for k, sl in enumerate(slices):
@@ -254,6 +260,12 @@ def update_subclonal_means_states(centers, subclonals, df_segs_hp1_updated, df_s
                     df_segs_hp_1_updated_depth[l] = up_val
 
         for i, (start,end) in enumerate(zip(df_segs_hp_2_updated_start, df_segs_hp_2_updated_end)):
+            # High-CN states (extrapolated above last center) are valid CN states, not subclonal
+            if df_segs_hp_2_updated_state[i] > centers[-1]:
+                df_segs_hp_2_updated_p_score.append(1.0)
+                df_segs_hp_2_updated_subclonal_check.append('N')
+                df_segs_hp_2_updated_depth.append(df_segs_hp_2_updated_state[i])
+                continue
             if len(df_hp_2_val[start//args.bin_size:end//args.bin_size]) > 0:
                 seg_mean = statistics.median(remove_outliers_iqr(np.array(df_hp_2_val[start//args.bin_size:end//args.bin_size])))
             else:
@@ -273,7 +285,7 @@ def update_subclonal_means_states(centers, subclonals, df_segs_hp1_updated, df_s
 
         indices = []
         for i, value in enumerate(df_segs_hp_2_updated_state):
-            if value not in centers:
+            if value not in centers and value <= centers[-1]:
                 indices.append(i)
         slices = list(slice_lists(lambda x, y: y - x > 1, sorted(indices)))
         for k, sl in enumerate(slices):
@@ -479,6 +491,10 @@ def add_confidence_score_cn_segemnts(centers, df_segs_hp1_updated, df_segs_hp2_u
         df_segs_hp_2_updated_subclonal_check = []
 
         for i, (start,end) in enumerate(zip(df_segs_hp_1_updated_start, df_segs_hp_1_updated_end)):
+            # High-CN states (extrapolated above last center) are valid CN states, not subclonal
+            if df_segs_hp_1_updated_state[i] > centers[-1]:
+                df_segs_hp_1_updated_p_score.append(1.0)
+                continue
             if len(df_hp_1_val[start//args.bin_size:end//args.bin_size]) > 0:
                 seg_mean = statistics.median(remove_outliers_iqr(np.array(df_hp_1_val[start//args.bin_size:end//args.bin_size])))
             else:
@@ -491,6 +507,10 @@ def add_confidence_score_cn_segemnts(centers, df_segs_hp1_updated, df_segs_hp2_u
 
 
         for i, (start,end) in enumerate(zip(df_segs_hp_2_updated_start, df_segs_hp_2_updated_end)):
+            # High-CN states (extrapolated above last center) are valid CN states, not subclonal
+            if df_segs_hp_2_updated_state[i] > centers[-1]:
+                df_segs_hp_2_updated_p_score.append(1.0)
+                continue
             if len(df_hp_2_val[start//args.bin_size:end//args.bin_size]) > 0:
                 seg_mean = statistics.median(remove_outliers_iqr(np.array(df_hp_2_val[start//args.bin_size:end//args.bin_size])))
             else:

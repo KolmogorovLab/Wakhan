@@ -37,6 +37,13 @@ def weigted_means_ploidy(args, df_hp_1, df_hp_2, centers, integer_fractional_mea
 
     for i in range(len(integer_fractional_means)):
         df_1['state'] = df_1['state'].mask(df_1['state'] == centers[i], integer_fractional_means[i])
+    # Convert extrapolated high-CN states (coverage scale, above last center) to integer CN
+    if len(centers) >= 2:
+        _spacing_1 = centers[-1] - centers[-2]
+        _max_cn_1 = integer_fractional_means[-1]
+        df_1['state'] = df_1['state'].apply(
+            lambda x: _max_cn_1 + round((x - centers[-1]) / _spacing_1) if x > centers[-1] else x
+        )
 
     vals = df_1.state.values.tolist()
     weights = [i - j for i, j in zip(df_1.end.values.tolist(), df_1.start.values.tolist())]
@@ -47,6 +54,13 @@ def weigted_means_ploidy(args, df_hp_1, df_hp_2, centers, integer_fractional_mea
 
     for i in range(len(integer_fractional_means)):
         df_2['state'] = df_2['state'].mask(df_2['state'] == centers[i], integer_fractional_means[i])
+    # Convert extrapolated high-CN states (coverage scale, above last center) to integer CN
+    if len(centers) >= 2:
+        _spacing_2 = centers[-1] - centers[-2]
+        _max_cn_2 = integer_fractional_means[-1]
+        df_2['state'] = df_2['state'].apply(
+            lambda x: _max_cn_2 + round((x - centers[-1]) / _spacing_2) if x > centers[-1] else x
+        )
 
     vals = df_2.state.values.tolist()
     weights = [i - j for i, j in zip(df_2.end.values.tolist(), df_2.start.values.tolist())]
@@ -60,7 +74,7 @@ def weigted_means_ploidy(args, df_hp_1, df_hp_2, centers, integer_fractional_mea
     for index, row in df_1.iterrows():
         for index_cent, row_cent in df_centm.iterrows():
             if row['chromosome'] == row_cent['chr'] and (
-                    ((row['start'] - 1) == row_cent['start'] or (row['start']) == row_cent['start']) and row_cent['end'] == row_cent['end']):
+                    ((row['start'] - 1) == row_cent['start'] or (row['start']) == row_cent['start']) and row['end'] == row_cent['end']):
                 cent_indices.append(index)
 
     df_1 = df_1.drop(cent_indices)
@@ -75,7 +89,7 @@ def weigted_means_ploidy(args, df_hp_1, df_hp_2, centers, integer_fractional_mea
     for index, row in df_2.iterrows():
         for index_cent, row_cent in df_centm.iterrows():
             if row['chromosome'] == row_cent['chr'] and (
-                    ((row['start'] - 1) == row_cent['start'] or (row['start']) == row_cent['start']) and row_cent['end'] == row_cent['end']):
+                    ((row['start'] - 1) == row_cent['start'] or (row['start']) == row_cent['start']) and row['end'] == row_cent['end']):
                 cent_indices.append(index)
 
     df_2 = df_2.drop(cent_indices)
