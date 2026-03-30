@@ -253,6 +253,8 @@ def update_coverage_hist(genome_ids, ref_lengths, segments_by_read, min_mapq, ma
     for read in allsegments:
         hist_start = read.ref_start // COV_WINDOW
         hist_end = read.ref_end // COV_WINDOW
+        hist_len = len(coverage_histograms[(read.genome_id, read.haplotype, read.ref_id)])
+        hist_end = min(hist_end, hist_len - 1)
         for i in range(hist_start, hist_end + 1):  ## Check with (hist_start, hist_end + 1)
             coverage_histograms[(read.genome_id, read.haplotype, read.ref_id)][i] += 1
 
