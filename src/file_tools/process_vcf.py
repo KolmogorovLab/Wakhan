@@ -51,6 +51,7 @@ def get_snps_counts(snps_df_sorted, chrom, ref_start_values, bin_size):  # TODO 
     if 'gt' in snps_df.columns:
         snps_df['gt'].astype(str)    #snps_df = snps_df[(snps_df['qual'] > 15)]
 
+    snps_df = snps_df.dropna(subset=['vaf'])
     if snps_df.vaf.dtype == object:
         snps_df_vaf = [eval(i) for i in snps_df.vaf.str.split(',').str[0].values.tolist()]
     else:
@@ -93,6 +94,7 @@ def get_snps_frquncies(snps_df_sorted, chrom):  # TODO This module needs better 
         snps_df['gt'].astype(str)
     #snps_df = snps_df[(snps_df['qual'] > 15)]
 
+    snps_df = snps_df.dropna(subset=['vaf'])
     if snps_df.vaf.dtype == object:
         snps_df_vaf = [eval(i) for i in snps_df.vaf.str.split(',').str[0].values.tolist()]
     else:
@@ -126,6 +128,7 @@ def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, bin_siz
 
     #snps_df = snps_df[(snps_df['qual'] > 15)]
 
+    snps_df = snps_df.dropna(subset=['vaf'])
     if snps_df.vaf.dtype == object:
         snps_df_vaf = [eval(i) for i in snps_df.vaf.str.split(',').str[0].values.tolist()]
     else:
