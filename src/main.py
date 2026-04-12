@@ -74,7 +74,8 @@ def copy_numbers_assignment_haplotypes(args, solutions_df, tumor_cov, max_limit,
 
     best_solution, best_solution_score = None, 0
 
-    for normal_coverage in np.arange(0, max_limit, STEP):
+    #TODO: something strange happenes with 0 normal coverage, might be triggering and edge case somewhere
+    for normal_coverage in np.arange(STEP, max_limit, STEP):
         if args.tumor_phased_vcf:
             df_hp1, df_hp2, df_segs_hp1, df_segs_hp2 = update_segs_with_normal_optimized(df_hp1_base, df_hp2_base, df_segs_hp1_base, df_segs_hp2_base, normal_coverage, args)
         else:
