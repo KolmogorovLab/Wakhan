@@ -444,6 +444,9 @@ def main(argv=None):
         args.phaseblock_flipping_disable = True
         args.histogram_coverage = True
 
+    if args.phaseblock_flipping_disable:
+        args.histogram_coverage = True
+
     if args.command == 'cna':
         logger.info('Starting cna() module...')
         cna_process(args) # cna()

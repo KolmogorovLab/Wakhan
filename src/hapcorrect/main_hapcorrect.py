@@ -278,19 +278,19 @@ def main_process(args):
             if args.enable_simple_heuristics:
                 is_simple_heuristics = True
 
-            if is_simple_heuristics:
+            if not args.phaseblock_flipping_disable and is_simple_heuristics:
                 # #plot resultant
-                (snps_haplotype1_mean, snps_haplotype2_mean, haplotype_1_values_phasesets, 
+                (snps_haplotype1_mean, snps_haplotype2_mean, haplotype_1_values_phasesets,
                  haplotype_2_values_phasesets, ref_start_values_phasesets, ref_end_values_phasesets) = \
-                    phaseblock_flipping_simple_heuristics(chrom, args, is_simple_heuristics, snps_haplotype1_mean, 
-                                                          snps_haplotype2_mean, ref_start_values, ref_start_values, 
-                                                          haplotype_1_values_phasesets, haplotype_2_values_phasesets, 
+                    phaseblock_flipping_simple_heuristics(chrom, args, is_simple_heuristics, snps_haplotype1_mean,
+                                                          snps_haplotype2_mean, ref_start_values, ref_start_values,
+                                                          haplotype_1_values_phasesets, haplotype_2_values_phasesets,
                                                           ref_start_values_phasesets, ref_end_values_phasesets)
-                plot_coverage_data(html_graphs, args, chrom, ref_start_values, ref_end_values, 
+                plot_coverage_data(html_graphs, args, chrom, ref_start_values, ref_end_values,
                                    snps_haplotype1_mean, snps_haplotype2_mean, unphased_reads_values,
-                                   haplotype_1_values_phasesets, haplotype_2_values_phasesets, 
+                                   haplotype_1_values_phasesets, haplotype_2_values_phasesets,
                                    ref_start_values_phasesets, ref_end_values_phasesets, "phase_correction_1")
-            else:
+            elif not args.phaseblock_flipping_disable:
                 # #detect centromeres
                 #ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets = detect_centromeres(ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets, haplotype_2_values_phasesets, snps_haplotype1_mean, snps_haplotype2_mean, ref_start_values, args.bin_size'])
                 #infer missing phaseblocks
@@ -351,10 +351,11 @@ def main_process(args):
                                                           updated_df_phasesets.start.values.tolist(), updated_df_phasesets.end.values.tolist(),
                                                           ref_start_values_phasesets_merged, ref_end_values_phasesets_merged,
                                                           haplotype_1_values_phasesets_merged, haplotype_2_values_phasesets_merged)
-            snps_haplotype1_mean, snps_haplotype2_mean = \
-                    without_phasesets_bins_correction(loh_chrom, args, chrom, ref_start_values, snps_haplotype1_mean, snps_haplotype2_mean,
-                                                      ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets,
-                                                      haplotype_2_values_phasesets)
+            if not args.phaseblock_flipping_disable:
+                snps_haplotype1_mean, snps_haplotype2_mean = \
+                        without_phasesets_bins_correction(loh_chrom, args, chrom, ref_start_values, snps_haplotype1_mean, snps_haplotype2_mean,
+                                                          ref_start_values_phasesets, ref_end_values_phasesets, haplotype_1_values_phasesets,
+                                                          haplotype_2_values_phasesets)
             plot_coverage_data(html_graphs, args, chrom, ref_start_values, ref_end_values, snps_haplotype1_mean, snps_haplotype2_mean,
                                unphased_reads_values, haplotype_1_values_phasesets, haplotype_2_values_phasesets,
                                ref_start_values_phasesets, ref_end_values_phasesets, "phase_correction_1")

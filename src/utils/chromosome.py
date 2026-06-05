@@ -147,7 +147,10 @@ def chromosomes_sorter(label):
 
 
 def csv_df_chromosomes_sorter(path, names, sept='\t'):
-    dataframe = pd.read_csv(path, sep=sept, names=names, header=None)
+    try:
+        dataframe = pd.read_csv(path, sep=sept, names=names, header=None)
+    except pd.errors.EmptyDataError:
+        return pd.DataFrame(columns=names)
     dataframe['chr'] = dataframe['chr'].astype(str)
     dataframe = dataframe.sort_values(by=['chr', names[1]], ascending=[True, True])
     return dataframe.reindex(dataframe.chr.apply(chromosomes_sorter).sort_values(kind='mergesort').index)
