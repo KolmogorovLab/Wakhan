@@ -92,7 +92,7 @@ def get_vafs_from_tumor_phased_vcf(df_snps, df_coverages, chroms, args):
         snps_df_haplotype1 = df[(df['gt'] == '0|1') | (df['gt'] == '0/1') | (df['gt'] == '1|0') | (df['gt'] == '1/0')]
         snps_df_haplotype1.reindex(snps_df_haplotype1)
         if df.vaf.dtype == object:
-            haplotype_1_coverage = [eval(i) for i in df.vaf.str.split(',').str[0].values.tolist()]
+            haplotype_1_coverage = [float(v) if v not in ('.', '') else float('nan') for v in df.vaf.str.split(',').str[0].values.tolist()]
         else:
             haplotype_1_coverage = df.vaf.values.tolist()
         haplotype_1_position = snps_df_haplotype1.pos.values.tolist()

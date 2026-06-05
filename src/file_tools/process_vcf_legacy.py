@@ -26,7 +26,7 @@ def get_snps_counts(snps_df_sorted, chrom, ref_start_values, bin_size):  # TODO 
     #snps_df = snps_df[(snps_df['qual'] > 15)]
 
     if snps_df.vaf.dtype == object:
-        snps_df_vaf = [eval(i) for i in snps_df.vaf.str.split(',').str[0].values.tolist()]
+        snps_df_vaf = [float(v) if v not in ('.', '') else float('nan') for v in snps_df.vaf.str.split(',').str[0].values.tolist()]
     else:
         snps_df_vaf = snps_df.vaf.values.tolist()
     snps_df_gt = snps_df['gt'].tolist()
@@ -68,7 +68,7 @@ def get_snps_counts_cn_regions(snps_df_sorted, chrom, ref_start_values, ref_end_
         snps_df['gt'].astype(str)    #snps_df = snps_df[(snps_df['qual'] > 15)]
 
     if snps_df.vaf.dtype == object:
-        snps_df_vaf = [eval(i) for i in snps_df.vaf.str.split(',').str[0].values.tolist()]
+        snps_df_vaf = [float(v) if v not in ('.', '') else float('nan') for v in snps_df.vaf.str.split(',').str[0].values.tolist()]
     else:
         snps_df_vaf = snps_df.vaf.values.tolist()
     snps_df_gt = snps_df['gt'].tolist()
@@ -108,7 +108,7 @@ def get_snps_frquncies_genome(snps_df):  # TODO This module needs better impleme
     #snps_df = snps_df[(snps_df['qual'] > 15)]
 
     if snps_df.vaf.dtype == object:
-        snps_df_vaf = [eval(i) for i in snps_df.vaf.str.split(',').str[0].values.tolist()]
+        snps_df_vaf = [float(v) if v not in ('.', '') else float('nan') for v in snps_df.vaf.str.split(',').str[0].values.tolist()]
     else:
         snps_df_vaf = snps_df.vaf.values.tolist()
     snps_df_gt = snps_df['gt'].tolist()
@@ -207,7 +207,7 @@ def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, args): 
     #snps_df['vaf'] = snps_df['vaf'].astype(float)
 
     if snps_df.vaf.dtype == object:
-        snps_df_vaf = [eval(i) for i in snps_df.vaf.str.split(',').str[0].values.tolist()]
+        snps_df_vaf = [float(v) if v not in ('.', '') else float('nan') for v in snps_df.vaf.str.split(',').str[0].values.tolist()]
     else:
         snps_df_vaf = snps_df.vaf.values.tolist()
     snps_df_gt = snps_df['gt'].tolist()
