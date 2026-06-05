@@ -338,7 +338,7 @@ def vcf_parse_to_csv_for_snps(input_vcf, args, output_subdir):
     logger.info('bcftools -> Query for phasesets and GT, DP, VAF feilds by creating a CSV file')
     # bcftools query for phasesets and GT,DP,VAF
     query = '%CHROM\t%POS\t%QUAL\t[%GT]\t[%DP]\t[%'+af_field+']\n'
-    cmd = ['bcftools', 'query', '-f', query, '-i', 'FILTER="PASS"', input_vcf, '-o', output_csv]  #
+    cmd = ['bcftools', 'query', '-f', query, '-i', 'FILTER="PASS" || FILTER="."', input_vcf, '-o', output_csv]  #
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     process.wait()
 
