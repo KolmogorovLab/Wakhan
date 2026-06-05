@@ -22,6 +22,16 @@ import multiprocessing
 from collections import Counter
 from typing import List, Tuple
 
+def vcf_header_has_format_field(vcf_path, field_id):
+    opener = gzip.open if vcf_path.endswith('.gz') else open
+    with opener(vcf_path, 'rt') as f:
+        for line in f:
+            if not line.startswith('#'):
+                break
+            if line.startswith('##FORMAT=<ID=' + field_id + ','):
+                return True
+    return False
+
 def af_field_selection(vcf_path):
     vcf_file = open(vcf_path, "r") if "gz" not in vcf_path else gzip.open(vcf_path, "rt")
     af_field = 'NULL'
@@ -52,7 +62,7 @@ def get_snps_counts(snps_df_sorted, chrom, ref_start_values, bin_size):  # TODO 
         snps_df['gt'].astype(str)    #snps_df = snps_df[(snps_df['qual'] > 15)]
 
     if snps_df.vaf.dtype == object:
-        snps_df_vaf = [eval(i) for i in snps_df.vaf.str.split(',').str[0].values.tolist()]
+        snps_df_vaf = [float(v) if v not in ('.', '') else float('nan') for v in snps_df.vaf.str.split(',').str[0].values.tolist()]
     else:
         snps_df_vaf = snps_df.vaf.values.tolist()
     snps_df_gt = snps_df['gt'].tolist()
@@ -94,7 +104,7 @@ def get_snps_frquncies(snps_df_sorted, chrom):  # TODO This module needs better 
     #snps_df = snps_df[(snps_df['qual'] > 15)]
 
     if snps_df.vaf.dtype == object:
-        snps_df_vaf = [eval(i) for i in snps_df.vaf.str.split(',').str[0].values.tolist()]
+        snps_df_vaf = [float(v) if v not in ('.', '') else float('nan') for v in snps_df.vaf.str.split(',').str[0].values.tolist()]
     else:
         snps_df_vaf = snps_df.vaf.values.tolist()
     snps_df_gt = snps_df['gt'].tolist()
@@ -127,7 +137,7 @@ def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, bin_siz
     #snps_df = snps_df[(snps_df['qual'] > 15)]
 
     if snps_df.vaf.dtype == object:
-        snps_df_vaf = [eval(i) for i in snps_df.vaf.str.split(',').str[0].values.tolist()]
+        snps_df_vaf = [float(v) if v not in ('.', '') else float('nan') for v in snps_df.vaf.str.split(',').str[0].values.tolist()]
     else:
         snps_df_vaf = snps_df.vaf.values.tolist()
     snps_df_gt = snps_df['gt'].tolist()
@@ -336,8 +346,9 @@ def vcf_parse_to_csv_for_snps(input_vcf, args, output_subdir):
 
     af_field = af_field_selection(input_vcf)
     logger.info('bcftools -> Query for phasesets and GT, DP, VAF feilds by creating a CSV file')
-    # bcftools query for phasesets and GT,DP,VAF
-    query = '%CHROM\t%POS\t%QUAL\t[%GT]\t[%DP]\t[%'+af_field+']\n'
+    dp_tag = '[%DP]' if vcf_header_has_format_field(input_vcf, 'DP') else '.'
+    af_tag = '[%' + af_field + ']' if af_field != 'NULL' else '.'
+    query = '%CHROM\t%POS\t%QUAL\t[%GT]\t' + dp_tag + '\t' + af_tag + '\n'
     cmd = ['bcftools', 'query', '-f', query, '-i', 'FILTER="PASS" || FILTER="."', input_vcf, '-o', output_csv]  #
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     process.wait()
