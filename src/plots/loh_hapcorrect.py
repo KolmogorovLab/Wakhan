@@ -59,16 +59,21 @@ def plot_snps(args, df_snps_in_csv):
 
 def plot_snps_freqs_ratios_counts(chrom, index, df_snps_in_csv, html_graphs, args):
     logger.info('SNPs frequencies plots generation for ' + chrom)
-    fig = go.Figure()
 
     snps_het, snps_homo, snps_het_pos, snps_homo_pos = get_snps_frquncies(df_snps_in_csv, chrom)
+
+    last_pos = (snps_homo_pos or snps_het_pos or [None])[-1]
+    if last_pos is None:
+        return
+
+    fig = go.Figure()
 
     add_scatter_trace_coverage(fig, snps_het_pos, snps_het, name='Het SNPs Freqs', text=None, yaxis=None,
                                opacity=0.7, color='#E3B448')
     add_scatter_trace_coverage(fig, snps_homo_pos, snps_homo, name='Homo SNPs Freqs', text=None, yaxis=None,
                                opacity=0.7, color='#3A6B35')
 
-    ref_start_values = [i for i in range(0, snps_homo_pos[-1:][0], args.bin_size_snps)]
+    ref_start_values = [i for i in range(0, last_pos, args.bin_size_snps)]
     ref_start_values_updated, snps_het_counts, snps_homo_counts, centromere_region_starts, centromere_region_ends, loh_region_starts, loh_region_ends = get_snps_frquncies_coverage(
         df_snps_in_csv, chrom, ref_start_values, args.bin_size_snps, args.hets_ratio, args.hets_smooth_window, args)
 
@@ -80,7 +85,7 @@ def plot_snps_freqs_ratios_counts(chrom, index, df_snps_in_csv, html_graphs, arg
                                opacity=0.7, color='#3A6B35')
 
     plots_add_markers_lines(fig)
-    plots_layout_settings(fig, chrom, args, snps_homo_pos[-1:][0], 0)
+    plots_layout_settings(fig, chrom, args, last_pos, 0)
     fig.update_layout(yaxis_title="<b>SNPs Frequencies</b> (ratios)",)
 
     #plot_snps_counts(chrom, index, ref_start_values, df_snps_in_csv, html_graphs, args)
