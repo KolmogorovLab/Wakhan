@@ -63,6 +63,7 @@ def cn_one_inference(input_segments, input_weights, phased, plot_path):
 
     #peaks_mixture = None
     first_min = 0
+    min_corr = 0
     max_peak_id = None
     scaled_peaks = []
     cn_one_alt = None
