@@ -245,6 +245,7 @@ def build_parser():
     global_parser = argparse.ArgumentParser(prog="wakhan", description="Wakhan plots coverage and copy number profiles from a bam and phased VCF files",
                                             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     ###################################################################################
+    global_parser.add_argument("--version", action="version", version="%(prog)s " + __version__)
     global_parser.add_argument("command", choices=["all", "cna", "hapcorrect"], help="Run full pipeline, cna or hapcorrect modes" )
     ###################################################################################
 
