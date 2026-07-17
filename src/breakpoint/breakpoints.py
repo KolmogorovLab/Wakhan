@@ -39,9 +39,8 @@ class bps_sample(object):
 #def sv_vcf_bps_cn_check(path, df_segs_hp1, df_segs_hp2):
 def sv_vcf_bps_cn_check(path, args):
     HP_BALANCE_RATE = 0.3
-    BP_RELIABLE_COV_RATE = 0.2
     BP_MIN_COV = 3
-    bp_cov_threshold = max(args.first_copy_breakpoints_filter * BP_RELIABLE_COV_RATE, BP_MIN_COV)
+    bp_cov_threshold = max(args.first_copy_breakpoints_filter * args.sv_support_rate, BP_MIN_COV)
 
     #########################################
     _logging_level = logger.level

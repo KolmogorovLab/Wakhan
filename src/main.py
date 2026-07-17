@@ -297,6 +297,8 @@ def build_parser():
                                help="user input p-value to detect if a segment is subclonal/off to integer copynumber")
     global_parser.add_argument("--breakpoints-min-length", dest="breakpoints_min_length", default=BP_MIN_LENGTH, metavar="int",
                                type=int, help="SV minimum length to include")
+    global_parser.add_argument("--sv-support-rate", dest="sv_support_rate", default=0.2, metavar="float", type=float,
+                               help="Minimum coverage rate relative to single-copy coverage for reliable SV breakpoint support")
 
     #FOR UNPHASED MODE
     global_parser.add_argument('--without-phasing', action="store_true", dest="without_phasing", default=False,
