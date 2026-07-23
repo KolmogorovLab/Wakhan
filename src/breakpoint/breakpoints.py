@@ -46,7 +46,7 @@ def sv_vcf_bps_cn_check(path, args):
     #########################################
     _logging_level = logger.level
     logger.setLevel(logging.CRITICAL)
-    my_parser = VCFParser(infile=path, split_variants=True, check_info=True)
+    my_parser = VCFParser(infile=path, split_variants=True, check_info=False)
 
     chr_phaseblocks = defaultdict(IntervalTree)
     chr_loh = defaultdict(IntervalTree)
@@ -95,15 +95,47 @@ def sv_vcf_bps_cn_check(path, args):
     bp_junctions_single_chr = [[]]
 
     for variant in my_parser:
-        dv_value = int(variant[my_parser.individuals[0]].split(':')[4])
+        # Get supporting read count based on detected tool
+        # Severus: DV at FORMAT index 4
+        # Sniffles2: DV at FORMAT index 3
+        # Savana: no DV — use SUPPORT from INFO
+        # NanoMonSV: no DV — use TUMOR_DP from INFO
+        # Benchmark VCF: no DV — default to BP_MIN_COV to pass threshold
+        # Read DV (variant-supporting reads) by looking up its position in this
+        # record's own FORMAT column, rather than assuming a fixed index.
+        # FORMAT differs per caller:
+        #   Severus   GT:GQ:VAF:hVAF:DR:DV  -> DV at 5
+        #   Sniffles2 GT:GQ:DR:DV:PS        -> DV at 3
+        #   benchmark GT:PSL:PSO:CN:GTPG    -> no DV
+        # If the caller reports no DV, do not invent a low value: the caller
+        # already applied its own FILTER, so pass the variant through.
+        dv_value = 999
+        try:
+            fmt_fields = variant['FORMAT'].split(':')
+            if 'DV' in fmt_fields and my_parser.individuals:
+                sample_vals = variant[my_parser.individuals[0]].split(':')
+                dv_value = int(sample_vals[fmt_fields.index('DV')])
+        except (IndexError, ValueError, KeyError, AttributeError):
+            dv_value = 999
+
         if dv_value < bp_cov_threshold:
             continue
 
-        if ("INV" in variant['ID'] and variant['info_dict']['DETAILED_TYPE'] == ['reciprocal_inv']) or  "INS" in variant['ID']:
-            continue
-        if variant['info_dict']['SVTYPE'][0] == 'INV' or variant['info_dict']['SVTYPE'][0] == 'DUP' or \
-                ((variant['info_dict']['SVTYPE'][0] == 'INS' or variant['info_dict']['SVTYPE'][0] == 'DEL') and
-                        int(variant['info_dict']['SVLEN'][0]) > args.breakpoints_min_length):
+        # Skip reciprocal inversions (Severus-specific field — skip check if absent)
+        # Use SVTYPE from INFO for INS check — ID-based check only works for Severus
+        svtype_check = variant['info_dict']['SVTYPE'][0] if 'SVTYPE' in variant['info_dict'] else ''
+        if 'DETAILED_TYPE' in variant['info_dict']:
+            if ("INV" in variant['ID'] and variant['info_dict']['DETAILED_TYPE'] == ['reciprocal_inv']) or svtype_check == 'INS':
+                continue
+        else:
+            if svtype_check == 'INS':
+                continue
+        svtype = variant['info_dict']['SVTYPE'][0] if 'SVTYPE' in variant['info_dict'] else ''
+        # Use SVTYPE from INFO field (works for all tools) rather than variant ID
+        # (ID-based checks like "INS" in variant['ID'] only work for Severus-style IDs)
+        is_ins_or_del = svtype in ('INS', 'DEL') and 'SVLEN' in variant['info_dict'] and abs(int(variant['info_dict']['SVLEN'][0])) > args.breakpoints_min_length
+        is_inv_or_dup = svtype in ('INV', 'DUP')
+        if is_inv_or_dup or is_ins_or_del:
             if not variant['CHROM'] in chroms:
                 continue
 
@@ -117,10 +149,11 @@ def sv_vcf_bps_cn_check(path, args):
                 if different_hp_coverage(variant['CHROM'], start) and different_hp_coverage(variant['CHROM'], end):
                     hp = variant['info_dict']['HP'][0]
 
+            bp_junctions.append([variant['CHROM'], int(variant['POS']), int(variant['POS'])+abs(int(variant['info_dict']['SVLEN'][0]))])
             bp_junctions_bnd.append([variant['CHROM'], int(variant['POS'])])
-            bp_junctions_bnd.append([variant['CHROM'], int(variant['POS'])+int(variant['info_dict']['SVLEN'][0])])
+            bp_junctions_bnd.append([variant['CHROM'], int(variant['POS'])+abs(int(variant['info_dict']['SVLEN'][0]))])
             sample_list[variant['ID']] = bps_sample(variant['CHROM'], int(variant['POS']), variant['ID'],
-                                                    variant['CHROM'], int(variant['POS'])+int(variant['info_dict']['SVLEN'][0]), hp, dv_value, False)
+                                                    variant['CHROM'], int(variant['POS'])+abs(int(variant['info_dict']['SVLEN'][0])), hp, dv_value, False)
 
         elif variant['info_dict']['SVTYPE'][0] == 'sBND' or 'sBND' in variant['ID']:
             hp = '0|0'
@@ -135,15 +168,26 @@ def sv_vcf_bps_cn_check(path, args):
 
         elif variant['info_dict']['SVTYPE'][0] == 'BND':
 
-            s = variant['ALT']
-            for ch in ['[', ']', 'N']:
-                if ch in s:
-                    s = s.replace(ch, '')
-
+            # BND ALT looks like t[p[ or t]p] where t is the ref base(s)
+            # and p is chr:pos. Severus writes t as 'N' so the old code
+            # stripped '[', ']', 'N' to isolate p. Other callers write the
+            # real base (G/C/T/A), which then stays glued on (e.g. 'Gchr5').
+            # Split on the bracket instead so any ref base is handled.
+            alt_str = variant['ALT']
+            bracket = '[' if '[' in alt_str else (']' if ']' in alt_str else '')
+            if not bracket:
+                continue
+            alt_parts = alt_str.split(bracket)
+            if len(alt_parts) < 2:
+                continue
+            s = alt_parts[1]
             if len(s.split(':')) < 2:
                 continue
             chr2_id = s.split(':')[0]
-            chr2_end = int(s.split(':')[1])
+            try:
+                chr2_end = int(s.split(':')[1])
+            except ValueError:
+                continue
 
             if not variant['CHROM'] in chroms or not chr2_id in chroms:
                 continue

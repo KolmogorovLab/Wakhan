@@ -10,7 +10,7 @@ from src.utils.chromosome import get_contigs_list, df_chromosomes_sorter
 def get_all_breakpoints_data(edges, edges_chr, height, path, args):
     _logging_level = logger.level
     logger.setLevel(logging.CRITICAL)
-    my_parser = VCFParser(infile=path, split_variants=True, check_info=True)
+    my_parser = VCFParser(infile=path, split_variants=True, check_info=False)
 
     chroms = get_contigs_list(args.contigs)
     bp_junctions_inv = [[]]
@@ -27,11 +27,11 @@ def get_all_breakpoints_data(edges, edges_chr, height, path, args):
             bp_junctions_inv.append([variant['CHROM'], int(variant['POS'])])
         elif variant['info_dict']['SVTYPE'][0] == 'sBND':
             bp_junctions_sbnd.append([variant['CHROM'], int(variant['POS'])])
-        elif (variant['info_dict']['SVTYPE'][0] == 'DUP') and int(variant['info_dict']['SVLEN'][0]) > args.breakpoints_min_length:
+        elif (variant['info_dict']['SVTYPE'][0] == 'DUP') and abs(int(variant['info_dict']['SVLEN'][0])) > args.breakpoints_min_length:
             bp_junctions_dup.append([variant['CHROM'], int(variant['POS'])])
-        elif (variant['info_dict']['SVTYPE'][0] == 'INS') and int(variant['info_dict']['SVLEN'][0]) > args.breakpoints_min_length:
+        elif (variant['info_dict']['SVTYPE'][0] == 'INS') and abs(int(variant['info_dict']['SVLEN'][0])) > args.breakpoints_min_length:
             bp_junctions_ins.append([variant['CHROM'], int(variant['POS'])])
-        elif variant['info_dict']['SVTYPE'][0] == 'DEL' and int(variant['info_dict']['SVLEN'][0]) > args.breakpoints_min_length:
+        elif variant['info_dict']['SVTYPE'][0] == 'DEL' and abs(int(variant['info_dict']['SVLEN'][0])) > args.breakpoints_min_length:
             bp_junctions_del.append([variant['CHROM'], int(variant['POS'])])
 
     logger.setLevel(_logging_level)

@@ -553,8 +553,7 @@ def cna_process(args):
             #csv_df_phasesets = csv_df_chromosomes_sorter(args.quick_start_coverage_path + '/coverage_ps.csv', ['chr', 'start', 'end', 'coverage'])
         elif args.histogram_coverage:
             if os.path.exists(args.out_dir_plots + '/coverage_data'):
-                safe_rmtree(args.out_dir_plots + '/coverage_data')
-                os.mkdir(args.out_dir_plots + '/coverage_data')
+                pass  # keep existing coverage data for quick-start
             else:
                 os.mkdir(args.out_dir_plots + '/coverage_data')
             logger.info('Computing coverage for bins')
