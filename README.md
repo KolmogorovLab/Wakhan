@@ -79,8 +79,9 @@ Alternatively, you can use the [Lumos pipeline](https://github.com/KolmogorovLab
 
 Note that if the organism has low-to-zero heterozygosity (e.g. mouse models), you should use the unphased input mode.
 
-## 1. Standalone mode
+## 1. Unphased SV mode
 
+This mode is easier to run using the existing variant calls.
 
 ### Tumor-Normal Mode (requires tumor BAM and normal phased VCF)
 ```
@@ -92,7 +93,7 @@ python wakhan.py all --threads <24> --reference <ref.fa>  --target-bam <tumor.ba
 python wakhan.py all --threads <24> --reference <ref.fa>  --target-bam <tumor.bam>  --tumor-phased-vcf <tumor_phased.vcf.gz> --genome-name <cellline/dataset name> --out-dir-plots <genome_abc_output> --breakpoints <severus-sv-VCF>
 ```
 
-## 2. Phased SVs/Breakpoints pipeline mode
+## 2. Phased SV mode
 
 Severus also produces phased breakpoints/structural variations after rephasing tumor (tumor-only mode) or normal (tumor/normal pair mode) phased VCF which can be used in Wakhan by setting `--use-sv-haplotypes` param. 
 This option enables to segment copy numbers boundaries in only one appropriate haplotype.
