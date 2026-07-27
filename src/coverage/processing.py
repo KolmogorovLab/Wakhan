@@ -1,10 +1,15 @@
 import pandas as pd
 import statistics
+import math
 import logging
 
 logger = logging.getLogger()
 
 from src.coverage.smoothing import smoothing
+from src.utils.chromosome import CENTROMERE_SENTINEL
+
+# Bins with fewer than this many het SNPs give an unreliable BAF estimate and are hidden from the plots.
+MIN_SNPS_PER_BAF_BIN = 5
 
 
 """
@@ -49,27 +54,26 @@ def seperate_dfs_coverage(args, df, haplotype_1_values_updated, haplotype_2_valu
 def get_vafs_from_normal_phased_vcf(df_snps, df_coverages, chroms, args):
     df_final = []
     logger.info('Generating BAFs')
-    for index, chrom in enumerate(chroms):
+    for chrom in chroms:
         df = df_snps[df_snps['chr'] == chrom]
         df_coverage = df_coverages[df_coverages['chr'] == chrom]
+        if df.empty or df_coverage.empty:
+            continue
         starts_pos = df_coverage.start.values.tolist()
-        vaf = []
         # df = dict(tuple(df_snps.groupby('hp')))
         haplotype_1_position = df.pos.values.tolist()
         haplotype_1_coverage = df.freq_value_b.values.tolist()
-        haplotype_2_position = df.pos.values.tolist()
         haplotype_2_coverage = df.freq_value_a.values.tolist()
         # vaf = a/a+b
         vaf = [round(min(i,j) / (i + j + 0.0000001), 3) for i, j in zip(haplotype_1_coverage, haplotype_2_coverage)]
-        #vaf = list(map(lambda x: 1 - x if x > 0.5 else x, vaf))
 
         snps_het_vaf = []
-        for index, pos in enumerate(starts_pos):
-            l2 = [i for i in haplotype_1_position if i > pos and i < pos + args.bin_size]
-            if l2:
-                snps_het_vaf.append(vaf[haplotype_1_position.index(max(l2))])
+        for pos in starts_pos:
+            matched = [v for p, v in zip(haplotype_1_position, vaf) if pos < p < pos + args.bin_size]
+            if len(matched) < MIN_SNPS_PER_BAF_BIN:
+                snps_het_vaf.append(CENTROMERE_SENTINEL)
             else:
-                snps_het_vaf.append(0)
+                snps_het_vaf.append(statistics.mean(matched))
 
         df_final.append(pd.DataFrame(list(zip([df['chr'].iloc[0] for ch in range(len(starts_pos))], starts_pos, snps_het_vaf)), columns=['chr', 'pos', 'vaf']))
 
@@ -90,11 +94,10 @@ def get_vafs_from_tumor_phased_vcf(df_snps, df_coverages, chroms, args):
         # df = dict(tuple(df_snps.groupby('hp')))
 
         snps_df_haplotype1 = df[(df['gt'] == '0|1') | (df['gt'] == '0/1') | (df['gt'] == '1|0') | (df['gt'] == '1/0')]
-        snps_df_haplotype1.reindex(snps_df_haplotype1)
-        if df.vaf.dtype == object:
-            haplotype_1_coverage = [float(v) if v not in ('.', '') else float('nan') for v in df.vaf.str.split(',').str[0].values.tolist()]
+        if snps_df_haplotype1.vaf.dtype == object:
+            haplotype_1_coverage = [float(v) if v not in ('.', '') else float('nan') for v in snps_df_haplotype1.vaf.str.split(',').str[0].values.tolist()]
         else:
-            haplotype_1_coverage = df.vaf.values.tolist()
+            haplotype_1_coverage = snps_df_haplotype1.vaf.values.tolist()
         haplotype_1_position = snps_df_haplotype1.pos.values.tolist()
 
         # snps_df_haplotype1 = df[(df['gt'] == '1|0') | (df['gt'] == '1/0')]
@@ -111,16 +114,13 @@ def get_vafs_from_tumor_phased_vcf(df_snps, df_coverages, chroms, args):
         haplotype_1_coverage = list(map(lambda x: 1 - x if x > 0.5 else x, haplotype_1_coverage))
 
         snps_het_vaf = []
-        for index, pos in enumerate(starts_pos):
-            l2 = [i for i in haplotype_1_position if i > pos and i < pos + args.bin_size]
-            #print(haplotype_1_position.index(min(l2)), ':', haplotype_1_position.index(max(l2)))
-            #data = haplotype_1_coverage[haplotype_1_position.index(min(l2)):haplotype_1_position.index(max(l2))]
-            if len(l2) == 1:
-                snps_het_vaf.append(haplotype_1_coverage[haplotype_1_position.index(l2[0])])
-            elif len(l2) > 1:
-                snps_het_vaf.append(statistics.mean(haplotype_1_coverage[haplotype_1_position.index(min(l2)):haplotype_1_position.index(max(l2))]))
+        for pos in starts_pos:
+            matched = [c for p, c in zip(haplotype_1_position, haplotype_1_coverage)
+                       if pos < p < pos + args.bin_size and not math.isnan(c)]
+            if len(matched) < MIN_SNPS_PER_BAF_BIN:
+                snps_het_vaf.append(CENTROMERE_SENTINEL)
             else:
-                snps_het_vaf.append(0)
+                snps_het_vaf.append(statistics.mean(matched))
 
         df_final.append(pd.DataFrame(list(zip([df['chr'].iloc[0] for ch in range(len(starts_pos))], starts_pos, snps_het_vaf)), columns=['chr', 'pos', 'vaf']))
 
