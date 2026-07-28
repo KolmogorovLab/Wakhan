@@ -1,6 +1,6 @@
 # Wakhan
 
-### Version 0.4.3
+### Version 0.4.4
 
 A tool to analyze haplotype-specific chromosome-scale somatic copy number aberrations and aneuploidy using long reads (Oxford Nanopore, PacBio). 
 Wakhan takes long-read alignment and phased heterozygous variants as input, and first extends the phased blocks and corrects phase-switch errors, taking
