@@ -67,10 +67,7 @@ def main_process(args):
     else:
         os.mkdir(args.out_dir_plots+'/data_phasing')
 
-    if os.path.exists(args.out_dir_plots+'/coverage_data'):
-        safe_rmtree(args.out_dir_plots+'/coverage_data')
-        os.mkdir(args.out_dir_plots+'/coverage_data')
-    else:
+    if not os.path.exists(args.out_dir_plots+'/coverage_data'):
         os.mkdir(args.out_dir_plots+'/coverage_data')
 
     thread_pool = Pool(args.threads)
