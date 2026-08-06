@@ -1829,12 +1829,12 @@ def copy_number_plots_genome_breakpoints(centers, integer_fractional_centers, df
         height=plot_height,
        )
     if args.without_phasing:
-        path_set = args.genome_name + '_genome_copynumbers_breakpoints'
+        path_set = 'solution/integer_profile'
     else:
         if is_half:
-            path_set = 'wgd/'+str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value) + '/' + args.genome_name + '_' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value) + '_genome_copynumbers_breakpoints'
+            path_set = 'wgd/solution_' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value) + '/integer_profile'
         else:
-            path_set = str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value) + '/' + args.genome_name + '_' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value) + '_genome_copynumbers_breakpoints'
+            path_set = 'solution_' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value) + '/integer_profile'
 
     if args.pdf_enable:
         print_genome_pdf(fig, path_set, args.out_dir_plots)
@@ -2206,12 +2206,12 @@ def copy_number_plots_genome(centers, integer_fractional_centers, df_cnr_hp1, df
         height=plot_height,
        )
     if args.without_phasing:
-        path_set = args.genome_name + '_genome_copynumbers'
+        path_set = 'solution/integer_profile'
     else:
         if is_half:
-            path_set = 'wgd/'+str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value) + '/' + args.genome_name + '_' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value) + '_genome_copynumbers'
+            path_set = 'wgd/solution_' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value) + '/integer_profile'
         else:
-            path_set = str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value) + '/' + args.genome_name + '_' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value) + '_genome_copynumbers'
+            path_set = 'solution_' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value) + '/integer_profile'
 
     if args.pdf_enable:
         print_genome_pdf(fig, path_set, args.out_dir_plots)
@@ -3260,12 +3260,12 @@ def copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_c
         height=plot_height,
     )
     if args.without_phasing:
-        path_set = args.genome_name + '_genome_copynumbers_breakpoints_subclonal'
+        path_set = 'solution/subclonal_profile'
     else:
         if is_half:
-            path_set = 'wgd/'+str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value) + '/' + args.genome_name + '_' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value) + '_genome_copynumbers_breakpoints_subclonal'
+            path_set = 'wgd/solution_' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value) + '/subclonal_profile'
         else:
-            path_set = str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value) + '/' + args.genome_name + '_' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value) + '_genome_copynumbers_breakpoints_subclonal'
+            path_set = 'solution_' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value) + '/subclonal_profile'
 
     if args.pdf_enable:
         print_genome_pdf(fig, path_set, args.out_dir_plots)
@@ -3665,12 +3665,12 @@ def copy_number_plots_genome_subclonal(centers, integer_fractional_centers, df_c
         height=plot_height,
     )
     if args.without_phasing:
-        path_set = args.genome_name + '_genome_copynumbers_subclonal'
+        path_set = 'solution/subclonal_profile'
     else:
         if is_half:
-            path_set = 'wgd/'+str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value) + '/' + args.genome_name + '_' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value) + '_genome_copynumbers_subclonal'
+            path_set = 'wgd/solution_' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value) + '/subclonal_profile'
         else:
-            path_set = str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value) + '/' + args.genome_name + '_' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value) + '_genome_copynumbers_subclonal'
+            path_set = 'solution_' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value) + '/subclonal_profile'
 
     if args.pdf_enable:
         print_genome_pdf(fig, path_set, args.out_dir_plots)
@@ -4509,12 +4509,12 @@ def genes_plots_genome(df_genes, centers, integer_fractional_centers, df_cnr_hp1
         height=plot_height,
     )
     if args.without_phasing:
-        path_set = args.genome_name + '_genes_genome'
+        path_set = 'genes/genes_copynumber_states'
     else:
         if is_half:
-            path_set = 'wgd/'+str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value) + '/' + args.genome_name + '_' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value) + '_genes_genome'
+            path_set = 'wgd/solution_' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value) + '/genes/genes_copynumber_states'
         else:
-            path_set = str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value) + '/' + args.genome_name + '_' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value) + '_genes_genome'
+            path_set = 'solution_' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value) + '/genes/genes_copynumber_states'
 
     if args.pdf_enable:
         print_genome_pdf(fig, path_set, args.out_dir_plots)

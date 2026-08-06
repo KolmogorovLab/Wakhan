@@ -224,7 +224,7 @@ User can input both `--ploidy-range` [default: 1.5-5.5 -> [min-max]] and `--puri
 
 ##### Genes/copy number annotations
 
-By default, Wakhan uses [COSMIC](https://cancer.sanger.ac.uk/cosmic) cancer census genes (100 genes freely available) to display corresponding copy number states in `<genome_name>_<ploidy>_<purity>_<confidence>_genes_genome.html` file.
+By default, Wakhan uses [COSMIC](https://cancer.sanger.ac.uk/cosmic) cancer census genes (100 genes freely available) to display corresponding copy number states in `genes/genes_copynumber_states.html` file (inside each solution directory).
 Complete COSMIC academic/research purpose cancer census genes set (Cosmic_CancerGeneCensus_v101_GRCh38.tsv) could be downloaded from [COSMIC](https://cancer.sanger.ac.uk/cosmic/download/cosmic/v101/cancergenecensus).
 Please run the `scripts/cosmic.py` to extract the required fields and then input resultant `cosmic_genes.tsv` in param `--user-input-genes`.
 Alternatively, user can also input path through param `--user-input-genes` to custom input genes/subset of genes [examples in src\annotations\user_input_genes_example_<N>.bed] bed file these genes will be used in plots instead of default COSMIC cancer genes.
@@ -250,15 +250,15 @@ Few cell lines arbitrary phase-switch correction and copy number estimation outp
 
 
 ## Output produced
-Based on best confidence scores, tumor purity and ploidy values are calculated and solution(s) are ranked accordingly with output as `solution_<N>` symlink directories. 
-Each sub-folder in output directory represents best <`ploidy`>_<`purity`>_<`confidence`> values.
+Based on best confidence scores, tumor purity and ploidy values are calculated and solution(s) are ranked accordingly, with `solution_rank_<N>` symlinks pointing at the corresponding `solution_<ploidy>_<purity>_<confidence>` directories (also listed in `solutions_ranks.tsv`).
 
-* `<genome-name>_genome_copynumber_details.html` Genome-wide copy number plots with coverage information on same axis
-* `<genome-name>_copynumber_breakpoints.html` Genome-wide copy number plots with coverage information on opposite axis, additionally breakpoints and genes annotations 
-* `<genome-name>_copynumber_breakpoints_subclonal.html` Genome-wide subclonal/fractional copy number plots with coverage information on opposite axis, additionally breakpoints and genes annotations (`--copynumbers-subclonal-enable`)
-* `bed_output` It contains copy numbers segments in bed format
-* `vcf_output` It contains copy numbers segments in VCF format
-* `variation_plots` Copy number chromosomes-scale plots with segmentation, coverage and LOH
+Each `solution_<ploidy>_<purity>_<confidence>` directory contains:
+
+* `integer_profile.html` Genome-wide copy number plot with coverage information, additionally breakpoints and genes annotations if `--breakpoints` is used
+* `integer_profile.bed` Copy number segments in bed format, boundary-aligned across both haplotypes (`hp1_*`/`hp2_*` columns)
+* `integer_profile.vcf` Copy number segments in VCF format
+* `subclonal_profile.html`, `subclonal_profile.bed`, `subclonal_profile.vcf` Same as above, for subclonal/fractional copy numbers (`--copynumbers-subclonal-enable`)
+* `genes/genes_copynumber_states.html`, `genes/genes_copynumber_states.bed` Copy number states for cancer genes
 
 Following are coverage and SNPs/LOH plots and bed directories in output folder, independent of CNA analysis
 

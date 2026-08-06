@@ -19,7 +19,7 @@ from src.__version__ import __version__
 
 from src.file_tools.process_bam import get_all_reads_parallel, update_coverage_hist, get_segments_coverage, ref_bam_vcfs_nomenclature_check
 from src.output.genes import update_genes_phase_corrected_coverage
-from src.output.writers import write_copynumber_segments_csv, write_segments_coverage_dict
+from src.output.writers import write_copynumber_segments_csv, write_unphased_copynumber_segments_csv, write_segments_coverage_dict
 from src.utils.chromosome import get_contigs_list, centromere_regions_blacklist, centromere_regions_blacklist_bins, csv_df_chromosomes_sorter, \
         df_chromosomes_sorter, extract_centromere_regions
 from src.coverage.binning import get_chromosomes_bins_bam, get_chromosomes_bins
@@ -30,11 +30,11 @@ from src.cna.loh import collect_loh_centromere_regions
 from src.cna.purity_ploidy import (normal_genome_proportion, weigted_means_ploidy, average_p_value_genome, dna_purity_to_cell_purity,
         move_100pct_purity_sol, find_p_values_peaks, update_segs_with_normal_optimized)
 from src.utils.statistics import weighted_means
-from src.plots.plots_main import coverage_plots_chromosomes, copy_number_plots_genome_details, copy_number_plots_genome, breakpoints_segments_means, \
+from src.plots.plots_main import coverage_plots_chromosomes, copy_number_plots_genome, breakpoints_segments_means, \
     copy_number_plots_genome_breakpoints, copy_number_plots_genome_breakpoints_subclonal, copy_number_plots_genome_subclonal, \
     genes_copy_number_plots_genome, genes_plots_genome, heatmap_copy_number_plots_genome, plot_ploidy_purity_p_values
 from src.file_tools.process_vcf import vcf_parse_to_csv_for_het_phased_snps_phasesets
-from src.plots.snps_loh import plot_snps_frequencies_without_phasing, plot_snps_ratios_genome, snps_df_loh, variation_plots, write_loh_regions
+from src.plots.snps_loh import plot_snps_frequencies_without_phasing, plot_snps_ratios_genome, snps_df_loh
 from src.hapcorrect.phase_correction import generate_phasesets_bins
 from src.cna.optimization import peak_detection_optimization, parse_coverage_bed_cpd
 from src.file_tools.generate_vcf import read_cn_segments_process_vcf
@@ -158,8 +158,8 @@ def copy_numbers_assignment_haplotypes(args, solutions_df, tumor_cov, max_limit,
         p_value_confidence = round(solution[3], 2)
         logger.info('Generating coverage/copy numbers plots genome wide for solution with tumor cellular fraction {0}, ploidy {1} and tumor dna fraction {2}'.format(args.tumor_purity, args.tumor_ploidy, dna_tumor_fraction))
         logger.debug('Normal optimized clusters means: %s', cen_out)
-        solutions_df.loc[len(solutions_df)] = [str(args.tumor_ploidy)+'_'+str(args.tumor_purity)+'_'+str(p_value_confidence),
-                                               dna_tumor_fraction, args.tumor_purity, args.tumor_ploidy, p_value_confidence]
+        repo = ('wgd/' if is_half else '') + 'solution_' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value_confidence)
+        solutions_df.loc[len(solutions_df)] = [repo, dna_tumor_fraction, args.tumor_purity, args.tumor_ploidy, p_value_confidence]
 
         #if args.breakpoints:
         #    df_segs_hp1, df_segs_hp2 = check_dv_support_in_breakpoints(cen_out[1], df_hp1, df_hp2, df_segs_hp1, df_segs_hp2)
@@ -172,15 +172,11 @@ def copy_numbers_assignment_haplotypes(args, solutions_df, tumor_cov, max_limit,
 
         #df_segs_hp1_updated = merge_bps_regions_cn(df_segs_hp1_updated, args)
 
-        write_copynumber_segments_csv(df_hp1, df_hp2, df_segs_hp1_updated, args, cen_out, integer_fractional_means, 1, '_' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value_confidence) + '_copynumbers_segments_HP_1.bed', p_value_confidence, is_half)
-        write_copynumber_segments_csv(df_hp1, df_hp2, df_segs_hp2_updated, args, cen_out, integer_fractional_means, 2, '_' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value_confidence) + '_copynumbers_segments_HP_2.bed', p_value_confidence, is_half)
-        write_loh_regions(loh_regions, 'loh_regions.bed', args, p_value_confidence, is_half)
-        read_cn_segments_process_vcf(args, str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value_confidence), 'integers')
+        write_copynumber_segments_csv(df_hp1, df_hp2, df_segs_hp1_updated, df_segs_hp2_updated, args, repo, cen_out, integer_fractional_means, 'integer_profile.bed', False)
+        read_cn_segments_process_vcf(args, repo, 'integers')
 
         df_segs_hp1_updated, df_segs_hp2_updated = centromere_regions_blacklist(args, df_segs_hp1_updated, df_segs_hp2_updated)
         df_hp1, df_hp2 = centromere_regions_blacklist_bins(args, df_hp1, df_hp2, df_segs_hp1_updated, df_segs_hp2_updated)
-
-        copy_number_plots_genome_details(cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_unphased, args, x_axis, observed_hist, p_value_confidence, is_half)
 
         # df_segs_hp1_updated, df_segs_hp2_updated, df_hp1, df_hp2 = fix_inter_cn_phase_switch_errors(args, df_segs_hp1_updated, df_segs_hp2_updated, df_hp1, df_hp2)
 
@@ -192,7 +188,6 @@ def copy_numbers_assignment_haplotypes(args, solutions_df, tumor_cov, max_limit,
             copy_number_plots_genome(cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, p_value_confidence, loh_regions, df_snps_in_csv, is_half)
         df_segs_hp1_updated = df_segs_hp1_updated.drop('confidence_value', axis=1)
         df_segs_hp2_updated = df_segs_hp2_updated.drop('confidence_value', axis=1)
-        variation_plots(args, csv_df_snps_mean, df_segs_hp1_updated, df_segs_hp2_updated, cen_out, integer_fractional_means, df_snps_in_csv, loh_regions, p_value_confidence, is_half)
         #debug uncomment
         if not args.phaseblock_flipping_disable:
            df_genes = update_genes_phase_corrected_coverage(args, df_segs_hp1_updated, df_segs_hp2_updated, p_value_confidence, cen_out, integer_fractional_means, is_half)
@@ -205,7 +200,6 @@ def copy_numbers_assignment_haplotypes(args, solutions_df, tumor_cov, max_limit,
             df_segs_hp1_updated, df_segs_hp2_updated = adjust_diversified_segments(cen_out, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, args)
             df_segs_hp1_updated, df_segs_hp2_updated = update_subclonal_means_states(cen_out, subclonals, df_segs_hp1_updated, df_segs_hp2_updated, df_hp1, df_hp2, args)
             loh_regions = collect_loh_centromere_regions(df_segs_hp1_updated, df_segs_hp2_updated, cen_out, integer_fractional_means, args)
-            write_loh_regions(loh_regions, 'loh_regions_subclonal.bed', args, p_value_confidence, is_half)
             # df_segs_hp1_updated = merge_adjacent_regions_cn(df_segs_hp1_updated, args)
             # df_segs_hp2_updated = merge_adjacent_regions_cn(df_segs_hp2_updated, args)
 
@@ -214,9 +208,8 @@ def copy_numbers_assignment_haplotypes(args, solutions_df, tumor_cov, max_limit,
                 copy_number_plots_genome_breakpoints_subclonal(cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, p_value_confidence, loh_regions, df_snps_in_csv, is_half)
             else:
                 copy_number_plots_genome_subclonal(cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, p_value_confidence, loh_regions, df_snps_in_csv, is_half)
-            write_copynumber_segments_csv(df_hp1, df_hp2, df_segs_hp1_updated, args, cen_out, integer_fractional_means, 1, '_' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value_confidence) + '_copynumbers_subclonal_segments_HP_1.bed', p_value_confidence, is_half)
-            write_copynumber_segments_csv(df_hp1, df_hp2, df_segs_hp2_updated, args, cen_out, integer_fractional_means, 2, '_' + str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value_confidence) + '_copynumbers_subclonal_segments_HP_2.bed', p_value_confidence, is_half)
-            read_cn_segments_process_vcf(args, str(args.tumor_ploidy) + '_' + str(args.tumor_purity) + '_' + str(p_value_confidence), 'subclonal')
+            write_copynumber_segments_csv(df_hp1, df_hp2, df_segs_hp1_updated, df_segs_hp2_updated, args, repo, cen_out, integer_fractional_means, 'subclonal_profile.bed', True)
+            read_cn_segments_process_vcf(args, repo, 'subclonal')
     #else:
     #    logger.info(
     #        'No estimated purity [%s] and ploidy [%s] value detected inside given ranges or overall ploidy is less than 0.1', args.purity_range, args.ploidy_range)
@@ -674,19 +667,8 @@ def cna_process(args):
             #TODO remove it, temp for debug
             #loh_regions = pd.DataFrame(columns=['chr', 'start', 'end'])
             loh_regions = plot_snps_frequencies_without_phasing(args, csv_df_snps_mean, df_segs_hp1_updated, df_segs_hp2_updated, centers, integer_fractional_means)
-        write_copynumber_segments_csv(df_hp1, df_hp1, df_segs_hp1_updated, args, centers, integer_fractional_means, None, '_copynumbers_segments.bed', None, False)
+        write_unphased_copynumber_segments_csv(df_hp1, df_segs_hp1_updated, args, centers, integer_fractional_means, 'integer_profile.bed', False)
 
-        ###############coverage data save#################
-        # if not 'state' in df_hp1.columns:
-        #     states_coverage = []
-        #     coverage_only = df_hp1.coverage.values.tolist()
-        #     for i, (start, end) in enumerate(zip(df_hp1.start.values.tolist(), df_hp1.end.values.tolist())):
-        #         states_coverage.append(min(centers, key=lambda x: abs(x - coverage_only[i])))
-        #     df_hp1['state'] = states_coverage
-        #     df = df_hp1.copy()
-        # write_copynumber_segments_csv(df, args, centers, integer_fractional_means, None, '_coverage_segments.bed', None)
-        ##################################################
-        copy_number_plots_genome_details(centers, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, x_axis, observed_hist, None, False)
         if args.breakpoints:
             copy_number_plots_genome_breakpoints(centers, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, None, loh_regions, df_snps_in_csv, False)
         else:
@@ -697,7 +679,7 @@ def cna_process(args):
             df_segs_hp1_updated, df_segs_hp2_updated = update_subclonal_means_states(centers, subclonals, df_segs_hp1_updated, df_segs_hp2_updated, df_hp1, df_hp2, args)
             #df_segs_hp1_updated = merge_adjacent_regions_cn(df_segs_hp1_updated, args)
             #df_segs_hp2_updated = merge_adjacent_regions_cn(df_segs_hp2_updated, args)
-            write_copynumber_segments_csv(df_hp1, df_hp1, df_segs_hp1_updated, args, centers, integer_fractional_means, None, '_copynumbers_subclonal_segments.bed', None, False)
+            write_unphased_copynumber_segments_csv(df_hp1, df_segs_hp1_updated, args, centers, integer_fractional_means, 'subclonal_profile.bed', True)
             cen_out = [int(i) for i in centers]
             if args.breakpoints:
                 copy_number_plots_genome_breakpoints_subclonal(cen_out, integer_fractional_means, df_hp1, df_segs_hp1_updated, df_hp2, df_segs_hp2_updated, df_hp1, args, None, loh_regions, df_snps_in_csv, False)
@@ -718,7 +700,7 @@ def cna_process(args):
 
             for index, link_info in solutions_df.iterrows():
                 target_folder = os.path.abspath(args.out_dir_plots) + '/' + link_info['repository_name']
-                link_path = os.path.abspath(args.out_dir_plots) + '/' + 'solution_' + str(link_info['solution_rank'])
+                link_path = os.path.abspath(args.out_dir_plots) + '/' + 'solution_rank_' + str(link_info['solution_rank'])
                 try:
                     if os.path.islink(link_path):
                         os.unlink(link_path)

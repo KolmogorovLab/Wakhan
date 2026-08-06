@@ -98,12 +98,14 @@ def genes_phase_correction(df_genes, df_segs_hp1, df_segs_hp2, args, centers, in
 def update_genes_phase_corrected_coverage(args, df_segs_hp1, df_segs_hp2, p_value, centers, integer_fractional_centers, is_half):
 
     df_genes = csv_df_chromosomes_sorter(args.out_dir_plots + '/coverage_data/cancer_genes_coverage.csv', ['chr','start','end','gene', 'hp1', 'hp2'])
-    #write_df_csv_header(df_genes, args.out_dir_plots + '/' + str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_'+ str(p_value) +'/bed_output/' + 'cancer_genes_coverage.csv')
     df_genes = genes_phase_correction(df_genes, df_segs_hp1, df_segs_hp2, args, centers, integer_fractional_centers)
     if is_half:
-        write_df_csv_header(df_genes, args.out_dir_plots + '/wgd/' + str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_'+ str(p_value) +'/bed_output/' + 'genes_copynumber_states.bed')
+        genes_dir = args.out_dir_plots + '/wgd/solution_' + str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_'+ str(p_value) + '/genes'
     else:
-        write_df_csv_header(df_genes, args.out_dir_plots + '/' + str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_'+ str(p_value) +'/bed_output/' + 'genes_copynumber_states.bed')
+        genes_dir = args.out_dir_plots + '/solution_' + str(args.tumor_ploidy) + '_'+ str(args.tumor_purity) +'_'+ str(p_value) + '/genes'
+    if not os.path.isdir(genes_dir):
+        os.makedirs(genes_dir)
+    write_df_csv_header(df_genes, genes_dir + '/genes_copynumber_states.bed')
 
     return df_genes
 
