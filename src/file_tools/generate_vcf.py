@@ -215,7 +215,7 @@ def read_cn_segments_process_vcf(args, repo, type):
     if args.breakpoints:
         columns += ['svs_breakpoints_ids']
 
-    segs = pd.read_csv(args.out_dir_plots + '/' + repo + '/' + bed_filename, sep='\t', header=None, comment='#', names=columns)
+    segs = pd.read_csv(args.out_dir_plots + '/' + repo + '/' + bed_filename, sep='\t', header=None, comment='#', names=columns, na_filter=False)
     segs = segs.rename(columns={'hp1_coverage': 'depth', 'hp1_copynumber_state': 'state', 'hp1_confidence': 'p_value',
                                 'hp2_coverage': 'depth_2', 'hp2_copynumber_state': 'state_2', 'hp2_confidence': 'p_value_2'})
     segs['bps'] = segs['svs_breakpoints_ids'] if 'svs_breakpoints_ids' in segs.columns else ''
