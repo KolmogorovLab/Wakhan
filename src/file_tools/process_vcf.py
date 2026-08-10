@@ -513,50 +513,39 @@ def parse_pileup_line(line):
         'T': base_counts['T']
     }
 
-_ACGT_BATCH_SIZE = 50000
-
-
-def _parse_pileup_lines_chunk(lines):
-    return [parse_pileup_line(line) for line in lines if line.strip()]
-
-
-def _pileup_line_batches(path, batch_size):
-    """Stream batches of lines off disk rather than materializing the whole
-    file, since a genome-wide pileup (millions of het SNPs) can be large."""
-    with open(path) as infile:
-        batch = []
-        for line in infile:
-            batch.append(line)
-            if len(batch) >= batch_size:
-                yield batch
-                batch = []
-        if batch:
-            yield batch
-
-
 def compute_acgt_frequency(pileup, snps_frequency, args): #https://www.biostars.org/p/95700/
-    threads = max(1, getattr(args, 'threads', 1) or 1)
-    batches = _pileup_line_batches(pileup, _ACGT_BATCH_SIZE)
-
-    with open(snps_frequency, "w", newline='') as outfile:
+    with open(pileup) as infile, open(snps_frequency, "w", newline='') as outfile:
         writer = csv.DictWriter(outfile, fieldnames=["chrom", "pos", "A", "C", "G", "T"])
+        #writer.writeheader()
+        for line in infile:
+            row = parse_pileup_line(line)
+            writer.writerow(row)
 
-        if threads > 1:
-            # parse_pileup_line does a per-character scan in pure Python, so
-            # for millions of pileup lines (one per het SNP genome-wide) this
-            # stage is CPU-bound, not I/O-bound - split it across processes
-            # rather than parsing everything on a single core. Pool.imap_unordered
-            # pulls batches from the generator lazily (bounded look-ahead), and
-            # results are written as each batch completes, so peak memory stays
-            # proportional to a handful of in-flight batches rather than the
-            # whole file. Row order doesn't matter: the caller merges this
-            # output back onto the SNP table by (chr, start), not by position.
-            with multiprocessing.Pool(processes=threads) as pool:
-                for batch_rows in pool.imap_unordered(_parse_pileup_lines_chunk, batches):
-                    writer.writerows(batch_rows)
-        else:
-            for batch in batches:
-                writer.writerows(_parse_pileup_lines_chunk(batch))
+    ##############################################################
+    # with open(pileup, 'r') as f:
+    #     input_data = f.readlines()
+    # base_counts = []
+    # positions = []
+    # for line in input_data:
+    #     elements = line.strip().split('\t')
+    #     positions.append((elements[0], int(elements[1]), elements[2], elements[4]))
+    # with multiprocessing.Pool(processes=args.threads) as pool:
+    #     base_counts = list(pool.imap(count_bases, chunks(positions, 1000)))
+    # base_counts = [item for sublist in base_counts for item in sublist]
+    # with open(snps_frequency, 'w') as f:
+    #     writer = csv.writer(f)
+    #     writer.writerows(base_counts)
+    ###################################################################
+    # cmd = ['sequenza-utils', 'pileup2acgt', '-p', pileup,  '-o', "pileup2acgt.tsv"]
+    # process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+    # process.wait()
+    #
+    # # Read the TSV file
+    # df = pd.read_csv("pileup2acgt.tsv", sep="\t", header=None, skiprows=1) #names=['chr',	'n_base',	'ref_base',	'read.depth',	'A',	'C',	'G',	'T',	'strand'])
+    # # Select only columns 0, 1, 4, 5, 6, 7
+    # df_filtered = df.iloc[:, [0, 1, 4, 5, 6, 7]]
+    # # Save as a CSV file (comma-separated)
+    # df_filtered.to_csv(snps_frequency, index=False, header=False)
 
 
 def rephase_vcf(flip_bins_df, phasesets_df, loh_df, vcf_in, out_vcf, args):
