@@ -26,14 +26,39 @@ def normal_genome_proportion(p, l, C):
     return average_contribution_by_normal_genome, average_contribution_by_tumor_genome, combined_normal_coverage_fraction, per_haplotype
 
 
-def weigted_means_ploidy(args, df_hp_1, df_hp_2, centers, integer_fractional_means):
+def _centromere_match_mask(df, df_centm):
+    """Vectorized replacement for a nested per-row membership test: a
+    segment matches a centromere region if same chromosome, end matches
+    exactly, and start matches either exactly or is one less than the
+    centromere's start (same off-by-one tolerance as
+    centromere_regions_blacklist in src/utils/chromosome.py)."""
+    cent = df_centm[['chr', 'start', 'end']].rename(columns={'chr': 'chromosome'})
+    keyed = df[['chromosome', 'start', 'end']].reset_index(drop=True)
+    keyed['__row__'] = np.arange(len(keyed))
+
+    exact_rows = keyed.merge(cent, on=['chromosome', 'start', 'end'], how='inner')['__row__']
+
+    shifted = keyed.copy()
+    shifted['start'] = shifted['start'] - 1
+    offby1_rows = shifted.merge(cent, on=['chromosome', 'start', 'end'], how='inner')['__row__']
+
+    mask = np.zeros(len(df), dtype=bool)
+    matched = pd.concat([exact_rows, offby1_rows]).unique()
+    mask[matched] = True
+    return mask
+
+
+def weigted_means_ploidy(args, df_hp_1, df_hp_2, centers, integer_fractional_means, df_centm=None):
     df_1 = df_hp_1.copy()
     df_2 = df_hp_2.copy()
 
-    #fileDir = os.path.dirname(__file__)  # os.path.dirname(os.path.realpath('__file__'))
-    #cen_coord = os.path.join(fileDir, args.centromere)
-    df_centm = csv_df_chromosomes_sorter(args.centromere, ['chr', 'start', 'end'])
-    df_centm['start'] = df_centm['start'].mask(df_centm['start'] == 1, 0)
+    if df_centm is None:
+        # Callers that run this once per grid-search step (see
+        # copy_numbers_assignment_haplotypes in src/main.py) should read the
+        # centromere bed once and pass it in, rather than re-reading it from
+        # disk on every call.
+        df_centm = csv_df_chromosomes_sorter(args.centromere, ['chr', 'start', 'end'])
+        df_centm['start'] = df_centm['start'].mask(df_centm['start'] == 1, 0)
 
     for i in range(len(integer_fractional_means)):
         df_1['state'] = df_1['state'].mask(df_1['state'] == centers[i], integer_fractional_means[i])
@@ -45,13 +70,6 @@ def weigted_means_ploidy(args, df_hp_1, df_hp_2, centers, integer_fractional_mea
             lambda x: _max_cn_1 + round((x - centers[-1]) / _spacing_1) if x > centers[-1] else x
         )
 
-    vals = df_1.state.values.tolist()
-    weights = [i - j for i, j in zip(df_1.end.values.tolist(), df_1.start.values.tolist())]
-
-    df = pd.DataFrame({'chromosome': df_1.chromosome.values.tolist(), 'start': df_1.start.values.tolist(),
-                       'end': df_1.end.values.tolist(), 'weights': weights, 'state': vals})
-    df.to_csv(args.out_dir_plots + '/data/hp1_weights.tsv', sep='\t', index=False)
-
     for i in range(len(integer_fractional_means)):
         df_2['state'] = df_2['state'].mask(df_2['state'] == centers[i], integer_fractional_means[i])
     # Convert extrapolated high-CN states (coverage scale, above last center) to integer CN
@@ -62,42 +80,11 @@ def weigted_means_ploidy(args, df_hp_1, df_hp_2, centers, integer_fractional_mea
             lambda x: _max_cn_2 + round((x - centers[-1]) / _spacing_2) if x > centers[-1] else x
         )
 
-    vals = df_2.state.values.tolist()
-    weights = [i - j for i, j in zip(df_2.end.values.tolist(), df_2.start.values.tolist())]
+    df_1 = df_1[~_centromere_match_mask(df_1, df_centm)]
+    df_2 = df_2[~_centromere_match_mask(df_2, df_centm)]
 
-    df = pd.DataFrame({'chromosome': df_2.chromosome.values.tolist(), 'start': df_2.start.values.tolist(),
-                       'end': df_2.end.values.tolist(), 'weights': weights, 'state': vals})
-    df.to_csv(args.out_dir_plots + '/data/hp2_weights.tsv', sep='\t', index=False)
-    #########################
-    df_1 = pd.read_csv(args.out_dir_plots + '/data/hp1_weights.tsv', sep='\t')
-    cent_indices = []
-    for index, row in df_1.iterrows():
-        for index_cent, row_cent in df_centm.iterrows():
-            if row['chromosome'] == row_cent['chr'] and (
-                    ((row['start'] - 1) == row_cent['start'] or (row['start']) == row_cent['start']) and row['end'] == row_cent['end']):
-                cent_indices.append(index)
-
-    df_1 = df_1.drop(cent_indices)
-
-    vals = df_1.state.values.tolist()
-    weights = [i - j for i, j in zip(df_1.end.values.tolist(), df_1.start.values.tolist())]
-
-    hp_1 = weighted_means(vals, weights)
-    ########################
-    df_2 = pd.read_csv(args.out_dir_plots + '/data/hp2_weights.tsv', sep='\t')
-    cent_indices = []
-    for index, row in df_2.iterrows():
-        for index_cent, row_cent in df_centm.iterrows():
-            if row['chromosome'] == row_cent['chr'] and (
-                    ((row['start'] - 1) == row_cent['start'] or (row['start']) == row_cent['start']) and row['end'] == row_cent['end']):
-                cent_indices.append(index)
-
-    df_2 = df_2.drop(cent_indices)
-
-    vals = df_2.state.values.tolist()
-    weights = [i - j for i, j in zip(df_2.end.values.tolist(), df_2.start.values.tolist())]
-
-    hp_2 = weighted_means(vals, weights)
+    hp_1 = weighted_means(df_1.state.values.tolist(), (df_1.end - df_1.start).values.tolist())
+    hp_2 = weighted_means(df_2.state.values.tolist(), (df_2.end - df_2.start).values.tolist())
 
     return hp_1 + hp_2
 

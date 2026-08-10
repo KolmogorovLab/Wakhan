@@ -74,6 +74,11 @@ def copy_numbers_assignment_haplotypes(args, solutions_df, tumor_cov, max_limit,
 
     best_solution, best_solution_score = None, 0
 
+    # Centromere regions don't depend on normal_coverage, so read the bed once
+    # here rather than on every grid-search step inside weigted_means_ploidy.
+    df_centm_grid = csv_df_chromosomes_sorter(args.centromere, ['chr', 'start', 'end'])
+    df_centm_grid['start'] = df_centm_grid['start'].mask(df_centm_grid['start'] == 1, 0)
+
     #TODO: something strange happenes with 0 normal coverage, might be triggering and edge case somewhere
     for normal_coverage in np.arange(STEP, max_limit, STEP):
         if args.tumor_phased_vcf:
@@ -88,7 +93,7 @@ def copy_numbers_assignment_haplotypes(args, solutions_df, tumor_cov, max_limit,
         df_segs_hp1_updated, df_segs_hp2_updated = adjust_diversified_segments(cen_out, snps_cpd_means_df, df_segs_hp1, df_segs_hp2, args)
         p_value = average_p_value_genome(args, cen_out, df_segs_hp1_updated, df_segs_hp2_updated, df_hp1, df_hp2)
 
-        overall_ploidy = weigted_means_ploidy(args, df_segs_hp1_updated, df_segs_hp2_updated, cen_out, sorted([i for i in range(0, len(cen_out))]))
+        overall_ploidy = weigted_means_ploidy(args, df_segs_hp1_updated, df_segs_hp2_updated, cen_out, sorted([i for i in range(0, len(cen_out))]), df_centm_grid)
 
         if overall_ploidy < 0.1:
             continue

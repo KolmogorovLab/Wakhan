@@ -1,6 +1,5 @@
+import numpy as np
 import pandas as pd
-import statistics
-import math
 import logging
 
 logger = logging.getLogger()
@@ -10,6 +9,54 @@ from src.utils.chromosome import CENTROMERE_SENTINEL
 
 # Bins with fewer than this many het SNPs give an unreliable BAF estimate and are hidden from the plots.
 MIN_SNPS_PER_BAF_BIN = 5
+
+
+def _bin_vaf_values(bin_starts, positions, values, bin_size, min_snps):
+    """Assign each (position, value) pair to the bin whose start is the
+    largest bin_start <= position (matching the original 'pos < p < pos +
+    bin_size' semantics), and average the values landing in each bin.
+    `bin_starts` must be sorted ascending (true for both call sites: coverage
+    bins are emitted in genomic order per chromosome); `positions` need not
+    be sorted.
+
+    This replaces an O(n_bins * n_positions) Python-level nested scan with a
+    single vectorized searchsorted + bincount, which matters at genome scale
+    (millions of SNP positions against tens of thousands of bins)."""
+    bin_starts = np.asarray(bin_starts)
+    if len(bin_starts) == 0:
+        return []
+
+    positions = np.asarray(positions, dtype=np.float64)
+    values = np.asarray(values, dtype=np.float64)
+    finite = np.isfinite(positions) & np.isfinite(values)
+    positions = positions[finite]
+    values = values[finite]
+
+    means = np.full(len(bin_starts), float(CENTROMERE_SENTINEL))
+    if len(positions) == 0:
+        return means.tolist()
+
+    bin_idx = np.searchsorted(bin_starts, positions, side='right') - 1
+    in_range = bin_idx >= 0
+    bin_idx = bin_idx[in_range]
+    vals = values[in_range]
+    pos = positions[in_range]
+
+    # preserve the original strict bounds (pos < p < pos + bin_size): a
+    # position exactly equal to a bin start is excluded, matching the
+    # original nested-loop's strict '<' on both sides.
+    in_range2 = (pos > bin_starts[bin_idx]) & (pos < bin_starts[bin_idx] + bin_size)
+    bin_idx = bin_idx[in_range2]
+    vals = vals[in_range2]
+
+    sums = np.zeros(len(bin_starts))
+    counts = np.zeros(len(bin_starts), dtype=np.int64)
+    np.add.at(sums, bin_idx, vals)
+    np.add.at(counts, bin_idx, 1)
+
+    ok = counts >= min_snps
+    means[ok] = sums[ok] / counts[ok]
+    return means.tolist()
 
 
 """
@@ -67,13 +114,7 @@ def get_vafs_from_normal_phased_vcf(df_snps, df_coverages, chroms, args):
         # vaf = a/a+b
         vaf = [round(min(i,j) / (i + j + 0.0000001), 3) for i, j in zip(haplotype_1_coverage, haplotype_2_coverage)]
 
-        snps_het_vaf = []
-        for pos in starts_pos:
-            matched = [v for p, v in zip(haplotype_1_position, vaf) if pos < p < pos + args.bin_size]
-            if len(matched) < MIN_SNPS_PER_BAF_BIN:
-                snps_het_vaf.append(CENTROMERE_SENTINEL)
-            else:
-                snps_het_vaf.append(statistics.mean(matched))
+        snps_het_vaf = _bin_vaf_values(starts_pos, haplotype_1_position, vaf, args.bin_size, MIN_SNPS_PER_BAF_BIN)
 
         df_final.append(pd.DataFrame(list(zip([df['chr'].iloc[0] for ch in range(len(starts_pos))], starts_pos, snps_het_vaf)), columns=['chr', 'pos', 'vaf']))
 
@@ -113,14 +154,7 @@ def get_vafs_from_tumor_phased_vcf(df_snps, df_coverages, chroms, args):
 
         haplotype_1_coverage = list(map(lambda x: 1 - x if x > 0.5 else x, haplotype_1_coverage))
 
-        snps_het_vaf = []
-        for pos in starts_pos:
-            matched = [c for p, c in zip(haplotype_1_position, haplotype_1_coverage)
-                       if pos < p < pos + args.bin_size and not math.isnan(c)]
-            if len(matched) < MIN_SNPS_PER_BAF_BIN:
-                snps_het_vaf.append(CENTROMERE_SENTINEL)
-            else:
-                snps_het_vaf.append(statistics.mean(matched))
+        snps_het_vaf = _bin_vaf_values(starts_pos, haplotype_1_position, haplotype_1_coverage, args.bin_size, MIN_SNPS_PER_BAF_BIN)
 
         df_final.append(pd.DataFrame(list(zip([df['chr'].iloc[0] for ch in range(len(starts_pos))], starts_pos, snps_het_vaf)), columns=['chr', 'pos', 'vaf']))
 
