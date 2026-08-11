@@ -1,4 +1,6 @@
 import os
+from collections import defaultdict
+
 import pandas as pd
 from intervaltree import IntervalTree, Interval
 
@@ -44,13 +46,14 @@ def _compute_haplotype_segments_df(df_hp1, df_hp2, haplotype_df_, args, centers,
     haplotype_df['coverage'] = haplotype_df['coverage'].apply(lambda x: round(x, 2))
 
     if bps_ids_all is not None:
+        bp_trees = defaultdict(IntervalTree)
+        for bp in bps_ids_all:
+            pos = int(bp[1])
+            bp_trees[bp[0]].addi(pos, pos + 1, bp[2])
+
         bps_ids_global = []
-        for index, row in haplotype_df.iterrows():
-            bps_ids = set()
-            for bp in bps_ids_all:
-                if bp[0] == row['chr'] and int(bp[1]) >= int(row['start']) and int(bp[1]) <= int(row['end']):
-                    bps_ids.add(bp[2])
-            bps_ids_global.append(bps_ids)
+        for chrom, start, end in zip(haplotype_df['chr'], haplotype_df['start'], haplotype_df['end']):
+            bps_ids_global.append({iv.data for iv in bp_trees[chrom][int(start):int(end) + 1]})
         haplotype_df['svs_breakpoints_ids'] = bps_ids_global
 
     return haplotype_df
