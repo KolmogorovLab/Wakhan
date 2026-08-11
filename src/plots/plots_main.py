@@ -111,7 +111,7 @@ def copy_number_plots_per_chromosome(centers, integer_fractional_means, ref_star
 
         if loh_region_starts:
             for k, (start_loh,end_loh) in enumerate(zip(loh_region_starts, loh_region_ends)):
-                fig.add_vrect(x0=start_loh, x1=end_loh, fillcolor="#f1c40f", opacity=0.5, layer="below", line_width=0.5, )
+                fig.add_vrect(x0=start_loh, x1=end_loh, fillcolor="#f1c40f", opacity=0.5, layer="below", line_width=0.5, exclude_empty_subplots=False)
 
         plots_layout_settings(fig, chrom, args, haplotype_1_end_values_copyratios[-1:][0], args.cut_threshold)
         if args.without_phasing:
@@ -795,11 +795,11 @@ def copy_number_plots_genome_details(centers, integer_fractional_centers, df_cnr
     for index, chrom in enumerate(chroms):
         current += lengths[index]
         label_pos.append(round(offset_chroms+regions[index]//2)) #y0=-10, y1=args.cut_threshold
-        fig.add_vline(x=offset_chroms,  line_width=1, line_dash="solid", line_color="#D7DBDD")
+        fig.add_vline(x=offset_chroms,  line_width=1, line_dash="solid", line_color="#D7DBDD", exclude_empty_subplots=False)
         offset_chroms_1 += regions[index]
 
         if index % 2 == 0:
-            fig.add_vrect(x0=offset_chroms, x1=offset_chroms_1, fillcolor="#E5E7E9", opacity=0.9, layer="below", line_width=0, )
+            fig.add_vrect(x0=offset_chroms, x1=offset_chroms_1, fillcolor="#E5E7E9", opacity=0.9, layer="below", line_width=0, exclude_empty_subplots=False)
         offset_chroms += regions[index]
 
     fig.update_layout(
@@ -1181,18 +1181,18 @@ def copy_number_plots_genome_breakpoints_cytos(centers, integer_fractional_cente
         current += lengths[index]
         label_pos.append(round(offset_chroms+regions[index]//2))
 
-        fig.add_vline(x=offset_chroms,  line_width=1, line_dash="solid", line_color="#D7DBDD")
+        fig.add_vline(x=offset_chroms,  line_width=1, line_dash="solid", line_color="#D7DBDD", exclude_empty_subplots=False)
 
         offset_chroms_1 += regions[index]
 
         if index % 2 == 0:
-            fig.add_vrect(x0=offset_chroms, x1=offset_chroms_1, fillcolor="#E5E7E9", opacity=0.9, layer="below", line_width=0, )
+            fig.add_vrect(x0=offset_chroms, x1=offset_chroms_1, fillcolor="#E5E7E9", opacity=0.9, layer="below", line_width=0, exclude_empty_subplots=False)
 
         if len(loh_starts) and args.loh_enable:
             for i in range(len(df_loh_region.start.values.tolist())):
-                fig.add_vrect(x0=offset_chroms+loh_starts[i], x1=offset_chroms+loh_ends[i], fillcolor="#2980b9", opacity=0.3, layer="below", line_width=0, row=2, col=1,)
+                fig.add_vrect(x0=offset_chroms+loh_starts[i], x1=offset_chroms+loh_ends[i], fillcolor="#2980b9", opacity=0.3, layer="below", line_width=0, row=2, col=1, exclude_empty_subplots=False)
         if len(cent_starts) and args.loh_enable:
-            fig.add_vrect(x0=offset_chroms+cent_starts[0], x1=offset_chroms+cent_ends[0], fillcolor="#7e1f14", opacity=0.3, layer="above", line_width=0, row=2, col=1,)
+            fig.add_vrect(x0=offset_chroms+cent_starts[0], x1=offset_chroms+cent_ends[0], fillcolor="#7e1f14", opacity=0.3, layer="above", line_width=0, row=2, col=1, exclude_empty_subplots=False)
 
         offset_chroms += regions[index]
 
@@ -1617,18 +1617,18 @@ def copy_number_plots_genome_breakpoints(centers, integer_fractional_centers, df
         current += lengths[index]
         label_pos.append(round(offset_chroms+regions[index]//2))
 
-        fig.add_vline(x=offset_chroms,  line_width=1, line_dash="solid", line_color="#D7DBDD")
+        fig.add_vline(x=offset_chroms,  line_width=1, line_dash="solid", line_color="#D7DBDD", exclude_empty_subplots=False)
 
         offset_chroms_1 += regions[index]
 
         if index % 2 == 0:
-            fig.add_vrect(x0=offset_chroms, x1=offset_chroms_1, fillcolor="#E5E7E9", opacity=0.9, layer="below", line_width=0, )
+            fig.add_vrect(x0=offset_chroms, x1=offset_chroms_1, fillcolor="#E5E7E9", opacity=0.9, layer="below", line_width=0, exclude_empty_subplots=False)
 
         if len(loh_starts) and args.loh_enable:
             for i in range(len(df_loh_region.start.values.tolist())):
-                fig.add_vrect(x0=offset_chroms+loh_starts[i], x1=offset_chroms+loh_ends[i], fillcolor="#2980b9", opacity=0.3, layer="below", line_width=0, row=2, col=1,)
+                fig.add_vrect(x0=offset_chroms+loh_starts[i], x1=offset_chroms+loh_ends[i], fillcolor="#2980b9", opacity=0.3, layer="below", line_width=0, row=2, col=1, exclude_empty_subplots=False)
         if len(cent_starts) and args.loh_enable:
-            fig.add_vrect(x0=offset_chroms+cent_starts[0], x1=offset_chroms+cent_ends[0], fillcolor="#7e1f14", opacity=0.3, layer="above", line_width=0, row=2, col=1,)
+            fig.add_vrect(x0=offset_chroms+cent_starts[0], x1=offset_chroms+cent_ends[0], fillcolor="#7e1f14", opacity=0.3, layer="above", line_width=0, row=2, col=1, exclude_empty_subplots=False)
 
         offset_chroms += regions[index]
 
@@ -2005,18 +2005,18 @@ def copy_number_plots_genome(centers, integer_fractional_centers, df_cnr_hp1, df
         current += lengths[index]
         label_pos.append(round(offset_chroms+regions[index]//2))
 
-        fig.add_vline(x=offset_chroms,  line_width=1, line_dash="solid", line_color="#D7DBDD")
+        fig.add_vline(x=offset_chroms,  line_width=1, line_dash="solid", line_color="#D7DBDD", exclude_empty_subplots=False)
 
         offset_chroms_1 += regions[index]
 
         if index % 2 == 0:
-            fig.add_vrect(x0=offset_chroms, x1=offset_chroms_1, fillcolor="#E5E7E9", opacity=0.9, layer="below", line_width=0, )
+            fig.add_vrect(x0=offset_chroms, x1=offset_chroms_1, fillcolor="#E5E7E9", opacity=0.9, layer="below", line_width=0, exclude_empty_subplots=False)
 
         if len(loh_starts) and args.loh_enable:
             for i in range(len(df_loh_region.start.values.tolist())):
-                fig.add_vrect(x0=offset_chroms+loh_starts[i], x1=offset_chroms+loh_ends[i], fillcolor="#2980b9", opacity=0.3, layer="below", line_width=0, row=1, col=1,)
+                fig.add_vrect(x0=offset_chroms+loh_starts[i], x1=offset_chroms+loh_ends[i], fillcolor="#2980b9", opacity=0.3, layer="below", line_width=0, row=1, col=1, exclude_empty_subplots=False)
         if len(cent_starts) and args.loh_enable:
-            fig.add_vrect(x0=offset_chroms+cent_starts[0], x1=offset_chroms+cent_ends[0], fillcolor="#7e1f14", opacity=0.3, layer="above", line_width=0, row=1, col=1,)
+            fig.add_vrect(x0=offset_chroms+cent_starts[0], x1=offset_chroms+cent_ends[0], fillcolor="#7e1f14", opacity=0.3, layer="above", line_width=0, row=1, col=1, exclude_empty_subplots=False)
 
         offset_chroms += regions[index]
 
@@ -2501,7 +2501,7 @@ def copy_number_plots_genome_breakpoints_subclonal_cytos(centers, integer_fracti
         current += lengths[index]
         label_pos.append(round(offset_chroms+regions[index]//2))
 
-        fig.add_vline(x=offset_chroms,  line_width=1, line_dash="solid", line_color="#D7DBDD")
+        fig.add_vline(x=offset_chroms,  line_width=1, line_dash="solid", line_color="#D7DBDD", exclude_empty_subplots=False)
 
         #label_chrms.append('0')
         #label_chrms.append(str(((lengths[index]//2) + regions[index])// 1000000)+'M')
@@ -2509,13 +2509,13 @@ def copy_number_plots_genome_breakpoints_subclonal_cytos(centers, integer_fracti
         offset_chroms_1 += regions[index]
 
         if index % 2 == 0:
-            fig.add_vrect(x0=offset_chroms, x1=offset_chroms_1, fillcolor="#E5E7E9", opacity=0.9, layer="below", line_width=0, )
+            fig.add_vrect(x0=offset_chroms, x1=offset_chroms_1, fillcolor="#E5E7E9", opacity=0.9, layer="below", line_width=0, exclude_empty_subplots=False)
 
         if len(loh_starts) and args.loh_enable:
             for i in range(len(df_loh_region.start.values.tolist())):
-                fig.add_vrect(x0=offset_chroms+loh_starts[i], x1=offset_chroms+loh_ends[i], fillcolor="#2980b9", opacity=0.3, layer="below", line_width=0, row=2, col=1,)
+                fig.add_vrect(x0=offset_chroms+loh_starts[i], x1=offset_chroms+loh_ends[i], fillcolor="#2980b9", opacity=0.3, layer="below", line_width=0, row=2, col=1, exclude_empty_subplots=False)
         if len(cent_starts) and args.loh_enable:
-            fig.add_vrect(x0=offset_chroms+cent_starts[0], x1=offset_chroms+cent_ends[0], fillcolor="#7e1f14", opacity=0.3, layer="above", line_width=0, row=2, col=1,)
+            fig.add_vrect(x0=offset_chroms+cent_starts[0], x1=offset_chroms+cent_ends[0], fillcolor="#7e1f14", opacity=0.3, layer="above", line_width=0, row=2, col=1, exclude_empty_subplots=False)
 
         offset_chroms += regions[index]
 
@@ -3023,7 +3023,7 @@ def copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_c
         current += lengths[index]
         label_pos.append(round(offset_chroms+regions[index]//2))
 
-        fig.add_vline(x=offset_chroms,  line_width=1, line_dash="solid", line_color="#D7DBDD")
+        fig.add_vline(x=offset_chroms,  line_width=1, line_dash="solid", line_color="#D7DBDD", exclude_empty_subplots=False)
 
         #label_chrms.append('0')
         #label_chrms.append(str(((lengths[index]//2) + regions[index])// 1000000)+'M')
@@ -3031,13 +3031,13 @@ def copy_number_plots_genome_breakpoints_subclonal(centers, integer_fractional_c
         offset_chroms_1 += regions[index]
 
         if index % 2 == 0:
-            fig.add_vrect(x0=offset_chroms, x1=offset_chroms_1, fillcolor="#E5E7E9", opacity=0.9, layer="below", line_width=0, )
+            fig.add_vrect(x0=offset_chroms, x1=offset_chroms_1, fillcolor="#E5E7E9", opacity=0.9, layer="below", line_width=0, exclude_empty_subplots=False)
 
         if len(loh_starts) and args.loh_enable:
             for i in range(len(df_loh_region.start.values.tolist())):
-                fig.add_vrect(x0=offset_chroms+loh_starts[i], x1=offset_chroms+loh_ends[i], fillcolor="#2980b9", opacity=0.3, layer="below", line_width=0, row=2, col=1,)
+                fig.add_vrect(x0=offset_chroms+loh_starts[i], x1=offset_chroms+loh_ends[i], fillcolor="#2980b9", opacity=0.3, layer="below", line_width=0, row=2, col=1, exclude_empty_subplots=False)
         if len(cent_starts) and args.loh_enable:
-            fig.add_vrect(x0=offset_chroms+cent_starts[0], x1=offset_chroms+cent_ends[0], fillcolor="#7e1f14", opacity=0.3, layer="above", line_width=0, row=2, col=1,)
+            fig.add_vrect(x0=offset_chroms+cent_starts[0], x1=offset_chroms+cent_ends[0], fillcolor="#7e1f14", opacity=0.3, layer="above", line_width=0, row=2, col=1, exclude_empty_subplots=False)
 
         offset_chroms += regions[index]
 
@@ -3442,18 +3442,18 @@ def copy_number_plots_genome_subclonal(centers, integer_fractional_centers, df_c
         current += lengths[index]
         label_pos.append(round(offset_chroms+regions[index]//2))
 
-        fig.add_vline(x=offset_chroms,  line_width=1, line_dash="solid", line_color="#D7DBDD")
+        fig.add_vline(x=offset_chroms,  line_width=1, line_dash="solid", line_color="#D7DBDD", exclude_empty_subplots=False)
 
         offset_chroms_1 += regions[index]
 
         if index % 2 == 0:
-            fig.add_vrect(x0=offset_chroms, x1=offset_chroms_1, fillcolor="#E5E7E9", opacity=0.9, layer="below", line_width=0, )
+            fig.add_vrect(x0=offset_chroms, x1=offset_chroms_1, fillcolor="#E5E7E9", opacity=0.9, layer="below", line_width=0, exclude_empty_subplots=False)
 
         if len(loh_starts) and args.loh_enable:
             for i in range(len(df_loh_region.start.values.tolist())):
-                fig.add_vrect(x0=offset_chroms+loh_starts[i], x1=offset_chroms+loh_ends[i], fillcolor="#2980b9", opacity=0.3, layer="below", line_width=0, row=1, col=1,)
+                fig.add_vrect(x0=offset_chroms+loh_starts[i], x1=offset_chroms+loh_ends[i], fillcolor="#2980b9", opacity=0.3, layer="below", line_width=0, row=1, col=1, exclude_empty_subplots=False)
         if len(cent_starts) and args.loh_enable:
-            fig.add_vrect(x0=offset_chroms+cent_starts[0], x1=offset_chroms+cent_ends[0], fillcolor="#7e1f14", opacity=0.3, layer="above", line_width=0, row=1, col=1,)
+            fig.add_vrect(x0=offset_chroms+cent_starts[0], x1=offset_chroms+cent_ends[0], fillcolor="#7e1f14", opacity=0.3, layer="above", line_width=0, row=1, col=1, exclude_empty_subplots=False)
 
         offset_chroms += regions[index]
 
@@ -3849,12 +3849,12 @@ def genes_copy_number_plots_genome(df_genes, centers, integer_fractional_centers
         current += lengths[index]
         label_pos.append(round(offset_chroms+regions[index]//2))
 
-        fig.add_vline(x=offset_chroms,  line_width=1, line_dash="solid", line_color="#D7DBDD")
+        fig.add_vline(x=offset_chroms,  line_width=1, line_dash="solid", line_color="#D7DBDD", exclude_empty_subplots=False)
 
         offset_chroms_1 += regions[index]
 
         if index % 2 == 0:
-            fig.add_vrect(x0=offset_chroms, x1=offset_chroms_1, fillcolor="#E5E7E9", opacity=0.9, layer="below", line_width=0, )
+            fig.add_vrect(x0=offset_chroms, x1=offset_chroms_1, fillcolor="#E5E7E9", opacity=0.9, layer="below", line_width=0, exclude_empty_subplots=False)
 
         # if len(loh_starts) and args.loh_enable:
         #     for i in range(len(df_loh_region.start.values.tolist())):
@@ -4282,13 +4282,13 @@ def genes_plots_genome(df_genes, centers, integer_fractional_centers, df_cnr_hp1
         current += lengths[index]
         label_pos.append(round(offset_chroms + regions[index] // 2))
 
-        fig.add_vline(x=offset_chroms, line_width=1, line_dash="solid", line_color="#D7DBDD")
+        fig.add_vline(x=offset_chroms, line_width=1, line_dash="solid", line_color="#D7DBDD", exclude_empty_subplots=False)
 
         offset_chroms_1 += regions[index]
 
         if index % 2 == 0:
             fig.add_vrect(x0=offset_chroms, x1=offset_chroms_1, fillcolor="#E5E7E9", opacity=0.9, layer="below",
-                          line_width=0, )
+                          line_width=0, exclude_empty_subplots=False)
 
         # if len(loh_starts) and args.loh_enable:
         #     for i in range(len(df_loh_region.start.values.tolist())):
@@ -4626,7 +4626,7 @@ def heatmap_copy_number_plots_genome(df_genes, centers, integer_fractional_cente
             #               ),
             #               fillcolor="#E5E7E9")
 
-            fig.add_vrect(x0=current, x1=current+lengths[index], fillcolor="#E5E7E9", opacity=0.8, layer="below", line_width=5, )
+            fig.add_vrect(x0=current, x1=current+lengths[index], fillcolor="#E5E7E9", opacity=0.8, layer="below", line_width=5, exclude_empty_subplots=False)
 
         label_pos.append(round(current + lengths[index] // 2))
         current += lengths[index]
