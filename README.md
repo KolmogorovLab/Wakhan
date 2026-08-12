@@ -260,9 +260,9 @@ Each `solution_<ploidy>_<purity>_<confidence>` directory contains:
 * `subclonal_profile.html`, `subclonal_profile.bed`, `subclonal_profile.vcf` Same as above, for subclonal/fractional copy numbers (`--copynumbers-subclonal-enable`)
 * `genes/genes_copynumber_states.html`, `genes/genes_copynumber_states.bed` Copy number states for cancer genes
 
-Following are coverage and SNPs/LOH plots and bed directories in output folder, independent of CNA analysis
+Following are additional outputs, independent of CNA profiles
 
-* `snps_loh_plots` SNPs and SNPs ratios plots with LOH representation in chromosomes-scale and genome-wide (in tumor-only mode), including `snps_loh_plots/<genome-name>_genome_snps_ratio_loh.html` (genome-wide LOH plot)
+* `snps_loh_plots` SNPs and SNPs ratios plots with LOH representation in chromosomes-scale and genome-wide (in tumor-only mode)
 * `coverage_plots` Haplotype specific coverage plots for chromosomes with option for unphased coverage
 * `coverage_data` Haplotype specific phase-corrected coverage data including SNPs pileup
 * `phasing_output` Phase-switch error correction plots and phase corrected VCF file (rephased.vcf.gz)
