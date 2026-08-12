@@ -112,7 +112,7 @@ Alternatively, user can use following commands to mimic this workflow:
 
 ```
 #Wakhan hapcorrect()
-python wakhan.py hapcorrect --threads 16 --reference  ${REF_FASTA}  --target-bam ${BAM_T}  --normal-phased-vcf ${VCF}  --genome-name ${SAMPLE_T}
+python wakhan.py hapcorrect --threads 16 --reference  ${REF_FASTA}  --target-bam ${BAM_T}  --normal-phased-vcf ${VCF}  --genome-name ${SAMPLE_T} --out-dir-plots ${SAMPLE_T}
 
 VCF='<genome_abc_output>/phasing_output/rephased.vcf.gz'
 
@@ -135,7 +135,7 @@ severus --target-bam ${SAMPLE_T}.haplotagged.bam --control-bam ${SAMPLE_N}.haplo
     -t 16 --phasing-vcf ${VCF} --vntr-bed ./vntrs/human_GRCh38_no_alt_analysis_set.trf.bed
 
 #Wakhan cna() tumor-normal mode
-python wakhan.py cna --threads 16 --reference  ${REF_FASTA}  --target-bam ${BAM_T}  --normal-phased-vcf ${VCF}  --genome-name ${SAMPLE_T} \
+python wakhan.py cna --threads 16 --reference  ${REF_FASTA}  --target-bam ${BAM_T}  --normal-phased-vcf ${VCF}  --genome-name ${SAMPLE_T} --out-dir-plots ${SAMPLE_T} \
     --breakpoints severus_out/severus_somatic.vcf --use-sv-haplotypes
 ```
 
@@ -161,7 +161,7 @@ severus --target-bam ${SAMPLE_T}.haplotagged.bam --out-dir severus_out -t 16 --p
     --vntr-bed ./vntrs/human_GRCh38_no_alt_analysis_set.trf.bed --PON ./pon/PoN_1000G_hg38.tsv.gz
 
 #Wakhan cna() tumor-only mode
-python wakhan.py cna --threads 16 --reference  ${REF_FASTA}  --target-bam ${BAM_T}  --tumor-phased-vcf ${VCF}  --genome-name ${SAMPLE_T} \
+python wakhan.py cna --threads 16 --reference  ${REF_FASTA}  --target-bam ${BAM_T}  --tumor-phased-vcf ${VCF}  --genome-name ${SAMPLE_T} --out-dir-plots ${SAMPLE_T} \
     --breakpoints severus_out/severus_somatic.vcf --use-sv-haplotypes
 ```
 
@@ -185,17 +185,17 @@ python wakhan.py cna --threads 16 --reference  ${REF_FASTA}  --target-bam ${BAM_
 
 ## Useful optional parameters
 
-* `--contigs` List of contigs (chromosomes, default: chr1-22,chrX) to be included in the plots [e.g., chr1-22,chrX,chrY], Note: Please use 1-22,X [e.g., 1-22,X,Y] in case REF, BAM, and VCFs entries don't contain `chr` name/notion, same should be observed in `--centromere` and `--cancer-genes` params in case no `chr` in names, use `*_nochr.bed` instead available in `src/annotations` or customized.
+* `--contigs` List of contigs (chromosomes, default: chr1-22,chrX) to be included in the plots [e.g., chr1-22,chrX,chrY], Note: Please use 1-22,X [e.g., 1-22,X,Y] in case REF, BAM, and VCFs entries don't contain `chr` name/notion, same should be observed in `--centromere-bed` and `--cancer-genes` params in case no `chr` in names, use `*_nochr.bed` instead available in `src/annotations` or customized.
 
 * `--use-sv-haplotypes` To use phased Severus SV/breakpoints [default: disabled]
 
 * `--cpd-internal-segments` For change point detection algo on internal segments after breakpoint/cpd algo for more precise segmentation.
 
-* `--cut-threshold` Maximum cut threshold for coverage (readdepth) plots [default: 100]
+* `--cut-threshold` Maximum cut threshold for coverage (readdepth) plots [default: auto-inferred from longest segments]
 
-* `--centromere` Path to centromere annotations BED file [default: annotations/grch38.cen_coord.curated.bed]
+* `--centromere-bed` Path to centromere annotations BED file [default: annotations/grch38.cen_coord.curated.bed]
 
-* `--cancer-genes` Path to Cancer Genes in TSV format to display in CNA plots [default: annotations/CancerGenes.tsv]
+* `--cancer-genes` Path to Cancer Genes in TSV format to display in CNA plots [default: annotations/COSMIC_cancer_genes.tsv]
 
 * `--pdf-enable` Enabling PDF output for plots
 
@@ -207,7 +207,7 @@ Use the `--without-phasing` to enable unphased mode.
 A sample command-line for running a mouse genome analysis in unphased mode (note additional argument for centromere annotation)
 
 ```
-python wakhan.py all --threads 16 --reference MM_10  --target-bam TUMOR.bam --tumor-phased-vcf TUMOR.vcf --out-dir-plots OUT_DIR --genome-name SAMPLE --breakpoints SEVERUS_SOMATIC.vcf --without-phasing --centromere WAKHAN_DIR/annotations/mouse_chr.bed> [--contigs chr1-19,chrX]
+python wakhan.py all --threads 16 --reference MM_10  --target-bam TUMOR.bam --tumor-phased-vcf TUMOR.vcf --out-dir-plots OUT_DIR --genome-name SAMPLE --breakpoints SEVERUS_SOMATIC.vcf --without-phasing --centromere-bed WAKHAN_DIR/annotations/mouse_cent.bed> [--contigs chr1-19,chrX]
 ```
 
 Here is a sample copy number/breakpoints output plot without phasing for a mouse subline dataset.
@@ -220,7 +220,7 @@ However, if `--breakpoints` option is not used, `--change-point-detection-for-cn
 
 ##### Tumor-Normal mixture and purity/ploidy estimation
 
-User can input both `--ploidy-range` [default: 1.5-5.5 -> [min-max]] and `--purity-range` [default: 0.5-1.0 -> [min-max] to inform copy number model about normal contamination in tumor to estimate copy number states correctly.
+User can input both `--ploidy-range` [default: 1.0-5.5 -> [min-max]] and `--purity-range` [default: 0.25-1.0 -> [min-max] to inform copy number model about normal contamination in tumor to estimate copy number states correctly.
 
 ##### Genes/copy number annotations
 
@@ -262,8 +262,7 @@ Each `solution_<ploidy>_<purity>_<confidence>` directory contains:
 
 Following are coverage and SNPs/LOH plots and bed directories in output folder, independent of CNA analysis
 
-* `snps_loh_plots` SNPs and SNPs ratios plots with LOH representation in chromosomes-scale and genome-wide (in tumor-only mode)
-* `<genome-name>_genome_loh.html` Genome-wide LOH plot (in tumor-only mode)
+* `snps_loh_plots` SNPs and SNPs ratios plots with LOH representation in chromosomes-scale and genome-wide (in tumor-only mode), including `snps_loh_plots/<genome-name>_genome_snps_ratio_loh.html` (genome-wide LOH plot)
 * `coverage_plots` Haplotype specific coverage plots for chromosomes with option for unphased coverage
 * `coverage_data` Haplotype specific phase-corrected coverage data including SNPs pileup
 * `phasing_output` Phase-switch error correction plots and phase corrected VCF file (rephased.vcf.gz)
