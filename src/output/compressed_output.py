@@ -5,9 +5,7 @@ import logging
 import zipfile
 from pathlib import Path
 
-
-logger = logging.getLogger("wakhan_hiscanner_zip")
-
+logger = logging.getLogger()
 
 def create_hiscanner_plot_data_archives(
     out_dir,
