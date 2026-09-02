@@ -21,8 +21,9 @@ def create_hiscanner_plot_data_archives(
         out_dir/
         ├── solution_1 -> solution_<...>
         ├── solution_2 -> solution_<...>
-        ├── solution_rank_1 -> solution_<...>   # also supported
+        ├── solution_rank_1 -> solution_<...>
         ├── solution_rank_2 -> solution_<...>
+        ├── solutions_ranks.tsv
         │
         ├── coverage_data/
         │   ├── phase_corrected_coverage.csv
@@ -31,7 +32,9 @@ def create_hiscanner_plot_data_archives(
         │
         ├── solution_<...>/
         │   ├── integer_profile.bed
-        │   └── subclonal_profile.bed
+        │   ├── subclonal_profile.bed
+        │   └── genes/
+        │       └── genes_copynumber_states.bed
         └── ...
 
     Creates:
@@ -44,11 +47,13 @@ def create_hiscanner_plot_data_archives(
 
         integer_profile.bed
         subclonal_profile.bed
+        genes_copynumber_states.bed
         phase_corrected_coverage.csv
         baf.csv
         <genome-name>_loh_segments.csv   # if available
         <centromere-bed-name>
         severus_somatic.vcf
+        solutions_ranks.tsv
     """
 
     out_dir = Path(out_dir).resolve()
@@ -57,13 +62,22 @@ def create_hiscanner_plot_data_archives(
 
     genome_name = str(genome_name)
 
+    # ------------------------------------------------------------------
+    # Validate output directory
+    # ------------------------------------------------------------------
+
     if not out_dir.exists():
         raise FileNotFoundError(
             f"Working/output directory does not exist: {out_dir}"
         )
 
+    if not out_dir.is_dir():
+        raise NotADirectoryError(
+            f"Output path is not a directory: {out_dir}"
+        )
+
     # ------------------------------------------------------------------
-    # Validate common input files
+    # Validate common files
     # ------------------------------------------------------------------
 
     if not breakpoints.exists():
@@ -75,6 +89,21 @@ def create_hiscanner_plot_data_archives(
         raise FileNotFoundError(
             f"Centromere BED file does not exist: {centromere_bed}"
         )
+
+    # ------------------------------------------------------------------
+    # solutions_ranks.tsv
+    # ------------------------------------------------------------------
+
+    solutions_ranks = out_dir / "solutions_ranks.tsv"
+
+    if not solutions_ranks.exists():
+        raise FileNotFoundError(
+            f"Missing solutions ranks file: {solutions_ranks}"
+        )
+
+    # ------------------------------------------------------------------
+    # Coverage files
+    # ------------------------------------------------------------------
 
     coverage_dir = out_dir / "coverage_data"
 
@@ -89,18 +118,6 @@ def create_hiscanner_plot_data_archives(
 
     baf = coverage_dir / "baf.csv"
 
-    # Optional file.
-    #
-    # Example:
-    #   --genome-name H2009
-    #
-    # looks for:
-    #   coverage_data/H2009_loh_segments.csv
-    #
-    loh_segments = (
-        coverage_dir / f"{genome_name}_loh_segments.csv"
-    )
-
     if not phase_corrected_coverage.exists():
         raise FileNotFoundError(
             f"Missing required coverage file: "
@@ -110,6 +127,25 @@ def create_hiscanner_plot_data_archives(
     if not baf.exists():
         raise FileNotFoundError(
             f"Missing required BAF file: {baf}"
+        )
+
+    # ------------------------------------------------------------------
+    # Optional LOH segments file
+    # ------------------------------------------------------------------
+
+    loh_segments = (
+        coverage_dir / f"{genome_name}_loh_segments.csv"
+    )
+
+    if loh_segments.exists():
+        logger.info(
+            "Found optional LOH segments file: %s",
+            loh_segments,
+        )
+    else:
+        logger.info(
+            "Optional LOH segments file not found: %s",
+            loh_segments,
         )
 
     # ------------------------------------------------------------------
@@ -124,9 +160,6 @@ def create_hiscanner_plot_data_archives(
     #
     #   solution_rank_1
     #   solution_rank_2
-    #
-    # The solution symlink itself is not stored in the ZIP.
-    # We resolve it and copy files from the actual target directory.
     # ------------------------------------------------------------------
 
     solution_links = {}
@@ -173,21 +206,6 @@ def create_hiscanner_plot_data_archives(
     )
 
     # ------------------------------------------------------------------
-    # Report optional LOH file
-    # ------------------------------------------------------------------
-
-    if loh_segments.exists():
-        logger.info(
-            "Found optional LOH segments file: %s",
-            loh_segments,
-        )
-    else:
-        logger.info(
-            "Optional LOH segments file not found: %s",
-            loh_segments,
-        )
-
-    # ------------------------------------------------------------------
     # Create ZIP for every solution
     # ------------------------------------------------------------------
 
@@ -228,6 +246,13 @@ def create_hiscanner_plot_data_archives(
             solution_dir / "subclonal_profile.bed"
         )
 
+        # New: genes/genes_copynumber_states.bed
+        genes_copynumber_states = (
+            solution_dir
+            / "genes"
+            / "genes_copynumber_states.bed"
+        )
+
         if not integer_profile.exists():
             raise FileNotFoundError(
                 f"Missing integer profile for solution "
@@ -238,6 +263,13 @@ def create_hiscanner_plot_data_archives(
             raise FileNotFoundError(
                 f"Missing subclonal profile for solution "
                 f"{solution_number}: {subclonal_profile}"
+            )
+
+        if not genes_copynumber_states.exists():
+            raise FileNotFoundError(
+                f"Missing gene copy-number states for solution "
+                f"{solution_number}: "
+                f"{genes_copynumber_states}"
             )
 
         # --------------------------------------------------------------
@@ -251,8 +283,7 @@ def create_hiscanner_plot_data_archives(
 
         zip_path = out_dir / zip_name
 
-        # Remove existing ZIP so rerunning the command produces
-        # a clean archive.
+        # Remove existing ZIP.
         if zip_path.exists():
             logger.info(
                 "Removing existing archive: %s",
@@ -276,7 +307,10 @@ def create_hiscanner_plot_data_archives(
             compresslevel=6,
         ) as zf:
 
+            # ----------------------------------------------------------
             # Solution-specific files
+            # ----------------------------------------------------------
+
             zf.write(
                 integer_profile,
                 arcname="integer_profile.bed",
@@ -287,7 +321,15 @@ def create_hiscanner_plot_data_archives(
                 arcname="subclonal_profile.bed",
             )
 
-            # Common coverage files
+            zf.write(
+                genes_copynumber_states,
+                arcname="genes_copynumber_states.bed",
+            )
+
+            # ----------------------------------------------------------
+            # Coverage files
+            # ----------------------------------------------------------
+
             zf.write(
                 phase_corrected_coverage,
                 arcname="phase_corrected_coverage.csv",
@@ -299,7 +341,7 @@ def create_hiscanner_plot_data_archives(
             )
 
             # ----------------------------------------------------------
-            # Optional LOH segments file
+            # Optional LOH segments
             # ----------------------------------------------------------
 
             if loh_segments.exists():
@@ -326,12 +368,21 @@ def create_hiscanner_plot_data_archives(
             # SeveRus somatic VCF
             #
             # Regardless of the original --breakpoints filename,
-            # store it in the archive as severus_somatic.vcf.
+            # store it as severus_somatic.vcf.
             # ----------------------------------------------------------
 
             zf.write(
                 breakpoints,
                 arcname="severus_somatic.vcf",
+            )
+
+            # ----------------------------------------------------------
+            # Wakhan solution ranking
+            # ----------------------------------------------------------
+
+            zf.write(
+                solutions_ranks,
+                arcname="solutions_ranks.tsv",
             )
 
         created_archives.append(zip_path)
