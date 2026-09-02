@@ -19,6 +19,7 @@ from src.__version__ import __version__
 
 from src.file_tools.process_bam import get_all_reads_parallel, update_coverage_hist, get_segments_coverage, ref_bam_vcfs_nomenclature_check
 from src.output.genes import update_genes_phase_corrected_coverage
+from src.output.compressed_output import create_hiscanner_plot_data_archives
 from src.output.writers import write_copynumber_segments_csv, write_unphased_copynumber_segments_csv, write_segments_coverage_dict
 from src.utils.chromosome import get_contigs_list, centromere_regions_blacklist, centromere_regions_blacklist_bins, csv_df_chromosomes_sorter, \
         df_chromosomes_sorter, extract_centromere_regions
