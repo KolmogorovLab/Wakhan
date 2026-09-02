@@ -714,6 +714,7 @@ def cna_process(args):
                 except OSError as e:
                     logger.info(f"Error creating symbolic link: {e}")
 
+    create_hiscanner_plot_data_archives(args.out_dir_plots, args.genome_name, args.breakpoints, args.centromere)
     #if average_p_value:
     #    #SNPs ratios and LOH and plots
     #    plot_snps_ratios_genome(args, df_snps_in_csv, loh_regions)
