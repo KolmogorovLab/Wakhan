@@ -9,6 +9,8 @@ haplotype-specific copy number and coverage plots.
 
 A detailed algorithm description and evaluation is available in our [preprint](https://www.medrxiv.org/content/10.64898/2025.12.11.25342098v1).
 
+[A more interactive HiScanner based Wakhan output plots](https://wakhan-visualization.github.io/) provide easy and flexible option to explore CNAs/SVs profiles, for a quick demo, use `Load Example Data` option.
+
 #### Breakpoints/SVs based segmentation and Copy numbers estimation:
 <img width="1373" alt="plots_example" src="examples/images/1437.png">
 
