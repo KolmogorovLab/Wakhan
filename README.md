@@ -9,8 +9,6 @@ haplotype-specific copy number and coverage plots.
 
 A detailed algorithm description and evaluation is available in our [preprint](https://www.medrxiv.org/content/10.64898/2025.12.11.25342098v1).
 
-[A more interactive HiScanner based Wakhan output plot](https://wakhan-visualization.github.io/) provide easy and flexible option to explore CNAs/SVs profiles, for a quick demo, use `Load Example Data` option.
-
 #### Breakpoints/SVs based segmentation and Copy numbers estimation:
 <img width="1373" alt="plots_example" src="examples/images/1437.png">
 
@@ -268,6 +266,9 @@ Following are additional outputs, independent of CNA profiles
 * `coverage_plots` Haplotype specific coverage plots for chromosomes with option for unphased coverage
 * `coverage_data` Haplotype specific phase-corrected coverage data including SNPs pileup
 * `phasing_output` Phase-switch error correction plots and phase corrected VCF file (rephased.vcf.gz)
+
+
+Additionally, for each solution Wakhan generates an additional interactive output that could be viewed at a [HiScanner fork for Wakhan](https://wakhan-visualization.github.io/). It provides easy and flexible option to explore CNAs/SVs profiles. For a quick demo, use `Load Example Data` option.
 
 
 ## Prerequisite

@@ -37,10 +37,9 @@ def create_hiscanner_plot_data_archives(
         │       └── genes_copynumber_states.bed
         └── ...
 
-    Creates:
+    Creates (inside each solution's own directory):
 
-        <genome-name>_solution_1_HiScanner_plots_data.zip
-        <genome-name>_solution_2_HiScanner_plots_data.zip
+        solution_<...>/HiScanner_plots_data.zip
         ...
 
     Each ZIP contains:
@@ -276,12 +275,9 @@ def create_hiscanner_plot_data_archives(
         # ZIP filename
         # --------------------------------------------------------------
 
-        zip_name = (
-            f"{genome_name}_solution_{solution_number}"
-            f"_HiScanner_plots_data.zip"
-        )
+        zip_name = "HiScanner_plots_data.zip"
 
-        zip_path = out_dir / zip_name
+        zip_path = solution_dir / zip_name
 
         # Remove existing ZIP.
         if zip_path.exists():
