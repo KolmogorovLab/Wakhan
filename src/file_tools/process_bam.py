@@ -7,6 +7,7 @@ import pandas
 from collections import defaultdict
 import logging
 from collections import Counter
+from itertools import accumulate
 
 from src.utils.chromosome import csv_df_chromosomes_sorter, df_chromosomes_sorter
 
@@ -249,12 +250,22 @@ def update_coverage_hist(genome_ids, ref_lengths, segments_by_read, min_mapq, ma
     for genome_id in genome_ids:
         for chr_id, chr_len in ref_lengths.items():
             for hp in range(0, NUM_HAPLOTYPES):
-                coverage_histograms[(genome_id, hp, chr_id)] = [0 for _ in range(chr_len // COV_WINDOW + 1)]
+                coverage_histograms[(genome_id, hp, chr_id)] = [0] * (chr_len // COV_WINDOW + 1)
     for read in allsegments:
         hist_start = read.ref_start // COV_WINDOW
         hist_end = read.ref_end // COV_WINDOW
-        for i in range(hist_start, hist_end + 1):  ## Check with (hist_start, hist_end + 1)
-            coverage_histograms[(read.genome_id, read.haplotype, read.ref_id)][i] += 1
+        if hist_start > hist_end:
+            continue
+        hist = coverage_histograms[(read.genome_id, read.haplotype, read.ref_id)]
+        if hist_end >= len(hist):
+            raise IndexError('list index out of range')
+        # Keep the existing inclusive end bin.
+        hist[hist_start] += 1
+        if hist_end + 1 < len(hist):
+            hist[hist_end + 1] -= 1
+
+    for key, hist in coverage_histograms.items():
+        coverage_histograms[key] = list(accumulate(hist))
 
     return coverage_histograms
 

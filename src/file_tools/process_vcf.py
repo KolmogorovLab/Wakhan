@@ -1,4 +1,5 @@
 import pathlib
+from bisect import bisect_left, bisect_right
 import subprocess
 import statistics
 import logging
@@ -183,26 +184,28 @@ def get_snps_frquncies_coverage(snps_df_sorted, chrom, ref_start_values, bin_siz
     centromere_region = []
     #num_hets = []
     #num_homs = []
+    snps_het_pos.sort()
+    snps_homo_pos.sort()
     for index, pos in enumerate(ref_start_values):
-        l1 = [i for i in snps_het_pos if i > pos and i < pos + bin_size]
-        l2 = [i for i in snps_homo_pos if i > pos and i < pos + bin_size]
-        #num_hets.append(len(l1))
-        #num_homs.append(len(l2))
-        # snps_homo_counts.append(len(l2)/len(snps_homo_pos)*bin_size)
-        if l1:
-            het_ratio = len(l1) / (len(l1) + len(l2))
+        het_count = bisect_left(snps_het_pos, pos + bin_size) - bisect_right(snps_het_pos, pos)
+        homo_count = bisect_left(snps_homo_pos, pos + bin_size) - bisect_right(snps_homo_pos, pos)
+        #num_hets.append(het_count)
+        #num_homs.append(homo_count)
+        # snps_homo_counts.append(homo_count/len(snps_homo_pos)*bin_size)
+        if het_count:
+            het_ratio = het_count / (het_count + homo_count)
             snps_het_counts.append(het_ratio)
         else:
             snps_het_counts.append(0)
             #het_ratio = 0
-        if l2:
-            homo_ratio = len(l2) / (len(l1) + len(l2))
+        if homo_count:
+            homo_ratio = homo_count / (het_count + homo_count)
             snps_homo_counts.append(homo_ratio)
         else:
             snps_homo_counts.append(0)
             #homo_ratio = 0
 
-        if len(l1) == 0 and len(l2) == 0:
+        if het_count == 0 and homo_count == 0:
             centromere_region.append(pos)
             centromere_region.append(pos + bin_size)
 
@@ -246,86 +249,63 @@ def squash_regions(region, bin_size):
 
     return region_starts, region_ends
 
+def nearest_position_indices(positions, targets):
+    first_indices = {}
+    for index, position in enumerate(positions):
+        first_indices.setdefault(position, index)
+    ordered = sorted(first_indices)
+    result = []
+    for target in targets:
+        if not ordered:
+            result.append(None)
+            continue
+        index = bisect_left(ordered, target)
+        candidates = ordered[max(0, index - 1):index + 1]
+        # Match min()'s first-occurrence rule for ties and duplicate positions.
+        nearest = min(candidates, key=lambda pos: (abs(pos - target), first_indices[pos]))
+        result.append(first_indices[nearest])
+    return result
+
+
 def snps_frequencies_chrom_mean_phasesets(df_snps, ref_start_values, ref_end_values, chrom, args):
     df = df_snps[df_snps['chr'] == chrom]
+    positions = df.pos.values.tolist()
+    starts = nearest_position_indices(positions, ref_start_values)
+    ends = nearest_position_indices(positions, ref_end_values)
+    results = []
+    for column in ('freq_value_b', 'freq_value_a'):
+        coverage = df[column].values.tolist()
+        medians = []
+        for start, end in zip(starts, ends):
+            if start is None:
+                logger.info('No Hets pileup found!')
+                medians.append(0)
+                continue
+            values = [value for value in coverage[start:end] if value != 0]
+            medians.append(statistics.median(values) if values else 0)
+        results.append(medians)
+    return tuple(results)
 
-    #df = dict(tuple(df_snps.groupby('hp')))
-    haplotype_1_position = df.pos.values.tolist()
-    haplotype_1_coverage = df.freq_value_b.values.tolist()
-    haplotype_2_position = df.pos.values.tolist()
-    haplotype_2_coverage = df.freq_value_a.values.tolist()
-    #vaf = a/a+b
-    #from normal as well
-    snps_haplotype1_mean = []
-    for index, (i,j) in enumerate(zip(ref_start_values, ref_end_values)):
-        sub_list = []
-        try:
-            sub_list = haplotype_1_coverage[haplotype_1_position.index(min(haplotype_1_position, key=lambda x:abs(x-i))):haplotype_1_position.index(min(haplotype_1_position, key=lambda x:abs(x-j)))]
-        except ValueError:
-            logger.info('No Hets pileup found!')
-        sub_list = [x for x in sub_list if x != 0]
-        if sub_list:
-
-            #snps_haplotype1_mean.append(statistics.mean(sub_list))
-            snps_haplotype1_mean.append(statistics.median(sub_list))
-        else:
-            snps_haplotype1_mean.append(0)
-
-    snps_haplotype2_mean = []
-    for index, (i, j) in enumerate(zip(ref_start_values, ref_end_values)):
-        sub_list = []
-        try:
-            sub_list = haplotype_2_coverage[haplotype_2_position.index(min(haplotype_2_position, key=lambda x:abs(x-i))):haplotype_2_position.index(min(haplotype_2_position, key=lambda x:abs(x-j)))]
-        except ValueError:
-            logger.info('No Hets pileup found!')
-        sub_list = [x for x in sub_list if x != 0]
-        if sub_list:
-            #snps_haplotype2_mean.append(statistics.mean(sub_list))
-            snps_haplotype2_mean.append(statistics.median(sub_list))
-        else:
-            snps_haplotype2_mean.append(0)
-
-    return snps_haplotype1_mean, snps_haplotype2_mean
 
 def snps_frequencies_chrom_mean(df_snps, ref_start_values, chrom, args):
     df = df_snps[df_snps['chr'] == chrom]
+    positions = np.sort(df.pos.to_numpy())
+    starts = np.asarray(ref_start_values)
+    counts = (np.searchsorted(positions, starts + args.bin_size) -
+              np.searchsorted(positions, starts))
+    results = []
+    for column in ('freq_value_b', 'freq_value_a'):
+        coverage = df[column].values.tolist()
+        means = []
+        total = 0
+        # Keep the original running slices; only the bin counts change implementation.
+        for count in counts:
+            values = coverage[total:total + count]
+            means.append(statistics.mean(values) if values else 0)
+            total += count
+        results.append(means)
+    return tuple(results)
 
-    #df = dict(tuple(df_snps.groupby('hp')))
-    haplotype_1_position = df.pos.values.tolist()
-    haplotype_1_coverage = df.freq_value_b.values.tolist()
-    haplotype_2_position = df.pos.values.tolist()
-    haplotype_2_coverage = df.freq_value_a.values.tolist()
-
-    snps_haplotype1_mean=[]
-    total=0
-    for index, i in enumerate(ref_start_values):
-        # if chrom == 'chr14' and i == 106260001:
-        #     print('here')
-        len_cov= len(df[(df.pos >= i) & (df.pos < i + args.bin_size)])
-        if len_cov ==0:
-            snps_haplotype1_mean.append(0)
-        else:
-            sub_list=haplotype_1_coverage[total:(total + len_cov)]
-            if sub_list:
-                snps_haplotype1_mean.append(statistics.mean(sub_list))
-            else:
-                snps_haplotype1_mean.append(0)
-        total += len_cov
-
-    snps_haplotype2_mean = []
-    total = 0
-    for index, i in enumerate(ref_start_values):
-        len_cov= len(df[(df.pos >= i) & (df.pos < i + args.bin_size)])
-        if len_cov ==0:
-            snps_haplotype2_mean.append(0)
-        else:
-            sub_list=haplotype_2_coverage[total:(total + len_cov)]
-            if sub_list:
-                snps_haplotype2_mean.append(statistics.mean(sub_list))
-            else:
-                snps_haplotype2_mean.append(0)
-        total += len_cov
-    return snps_haplotype1_mean, snps_haplotype2_mean
 
 def vcf_parse_to_csv_for_snps(input_vcf, args, output_subdir):
     # pathlib.Path(input_vcf).suffix #extension
