@@ -199,7 +199,8 @@ def get_all_reads_parallel(bam_file, thread_pool, ref_lengths,
     tasks = [(bam_file, region, genome_id, sv_size) for region in fetch_list]
     parsing_results = None
     # thread_pool = Pool(num_threads)
-    parsing_results = thread_pool.starmap(get_all_reads, tasks)
+    # Avoid batching several large regions onto the same worker.
+    parsing_results = thread_pool.starmap(get_all_reads, tasks, chunksize=1)
     segments_by_read = defaultdict(list)
     for alignments in parsing_results:
         for aln in alignments:
@@ -390,16 +391,26 @@ def process_pileups_parallel(bam, ref, bed, args):
     #cmd = ['samtools', 'mpileup', '-l', bed, '-f', ref, bam,  '-o', output_csv]
 
     chromosomes = set()
+    bounds = {}
     with open(bed, "r") as f:
         for line in f:
             if line.startswith("#"):
                 continue
-            chromosomes.add(line.split()[0])
+            fields = line.split()
+            chrom = fields[0]
+            chromosomes.add(chrom)
+            # Position lists are 1-based; BED intervals are 0-based, half-open.
+            start = int(fields[1]) if len(fields) == 2 else int(fields[1]) + 1
+            end = int(fields[1]) if len(fields) == 2 else int(fields[2])
+            previous_start, previous_end = bounds.get(chrom, (start, end))
+            bounds[chrom] = min(start, previous_start), max(end, previous_end)
 
     #open(output_csv, "w").close()
     with open(output_csv, "w") as samtools_out:
         for chrom in chromosomes:
-            cmd = ['samtools', 'mpileup', '-l', bed, '-f', ref, '-r', chrom, bam, '--no-BAQ', '-q', '5', '-Q', '1',
+            start, end = bounds[chrom]
+            region = f'{chrom}:{start}-{end}' if 0 < start <= end else chrom
+            cmd = ['samtools', 'mpileup', '-l', bed, '-f', ref, '-r', region, bam, '--no-BAQ', '-q', '5', '-Q', '1',
                    '--no-output-ins', '--no-output-ins', '--no-output-del', '--no-output-del', '--no-output-ends']
             subprocess.check_call(cmd, stdout=samtools_out, stderr=open(os.devnull, "w"))
             #print(cmd)
