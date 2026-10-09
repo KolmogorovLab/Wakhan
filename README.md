@@ -9,49 +9,7 @@ haplotype-specific copy number and coverage plots.
 
 A detailed algorithm description and evaluation is available in our [preprint](https://www.medrxiv.org/content/10.64898/2025.12.11.25342098v1).
 
-#### Breakpoints/SVs based segmentation and Copy numbers estimation:
-<img width="1373" alt="plots_example" src="examples/images/1437.png">
-
-[//]: # (#### LOH detection, phasing correction and CopyNumbers profiling &#40;COLO357&#41;:)
-
-[//]: # (<p float="left">)
-
-[//]: # (  <img src="examples/images/loh1.png" width="270" />)
-
-[//]: # (  <img src="examples/images/loh2.png" width="270" /> )
-
-[//]: # (  <img src="examples/images/loh3.png" width="270" />)
-
-[//]: # (</p>)
-
-[//]: # (#### Copy number segmentation:)
-
-[//]: # (<img width="1373" alt="plots_example" src="examples/images/HG008_CN.png">)
-
-[//]: # ()
-[//]: # (#### LOH detection)
-
-[//]: # (<img width="1373" alt="plots_example" src="examples/images/HG008_LOH.png">)
-
-[//]: # (## Installation &#40;individual packages through conda and pip&#41;)
-
-[//]: # (```)
-
-[//]: # (git clone https://github.com/KolmogorovLab/Wakhan.git)
-
-[//]: # (cd Wakhan/)
-
-[//]: # (conda create --name Wakhan python=3.8)
-
-[//]: # (conda activate Wakhan)
-
-[//]: # (pip install pysam pyfaidx numpy pandas plotly scikit-learn==1.2.0 scipy==1.9.2 ruptures vcf_parser)
-
-[//]: # (conda install -c bioconda samtools bcftools)
-
-[//]: # (cd src/)
-
-[//]: # (```)
+<img alt="wakhan_overview" src="examples/images/wakhan_overview.png">
 
 ## Bioconda installation 
 ```
