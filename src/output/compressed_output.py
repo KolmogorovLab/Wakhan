@@ -33,7 +33,7 @@ def create_hiscanner_plot_data_archives(
         ├── solution_<...>/
         │   ├── integer_profile.bed
         │   ├── subclonal_profile.bed
-        │   └── genes/
+        │   └── genes/                          # optional
         │       └── genes_copynumber_states.bed
         └── ...
 
@@ -46,17 +46,17 @@ def create_hiscanner_plot_data_archives(
 
         integer_profile.bed
         subclonal_profile.bed
-        genes_copynumber_states.bed
+        genes_copynumber_states.bed      # if available
         phase_corrected_coverage.csv
         baf.csv
         <genome-name>_loh_segments.csv   # if available
         <centromere-bed-name>
-        severus_somatic.vcf
+        severus_somatic.vcf              # if --breakpoints was provided
         solutions_ranks.tsv
     """
 
     out_dir = Path(out_dir).resolve()
-    breakpoints = Path(breakpoints).resolve()
+    breakpoints = Path(breakpoints).resolve() if breakpoints else None
     centromere_bed = Path(centromere_bed).resolve()
 
     genome_name = str(genome_name)
@@ -79,9 +79,15 @@ def create_hiscanner_plot_data_archives(
     # Validate common files
     # ------------------------------------------------------------------
 
-    if not breakpoints.exists():
+    if breakpoints is not None and not breakpoints.exists():
         raise FileNotFoundError(
             f"Breakpoints file does not exist: {breakpoints}"
+        )
+
+    if breakpoints is None:
+        logger.info(
+            "No --breakpoints provided: severus_somatic.vcf will "
+            "be omitted from the archive(s)"
         )
 
     if not centromere_bed.exists():
@@ -245,7 +251,12 @@ def create_hiscanner_plot_data_archives(
             solution_dir / "subclonal_profile.bed"
         )
 
-        # New: genes/genes_copynumber_states.bed
+        # Optional: genes/genes_copynumber_states.bed
+        #
+        # Not produced when haplotype phase correction is
+        # bypassed (--phaseblock-flipping-disable, implied by
+        # --without-phasing), since gene copy-number states are
+        # only meaningful for phase-corrected segments.
         genes_copynumber_states = (
             solution_dir
             / "genes"
@@ -264,11 +275,15 @@ def create_hiscanner_plot_data_archives(
                 f"{solution_number}: {subclonal_profile}"
             )
 
-        if not genes_copynumber_states.exists():
-            raise FileNotFoundError(
-                f"Missing gene copy-number states for solution "
-                f"{solution_number}: "
-                f"{genes_copynumber_states}"
+        if genes_copynumber_states.exists():
+            logger.info(
+                "Found optional gene copy-number states file: %s",
+                genes_copynumber_states,
+            )
+        else:
+            logger.info(
+                "Optional gene copy-number states file not found: %s",
+                genes_copynumber_states,
             )
 
         # --------------------------------------------------------------
@@ -317,10 +332,16 @@ def create_hiscanner_plot_data_archives(
                 arcname="subclonal_profile.bed",
             )
 
-            zf.write(
-                genes_copynumber_states,
-                arcname="genes_copynumber_states.bed",
-            )
+            if genes_copynumber_states.exists():
+                zf.write(
+                    genes_copynumber_states,
+                    arcname="genes_copynumber_states.bed",
+                )
+
+                logger.info(
+                    "Added gene copy-number states: %s",
+                    genes_copynumber_states.name,
+                )
 
             # ----------------------------------------------------------
             # Coverage files
@@ -367,10 +388,11 @@ def create_hiscanner_plot_data_archives(
             # store it as severus_somatic.vcf.
             # ----------------------------------------------------------
 
-            zf.write(
-                breakpoints,
-                arcname="severus_somatic.vcf",
-            )
+            if breakpoints is not None:
+                zf.write(
+                    breakpoints,
+                    arcname="severus_somatic.vcf",
+                )
 
             # ----------------------------------------------------------
             # Wakhan solution ranking
