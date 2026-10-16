@@ -7,6 +7,7 @@ import pandas
 from collections import defaultdict
 import logging
 from collections import Counter
+from itertools import accumulate
 
 from src.utils.chromosome import csv_df_chromosomes_sorter, df_chromosomes_sorter
 
@@ -198,7 +199,8 @@ def get_all_reads_parallel(bam_file, thread_pool, ref_lengths,
     tasks = [(bam_file, region, genome_id, sv_size) for region in fetch_list]
     parsing_results = None
     # thread_pool = Pool(num_threads)
-    parsing_results = thread_pool.starmap(get_all_reads, tasks)
+    # Avoid batching several large regions onto the same worker.
+    parsing_results = thread_pool.starmap(get_all_reads, tasks, chunksize=1)
     segments_by_read = defaultdict(list)
     for alignments in parsing_results:
         for aln in alignments:
@@ -249,12 +251,22 @@ def update_coverage_hist(genome_ids, ref_lengths, segments_by_read, min_mapq, ma
     for genome_id in genome_ids:
         for chr_id, chr_len in ref_lengths.items():
             for hp in range(0, NUM_HAPLOTYPES):
-                coverage_histograms[(genome_id, hp, chr_id)] = [0 for _ in range(chr_len // COV_WINDOW + 1)]
+                coverage_histograms[(genome_id, hp, chr_id)] = [0] * (chr_len // COV_WINDOW + 1)
     for read in allsegments:
         hist_start = read.ref_start // COV_WINDOW
         hist_end = read.ref_end // COV_WINDOW
-        for i in range(hist_start, hist_end + 1):  ## Check with (hist_start, hist_end + 1)
-            coverage_histograms[(read.genome_id, read.haplotype, read.ref_id)][i] += 1
+        if hist_start > hist_end:
+            continue
+        hist = coverage_histograms[(read.genome_id, read.haplotype, read.ref_id)]
+        if hist_end >= len(hist):
+            raise IndexError('list index out of range')
+        # Keep the existing inclusive end bin.
+        hist[hist_start] += 1
+        if hist_end + 1 < len(hist):
+            hist[hist_end + 1] -= 1
+
+    for key, hist in coverage_histograms.items():
+        coverage_histograms[key] = list(accumulate(hist))
 
     return coverage_histograms
 
@@ -379,16 +391,26 @@ def process_pileups_parallel(bam, ref, bed, args):
     #cmd = ['samtools', 'mpileup', '-l', bed, '-f', ref, bam,  '-o', output_csv]
 
     chromosomes = set()
+    bounds = {}
     with open(bed, "r") as f:
         for line in f:
             if line.startswith("#"):
                 continue
-            chromosomes.add(line.split()[0])
+            fields = line.split()
+            chrom = fields[0]
+            chromosomes.add(chrom)
+            # Position lists are 1-based; BED intervals are 0-based, half-open.
+            start = int(fields[1]) if len(fields) == 2 else int(fields[1]) + 1
+            end = int(fields[1]) if len(fields) == 2 else int(fields[2])
+            previous_start, previous_end = bounds.get(chrom, (start, end))
+            bounds[chrom] = min(start, previous_start), max(end, previous_end)
 
     #open(output_csv, "w").close()
     with open(output_csv, "w") as samtools_out:
         for chrom in chromosomes:
-            cmd = ['samtools', 'mpileup', '-l', bed, '-f', ref, '-r', chrom, bam, '--no-BAQ', '-q', '5', '-Q', '1',
+            start, end = bounds[chrom]
+            region = f'{chrom}:{start}-{end}' if 0 < start <= end else chrom
+            cmd = ['samtools', 'mpileup', '-l', bed, '-f', ref, '-r', region, bam, '--no-BAQ', '-q', '5', '-Q', '1',
                    '--no-output-ins', '--no-output-ins', '--no-output-del', '--no-output-del', '--no-output-ends']
             subprocess.check_call(cmd, stdout=samtools_out, stderr=open(os.devnull, "w"))
             #print(cmd)
